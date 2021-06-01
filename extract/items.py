@@ -6,7 +6,7 @@
 import scrapy
 
 
-class ProtrendItem(scrapy.Item):
+class ExtractItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     pass

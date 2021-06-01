@@ -8,6 +8,6 @@
 from itemadapter import ItemAdapter
 
 
-class ProtrendPipeline:
+class ExtractPipeline:
     def process_item(self, item, spider):
         return item

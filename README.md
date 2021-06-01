@@ -1,2 +1,2 @@
-# protrend-extract
-ProTReND extract tool
+# protrend-database
+ProTReND database ETL tool
