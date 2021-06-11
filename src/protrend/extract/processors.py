@@ -14,6 +14,26 @@ class RegPreciseProcessors:
         return
 
     @staticmethod
+    def process_pubmed_href(href: str) -> Union[str, None]:
+        # href='https://www.ncbi.nlm.nih.gov/pubmed?term=19130263'
+
+        if "ncbi" in href and "=" in href:
+            *_, identifier = href.split("=")
+            return identifier
+
+        return
+
+    @staticmethod
+    def process_rfam_href(href: str) -> Union[str, None]:
+        # href=https://rfam.sanger.ac.uk/family/RF00174'
+
+        if "rfam" in href and "family" in href:
+            *_, identifier = href.split("/")
+            return identifier
+
+        return
+
+    @staticmethod
     def process_operon_name(gene_name: str) -> Union[str, None]:
 
         if gene_name:

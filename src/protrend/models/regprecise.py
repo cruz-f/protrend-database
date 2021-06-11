@@ -107,7 +107,7 @@ class RNAFamily(StructuredNode, Node):
 
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
-    rfam_sanger = StringProperty()
+    rfam = StringProperty()
 
     collection = RelationshipTo(Collection, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')

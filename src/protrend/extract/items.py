@@ -1,5 +1,6 @@
 from itemloaders.processors import MapCompose, TakeFirst, Join
 from scrapy.item import Item, Field
+from w3lib.html import remove_tags
 
 from .processors import RegPreciseProcessors
 
@@ -53,9 +54,9 @@ class TranscriptionFactorItem(Item):
 
     url = Field(output_processor=TakeFirst())
 
-    # TODO: missing processing
-    description = Field(output_processor=TakeFirst())
-    pubmed = Field(output_processor=TakeFirst())
+    description = Field(input_processor=MapCompose(remove_tags),
+                        output_processor=Join(separator=''))
+    pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
 
     # outgoing relationship
     # TODO: missing add collection value
@@ -103,9 +104,9 @@ class TranscriptionFactorFamilyItem(Item):
 
     url = Field(output_processor=TakeFirst())
 
-    # TODO: missing processing
-    description = Field(output_processor=TakeFirst())
-    pubmed = Field(output_processor=TakeFirst())
+    description = Field(input_processor=MapCompose(remove_tags),
+                        output_processor=Join(separator=''))
+    pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
 
     # outgoing relationship
     # TODO: missing add collection value
@@ -115,16 +116,17 @@ class TranscriptionFactorFamilyItem(Item):
 
 class RNAFamilyItem(Item):
     riboswitch_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
-                        output_processor=TakeFirst())
+                          output_processor=TakeFirst())
 
     name = Field(output_processor=TakeFirst())
 
     url = Field(output_processor=TakeFirst())
 
-    # TODO: missing processing
-    description = Field(output_processor=TakeFirst())
-    pubmed = Field(output_processor=TakeFirst())
-    rfam_sanger = Field(output_processor=TakeFirst())
+    description = Field(input_processor=MapCompose(remove_tags),
+                        output_processor=Join(separator=''))
+    pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
+    rfam = Field(input_processor=MapCompose(RegPreciseProcessors.process_rfam_href),
+                 output_processor=TakeFirst())
 
     # outgoing relationship
     # TODO: missing add collection value

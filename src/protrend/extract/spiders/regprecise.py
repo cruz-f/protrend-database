@@ -1,16 +1,15 @@
 from collections import namedtuple
 
-from scrapy import Spider, Request
+from scrapy import Spider, Request, Selector
 from scrapy.http import Response
 from scrapy.loader import ItemLoader
 
 from protrend.extract.utils import parsing_spider_arguments
 from protrend.extract.items import TaxonomyItem, GenomeItem, RegulonItem, OperonItem, TFBSItem, GeneItem, \
-    TranscriptionFactorItem, RegulogItem
+    TranscriptionFactorItem, RegulogItem, TranscriptionFactorFamilyItem, RNAFamilyItem, EffectorItem, PathwayItem
 
 OperonGeneTFBS = namedtuple("OperonGeneTFBS",
-                            ["operon", "genes", "tfbs"],
-                            defaults=[None, None, None])
+                            ["operon", "genes", "tfbs"])
 
 
 class RegPreciseSpider(Spider):
@@ -331,7 +330,7 @@ class RegPreciseSpider(Spider):
         return operon_gene_tfbs
 
     @staticmethod
-    def parse_tfbs(tooltip):
+    def parse_tfbs(tooltip: Selector):
 
         tooltip_site_img = tooltip.xpath(".//div[contains(@class, 'site_img')]")
 
@@ -352,7 +351,7 @@ class RegPreciseSpider(Spider):
         return
 
     @staticmethod
-    def parse_gene(tooltip):
+    def parse_gene(tooltip: Selector):
 
         tooltip_gene_img = tooltip.xpath(".//div[contains(@class, 'gene_img')]")
 
@@ -372,10 +371,8 @@ class RegPreciseSpider(Spider):
 
         return
 
-    # TODO: missing checking parsing of tfs
-    def parse_collections_tf(self, response):
+    def parse_collections_tf(self, response: Response):
 
-        # TODO: check valid xpaths
         tf_xpath = "//*[@id='content']/div/div[3]/table/tbody/tr/td[1]/a"
         tfs = response.xpath(tf_xpath)
 
@@ -397,17 +394,20 @@ class RegPreciseSpider(Spider):
 
             yield tf_item
 
-    def parse_regulog(self, response, tf_item):
+    def parse_regulog(self, response: Response, tf_item: TranscriptionFactorItem):
 
         tf_loader = ItemLoader(item=tf_item,
                                response=response)
 
         tf_loader.add_value("url", response.url)
 
-        # TODO: parsing description, pubmed
+        description_xpath = "//*[@id='content']/div/h2//text()"
+        tf_loader.add_xpath("description", description_xpath)
 
-        # TODO: check valid xpaths
-        regulogs_xpath = "//*[@id='content']/div/table/tbody/tr/td[1]/a"
+        pubmed_xpath = "//*[@id='content']/div/h2//a//@href"
+        tf_loader.add_xpath("pubmed", pubmed_xpath)
+
+        regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[2]/a"
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
@@ -432,7 +432,7 @@ class RegPreciseSpider(Spider):
 
             yield regulog_item
 
-    def parse_regulog_page(self, response, regulog_item):
+    def parse_regulog_page(self, response: Response, regulog_item: RegulogItem):
 
         regulog_loader = ItemLoader(item=regulog_item,
                                     response=response)
@@ -449,9 +449,7 @@ class RegPreciseSpider(Spider):
         self.parse_regulog_regulons(response=response, regulog_item=regulog_item)
 
     @staticmethod
-    def parse_regulog_properties(response, regulog_item):
-
-        # TODO: check valid xpaths
+    def parse_regulog_properties(response: Response, regulog_item: RegulogItem):
 
         regulog_loader = ItemLoader(item=regulog_item,
                                     response=response)
@@ -476,30 +474,203 @@ class RegPreciseSpider(Spider):
 
         regulog_loader.load_item()
 
-    def parse_regulog_collections(self, response, regulog_item):
-        # TODO: check valid xpaths
+    def parse_regulog_collections(self, response: Response, regulog_item):
+
+        # regulog collection properties are the same as regulon collection properties
         return self.parse_regulon_collections(response, regulog_item)
 
-    def parse_regulog_regulons(self, response, regulog_item):
+    @staticmethod
+    def parse_regulog_regulons(response: Response, regulog_item: RegulogItem):
 
-        # TODO: missing parsing of regulog regulons
-        pass
+        regulons_xpath = "//*[@id='content']/table[1]/tbody/tr/td[1]/a"
+        regulons = response.xpath(regulons_xpath)
 
-    def parse_collections_tffam(self, response, **kwargs):
-        # TODO: missing parsing of tffam
-        pass
+        regulog_loader = ItemLoader(item=regulog_item)
 
-    def parse_collections_rfam(self, response, **kwargs):
-        # TODO: missing parsing of rfam
-        pass
+        for regulon in regulons:
+            regulon_href_xpath = ".//@href"
+            regulon_href = regulon.xpath(regulon_href_xpath).get()
+            regulog_loader.add_value("regulon", regulon_href)
 
-    def parse_collections_effector(self, response, **kwargs):
-        # TODO: missing parsing of effector
-        pass
+        regulog_loader.load_item()
 
-    def parse_collections_pathway(self, response, **kwargs):
-        # TODO: missing parsing of pathway
-        pass
+    def parse_collections_tffam(self, response: Response):
+
+        tffam_xpath = "//*[@id='content']/div/div[3]/table/tbody/tr/td[1]/a"
+        tffams = response.xpath(tffam_xpath)
+
+        for tffam in tffams:
+            tffam_loader = ItemLoader(item=TranscriptionFactorFamilyItem(),
+                                      selector=tffam)
+
+            anchor_href_xpath = ".//@href"
+            tffam_loader.add_xpath("tffamily_id", anchor_href_xpath)
+
+            anchor_text_xpath = ".//text()"
+            tffam_loader.add_xpath("name", anchor_text_xpath)
+
+            tffam_item = tffam_loader.load_item()
+            cb_kwargs = dict(tffam_item=tffam_item)
+            yield response.follow(tffam,
+                                  callback=self.parse_tffam,
+                                  cb_kwargs=cb_kwargs)
+
+            yield tffam_item
+
+    @staticmethod
+    def parse_tffam(response: Response, tffam_item: TranscriptionFactorFamilyItem):
+
+        tffam_loader = ItemLoader(item=tffam_item,
+                                  response=response)
+
+        tffam_loader.add_value("url", response.url)
+
+        description_xpath = "//*[@id='content']/div/h2//text()"
+        tffam_loader.add_xpath("description", description_xpath)
+
+        pubmed_xpath = "//*[@id='content']/div/h2//a//@href"
+        tffam_loader.add_xpath("pubmed", pubmed_xpath)
+
+        regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[2]/a"
+        regulogs = response.xpath(regulogs_xpath)
+
+        for regulog in regulogs:
+            regulog_href_xpath = ".//@href"
+            regulog_href = regulog.xpath(regulog_href_xpath).get()
+            tffam_loader.add_value("regulog", regulog_href)
+
+        tffam_loader.load_item()
+
+    def parse_collections_rfam(self, response: Response):
+
+        rfam_xpath = "//*[@id='content']/div/div[3]/table/tbody/tr/td[1]/a"
+        rfams = response.xpath(rfam_xpath)
+
+        for rfam in rfams:
+            rfam_loader = ItemLoader(item=RNAFamilyItem(),
+                                     selector=rfam)
+
+            anchor_href_xpath = ".//@href"
+            rfam_loader.add_xpath("riboswitch_id", anchor_href_xpath)
+
+            anchor_text_xpath = ".//text()"
+            rfam_loader.add_xpath("name", anchor_text_xpath)
+
+            rfam_item = rfam_loader.load_item()
+            cb_kwargs = dict(rfam_item=rfam_item)
+            yield response.follow(rfam,
+                                  callback=self.parse_rfam,
+                                  cb_kwargs=cb_kwargs)
+
+            yield rfam_item
+
+    @staticmethod
+    def parse_rfam(response: Response, rfam_item: RNAFamilyItem):
+
+        rfam_loader = ItemLoader(item=rfam_item,
+                                 response=response)
+
+        rfam_loader.add_value("url", response.url)
+
+        description_xpath = "//*[@id='content']/h2//text()"
+        rfam_loader.add_xpath("description", description_xpath)
+
+        pubmed_xpath = "//*[@id='content']/h2//a//@href"
+        rfam_loader.add_xpath("pubmed", pubmed_xpath)
+
+        rfam_xpath = "//*[@id='content']/div[1]/h1/span/a//@href"
+        rfam_loader.add_xpath("rfam", rfam_xpath)
+
+        regulogs_xpath = "//*[@id='content']/div[5]/table/tbody/tr/td[2]/a"
+        regulogs = response.xpath(regulogs_xpath)
+
+        for regulog in regulogs:
+            regulog_href_xpath = ".//@href"
+            regulog_href = regulog.xpath(regulog_href_xpath).get()
+            rfam_loader.add_value("regulog", regulog_href)
+
+        rfam_loader.load_item()
+
+    def parse_collections_effector(self, response):
+
+        effector_xpath = "//*[@id='content']/div/div[3]/table/tbody/tr/td[1]/a"
+        effectors = response.xpath(effector_xpath)
+
+        for effector in effectors:
+            effector_loader = ItemLoader(item=EffectorItem(),
+                                         selector=effector)
+
+            anchor_href_xpath = ".//@href"
+            effector_loader.add_xpath("effector_id", anchor_href_xpath)
+
+            anchor_text_xpath = ".//text()"
+            effector_loader.add_xpath("name", anchor_text_xpath)
+
+            effector_item = effector_loader.load_item()
+            cb_kwargs = dict(effector_item=effector_item)
+            yield response.follow(effector,
+                                  callback=self.parse_effector,
+                                  cb_kwargs=cb_kwargs)
+
+            yield effector_item
+
+    @staticmethod
+    def parse_effector(response: Response, effector_item: EffectorItem):
+
+        effector_loader = ItemLoader(item=effector_item,
+                                     response=response)
+
+        effector_loader.add_value("url", response.url)
+
+        regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[3]/a"
+        regulogs = response.xpath(regulogs_xpath)
+
+        for regulog in regulogs:
+            regulog_href_xpath = ".//@href"
+            regulog_href = regulog.xpath(regulog_href_xpath).get()
+            effector_loader.add_value("regulog", regulog_href)
+
+        effector_loader.load_item()
+
+    def parse_collections_pathway(self, response):
+
+        pathway_xpath = "//*[@id='content']/div/div[3]/table/tbody/tr/td[1]/a"
+        pathways = response.xpath(pathway_xpath)
+
+        for pathway in pathways:
+            pathway_loader = ItemLoader(item=PathwayItem(),
+                                        selector=pathway)
+
+            anchor_href_xpath = ".//@href"
+            pathway_loader.add_xpath("pathway_id", anchor_href_xpath)
+
+            anchor_text_xpath = ".//text()"
+            pathway_loader.add_xpath("name", anchor_text_xpath)
+
+            pathway_item = pathway_loader.load_item()
+            cb_kwargs = dict(pathway_item=pathway_item)
+            yield response.follow(pathway,
+                                  callback=self.parse_pathway,
+                                  cb_kwargs=cb_kwargs)
+
+            yield pathway_item
+
+    @staticmethod
+    def parse_pathway(response: Response, pathway_item: PathwayItem):
+
+        pathway_loader = ItemLoader(item=pathway_item,
+                                    response=response)
+
+        pathway_loader.add_value("url", response.url)
+        regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[3]/a"
+        regulogs = response.xpath(regulogs_xpath)
+
+        for regulog in regulogs:
+            regulog_href_xpath = ".//@href"
+            regulog_href = regulog.xpath(regulog_href_xpath).get()
+            pathway_loader.add_value("regulog", regulog_href)
+
+        pathway_loader.load_item()
 
     def parse(self, response, **kwargs):
 
