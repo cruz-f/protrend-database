@@ -95,7 +95,7 @@ class RegPreciseSpider(Spider):
             genome_loader = ItemLoader(item=GenomeItem(),
                                        selector=genome)
 
-            genome_loader.add_value("taxonomy", taxon_item.collection_id)
+            genome_loader.add_value("taxonomy", taxon_item["collection_id"])
 
             anchor_href_xpath = ".//@href"
             genome_loader.add_xpath("genome_id", anchor_href_xpath)
@@ -113,6 +113,8 @@ class RegPreciseSpider(Spider):
 
             yield genome_item
 
+        taxon_loader.load_item()
+
     def parse_regulon(self, response: Response, genome_item: GenomeItem):
 
         genome_loader = ItemLoader(item=genome_item,
@@ -127,7 +129,7 @@ class RegPreciseSpider(Spider):
             regulon_loader = ItemLoader(item=RegulonItem(),
                                         selector=regulon)
 
-            regulon_loader.add_value("genome", genome_item.genome_id)
+            regulon_loader.add_value("genome", genome_item["genome_id"])
 
             anchor_href_xpath = ".//@href"
             regulon_loader.add_xpath("regulon_id", anchor_href_xpath)
@@ -144,6 +146,8 @@ class RegPreciseSpider(Spider):
                                   cb_kwargs=cb_kwargs)
 
             yield regulon_item
+
+        genome_loader.load_item()
 
     def parse_regulon_page(self, response: Response, regulon_item: RegulonItem):
 
@@ -183,7 +187,7 @@ class RegPreciseSpider(Spider):
         regulator_family = "//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
         regulon_loader.add_xpath("regulator_family", regulator_family)
 
-        regulation_mode = ", '//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"
+        regulation_mode = "//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"
         regulon_loader.add_xpath("regulation_mode", regulation_mode)
 
         biological_process = "//*[@id='propblock']/table/tbody/tr[5]/td[2]//text()"
@@ -203,11 +207,10 @@ class RegPreciseSpider(Spider):
     @staticmethod
     def parse_regulon_collections(response: Response, regulon_item: RegulonItem):
 
-        regulon_loader = ItemLoader(item=regulon_item,
-                                    response=response)
-
         collections_xpath = "//*[@id='content']/div[6]/ul/li"
         collections = response.xpath(collections_xpath)
+
+        regulon_loader = None
 
         for collection in collections:
 
@@ -217,34 +220,50 @@ class RegPreciseSpider(Spider):
 
                 if "taxonomy" in collection_text:
 
-                    regulon_loader.add_value("taxonomy", ".//@href")
+                    regulon_loader = ItemLoader(item=regulon_item,
+                                                selector=collection)
+                    regulon_loader.add_xpath("taxonomy", ".//@href")
+                    regulon_loader.load_item()
 
                 elif "trascription factor" in collection_text:
 
-                    regulon_loader.add_value("transcription_factor", ".//@href")
+                    regulon_loader = ItemLoader(item=regulon_item,
+                                                selector=collection)
+                    regulon_loader.add_xpath("transcription_factor", ".//@href")
+                    regulon_loader.load_item()
 
                 elif "TF family" in collection_text:
 
-                    regulon_loader.add_value("tf_family", ".//@href")
+                    regulon_loader = ItemLoader(item=regulon_item,
+                                                selector=collection)
+                    regulon_loader.add_xpath("tf_family", ".//@href")
+                    regulon_loader.load_item()
 
                 elif "RNA motif" in collection_text:
 
-                    regulon_loader.add_value("rna_family", ".//@href")
+                    regulon_loader = ItemLoader(item=regulon_item,
+                                                selector=collection)
+                    regulon_loader.add_xpath("rna_family", ".//@href")
+                    regulon_loader.load_item()
 
                 elif "effector" in collection_text:
 
-                    regulon_loader.add_value("effector", ".//@href")
+                    regulon_loader = ItemLoader(item=regulon_item,
+                                                selector=collection)
+                    regulon_loader.add_xpath("effector", ".//@href")
+                    regulon_loader.load_item()
 
                 elif "pathway" in collection_text:
 
-                    regulon_loader.add_value("pathway", ".//@href")
-
-        regulon_loader.load_item()
+                    regulon_loader = ItemLoader(item=regulon_item,
+                                                selector=collection)
+                    regulon_loader.add_xpath("pathway", ".//@href")
+                    regulon_loader.load_item()
 
     @staticmethod
     def parse_operons_genes_tfbs(response: Response, regulon_item: RegulonItem):
 
-        operon_xpath = "//*[@id='operontbl']/tbody/tr/td/div[contains(@class, 'operon')]"
+        operon_xpath = "//*[@id='operontbl']/tr/td/div[contains(@class, 'operon')]"
         operons = response.xpath(operon_xpath)
 
         operon_gene_tfbs = []
@@ -267,13 +286,12 @@ class RegPreciseSpider(Spider):
                     operon_tfbs.append(tfbs_item)
 
                 gene_item = RegPreciseSpider.parse_gene(tooltip=tooltip)
-
                 if gene_item:
                     operon_genes.append(gene_item)
 
                     # operon identifier is created according to the operon genes
-                    operon_loader.add_value("operon_id", gene_item.locus_tag)
-                    operon_loader.add_value("name", gene_item.name)
+                    operon_loader.add_value("operon_id", gene_item["locus_tag"])
+                    operon_loader.add_value("name", gene_item["name"])
 
             operon_item = operon_loader.load_item()
             operon_gene_tfbs.append(OperonGeneTFBS(operon=operon_item,
@@ -285,47 +303,53 @@ class RegPreciseSpider(Spider):
 
         for (operon, genes, tfbs) in operon_gene_tfbs:
 
-            regulon_loader.add_value("operon", operon.operon_id)
+            regulon_loader.add_value("operon", operon["operon_id"])
 
             operon_loader = ItemLoader(item=operon)
 
             operon_loader.add_value("url", response.url)
-            operon_loader.add_value("regulon", regulon_item.regulon_id)
+            operon_loader.add_value("regulon", regulon_item["regulon_id"])
 
             for tfbs_item in tfbs:
 
                 tfbs_loader = ItemLoader(item=tfbs_item)
 
-                tfbs_loader.add_value("tfbs_id", tfbs_item.position)
-                tfbs_loader.add_value("tfbs_id", operon.operon_id)
+                tfbs_loader.add_value("tfbs_id", tfbs_item["position"])
+                tfbs_loader.add_value("tfbs_id", operon["operon_id"])
 
                 tfbs_loader.add_value("url", response.url)
-                tfbs_loader.add_value("regulon", regulon_item.regulon_id)
-                tfbs_loader.add_value("operon", operon.operon_id)
+                tfbs_loader.add_value("regulon", regulon_item["regulon_id"])
+                tfbs_loader.add_value("operon", operon["operon_id"])
 
                 for gene_item in genes:
-                    tfbs_loader.add_value("gene", gene_item.locus_tag)
+                    tfbs_loader.add_value("gene", gene_item["locus_tag"])
 
                 tfbs_loader.load_item()
 
-                operon_loader.add_value("tfbs", tfbs_item.tfbs_id)
+                operon_loader.add_value("tfbs", tfbs_item["tfbs_id"])
 
-                regulon_loader.add_value("tfbs", tfbs_item.tfbs_id)
+                regulon_loader.add_value("tfbs", tfbs_item["tfbs_id"])
 
             for gene_item in genes:
 
                 gene_loader = ItemLoader(item=gene_item)
 
                 gene_loader.add_value("url", response.url)
-                gene_loader.add_value("regulon", regulon_item.regulon_id)
-                gene_loader.add_value("operon", operon.operon_id)
+                gene_loader.add_value("regulon", regulon_item["regulon_id"])
+                gene_loader.add_value("operon", operon["operon_id"])
 
                 for tfbs_item in tfbs:
-                    gene_loader.add_value("tfbs", tfbs_item.tfbs_id)
+                    gene_loader.add_value("tfbs", tfbs_item["tfbs_id"])
 
-                operon_loader.add_value("gene", gene_item.locus_tag)
+                gene_loader.load_item()
 
-                regulon_loader.add_value("gene", gene_item.locus_tag)
+                operon_loader.add_value("gene", gene_item["locus_tag"])
+
+                regulon_loader.add_value("gene", gene_item["locus_tag"])
+
+            operon_loader.load_item()
+
+        regulon_loader.load_item()
 
         return operon_gene_tfbs
 
@@ -414,7 +438,7 @@ class RegPreciseSpider(Spider):
             regulog_loader = ItemLoader(item=RegulogItem(),
                                         selector=regulog)
 
-            regulog_loader.add_value("transcription_factor", tf_item.collection_id)
+            regulog_loader.add_value("transcription_factor", tf_item["collection_id"])
 
             anchor_href_xpath = ".//@href"
             regulog_loader.add_xpath("regulog_id", anchor_href_xpath)
@@ -431,6 +455,8 @@ class RegPreciseSpider(Spider):
                                   cb_kwargs=cb_kwargs)
 
             yield regulog_item
+
+        tf_loader.load_item()
 
     def parse_regulog_page(self, response: Response, regulog_item: RegulogItem):
 
@@ -460,7 +486,7 @@ class RegPreciseSpider(Spider):
         regulator_family = "//*[@id='propblock']/table/tbody/tr[2]/td[2]//text()"
         regulog_loader.add_xpath("regulator_family", regulator_family)
 
-        regulation_mode = ", '//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
+        regulation_mode = "//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
         regulog_loader.add_xpath("regulation_mode", regulation_mode)
 
         biological_process = "//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"

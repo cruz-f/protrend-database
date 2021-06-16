@@ -85,7 +85,7 @@ class RegulogItem(Item):
     phylum = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    transcription_factor = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
+    transcription_factor = Field(output_processor=TakeFirst())
     regulon = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
     # other outgoing relationships
@@ -182,7 +182,8 @@ class RegulonItem(Item):
 
     regulation_effector = Field(output_processor=TakeFirst())
 
-    regulation_regulog = Field(output_processor=TakeFirst())
+    regulation_regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_regulog_name),
+                               output_processor=TakeFirst())
 
     # outgoing relationship
     genome = Field(output_processor=TakeFirst())

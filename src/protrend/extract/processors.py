@@ -34,6 +34,14 @@ class RegPreciseProcessors:
         return
 
     @staticmethod
+    def process_regulog_name(regulog_name: str) -> Union[str]:
+
+        if regulog_name:
+            return regulog_name.strip()
+
+        return regulog_name
+
+    @staticmethod
     def process_operon_name(gene_name: str) -> Union[str, None]:
 
         if gene_name:
@@ -45,7 +53,7 @@ class RegPreciseProcessors:
         return
 
     @staticmethod
-    def process_span(span_text: str, prefix: str, to: type) -> Union[str, int, None]:
+    def process_span(span_text: str, prefix: str, to: type) -> Union[str, int, float, None]:
 
         # " Position: -213"
         # ' Locus tag: BSU03290'
@@ -83,7 +91,7 @@ class RegPreciseProcessors:
         # 'Funciton: Nitrite reductase [NAD(P)H] small subunit (EC 1.7.1.4)'
 
         if "Funciton:" in func:
-            return func.replace("Funciton: ", "")
+            return func.replace("Funciton: ", "").strip()
 
         return
 
@@ -99,7 +107,7 @@ class RegPreciseProcessors:
 
         # " Score: 8"
 
-        return RegPreciseProcessors.process_span(score, "Score:", to=str)
+        return RegPreciseProcessors.process_span(score, "Score:", to=float)
 
     @staticmethod
     def process_score_str(score: int) -> Union[str, None]:
