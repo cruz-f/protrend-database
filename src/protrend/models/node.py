@@ -25,7 +25,7 @@ class Node:
                 version.register(cls)
 
     @classmethod
-    def name(cls):
+    def cls_name(cls):
         return cls.__name__.lower()
 
     def connect_version(self, version: Union[None, VersionNode]):
@@ -36,6 +36,6 @@ class Node:
         if hasattr(self, 'version'):
             self.version.connect(version)
 
-        if hasattr(version, self.name()):
-            relationship = getattr(version, self.name())
+        if hasattr(version, self.cls_name()):
+            relationship = getattr(version, self.cls_name())
             relationship.connect(self)
