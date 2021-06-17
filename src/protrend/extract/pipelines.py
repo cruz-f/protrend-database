@@ -8,6 +8,8 @@
 from itemadapter import ItemAdapter
 
 
-class ExtractPipeline:
+class RegPrecisePipeline:
+
     def process_item(self, item, spider):
+
         return item

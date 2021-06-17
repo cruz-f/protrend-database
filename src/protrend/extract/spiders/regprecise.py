@@ -74,53 +74,56 @@ class RegPreciseSpider(Spider):
             taxon_loader.add_xpath("name", anchor_text_xpath)
 
             taxon_item = taxon_loader.load_item()
+
             cb_kwargs = dict(taxon_item=taxon_item)
+
             yield response.follow(taxon,
                                   callback=self.parse_genome,
                                   cb_kwargs=cb_kwargs)
 
-            yield taxon_item
-
     def parse_genome(self, response: Response, taxon_item: TaxonomyItem):
 
-        taxon_loader = ItemLoader(item=taxon_item,
-                                  response=response)
-
+        taxon_loader = ItemLoader(item=taxon_item)
         taxon_loader.add_value("url", response.url)
+        taxon_item = taxon_loader.load_item()
 
         genomes_xpath = "//*[@id='content']/div/table/tbody/tr/td[1]/a"
         genomes = response.xpath(genomes_xpath)
 
         for genome in genomes:
-            genome_loader = ItemLoader(item=GenomeItem(),
-                                       selector=genome)
-
-            genome_loader.add_value("taxonomy", taxon_item["collection_id"])
+            genome_loader = ItemLoader(item=GenomeItem(), selector=genome)
 
             anchor_href_xpath = ".//@href"
             genome_loader.add_xpath("genome_id", anchor_href_xpath)
-            taxon_loader.add_xpath("genome", anchor_href_xpath)
 
             anchor_text_xpath = ".//text()"
             genome_loader.add_xpath("name", anchor_text_xpath)
 
             genome_item = genome_loader.load_item()
+
+            # connecting items
+            taxon_loader = ItemLoader(item=taxon_item, selector=genome)
+            anchor_href_xpath = ".//@href"
+            taxon_loader.add_xpath("genome", anchor_href_xpath)
+            taxon_item = taxon_loader.load_item()
+
+            genome_loader = ItemLoader(item=genome_item, selector=genome)
+            genome_loader.add_value("taxonomy", taxon_item["collection_id"])
+            genome_item = genome_loader.load_item()
+
             cb_kwargs = dict(genome_item=genome_item)
 
             yield response.follow(genome,
                                   callback=self.parse_regulon,
                                   cb_kwargs=cb_kwargs)
 
-            yield genome_item
-
-        taxon_loader.load_item()
+        yield taxon_item
 
     def parse_regulon(self, response: Response, genome_item: GenomeItem):
 
-        genome_loader = ItemLoader(item=genome_item,
-                                   response=response)
-
+        genome_loader = ItemLoader(item=genome_item)
         genome_loader.add_value("url", response.url)
+        genome_item = genome_loader.load_item()
 
         regulons_xpath = "//*[@id='content']/div[2]/div/table/tbody/tr/td[2]/a"
         regulons = response.xpath(regulons_xpath)
@@ -129,41 +132,45 @@ class RegPreciseSpider(Spider):
             regulon_loader = ItemLoader(item=RegulonItem(),
                                         selector=regulon)
 
-            regulon_loader.add_value("genome", genome_item["genome_id"])
-
             anchor_href_xpath = ".//@href"
             regulon_loader.add_xpath("regulon_id", anchor_href_xpath)
-            genome_loader.add_xpath("regulon", anchor_href_xpath)
 
             anchor_text_xpath = ".//text()"
             regulon_loader.add_xpath("name", anchor_text_xpath)
 
             regulon_item = regulon_loader.load_item()
+
+            # connecting items
+            genome_loader = ItemLoader(item=genome_item, selector=regulon)
+            anchor_href_xpath = ".//@href"
+            genome_loader.add_xpath("regulon", anchor_href_xpath)
+            genome_item = genome_loader.load_item()
+
+            regulon_loader = ItemLoader(item=regulon_item, selector=regulon)
+            regulon_loader.add_value("genome", genome_item["genome_id"])
+            regulon_item = regulon_loader.load_item()
+
             cb_kwargs = dict(regulon_item=regulon_item)
 
             yield response.follow(regulon,
                                   callback=self.parse_regulon_page,
                                   cb_kwargs=cb_kwargs)
 
-            yield regulon_item
-
-        genome_loader.load_item()
+        yield genome_item
 
     def parse_regulon_page(self, response: Response, regulon_item: RegulonItem):
 
-        regulon_loader = ItemLoader(item=regulon_item,
-                                    response=response)
-
+        regulon_loader = ItemLoader(item=regulon_item)
         regulon_loader.add_value("url", response.url)
-
         regulon_item = regulon_loader.load_item()
 
-        self.parse_regulon_properties(response=response,
-                                      regulon_item=regulon_item)
+        regulon_item = self.parse_regulon_properties(response=response, regulon_item=regulon_item)
 
-        self.parse_regulon_collections(response=response, regulon_item=regulon_item)
+        regulon_item = self.parse_regulon_collections(response=response, regulon_item=regulon_item)
 
-        operon_genes_tfbs = self.parse_operons_genes_tfbs(response=response, regulon_item=regulon_item)
+        regulon_item, operon_genes_tfbs = self.parse_operons_genes_tfbs(response=response, regulon_item=regulon_item)
+
+        yield regulon_item
 
         for (operon, genes, tfbs) in operon_genes_tfbs:
             yield from tfbs
@@ -175,8 +182,7 @@ class RegPreciseSpider(Spider):
     @staticmethod
     def parse_regulon_properties(response: Response, regulon_item: RegulonItem):
 
-        regulon_loader = ItemLoader(item=regulon_item,
-                                    response=response)
+        regulon_loader = ItemLoader(item=regulon_item, response=response)
 
         regulator_type = "//*[@id='propblock']/table/tbody/tr[1]/td[2]//text()"
         regulon_loader.add_xpath("regulator_type", regulator_type)
@@ -202,15 +208,13 @@ class RegPreciseSpider(Spider):
         regulog = "//*[@id='propblock']/table/tbody/tr[7]/td[2]/a//@href"
         regulon_loader.add_xpath("regulog", regulog)
 
-        regulon_loader.load_item()
+        return regulon_loader.load_item()
 
     @staticmethod
     def parse_regulon_collections(response: Response, regulon_item: RegulonItem):
 
         collections_xpath = "//*[@id='content']/div[6]/ul/li"
         collections = response.xpath(collections_xpath)
-
-        regulon_loader = None
 
         for collection in collections:
 
@@ -220,45 +224,42 @@ class RegPreciseSpider(Spider):
 
                 if "taxonomy" in collection_text:
 
-                    regulon_loader = ItemLoader(item=regulon_item,
-                                                selector=collection)
+                    regulon_loader = ItemLoader(item=regulon_item, selector=collection)
                     regulon_loader.add_xpath("taxonomy", ".//@href")
-                    regulon_loader.load_item()
+                    regulon_item = regulon_loader.load_item()
 
                 elif "trascription factor" in collection_text:
 
                     regulon_loader = ItemLoader(item=regulon_item,
                                                 selector=collection)
                     regulon_loader.add_xpath("transcription_factor", ".//@href")
-                    regulon_loader.load_item()
+                    regulon_item = regulon_loader.load_item()
 
                 elif "TF family" in collection_text:
 
-                    regulon_loader = ItemLoader(item=regulon_item,
-                                                selector=collection)
+                    regulon_loader = ItemLoader(item=regulon_item, selector=collection)
                     regulon_loader.add_xpath("tf_family", ".//@href")
-                    regulon_loader.load_item()
+                    regulon_item = regulon_loader.load_item()
 
                 elif "RNA motif" in collection_text:
 
-                    regulon_loader = ItemLoader(item=regulon_item,
-                                                selector=collection)
+                    regulon_loader = ItemLoader(item=regulon_item, selector=collection)
                     regulon_loader.add_xpath("rna_family", ".//@href")
-                    regulon_loader.load_item()
+                    regulon_item = regulon_loader.load_item()
 
                 elif "effector" in collection_text:
 
-                    regulon_loader = ItemLoader(item=regulon_item,
-                                                selector=collection)
+                    regulon_loader = ItemLoader(item=regulon_item, selector=collection)
                     regulon_loader.add_xpath("effector", ".//@href")
-                    regulon_loader.load_item()
+                    regulon_item = regulon_loader.load_item()
 
                 elif "pathway" in collection_text:
 
-                    regulon_loader = ItemLoader(item=regulon_item,
-                                                selector=collection)
+                    regulon_loader = ItemLoader(item=regulon_item, selector=collection)
                     regulon_loader.add_xpath("pathway", ".//@href")
-                    regulon_loader.load_item()
+                    regulon_item = regulon_loader.load_item()
+
+        return regulon_item
 
     @staticmethod
     def parse_operons_genes_tfbs(response: Response, regulon_item: RegulonItem):
@@ -349,9 +350,9 @@ class RegPreciseSpider(Spider):
 
             operon_loader.load_item()
 
-        regulon_loader.load_item()
+        regulon_item = regulon_loader.load_item()
 
-        return operon_gene_tfbs
+        return regulon_item, operon_gene_tfbs
 
     @staticmethod
     def parse_tfbs(tooltip: Selector):
@@ -412,16 +413,14 @@ class RegPreciseSpider(Spider):
 
             tf_item = tf_loader.load_item()
             cb_kwargs = dict(tf_item=tf_item)
+
             yield response.follow(tf,
                                   callback=self.parse_regulog,
                                   cb_kwargs=cb_kwargs)
 
-            yield tf_item
-
     def parse_regulog(self, response: Response, tf_item: TranscriptionFactorItem):
 
-        tf_loader = ItemLoader(item=tf_item,
-                               response=response)
+        tf_loader = ItemLoader(item=tf_item, response=response)
 
         tf_loader.add_value("url", response.url)
 
@@ -431,54 +430,59 @@ class RegPreciseSpider(Spider):
         pubmed_xpath = "//*[@id='content']/div/h2//a//@href"
         tf_loader.add_xpath("pubmed", pubmed_xpath)
 
+        tf_item = tf_loader.load_item()
+
         regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[2]/a"
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
-            regulog_loader = ItemLoader(item=RegulogItem(),
-                                        selector=regulog)
-
-            regulog_loader.add_value("transcription_factor", tf_item["collection_id"])
+            regulog_loader = ItemLoader(item=RegulogItem(), selector=regulog)
 
             anchor_href_xpath = ".//@href"
             regulog_loader.add_xpath("regulog_id", anchor_href_xpath)
-            tf_loader.add_xpath("regulog", anchor_href_xpath)
 
             anchor_text_xpath = ".//text()"
             regulog_loader.add_xpath("name", anchor_text_xpath)
 
             regulog_item = regulog_loader.load_item()
+
+            # connecting items
+            tf_loader = ItemLoader(item=tf_item, selector=regulog)
+            anchor_href_xpath = ".//@href"
+            tf_loader.add_xpath("regulog", anchor_href_xpath)
+            tf_item = tf_loader.load_item()
+
+            regulog_loader = ItemLoader(item=regulog_item, selector=regulog)
+            regulog_loader.add_value("transcription_factor", tf_item["collection_id"])
+            regulog_item = regulog_loader.load_item()
+
             cb_kwargs = dict(regulog_item=regulog_item)
 
             yield response.follow(regulog,
                                   callback=self.parse_regulog_page,
                                   cb_kwargs=cb_kwargs)
 
-            yield regulog_item
-
-        tf_loader.load_item()
+        yield tf_item
 
     def parse_regulog_page(self, response: Response, regulog_item: RegulogItem):
 
-        regulog_loader = ItemLoader(item=regulog_item,
-                                    response=response)
-
+        regulog_loader = ItemLoader(item=regulog_item)
         regulog_loader.add_value("url", response.url)
-
         regulog_item = regulog_loader.load_item()
 
-        self.parse_regulog_properties(response=response,
-                                      regulog_item=regulog_item)
+        regulog_item = self.parse_regulog_properties(response=response,
+                                                     regulog_item=regulog_item)
 
-        self.parse_regulog_collections(response=response, regulog_item=regulog_item)
+        regulog_item = self.parse_regulog_collections(response=response, regulog_item=regulog_item)
 
-        self.parse_regulog_regulons(response=response, regulog_item=regulog_item)
+        regulog_item = self.parse_regulog_regulons(response=response, regulog_item=regulog_item)
+
+        yield regulog_item
 
     @staticmethod
     def parse_regulog_properties(response: Response, regulog_item: RegulogItem):
 
-        regulog_loader = ItemLoader(item=regulog_item,
-                                    response=response)
+        regulog_loader = ItemLoader(item=regulog_item, response=response)
 
         regulator_type = "//*[@id='propblock']/table/tbody/tr[1]/td[2]//text()"
         regulog_loader.add_xpath("regulator_type", regulator_type)
@@ -498,7 +502,7 @@ class RegPreciseSpider(Spider):
         phylum = "//*[@id='propblock']/table/tbody/tr[6]/td[2]/a//text()"
         regulog_loader.add_xpath("phylum", phylum)
 
-        regulog_loader.load_item()
+        return regulog_loader.load_item()
 
     def parse_regulog_collections(self, response: Response, regulog_item):
 
@@ -511,14 +515,14 @@ class RegPreciseSpider(Spider):
         regulons_xpath = "//*[@id='content']/table[1]/tbody/tr/td[1]/a"
         regulons = response.xpath(regulons_xpath)
 
-        regulog_loader = ItemLoader(item=regulog_item)
-
         for regulon in regulons:
-            regulon_href_xpath = ".//@href"
-            regulon_href = regulon.xpath(regulon_href_xpath).get()
-            regulog_loader.add_value("regulon", regulon_href)
+            regulog_loader = ItemLoader(item=regulog_item, selector=regulon)
 
-        regulog_loader.load_item()
+            regulon_href_xpath = ".//@href"
+            regulog_loader.add_xpath("regulon", regulon_href_xpath)
+            regulog_item = regulog_loader.load_item()
+
+        return regulog_item
 
     def parse_collections_tffam(self, response: Response):
 
@@ -526,8 +530,7 @@ class RegPreciseSpider(Spider):
         tffams = response.xpath(tffam_xpath)
 
         for tffam in tffams:
-            tffam_loader = ItemLoader(item=TranscriptionFactorFamilyItem(),
-                                      selector=tffam)
+            tffam_loader = ItemLoader(item=TranscriptionFactorFamilyItem(), selector=tffam)
 
             anchor_href_xpath = ".//@href"
             tffam_loader.add_xpath("tffamily_id", anchor_href_xpath)
@@ -537,17 +540,15 @@ class RegPreciseSpider(Spider):
 
             tffam_item = tffam_loader.load_item()
             cb_kwargs = dict(tffam_item=tffam_item)
+
             yield response.follow(tffam,
                                   callback=self.parse_tffam,
                                   cb_kwargs=cb_kwargs)
 
-            yield tffam_item
-
     @staticmethod
     def parse_tffam(response: Response, tffam_item: TranscriptionFactorFamilyItem):
 
-        tffam_loader = ItemLoader(item=tffam_item,
-                                  response=response)
+        tffam_loader = ItemLoader(item=tffam_item, response=response)
 
         tffam_loader.add_value("url", response.url)
 
@@ -557,15 +558,19 @@ class RegPreciseSpider(Spider):
         pubmed_xpath = "//*[@id='content']/div/h2//a//@href"
         tffam_loader.add_xpath("pubmed", pubmed_xpath)
 
+        tffam_item = tffam_loader.load_item()
+
         regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[2]/a"
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
-            regulog_href_xpath = ".//@href"
-            regulog_href = regulog.xpath(regulog_href_xpath).get()
-            tffam_loader.add_value("regulog", regulog_href)
+            tffam_loader = ItemLoader(item=tffam_item, selector=regulog)
 
-        tffam_loader.load_item()
+            regulog_href_xpath = ".//@href"
+            tffam_loader.add_xpath("regulog", regulog_href_xpath)
+            tffam_item = tffam_loader.load_item()
+
+        yield tffam_item
 
     def parse_collections_rfam(self, response: Response):
 
@@ -573,8 +578,7 @@ class RegPreciseSpider(Spider):
         rfams = response.xpath(rfam_xpath)
 
         for rfam in rfams:
-            rfam_loader = ItemLoader(item=RNAFamilyItem(),
-                                     selector=rfam)
+            rfam_loader = ItemLoader(item=RNAFamilyItem(), selector=rfam)
 
             anchor_href_xpath = ".//@href"
             rfam_loader.add_xpath("riboswitch_id", anchor_href_xpath)
@@ -584,17 +588,15 @@ class RegPreciseSpider(Spider):
 
             rfam_item = rfam_loader.load_item()
             cb_kwargs = dict(rfam_item=rfam_item)
+
             yield response.follow(rfam,
                                   callback=self.parse_rfam,
                                   cb_kwargs=cb_kwargs)
 
-            yield rfam_item
-
     @staticmethod
     def parse_rfam(response: Response, rfam_item: RNAFamilyItem):
 
-        rfam_loader = ItemLoader(item=rfam_item,
-                                 response=response)
+        rfam_loader = ItemLoader(item=rfam_item, response=response)
 
         rfam_loader.add_value("url", response.url)
 
@@ -607,15 +609,20 @@ class RegPreciseSpider(Spider):
         rfam_xpath = "//*[@id='content']/div[1]/h1/span/a//@href"
         rfam_loader.add_xpath("rfam", rfam_xpath)
 
+        rfam_item = rfam_loader.load_item()
+
         regulogs_xpath = "//*[@id='content']/div[5]/table/tbody/tr/td[2]/a"
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
-            regulog_href_xpath = ".//@href"
-            regulog_href = regulog.xpath(regulog_href_xpath).get()
-            rfam_loader.add_value("regulog", regulog_href)
 
-        rfam_loader.load_item()
+            rfam_loader = ItemLoader(item=rfam_item, selector=regulog)
+
+            regulog_href_xpath = ".//@href"
+            rfam_loader.add_xpath("regulog", regulog_href_xpath)
+            rfam_item = rfam_loader.load_item()
+
+        yield rfam_item
 
     def parse_collections_effector(self, response):
 
@@ -634,29 +641,30 @@ class RegPreciseSpider(Spider):
 
             effector_item = effector_loader.load_item()
             cb_kwargs = dict(effector_item=effector_item)
+
             yield response.follow(effector,
                                   callback=self.parse_effector,
                                   cb_kwargs=cb_kwargs)
 
-            yield effector_item
-
     @staticmethod
     def parse_effector(response: Response, effector_item: EffectorItem):
 
-        effector_loader = ItemLoader(item=effector_item,
-                                     response=response)
-
+        effector_loader = ItemLoader(item=effector_item)
         effector_loader.add_value("url", response.url)
+
+        effector_item = effector_loader.load_item()
 
         regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[3]/a"
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
-            regulog_href_xpath = ".//@href"
-            regulog_href = regulog.xpath(regulog_href_xpath).get()
-            effector_loader.add_value("regulog", regulog_href)
+            effector_loader = ItemLoader(item=effector_item, selector=regulog)
 
-        effector_loader.load_item()
+            regulog_href_xpath = ".//@href"
+            effector_loader.add_xpath("regulog", regulog_href_xpath)
+            effector_item = effector_loader.load_item()
+
+        yield effector_item
 
     def parse_collections_pathway(self, response):
 
@@ -675,28 +683,30 @@ class RegPreciseSpider(Spider):
 
             pathway_item = pathway_loader.load_item()
             cb_kwargs = dict(pathway_item=pathway_item)
+
             yield response.follow(pathway,
                                   callback=self.parse_pathway,
                                   cb_kwargs=cb_kwargs)
 
-            yield pathway_item
-
     @staticmethod
     def parse_pathway(response: Response, pathway_item: PathwayItem):
 
-        pathway_loader = ItemLoader(item=pathway_item,
-                                    response=response)
-
+        pathway_loader = ItemLoader(item=pathway_item)
         pathway_loader.add_value("url", response.url)
+
+        pathway_item = pathway_loader.load_item()
+
         regulogs_xpath = "//*[@id='content']/div[4]/table/tbody/tr/td[3]/a"
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
-            regulog_href_xpath = ".//@href"
-            regulog_href = regulog.xpath(regulog_href_xpath).get()
-            pathway_loader.add_value("regulog", regulog_href)
+            pathway_loader = ItemLoader(item=pathway_item, selector=regulog)
 
-        pathway_loader.load_item()
+            regulog_href_xpath = ".//@href"
+            pathway_loader.add_xpath("regulog", regulog_href_xpath)
+            pathway_item = pathway_loader.load_item()
+
+        yield pathway_item
 
     def parse(self, response, **kwargs):
 
