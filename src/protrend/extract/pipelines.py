@@ -5,12 +5,11 @@
 
 
 # useful for handling different item types with a single interface
+from protrend.models.version import VersionNode
+from protrend.utils.db_connection import DBSettings
 
-from protrend.extract.databases import RegPreciseDB
-from protrend.models.regprecise import Version as RegPreciseVersion
 
-
-class RegPrecisePipeline:
+class NeoPipeline:
 
     def __init__(self,
                  user_name: str = None,
@@ -23,10 +22,10 @@ class RegPrecisePipeline:
                  clear_sa_schema: bool = False):
 
         if not user_name:
-            user_name = 'regprecise'
+            user_name = 'db'
 
         if not password:
-            user_name = 'regprecise'
+            user_name = 'db'
 
         if not ip:
             user_name = 'localhost'
@@ -69,35 +68,12 @@ class RegPrecisePipeline:
                    clear_sa_schema=clear_sa_schema)
 
     @property
-    def version(self) -> RegPreciseVersion:
-
-        if self._version is None:
-            versions = RegPreciseVersion.nodes.order_by('-created')
-
-            if versions:
-                self._version = versions[0]
-
-            else:
-                self._version = RegPreciseVersion(name='0.0.0').save()
-
-        if isinstance(self._version, str):
-            try:
-                self._version = RegPreciseVersion.nodes.get(name=self._version)
-
-            except RegPreciseVersion.DoesNotExist:
-
-                self._version = RegPreciseVersion(name=self._version).save()
+    def version(self) -> VersionNode:
 
         return self._version
 
     @property
-    def database(self) -> RegPreciseDB:
-
-        if self._database is None:
-            self._database = RegPreciseDB(user_name=self._user_name,
-                                          password=self._password,
-                                          ip=self._ip,
-                                          port=self._port)
+    def database(self) -> DBSettings:
 
         return self._database
 
@@ -123,5 +99,4 @@ class RegPrecisePipeline:
         pass
 
     def process_item(self, item, spider):
-
         return item
