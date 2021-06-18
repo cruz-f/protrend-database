@@ -1,6 +1,6 @@
 from typing import Union, Type, TYPE_CHECKING
 
-from neomodel import (UniqueIdProperty, RelationshipTo, DateTimeProperty)
+from neomodel import (UniqueIdProperty, RelationshipTo, DateTimeProperty, StructuredNode)
 
 if TYPE_CHECKING:
     from protrend.models.version import VersionNode
@@ -10,7 +10,7 @@ class Node:
     uid = UniqueIdProperty()
     created = DateTimeProperty(default_now=True)
 
-    def __init_subclass__(cls,
+    def __init_subclass__(cls: Type[StructuredNode],
                           version: Type['VersionNode'] = None,
                           to_: bool = False,
                           from_: bool = False,
@@ -25,13 +25,14 @@ class Node:
                 version.register(cls)
 
     @classmethod
-    def cls_name(cls):
+    def cls_name(cls: Type[StructuredNode]):
         return cls.__name__.lower()
 
-    def connect_version(self, version: Union[None, VersionNode]):
+    @classmethod
+    def from_item(cls: Type[StructuredNode], item: dict):
+        pass
 
-        if version is None:
-            return
+    def connect_version(self: StructuredNode, version: VersionNode):
 
         if hasattr(self, 'version'):
             self.version.connect(version)
