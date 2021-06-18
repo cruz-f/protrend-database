@@ -39,14 +39,19 @@ class Node:
         return cls.__all_relationships__
 
     @classmethod
-    def from_item(cls: Type[StructuredNode], item: dict):
+    def from_item(cls: Type[StructuredNode], item: dict, save: bool = True):
         properties = {attr: value for attr, value in item.items()
                       if attr in cls.properties()}
 
-        return cls(**properties)
+        instance = cls(**properties)
+
+        if save:
+            return instance.save()
+
+        return instance
 
     @classmethod
-    def get_by_version(cls: Type[StructuredNode], attr: str, value: Any, version: VersionNode, default: Any = None):
+    def get_by_version(cls: Type[StructuredNode], attr: str, value: Any, version: VersionNode):
 
         node_set = cls.nodes.filter(**{attr: value})
 
@@ -54,8 +59,6 @@ class Node:
 
             if node.version.is_connected(version):
                 return node
-
-        return default
 
     def update(self: StructuredNode, item: dict, save: bool = True):
 
@@ -69,7 +72,9 @@ class Node:
                 setattr(self, attr, value)
 
         if save:
-            self.save()
+            return self.save()
+
+        return self
 
     def connect_version(self: StructuredNode, version: VersionNode):
 
