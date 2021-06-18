@@ -20,17 +20,38 @@ class VersionNode:
     @classmethod
     def register(cls, node: Type['Node']):
 
-        setattr(cls, node.name(), RelationshipFrom(node, 'VERSIONING'))
-        cls.__registered_relationships[node.name()] = getattr(cls, node.name())
+        setattr(cls, node.cls_name(), RelationshipFrom(node, 'VERSIONING'))
+        cls.__registered_relationships[node.cls_name()] = getattr(cls, node.cls_name())
 
-    def get_children(self, node: Union[str, Type['Node']] = None):
+    def get_children(self,
+                     node_type: str = None,
+                     to: str = 'list') -> Union[list, dict]:
 
-        if not node:
-            return {name: relationship.all()
-                    for name, relationship in self.registered_relationships.keys()}
+        if node_type:
 
-        if hasattr(node, 'name'):
-            node = node.name()
+            if to == 'dict':
 
-        relationship = self.registered_relationships[node]
-        return relationship.all()
+                return {node_type: self.registered_relationships[node_type].all()}
+
+            elif to == 'list':
+
+                return self.registered_relationships[node_type].all()
+
+            else:
+                raise ValueError(f'{to} output format not supported')
+
+        else:
+
+            if to == 'dict':
+                return {name: relationship.all()
+                        for name, relationship in self.registered_relationships.items()}
+
+            elif to == 'list':
+                nodes = []
+                for relationship in self.registered_relationships.values():
+                    nodes.extend(relationship.all())
+
+                return nodes
+
+            else:
+                raise ValueError(f'{to} output format not supported')
