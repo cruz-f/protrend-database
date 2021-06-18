@@ -1,4 +1,4 @@
-from typing import Union, Type, TYPE_CHECKING
+from typing import Union, Type, TYPE_CHECKING, Any
 
 from neomodel import (UniqueIdProperty, RelationshipTo, DateTimeProperty, StructuredNode)
 
@@ -29,8 +29,52 @@ class Node:
         return cls.__name__.lower()
 
     @classmethod
-    def from_item(cls: Type[StructuredNode], item: dict):
-        pass
+    def properties(cls: Type[StructuredNode]):
+
+        return cls.__all_properties__
+
+    @classmethod
+    def relationships(cls: Type[StructuredNode]):
+
+        return cls.__all_relationships__
+
+    @classmethod
+    def from_item(cls: Type[StructuredNode], item: dict, save: bool = True):
+        properties = {attr: value for attr, value in item.items()
+                      if attr in cls.properties()}
+
+        instance = cls(**properties)
+
+        if save:
+            return instance.save()
+
+        return instance
+
+    @classmethod
+    def get_by_version(cls: Type[StructuredNode], attr: str, value: Any, version: VersionNode):
+
+        node_set = cls.nodes.filter(**{attr: value})
+
+        for node in node_set:
+
+            if node.version.is_connected(version):
+                return node
+
+    def update(self: StructuredNode, item: dict, save: bool = True):
+
+        properties = {attr: value for attr, value in item.items()
+                      if attr in self.properties()}
+
+        for attr, value in item.items():
+
+            if attr in self.properties():
+
+                setattr(self, attr, value)
+
+        if save:
+            return self.save()
+
+        return self
 
     def connect_version(self: StructuredNode, version: VersionNode):
 
