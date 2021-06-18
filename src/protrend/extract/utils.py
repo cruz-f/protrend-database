@@ -3,7 +3,7 @@ from typing import List, Type, Union
 from neomodel import StructuredNode
 
 from protrend.models.node import Node
-from protrend.models.version import VersionNode
+from protrend.models.version import Version
 
 
 def parsing_spider_arguments(argument: str):
@@ -21,9 +21,9 @@ class NodeRelationshipMap:
     def __init__(self,
                  node: Node,
                  relationship_name: str,
-                 to_node_cls: Union[Type[StructuredNode, Type[Node]]],
+                 to_node_cls: Union[Type[StructuredNode], Type[Node]],
                  to_node_attr: str,
-                 to: List[str, int]):
+                 to: List[Union[str, int]]):
 
         """
 
@@ -43,7 +43,7 @@ class NodeRelationshipMap:
         self.to_node_attr = to_node_attr
         self.to = to
 
-    def connect(self, version: VersionNode):
+    def connect(self, version: Version):
 
         for node_id in self.to:
             to_node = self.to_node_cls.get_by_version(attr=self.to_node_attr, value=node_id, version=version)

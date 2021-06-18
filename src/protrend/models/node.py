@@ -1,45 +1,38 @@
-from typing import Union, Type, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any
 
-from neomodel import (UniqueIdProperty, RelationshipTo, DateTimeProperty, StructuredNode)
+from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode)
 
 if TYPE_CHECKING:
-    from protrend.models.version import VersionNode
+    from protrend.models.version import Version
 
 
-class Node:
+class Node(StructuredNode):
+
     uid = UniqueIdProperty()
     created = DateTimeProperty(default_now=True)
 
-    def __init_subclass__(cls: Type[StructuredNode],
-                          version: Type['VersionNode'] = None,
-                          to_: bool = False,
-                          from_: bool = False,
-                          **kwargs):
-
-        if version:
-
-            if to_:
-                setattr(cls, 'version', RelationshipTo(version, 'VERSIONING'))
-
-            if from_:
-                version.register(cls)
+    __abstract_node__ = True
 
     @classmethod
-    def cls_name(cls: Type[StructuredNode]):
-        return cls.__name__.lower()
+    def cls_name(cls, lower: bool = False):
+
+        if lower:
+            return cls.__name__.lower()
+
+        return cls.__name__
 
     @classmethod
-    def properties(cls: Type[StructuredNode]):
+    def properties(cls):
 
-        return cls.__all_properties__
-
-    @classmethod
-    def relationships(cls: Type[StructuredNode]):
-
-        return cls.__all_relationships__
+        return dict(cls.__all_properties__)
 
     @classmethod
-    def from_item(cls: Type[StructuredNode], item: dict, save: bool = True) -> StructuredNode:
+    def relationships(cls):
+
+        return dict(cls.__all_relationships__)
+
+    @classmethod
+    def from_item(cls, item: dict, save: bool = True) -> StructuredNode:
         properties = {attr: value for attr, value in item.items()
                       if attr in cls.properties()}
 
@@ -51,7 +44,7 @@ class Node:
         return instance
 
     @classmethod
-    def get_by_version(cls: Type[StructuredNode], attr: str, value: Any, version: VersionNode):
+    def get_by_version(cls, attr: str, value: Any, version: 'Version'):
 
         node_set = cls.nodes.filter(**{attr: value})
 
@@ -60,7 +53,7 @@ class Node:
             if node.version.is_connected(version):
                 return node
 
-    def update(self: StructuredNode, item: dict, save: bool = True):
+    def update(self, item: dict, save: bool = True):
 
         properties = {attr: value for attr, value in item.items()
                       if attr in self.properties()}
@@ -76,11 +69,13 @@ class Node:
 
         return self
 
-    def connect_version(self: StructuredNode, version: VersionNode):
+    def connect_to_version(self, version: 'Version'):
 
         if hasattr(self, 'version'):
             self.version.connect(version)
 
-        if hasattr(version, self.cls_name()):
-            relationship = getattr(version, self.cls_name())
+        rel_name = self.cls_name(lower=True)
+
+        if hasattr(version, rel_name):
+            relationship = getattr(version, rel_name)
             relationship.connect(self)

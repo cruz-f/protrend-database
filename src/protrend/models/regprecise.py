@@ -1,21 +1,63 @@
-from neomodel import (StructuredNode,
-                      StringProperty,
+from typing import Dict
+
+from neomodel import (StringProperty,
                       IntegerProperty,
                       RelationshipTo,
                       ArrayProperty,
                       FloatProperty)
 
 from protrend.models.node import Node
-from protrend.models.version import VersionNode
+from protrend.models.version import Version
 
 
 # noinspection PyAbstractClass
-class Version(StructuredNode, VersionNode):
-    pass
+class RegPreciseVersion(Version):
+
+    database = RelationshipTo('Database', 'VERSIONING')
+
+    taxonomy = RelationshipTo('Taxonomy', 'VERSIONING')
+    genome = RelationshipTo('Genome', 'VERSIONING')
+
+    transcriptionfactor = RelationshipTo('TranscriptionFactor', 'VERSIONING')
+    regulog = RelationshipTo('Regulog', 'VERSIONING')
+
+    transcriptionfactorfamily = RelationshipTo('TranscriptionFactorFamily', 'VERSIONING')
+    rnafamily = RelationshipTo('RNAFamily', 'VERSIONING')
+    effector = RelationshipTo('Effector', 'VERSIONING')
+    pathway = RelationshipTo('Pathway', 'VERSIONING')
+
+    regulon = RelationshipTo('Regulon', 'VERSIONING')
+    operon = RelationshipTo('Operon', 'VERSIONING')
+    gene = RelationshipTo('Gene', 'VERSIONING')
+    tfbs = RelationshipTo('TFBS', 'VERSIONING')
+
+    @property
+    def versioned_nodes(self) -> Dict[str, RelationshipTo]:
+
+        return {'Database': self.database,
+                'Taxonomy': self.taxonomy,
+                'Genome': self.genome,
+                'TranscriptionFactor': self.transcriptionfactor,
+                'Regulog': self.regulog,
+                'TranscriptionFactorFamily': self.transcriptionfactorfamily,
+                'RNAFamily': self.rnafamily,
+                'Effector': self.effector,
+                'Pathway': self.pathway,
+                'Regulon': self.regulon,
+                'Operon': self.operon,
+                'Gene': self.gene,
+                'TFBS': self.tfbs}
+
+
+class RegPreciseNode(Node):
+
+    __abstract_node__ = True
+
+    version = RelationshipTo(RegPreciseVersion, 'VERSIONING')
 
 
 # noinspection PyAbstractClass
-class Database(StructuredNode, Node):
+class Database(RegPreciseNode):
     name = StringProperty(default='regprecise')
     url = StringProperty(default='https://regprecise.lbl.gov/collections.jsp')
     doi = StringProperty(default='10.1186/1471-2164-14-745')
@@ -31,7 +73,7 @@ class Database(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Taxonomy(StructuredNode, Node):
+class Taxonomy(RegPreciseNode):
     collection_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -41,7 +83,7 @@ class Taxonomy(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Genome(StructuredNode, Node):
+class Genome(RegPreciseNode):
     genome_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -51,7 +93,7 @@ class Genome(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class TranscriptionFactor(StructuredNode, Node):
+class TranscriptionFactor(RegPreciseNode):
     collection_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -64,7 +106,7 @@ class TranscriptionFactor(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Regulog(StructuredNode, Node):
+class Regulog(RegPreciseNode):
     regulog_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -87,7 +129,7 @@ class Regulog(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class TranscriptionFactorFamily(StructuredNode, Node):
+class TranscriptionFactorFamily(RegPreciseNode):
     tffamily_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -100,7 +142,7 @@ class TranscriptionFactorFamily(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class RNAFamily(StructuredNode, Node):
+class RNAFamily(RegPreciseNode):
     riboswitch_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -114,7 +156,7 @@ class RNAFamily(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Effector(StructuredNode, Node):
+class Effector(RegPreciseNode):
     effector_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -124,7 +166,7 @@ class Effector(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Pathway(StructuredNode, Node):
+class Pathway(RegPreciseNode):
     pathway_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -134,7 +176,7 @@ class Pathway(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Regulon(StructuredNode, Node):
+class Regulon(RegPreciseNode):
     regulon_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -162,7 +204,7 @@ class Regulon(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Operon(StructuredNode, Node):
+class Operon(RegPreciseNode):
     operon_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -173,7 +215,7 @@ class Operon(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class Gene(StructuredNode, Node):
+class Gene(RegPreciseNode):
     locus_tag = StringProperty(required=True)
     name = StringProperty()
     function = StringProperty()
@@ -185,7 +227,7 @@ class Gene(StructuredNode, Node):
 
 
 # noinspection PyAbstractClass
-class TFBS(StructuredNode, Node):
+class TFBS(RegPreciseNode):
     tfbs_id = StringProperty(required=True)
     position = IntegerProperty(required=True)
     score = FloatProperty(required=True)

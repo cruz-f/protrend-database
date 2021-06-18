@@ -1,41 +1,34 @@
-from typing import Type, TYPE_CHECKING, Union, Dict
+from typing import Union, Dict
 
-from neomodel import (StringProperty, UniqueIdProperty, DateTimeProperty, RelationshipFrom)
-
-if TYPE_CHECKING:
-    from protrend.models.node import Node
+from neomodel import (StringProperty, UniqueIdProperty, DateTimeProperty, StructuredNode,
+                      RelationshipTo)
 
 
-class VersionNode:
+class Version(StructuredNode):
+
     uid = UniqueIdProperty()
     name = StringProperty(required=True, unique_index=True)
     created = DateTimeProperty(default_now=True)
 
-    __registered_relationships = {}
+    __abstract_node__ = True
 
     @property
-    def registered_relationships(self) -> Dict[str, RelationshipFrom]:
-        return self.__registered_relationships
+    def versioned_nodes(self) -> Dict[str, RelationshipTo]:
+        return {}
 
-    @classmethod
-    def register(cls, node: Type['Node']):
-
-        setattr(cls, node.cls_name(), RelationshipFrom(node, 'VERSIONING'))
-        cls.__registered_relationships[node.cls_name()] = getattr(cls, node.cls_name())
-
-    def get_children(self,
-                     node_type: str = None,
-                     to: str = 'list') -> Union[list, dict]:
+    def get_versioned_nodes(self,
+                            node_type: str = None,
+                            to: str = 'list') -> Union[list, dict]:
 
         if node_type:
 
             if to == 'dict':
 
-                return {node_type: self.registered_relationships[node_type].all()}
+                return {node_type: self.versioned_nodes[node_type].all()}
 
             elif to == 'list':
 
-                return self.registered_relationships[node_type].all()
+                return self.versioned_nodes[node_type].all()
 
             else:
                 raise ValueError(f'{to} output format not supported')
@@ -44,11 +37,11 @@ class VersionNode:
 
             if to == 'dict':
                 return {name: relationship.all()
-                        for name, relationship in self.registered_relationships.items()}
+                        for name, relationship in self.versioned_nodes.items()}
 
             elif to == 'list':
                 nodes = []
-                for relationship in self.registered_relationships.values():
+                for relationship in self.versioned_nodes.values():
                     nodes.extend(relationship.all())
 
                 return nodes
