@@ -15,8 +15,8 @@ class Version(StructuredNode, VersionNode):
 
 
 # noinspection PyAbstractClass
-class Collection(StructuredNode, Node):
-    name = StringProperty(default='regprecise collection')
+class Database(StructuredNode, Node):
+    name = StringProperty(default='regprecise')
     url = StringProperty(default='https://regprecise.lbl.gov/collections.jsp')
     doi = StringProperty(default='10.1186/1471-2164-14-745')
     authors = ArrayProperty(StringProperty(), default=['Pavel S Novichkov', 'Dmitry A Rodionov'])
@@ -36,7 +36,7 @@ class Taxonomy(StructuredNode, Node):
     name = StringProperty(required=True)
     url = StringProperty()
 
-    collection = RelationshipTo(Collection, 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     genome = RelationshipTo('Genome', 'HAS')
 
 
@@ -59,7 +59,7 @@ class TranscriptionFactor(StructuredNode, Node):
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
 
-    collection = RelationshipTo(Collection, 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
@@ -95,7 +95,7 @@ class TranscriptionFactorFamily(StructuredNode, Node):
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
 
-    collection = RelationshipTo(Collection, 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
@@ -109,7 +109,7 @@ class RNAFamily(StructuredNode, Node):
     pubmed = ArrayProperty(IntegerProperty())
     rfam = StringProperty()
 
-    collection = RelationshipTo(Collection, 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
@@ -119,7 +119,7 @@ class Effector(StructuredNode, Node):
     name = StringProperty(required=True)
     url = StringProperty()
 
-    collection = RelationshipTo(Collection, 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
@@ -129,7 +129,7 @@ class Pathway(StructuredNode, Node):
     name = StringProperty(required=True)
     url = StringProperty()
 
-    collection = RelationshipTo(Collection, 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 

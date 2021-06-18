@@ -6,8 +6,13 @@
 
 # useful for handling different item types with a single interface
 from protrend.extract.databases import RegPreciseDB
-from protrend.models.regprecise import Version as RegPreciseVersion
+from protrend.extract.items import TaxonomyItem, GenomeItem, TranscriptionFactorItem, RegulogItem, \
+    TranscriptionFactorFamilyItem, RNAFamilyItem, EffectorItem, PathwayItem, RegulonItem, OperonItem, GeneItem, TFBSItem
+from protrend.models.regprecise import Version as RegPreciseVersion, Taxonomy, TranscriptionFactor, \
+    TranscriptionFactorFamily, RNAFamily, Effector, Pathway, Genome, Regulog, Regulon, Operon, Gene, TFBS
+from protrend.models.regprecise import Database as RegPreciseDatabase
 from protrend.models.version import VersionNode
+from protrend.models.node import Node
 from protrend.utils.db_connection import DBSettings
 
 
@@ -41,12 +46,15 @@ class NeoPipeline:
         self._port = port
 
         self._database = None
+        self._database_node = None
 
         self._version = version
 
         self.clear_version = clear_version
         self.clear_sa = clear_sa
         self.clear_sa_schema = clear_sa_schema
+
+        self._relationships = []
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -70,6 +78,10 @@ class NeoPipeline:
                    clear_sa_schema=clear_sa_schema)
 
     @property
+    def relationships(self):
+        return self._relationships
+
+    @property
     def version(self) -> VersionNode:
 
         return self._version
@@ -78,6 +90,11 @@ class NeoPipeline:
     def database(self) -> DBSettings:
 
         return self._database
+
+    @property
+    def database_node(self) -> Node:
+
+        return self._database_node
 
     def open_spider(self, spider):
         pass
@@ -123,6 +140,17 @@ class RegPrecisePipeline(NeoPipeline):
                          clear_sa_schema=clear_sa_schema)
 
     @property
+    def database(self) -> RegPreciseDB:
+
+        if self._database is None:
+            self._database = RegPreciseDB(user_name=self._user_name,
+                                          password=self._password,
+                                          ip=self._ip,
+                                          port=self._port)
+
+        return self._database
+
+    @property
     def version(self) -> RegPreciseVersion:
 
         if self._version is None:
@@ -145,15 +173,18 @@ class RegPrecisePipeline(NeoPipeline):
         return self._version
 
     @property
-    def database(self) -> RegPreciseDB:
+    def database_node(self) -> RegPreciseDatabase:
 
-        if self._database is None:
-            self._database = RegPreciseDB(user_name=self._user_name,
-                                          password=self._password,
-                                          ip=self._ip,
-                                          port=self._port)
+        if self._database_node is None:
 
-        return self._database
+            node = RegPreciseDatabase.get_by_version(attr='name', value='regprecise', version=self.version)
+
+            if node is None:
+                node = RegPreciseDatabase().save()
+
+            self._database_node = node
+
+        return self._database_node
 
     def open_spider(self, spider):
 
@@ -175,4 +206,197 @@ class RegPrecisePipeline(NeoPipeline):
 
     def process_item(self, item, spider):
 
+        if isinstance(item, TaxonomyItem):
+
+            self.process_taxonomy_item(item=item, spider=spider)
+
+        elif isinstance(item, GenomeItem):
+
+            self.process_genome_item(item=item, spider=spider)
+
+        elif isinstance(item, TranscriptionFactorItem):
+
+            self.process_tf_item(item=item, spider=spider)
+
+        elif isinstance(item, RegulogItem):
+
+            self.process_regulog_item(item=item, spider=spider)
+
+        elif isinstance(item, TranscriptionFactorFamilyItem):
+
+            self.process_tffam_item(item=item, spider=spider)
+
+        elif isinstance(item, RNAFamilyItem):
+
+            self.process_rfam_item(item=item, spider=spider)
+
+        elif isinstance(item, EffectorItem):
+
+            self.process_effector_item(item=item, spider=spider)
+
+        elif isinstance(item, PathwayItem):
+
+            self.process_pathway_item(item=item, spider=spider)
+
+        elif isinstance(item, RegulonItem):
+
+            self.process_regulon_item(item=item, spider=spider)
+
+        elif isinstance(item, OperonItem):
+
+            self.process_operon_item(item=item, spider=spider)
+
+        elif isinstance(item, GeneItem):
+
+            self.process_gene_item(item=item, spider=spider)
+
+        elif isinstance(item, TFBSItem):
+
+            self.process_tfbs_item(item=item, spider=spider)
+
         return item
+
+    def process_taxonomy_item(self, item, spider):
+        attr = 'collection_id'
+
+        node = Taxonomy.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+
+            node = Taxonomy.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+        node.database.connect(self.database_node)
+
+    def process_genome_item(self, item, spider):
+        attr = 'genome_id'
+
+        node = Genome.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Genome.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+    def process_tf_item(self, item, spider):
+        attr = 'collection_id'
+
+        node = TranscriptionFactor.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = TranscriptionFactor.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+        node.database.connect(self.database_node)
+
+    def process_regulog_item(self, item, spider):
+        attr = 'regulog_id'
+
+        node = Regulog.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Regulog.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+    def process_tffam_item(self, item, spider):
+        attr = 'tffamily_id'
+
+        node = TranscriptionFactorFamily.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = TranscriptionFactorFamily.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+        node.database.connect(self.database_node)
+
+    def process_rfam_item(self, item, spider):
+        attr = 'riboswitch_id'
+
+        node = RNAFamily.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = RNAFamily.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+        node.database.connect(self.database_node)
+
+    def process_effector_item(self, item, spider):
+        attr = 'effector_id'
+
+        node = Effector.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Effector.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+        node.database.connect(self.database_node)
+
+    def process_pathway_item(self, item, spider):
+        attr = 'pathway_id'
+
+        node = Pathway.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Pathway.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+        node.database.connect(self.database_node)
+
+    def process_regulon_item(self, item, spider):
+        attr = 'regulon_id'
+
+        node = Regulon.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Regulon.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+    def process_operon_item(self, item, spider):
+        attr = 'operon_id'
+
+        node = Operon.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Operon.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+    def process_gene_item(self, item, spider):
+        attr = 'locus_tag'
+
+        node = Gene.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = Gene.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)
+
+    def process_tfbs_item(self, item, spider):
+        attr = 'tfbs_id'
+
+        node = TFBS.get_by_version(attr=attr, value=item[attr], version=self.version)
+
+        if node is None:
+            node = TFBS.from_item(item=item, save=True)
+
+        else:
+            node = node.update(item=item, save=True)

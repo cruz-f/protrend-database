@@ -39,7 +39,7 @@ class Node:
         return cls.__all_relationships__
 
     @classmethod
-    def from_item(cls: Type[StructuredNode], item: dict, save: bool = True):
+    def from_item(cls: Type[StructuredNode], item: dict, save: bool = True) -> StructuredNode:
         properties = {attr: value for attr, value in item.items()
                       if attr in cls.properties()}
 

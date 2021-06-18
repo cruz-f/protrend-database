@@ -8,17 +8,6 @@ from .processors import RegPreciseProcessors
 # ----------------------------
 # RegPrecise items
 # ----------------------------
-class CollectionItem(Item):
-    # outgoing relationship
-    # TODO: missing add collection value
-    taxonomy = Field()
-    transcription_factor = Field()
-    transcription_factor_family = Field()
-    rna_family = Field()
-    effector = Field()
-    pathway = Field()
-
-
 class TaxonomyItem(Item):
     collection_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
                           output_processor=TakeFirst())
@@ -28,8 +17,6 @@ class TaxonomyItem(Item):
     url = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    # TODO: missing add collection value
-    collection = Field(output_processor=TakeFirst())
     genome = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
@@ -59,8 +46,6 @@ class TranscriptionFactorItem(Item):
     pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
 
     # outgoing relationship
-    # TODO: missing add collection value
-    collection = Field(output_processor=TakeFirst())
     regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
@@ -109,8 +94,6 @@ class TranscriptionFactorFamilyItem(Item):
     pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
 
     # outgoing relationship
-    # TODO: missing add collection value
-    collection = Field(output_processor=TakeFirst())
     regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
@@ -129,8 +112,6 @@ class RNAFamilyItem(Item):
                  output_processor=TakeFirst())
 
     # outgoing relationship
-    # TODO: missing add collection value
-    collection = Field(output_processor=TakeFirst())
     regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
@@ -143,8 +124,6 @@ class EffectorItem(Item):
     url = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    # TODO: missing add collection value
-    collection = Field(output_processor=TakeFirst())
     regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
@@ -157,8 +136,6 @@ class PathwayItem(Item):
     url = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    # TODO: missing add collection value
-    collection = Field(output_processor=TakeFirst())
     regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
