@@ -280,20 +280,20 @@ class RegPrecisePipeline(NeoPipeline):
 
         if node is None:
 
-            node = Taxonomy.from_item(item=item, save=True)
+            node = Taxonomy.from_item(item=item)
 
         else:
-            node = node.update(item=item, save=True)
+            node = node.update(item=item)
 
         node.database.connect(self.database_node)
 
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='genome',
-                                      to_node_cls=Genome,
-                                      to_node_attr='genome_id',
-                                      to=item['genome'])
+        relationships = [NodeRelationshipMap(node=node,
+                                             item=item,
+                                             relationship_name='genome',
+                                             to_node_cls=Genome,
+                                             to_node_attr='genome_id')]
 
-        return node, [rel_map]
+        return node, relationships
 
     def process_genome_item(self, item, spider):
         attr = 'genome_id'
@@ -301,30 +301,30 @@ class RegPrecisePipeline(NeoPipeline):
         node = Genome.get_by_version(attr=attr, value=item[attr], version=self.version)
 
         if node is None:
-            node = Genome.from_item(item=item, save=True)
+            node = Genome.from_item(item=item)
 
         else:
-            node = node.update(item=item, save=True)
+            node = node.update(item=item)
 
-        rels = []
+        relationships = []
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='taxonomy',
                                       to_node_cls=Taxonomy,
-                                      to_node_attr='collection_id',
-                                      to=[item['taxonomy']])
+                                      to_node_attr='collection_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='regulon',
                                       to_node_cls=Regulon,
-                                      to_node_attr='regulon_id',
-                                      to=item['regulon'])
+                                      to_node_attr='regulon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
-        return node, rels
+        return node, relationships
 
     def process_tf_item(self, item, spider):
         attr = 'collection_id'
@@ -339,13 +339,13 @@ class RegPrecisePipeline(NeoPipeline):
 
         node.database.connect(self.database_node)
 
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='regulog',
-                                      to_node_cls=Regulog,
-                                      to_node_attr='regulog_id',
-                                      to=item['regulog'])
+        relationships = [NodeRelationshipMap(node=node,
+                                             item=item,
+                                             relationship_name='regulog',
+                                             to_node_cls=Regulog,
+                                             to_node_attr='regulog_id')]
 
-        return node, [rel_map]
+        return node, relationships
 
     def process_regulog_item(self, item, spider):
         attr = 'regulog_id'
@@ -358,65 +358,65 @@ class RegPrecisePipeline(NeoPipeline):
         else:
             node = node.update(item=item, save=True)
 
-        rels = []
+        relationships = []
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='transcription_factor',
                                       to_node_cls=TranscriptionFactor,
-                                      to_node_attr='collection_id',
-                                      to=[item['transcription_factor']])
+                                      to_node_attr='collection_id')
 
-        rels.append(rel_map)
-
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='regulon',
-                                      to_node_cls=Regulon,
-                                      to_node_attr='regulon_id',
-                                      to=item['regulon'])
-
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='taxonomy',
-                                      to_node_cls=Taxonomy,
-                                      to_node_attr='collection_id',
-                                      to=item['taxonomy'])
-
-        rels.append(rel_map)
-
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='tf_family',
-                                      to_node_cls=TranscriptionFactorFamily,
-                                      to_node_attr='tffamily_id',
-                                      to=item['tf_family'])
-
-        rels.append(rel_map)
-
-        rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='rna_family',
                                       to_node_cls=RNAFamily,
-                                      to_node_attr='riboswitch_id',
-                                      to=item['rna_family'])
+                                      to_node_attr='riboswitch_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
+                                      relationship_name='regulon',
+                                      to_node_cls=Regulon,
+                                      to_node_attr='regulon_id')
+
+        relationships.append(rel_map)
+
+        rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
+                                      relationship_name='taxonomy',
+                                      to_node_cls=Taxonomy,
+                                      to_node_attr='collection_id')
+
+        relationships.append(rel_map)
+
+        rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
+                                      relationship_name='tf_family',
+                                      to_node_cls=TranscriptionFactorFamily,
+                                      to_node_attr='tffamily_id')
+
+        relationships.append(rel_map)
+
+        rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='effector',
                                       to_node_cls=Effector,
-                                      to_node_attr='effector_id',
-                                      to=item['effector'])
+                                      to_node_attr='effector_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='pathway',
                                       to_node_cls=Pathway,
-                                      to_node_attr='pathway_id',
-                                      to=item['pathway'])
+                                      to_node_attr='pathway_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
-        return node, rels
+        return node, relationships
 
     def process_tffam_item(self, item, spider):
         attr = 'tffamily_id'
@@ -431,13 +431,13 @@ class RegPrecisePipeline(NeoPipeline):
 
         node.database.connect(self.database_node)
 
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='regulog',
-                                      to_node_cls=Regulog,
-                                      to_node_attr='regulog_id',
-                                      to=item['regulog'])
+        relationships = [NodeRelationshipMap(node=node,
+                                             item=item,
+                                             relationship_name='regulog',
+                                             to_node_cls=Regulog,
+                                             to_node_attr='regulog_id')]
 
-        return node, [rel_map]
+        return node, relationships
 
     def process_rfam_item(self, item, spider):
         attr = 'riboswitch_id'
@@ -452,13 +452,13 @@ class RegPrecisePipeline(NeoPipeline):
 
         node.database.connect(self.database_node)
 
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='regulog',
-                                      to_node_cls=Regulog,
-                                      to_node_attr='regulog_id',
-                                      to=item['regulog'])
+        relationships = [NodeRelationshipMap(node=node,
+                                             item=item,
+                                             relationship_name='regulog',
+                                             to_node_cls=Regulog,
+                                             to_node_attr='regulog_id')]
 
-        return node, [rel_map]
+        return node, relationships
 
     def process_effector_item(self, item, spider):
         attr = 'effector_id'
@@ -473,13 +473,13 @@ class RegPrecisePipeline(NeoPipeline):
 
         node.database.connect(self.database_node)
 
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='regulog',
-                                      to_node_cls=Regulog,
-                                      to_node_attr='regulog_id',
-                                      to=item['regulog'])
+        relationships = [NodeRelationshipMap(node=node,
+                                             item=item,
+                                             relationship_name='regulog',
+                                             to_node_cls=Regulog,
+                                             to_node_attr='regulog_id')]
 
-        return node, [rel_map]
+        return node, relationships
 
     def process_pathway_item(self, item, spider):
         attr = 'pathway_id'
@@ -494,13 +494,13 @@ class RegPrecisePipeline(NeoPipeline):
 
         node.database.connect(self.database_node)
 
-        rel_map = NodeRelationshipMap(node=node,
-                                      relationship_name='regulog',
-                                      to_node_cls=Regulog,
-                                      to_node_attr='regulog_id',
-                                      to=item['regulog'])
+        relationships = [NodeRelationshipMap(node=node,
+                                             item=item,
+                                             relationship_name='regulog',
+                                             to_node_cls=Regulog,
+                                             to_node_attr='regulog_id')]
 
-        return node, [rel_map]
+        return node, relationships
 
     def process_regulon_item(self, item, spider):
         attr = 'regulon_id'
@@ -508,102 +508,102 @@ class RegPrecisePipeline(NeoPipeline):
         node = Regulon.get_by_version(attr=attr, value=item[attr], version=self.version)
 
         if node is None:
-            node = Regulon.from_item(item=item, save=True)
+            node = Regulon.from_item(item=item)
 
         else:
-            node = node.update(item=item, save=True)
+            node = node.update(item=item)
 
-        rels = []
+        relationships = []
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='genome',
                                       to_node_cls=Genome,
-                                      to_node_attr='genome_id',
-                                      to=[item['genome']])
+                                      to_node_attr='genome_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='operon',
                                       to_node_cls=Operon,
-                                      to_node_attr='operon_id',
-                                      to=item['operon'])
+                                      to_node_attr='operon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='gene',
                                       to_node_cls=Gene,
-                                      to_node_attr='locus_tag',
-                                      to=item['gene'])
+                                      to_node_attr='locus_tag')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='tfbs',
                                       to_node_cls=TFBS,
-                                      to_node_attr='tfbs_id',
-                                      to=item['tfbs'])
+                                      to_node_attr='tfbs_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='regulog',
                                       to_node_cls=Regulog,
-                                      to_node_attr='regulog_id',
-                                      to=item['regulog'])
+                                      to_node_attr='regulog_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='taxonomy',
                                       to_node_cls=Taxonomy,
-                                      to_node_attr='collection_id',
-                                      to=item['taxonomy'])
+                                      to_node_attr='collection_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='transcription_factor',
                                       to_node_cls=TranscriptionFactor,
-                                      to_node_attr='collection_id',
-                                      to=item['transcription_factor'])
+                                      to_node_attr='collection_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='tf_family',
                                       to_node_cls=TranscriptionFactorFamily,
-                                      to_node_attr='tffamily_id',
-                                      to=item['tf_family'])
+                                      to_node_attr='tffamily_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='rna_family',
                                       to_node_cls=RNAFamily,
-                                      to_node_attr='riboswitch_id',
-                                      to=item['rna_family'])
+                                      to_node_attr='riboswitch_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='effector',
                                       to_node_cls=Effector,
-                                      to_node_attr='effector_id',
-                                      to=item['effector'])
+                                      to_node_attr='effector_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='pathway',
                                       to_node_cls=Pathway,
-                                      to_node_attr='pathway_id',
-                                      to=item['pathway'])
+                                      to_node_attr='pathway_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
-        return node, rels
+        return node, relationships
 
     def process_operon_item(self, item, spider):
         attr = 'operon_id'
@@ -616,33 +616,33 @@ class RegPrecisePipeline(NeoPipeline):
         else:
             node = node.update(item=item, save=True)
 
-        rels = []
+        relationships = []
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='regulon',
                                       to_node_cls=Regulon,
-                                      to_node_attr='regulon_id',
-                                      to=[item['regulon']])
+                                      to_node_attr='regulon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='gene',
                                       to_node_cls=Gene,
-                                      to_node_attr='locus_tag',
-                                      to=item['gene'])
+                                      to_node_attr='locus_tag')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='tfbs',
                                       to_node_cls=TFBS,
-                                      to_node_attr='tfbs_id',
-                                      to=item['tfbs'])
+                                      to_node_attr='tfbs_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
-        return node, rels
+        return node, relationships
 
     def process_gene_item(self, item, spider):
         attr = 'locus_tag'
@@ -655,33 +655,33 @@ class RegPrecisePipeline(NeoPipeline):
         else:
             node = node.update(item=item, save=True)
 
-        rels = []
+        relationships = []
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='regulon',
                                       to_node_cls=Regulon,
-                                      to_node_attr='regulon_id',
-                                      to=[item['regulon']])
+                                      to_node_attr='regulon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='operon',
                                       to_node_cls=Operon,
-                                      to_node_attr='operon_id',
-                                      to=[item['operon']])
+                                      to_node_attr='operon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='tfbs',
                                       to_node_cls=TFBS,
-                                      to_node_attr='tfbs_id',
-                                      to=item['tfbs'])
+                                      to_node_attr='tfbs_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
-        return node, rels
+        return node, relationships
 
     def process_tfbs_item(self, item, spider):
         attr = 'tfbs_id'
@@ -694,30 +694,30 @@ class RegPrecisePipeline(NeoPipeline):
         else:
             node = node.update(item=item, save=True)
 
-        rels = []
+        relationships = []
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='regulon',
                                       to_node_cls=Regulon,
-                                      to_node_attr='regulon_id',
-                                      to=[item['regulon']])
+                                      to_node_attr='regulon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='operon',
                                       to_node_cls=Operon,
-                                      to_node_attr='operon_id',
-                                      to=[item['operon']])
+                                      to_node_attr='operon_id')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
         rel_map = NodeRelationshipMap(node=node,
+                                      item=item,
                                       relationship_name='gene',
-                                      to_node_cls=TFBS,
-                                      to_node_attr='locus_tag',
-                                      to=item['gene'])
+                                      to_node_cls=Gene,
+                                      to_node_attr='locus_tag')
 
-        rels.append(rel_map)
+        relationships.append(rel_map)
 
-        return node, rels
+        return node, relationships

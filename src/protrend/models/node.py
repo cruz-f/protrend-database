@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode)
 
@@ -44,7 +44,7 @@ class Node(StructuredNode):
         return instance
 
     @classmethod
-    def get_by_version(cls, attr: str, value: Any, version: 'Version'):
+    def get_by_version(cls, attr: str, value: Any, version: 'Version') -> Union['Node', None]:
 
         node_set = cls.nodes.filter(**{attr: value})
 
@@ -53,7 +53,7 @@ class Node(StructuredNode):
             if node.version.is_connected(version):
                 return node
 
-    def update(self, item: dict, save: bool = True):
+    def update(self, item: dict, save: bool = True) -> 'Node':
 
         properties = {attr: value for attr, value in item.items()
                       if attr in self.properties()}

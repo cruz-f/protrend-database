@@ -179,19 +179,54 @@ class RegPreciseSpider(Spider):
 
             yield operon
 
-    @staticmethod
-    def parse_regulon_properties(response: Response, regulon_item: RegulonItem):
+    def parse_regulon_properties(self, response: Response, regulon_item: RegulonItem):
 
         regulon_loader = ItemLoader(item=regulon_item, response=response)
 
         regulator_type = "//*[@id='propblock']/table/tbody/tr[1]/td[2]//text()"
         regulon_loader.add_xpath("regulator_type", regulator_type)
+        regulon_item = regulon_loader.load_item()
+
+        if 'rna' in regulon_item.get('regulator_type', '').lower():
+            return self.parse_regulon_rna_properties(response=response, regulon_item=regulon_item)
+
+        else:
+            return self.parse_regulon_tf_properties(response=response, regulon_item=regulon_item)
+
+    @staticmethod
+    def parse_regulon_tf_properties(response: Response, regulon_item: RegulonItem):
+
+        regulon_loader = ItemLoader(item=regulon_item, response=response)
 
         regulator_locus_tag = "//*[@id='propblock']/table/tbody/tr[2]/td[2]/a//text()"
         regulon_loader.add_xpath("regulator_locus_tag", regulator_locus_tag)
 
         regulator_family = "//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
         regulon_loader.add_xpath("regulator_family", regulator_family)
+
+        regulation_mode = "//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"
+        regulon_loader.add_xpath("regulation_mode", regulation_mode)
+
+        biological_process = "//*[@id='propblock']/table/tbody/tr[5]/td[2]//text()"
+        regulon_loader.add_xpath("biological_process", biological_process)
+
+        regulation_effector = "//*[@id='propblock']/table/tbody/tr[6]/td[2]//text()"
+        regulon_loader.add_xpath("regulation_effector", regulation_effector)
+
+        regulation_regulog = "//*[@id='propblock']/table/tbody/tr[7]/td[2]/a//text()"
+        regulon_loader.add_xpath("regulation_regulog", regulation_regulog)
+
+        regulog = "//*[@id='propblock']/table/tbody/tr[7]/td[2]/a//@href"
+        regulon_loader.add_xpath("regulog", regulog)
+
+        return regulon_loader.load_item()
+
+    @staticmethod
+    def parse_regulon_rna_properties(response: Response, regulon_item: RegulonItem):
+        regulon_loader = ItemLoader(item=regulon_item, response=response)
+
+        rfam = "//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
+        regulon_loader.add_xpath("rfam", rfam)
 
         regulation_mode = "//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"
         regulon_loader.add_xpath("regulation_mode", regulation_mode)
@@ -479,13 +514,24 @@ class RegPreciseSpider(Spider):
 
         yield regulog_item
 
-    @staticmethod
-    def parse_regulog_properties(response: Response, regulog_item: RegulogItem):
+    def parse_regulog_properties(self, response: Response, regulog_item: RegulogItem):
 
         regulog_loader = ItemLoader(item=regulog_item, response=response)
 
         regulator_type = "//*[@id='propblock']/table/tbody/tr[1]/td[2]//text()"
         regulog_loader.add_xpath("regulator_type", regulator_type)
+        regulog_item = regulog_loader.load_item()
+
+        if 'rna' in regulog_item.get('regulator_type', '').lower():
+            return self.parse_regulog_rna_properties(response=response, regulog_item=regulog_item)
+
+        else:
+            return self.parse_regulog_tf_properties(response=response, regulog_item=regulog_item)
+
+    @staticmethod
+    def parse_regulog_tf_properties(response: Response, regulog_item: RegulogItem):
+
+        regulog_loader = ItemLoader(item=regulog_item, response=response)
 
         regulator_family = "//*[@id='propblock']/table/tbody/tr[2]/td[2]//text()"
         regulog_loader.add_xpath("regulator_family", regulator_family)
@@ -499,7 +545,29 @@ class RegPreciseSpider(Spider):
         regulation_effector = "//*[@id='propblock']/table/tbody/tr[5]/td[2]//text()"
         regulog_loader.add_xpath("regulation_effector", regulation_effector)
 
-        phylum = "//*[@id='propblock']/table/tbody/tr[6]/td[2]/a//text()"
+        phylum = "//*[@id='propblock']/table/tbody/tr[6]/td[2]//text()"
+        regulog_loader.add_xpath("phylum", phylum)
+
+        return regulog_loader.load_item()
+
+    @staticmethod
+    def parse_regulog_rna_properties(response: Response, regulog_item: RegulogItem):
+
+        regulog_loader = ItemLoader(item=regulog_item, response=response)
+
+        rfam = "//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
+        regulog_loader.add_xpath("rfam", rfam)
+
+        regulation_mode = "//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"
+        regulog_loader.add_xpath("regulation_mode", regulation_mode)
+
+        biological_process = "//*[@id='propblock']/table/tbody/tr[5]/td[2]//text()"
+        regulog_loader.add_xpath("biological_process", biological_process)
+
+        regulation_effector = "//*[@id='propblock']/table/tbody/tr[6]/td[2]//text()"
+        regulog_loader.add_xpath("regulation_effector", regulation_effector)
+
+        phylum = "//*[@id='propblock']/table/tbody/tr[7]/td[2]//text()"
         regulog_loader.add_xpath("phylum", phylum)
 
         return regulog_loader.load_item()
@@ -593,8 +661,7 @@ class RegPreciseSpider(Spider):
                                   callback=self.parse_rfam,
                                   cb_kwargs=cb_kwargs)
 
-    @staticmethod
-    def parse_rfam(response: Response, rfam_item: RNAFamilyItem):
+    def parse_rfam(self, response: Response, rfam_item: RNAFamilyItem):
 
         rfam_loader = ItemLoader(item=rfam_item, response=response)
 
@@ -615,12 +682,31 @@ class RegPreciseSpider(Spider):
         regulogs = response.xpath(regulogs_xpath)
 
         for regulog in regulogs:
+            regulog_loader = ItemLoader(item=RegulogItem(), selector=regulog)
 
+            anchor_href_xpath = ".//@href"
+            regulog_loader.add_xpath("regulog_id", anchor_href_xpath)
+
+            anchor_text_xpath = ".//text()"
+            regulog_loader.add_xpath("name", anchor_text_xpath)
+
+            regulog_item = regulog_loader.load_item()
+
+            # connecting items
             rfam_loader = ItemLoader(item=rfam_item, selector=regulog)
-
-            regulog_href_xpath = ".//@href"
-            rfam_loader.add_xpath("regulog", regulog_href_xpath)
+            anchor_href_xpath = ".//@href"
+            rfam_loader.add_xpath("regulog", anchor_href_xpath)
             rfam_item = rfam_loader.load_item()
+
+            regulog_loader = ItemLoader(item=regulog_item, selector=regulog)
+            regulog_loader.add_value("rna_family", rfam_item["riboswitch_id"])
+            regulog_item = regulog_loader.load_item()
+
+            cb_kwargs = dict(regulog_item=regulog_item)
+
+            yield response.follow(regulog,
+                                  callback=self.parse_regulog_page,
+                                  cb_kwargs=cb_kwargs)
 
         yield rfam_item
 

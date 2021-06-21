@@ -108,11 +108,12 @@ class TranscriptionFactor(RegPreciseNode):
 # noinspection PyAbstractClass
 class Regulog(RegPreciseNode):
     regulog_id = IntegerProperty(required=True)
-    name = StringProperty(required=True)
+    name = StringProperty()
     url = StringProperty()
 
     regulator_type = StringProperty()
     regulator_family = StringProperty()
+    rfam = StringProperty()
     regulation_mode = StringProperty()
     biological_process = StringProperty()
     regulation_effector = StringProperty()
@@ -178,16 +179,17 @@ class Pathway(RegPreciseNode):
 # noinspection PyAbstractClass
 class Regulon(RegPreciseNode):
     regulon_id = IntegerProperty(required=True)
-    name = StringProperty(required=True)
+    name = StringProperty()
     url = StringProperty()
 
     regulator_type = StringProperty()
-    regulator_locus_tag = StringProperty(required=True)
+    regulator_locus_tag = StringProperty()
+    rfam = StringProperty()
     regulator_family = StringProperty()
     regulation_mode = StringProperty()
     biological_process = StringProperty()
     regulation_effector = StringProperty()
-    regulation_regulog = StringProperty(required=True)
+    regulation_regulog = StringProperty()
 
     genome = RelationshipTo(Genome, 'IS_FROM')
     operon = RelationshipTo('Operon', 'HAS')
@@ -205,8 +207,8 @@ class Regulon(RegPreciseNode):
 
 # noinspection PyAbstractClass
 class Operon(RegPreciseNode):
-    operon_id = IntegerProperty(required=True)
-    name = StringProperty(required=True)
+    operon_id = StringProperty(required=True)
+    name = StringProperty()
     url = StringProperty()
 
     regulon = RelationshipTo(Regulon, 'IS_FROM')

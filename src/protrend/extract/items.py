@@ -41,7 +41,7 @@ class TranscriptionFactorItem(Item):
 
     url = Field(output_processor=TakeFirst())
 
-    description = Field(input_processor=MapCompose(remove_tags),
+    description = Field(input_processor=MapCompose(remove_tags, RegPreciseProcessors.process_description),
                         output_processor=Join(separator=''))
     pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
 
@@ -59,6 +59,8 @@ class RegulogItem(Item):
 
     regulator_type = Field(output_processor=TakeFirst())
 
+    rfam = Field(output_processor=TakeFirst())
+
     regulator_family = Field(output_processor=TakeFirst())
 
     regulation_mode = Field(output_processor=TakeFirst())
@@ -71,12 +73,12 @@ class RegulogItem(Item):
 
     # outgoing relationship
     transcription_factor = Field(output_processor=TakeFirst())
+    rna_family = Field(output_processor=TakeFirst())
     regulon = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
     # other outgoing relationships
     taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
     tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    rna_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
     effector = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
     pathway = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
@@ -89,7 +91,7 @@ class TranscriptionFactorFamilyItem(Item):
 
     url = Field(output_processor=TakeFirst())
 
-    description = Field(input_processor=MapCompose(remove_tags),
+    description = Field(input_processor=MapCompose(remove_tags, RegPreciseProcessors.process_description),
                         output_processor=Join(separator=''))
     pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
 
@@ -105,7 +107,7 @@ class RNAFamilyItem(Item):
 
     url = Field(output_processor=TakeFirst())
 
-    description = Field(input_processor=MapCompose(remove_tags),
+    description = Field(input_processor=MapCompose(remove_tags, RegPreciseProcessors.process_description),
                         output_processor=Join(separator=''))
     pubmed = Field(input_processor=MapCompose(RegPreciseProcessors.process_pubmed_href))
     rfam = Field(input_processor=MapCompose(RegPreciseProcessors.process_rfam_href),
@@ -150,6 +152,8 @@ class RegulonItem(Item):
     regulator_type = Field(output_processor=TakeFirst())
 
     regulator_locus_tag = Field(output_processor=TakeFirst())
+
+    rfam = Field(output_processor=TakeFirst())
 
     regulator_family = Field(output_processor=TakeFirst())
 

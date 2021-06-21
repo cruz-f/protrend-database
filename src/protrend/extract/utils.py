@@ -1,6 +1,7 @@
 from typing import List, Type, Union
 
 from neomodel import StructuredNode
+from scrapy import Item
 
 from protrend.models.node import Node
 from protrend.models.version import Version
@@ -20,10 +21,10 @@ class NodeRelationshipMap:
 
     def __init__(self,
                  node: Node,
+                 item: Item,
                  relationship_name: str,
                  to_node_cls: Union[Type[StructuredNode], Type[Node]],
-                 to_node_attr: str,
-                 to: List[Union[str, int]]):
+                 to_node_attr: str):
 
         """
 
@@ -31,17 +32,32 @@ class NodeRelationshipMap:
         only be made after the creation of all nodes. Note that, different node types are created at different moments
 
         :param node:
+        :param item:
         :param relationship_name:
         :param to_node_cls:
         :param to_node_attr:
-        :param to:
         """
 
         self.node = node
+        self.item = item
         self.relationship_name = relationship_name
         self.to_node_cls = to_node_cls
         self.to_node_attr = to_node_attr
-        self.to = to
+
+    @property
+    def to(self) -> List[Union[str, int]]:
+
+        if self.relationship_name in self.item:
+
+            to = self.item[self.relationship_name]
+
+            if isinstance(to, (list, tuple)):
+                return to
+
+            else:
+                return [to]
+
+        return []
 
     def connect(self, version: Version):
 

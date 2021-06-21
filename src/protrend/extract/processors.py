@@ -14,6 +14,11 @@ class RegPreciseProcessors:
         return
 
     @staticmethod
+    def process_description(description: str) -> Union[str, None]:
+        if description:
+            return description.replace("\n", "").replace("\t", "").replace("  ", " ")
+
+    @staticmethod
     def process_pubmed_href(href: str) -> Union[str, None]:
         # href='https://www.ncbi.nlm.nih.gov/pubmed?term=19130263'
 
