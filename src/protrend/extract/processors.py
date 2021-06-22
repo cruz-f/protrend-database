@@ -115,11 +115,11 @@ class RegPreciseProcessors:
         return RegPreciseProcessors.process_span(score, "Score:", to=float)
 
     @staticmethod
-    def process_score_str(score: int) -> Union[str, None]:
+    def process_position_str(position: int) -> str:
 
-        # " Score: 8"
+        # "-87"
 
-        return str(score)
+        return str(position)
 
     @staticmethod
     def process_sequence(sequence: str) -> Union[str, None]:

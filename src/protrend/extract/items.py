@@ -215,7 +215,7 @@ class GeneItem(Item):
 
 
 class TFBSItem(Item):
-    tfbs_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_score_str),
+    tfbs_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_position_str),
                     output_processor=Join(separator='_'))
 
     position = Field(input_processor=MapCompose(RegPreciseProcessors.process_position),
