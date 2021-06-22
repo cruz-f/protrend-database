@@ -2,7 +2,7 @@ from itemloaders.processors import MapCompose, TakeFirst, Join
 from scrapy.item import Item, Field
 from w3lib.html import remove_tags
 
-from .processors import RegPreciseProcessors
+from protrend.extract.processors import RegPreciseProcessors
 
 
 # ----------------------------
