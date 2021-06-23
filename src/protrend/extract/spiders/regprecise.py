@@ -5,7 +5,7 @@ from scrapy.http import Response
 from scrapy.loader import ItemLoader
 
 from protrend.extract.utils import parsing_spider_arguments
-from protrend.extract.items import TaxonomyItem, GenomeItem, RegulonItem, OperonItem, TFBSItem, GeneItem, \
+from protrend.extract.items.regprecise import TaxonomyItem, GenomeItem, RegulonItem, OperonItem, TFBSItem, GeneItem, \
     TranscriptionFactorItem, RegulogItem, TranscriptionFactorFamilyItem, RNAFamilyItem, EffectorItem, PathwayItem
 
 OperonGeneTFBS = namedtuple("OperonGeneTFBS",

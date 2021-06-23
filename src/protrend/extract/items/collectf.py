@@ -1,10 +1,13 @@
-from itemloaders.processors import TakeFirst
+from itemloaders.processors import TakeFirst, MapCompose, Join
 from scrapy import Item, Field
+from w3lib.html import remove_tags
+
+from protrend.extract.processors import CollecTFProcessors
 
 
 class TaxonomyItem(Item):
-
-    identifier = Field(output_processor=TakeFirst())
+    identifier = Field(input_processor=MapCompose(CollecTFProcessors.process_tax_onclick),
+                       output_processor=TakeFirst())
     name = Field(output_processor=TakeFirst())
     url = Field(output_processor=TakeFirst())
 
@@ -13,7 +16,6 @@ class TaxonomyItem(Item):
 
 
 class OrganismItem(Item):
-
     name = Field(output_processor=TakeFirst())
     genome_accession = Field(output_processor=TakeFirst())
 
@@ -24,7 +26,6 @@ class OrganismItem(Item):
 
 
 class RegulonItem(Item):
-
     uniprot_accession = Field(output_processor=TakeFirst())
     name = Field(output_processor=TakeFirst())
     url = Field(output_processor=TakeFirst())
@@ -39,9 +40,7 @@ class RegulonItem(Item):
 
 
 class OperonItem(Item):
-
-    identifier = Field(output_processor=TakeFirst())
-    name = Field(output_processor=TakeFirst())
+    identifier = Field(output_processor=Join(separator='_'))
 
     # relationships
     regulon = Field()
@@ -50,8 +49,8 @@ class OperonItem(Item):
 
 
 class GeneItem(Item):
-
-    locus_tag = Field(output_processor=TakeFirst())
+    locus_tag = Field(input_processor=MapCompose(str.strip),
+                      output_processor=TakeFirst())
 
     # relationships
     regulon = Field()
@@ -60,14 +59,14 @@ class GeneItem(Item):
 
 
 class TFBSItem(Item):
-
-    identifier = Field(output_processor=TakeFirst())
+    identifier = Field(input_processor=MapCompose(CollecTFProcessors.process_site_identifier),
+                       output_processor=Join(separator='_'))
     site_start = Field(output_processor=TakeFirst())
     site_end = Field(output_processor=TakeFirst())
     site_strand = Field(output_processor=TakeFirst())
     sequence = Field(output_processor=TakeFirst())
-    mode = Field(output_processor=TakeFirst())
-    pubmed = Field()
+    mode = Field(input_processor=MapCompose(CollecTFProcessors.process_mode), output_processor=TakeFirst())
+    pubmed = Field(input_processor=MapCompose(CollecTFProcessors.process_pubmed))
 
     # relationships
     organism = Field(output_processor=TakeFirst())
@@ -78,33 +77,19 @@ class TFBSItem(Item):
 
 
 class ExperimentalEvidenceItem(Item):
-
-    identifier = Field(output_processor=TakeFirst())
-    description = Field(output_processor=TakeFirst())
+    identifier = Field(input_processor=MapCompose(str.strip, CollecTFProcessors.process_evidence_identifier),
+                       output_processor=TakeFirst())
 
     # relationships
     regulon = Field()
     tfbs = Field()
 
 
-class TranscriptionFactorFamilyItem(Item):
-
-    identifier = Field(output_processor=TakeFirst())
-    name = Field(output_processor=TakeFirst())
-    description = Field(output_processor=TakeFirst())
-    pubmed = Field()
-    url = Field(output_processor=TakeFirst())
-
-    # relationships
-    transcription_factor = Field()
-
-
 class TranscriptionFactorItem(Item):
-
-    name = Field(output_processor=TakeFirst())
-    description = Field(output_processor=TakeFirst())
-    pubmed = Field()
+    name = Field(input_processor=MapCompose(str.strip), output_processor=TakeFirst())
+    family = Field(input_processor=MapCompose(str.strip), output_processor=TakeFirst())
+    description = Field(input_processor=MapCompose(remove_tags))
+    pubmed = Field(input_processor=MapCompose(remove_tags, CollecTFProcessors.process_evidence_identifier))
 
     # relationships
-    transcription_factor_family = Field(output_processor=TakeFirst())
     regulon = Field()

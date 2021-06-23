@@ -23,7 +23,6 @@ class CollecTFVersion(Version):
     experimentalevidence = RelationshipTo('ExperimentalEvidence', 'VERSIONING')
 
     transcriptionfactor = RelationshipTo('TranscriptionFactor', 'VERSIONING')
-    transcriptionfactorfamily = RelationshipTo('TranscriptionFactorFamily', 'VERSIONING')
 
     @property
     def versioned_nodes(self) -> Dict[str, RelationshipTo]:
@@ -36,8 +35,7 @@ class CollecTFVersion(Version):
                 'Gene': self.gene,
                 'TFBS': self.tfbs,
                 'ExperimentalEvidence': self.experimentalevidence,
-                'TranscriptionFactor': self.transcriptionfactor,
-                'TranscriptionFactorFamily': self.transcriptionfactorfamily}
+                'TranscriptionFactor': self.transcriptionfactor}
 
 
 class CollecTFNode(Node):
@@ -57,7 +55,7 @@ class Database(CollecTFNode):
                                          'factor-binding sites in Bacteria')
 
     taxonomy = RelationshipTo('Taxonomy', 'HAS')
-    transcription_factor_family = RelationshipTo('TranscriptionFactorFamily', 'HAS')
+    transcription_factor = RelationshipTo('TranscriptionFactor', 'HAS')
 
 
 # noinspection PyAbstractClass
@@ -97,7 +95,6 @@ class Regulon(CollecTFNode):
 # noinspection PyAbstractClass
 class Operon(CollecTFNode):
     identifier = StringProperty(required=True)
-    name = StringProperty()
 
     regulon = RelationshipTo(Regulon, 'IS_FROM')
     gene = RelationshipTo('Gene', 'HAS')
@@ -133,26 +130,14 @@ class TFBS(CollecTFNode):
 # noinspection PyAbstractClass
 class ExperimentalEvidence(CollecTFNode):
     identifier = StringProperty(required=True)
-    description = StringProperty()
-
-
-# noinspection PyAbstractClass
-class TranscriptionFactorFamily(CollecTFNode):
-    identifier = IntegerProperty(required=True)
-    name = StringProperty(required=True)
-    description = StringProperty()
-    pubmed = ArrayProperty(IntegerProperty())
-    url = StringProperty()
-
-    database = RelationshipTo(Database, 'IS_FROM')
-    transcription_factor = RelationshipTo('TranscriptionFactor', 'HAS')
 
 
 # noinspection PyAbstractClass
 class TranscriptionFactor(CollecTFNode):
     name = StringProperty(required=True)
+    family = StringProperty()
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
 
-    transcription_factor_family = RelationshipTo('TranscriptionFactorFamily', 'IS_FROM')
+    database = RelationshipTo(Database, 'IS_FROM')
     regulon = RelationshipTo(Regulon, 'HAS')
