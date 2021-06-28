@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, Callable
 
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode)
 
@@ -14,10 +14,10 @@ class Node(StructuredNode):
     __abstract_node__ = True
 
     @classmethod
-    def cls_name(cls, lower: bool = False):
+    def cls_name(cls, transform: Callable):
 
-        if lower:
-            return cls.__name__.lower()
+        if transform:
+            return transform(cls.__name__)
 
         return cls.__name__
 
@@ -74,7 +74,7 @@ class Node(StructuredNode):
         if hasattr(self, 'version'):
             self.version.connect(version)
 
-        rel_name = self.cls_name(lower=True)
+        rel_name = self.cls_name(str.lower)
 
         if hasattr(version, rel_name):
             relationship = getattr(version, rel_name)
