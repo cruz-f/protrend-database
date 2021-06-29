@@ -1,13 +1,7 @@
 import subprocess
-from collections import namedtuple
-from typing import Union, List, Set, Tuple
 
-from neomodel import db, clear_neo4j_database, install_all_labels, install_labels
 from neomodel import config
-
-NeoImportEntity = namedtuple('NeoImportEntity', field_names=('label', 'csv_file'))
-
-NeoImportsTyping = Union[List[NeoImportEntity], Set[NeoImportEntity], Tuple[NeoImportEntity]]
+from neomodel import db, clear_neo4j_database, install_all_labels, install_labels
 
 
 class DBSettings:
