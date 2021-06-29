@@ -1,5 +1,3 @@
-from typing import Dict
-
 from neomodel import (StringProperty,
                       IntegerProperty,
                       RelationshipTo,
@@ -170,8 +168,8 @@ class Regulon(Node):
     transcription_factor = RelationshipTo(TranscriptionFactor, 'IS_FROM')
     tf_family = RelationshipTo(TranscriptionFactorFamily, 'IS_FROM')
     rna_family = RelationshipTo(RNAFamily, 'IS_FROM')
-    effector = RelationshipTo(Effector, 'IS_FROM')
-    pathway = RelationshipTo(Pathway, 'IS_FROM')
+    effector = RelationshipTo(Effector, 'HAS')
+    pathway = RelationshipTo(Pathway, 'HAS')
 
 
 # noinspection PyAbstractClass
@@ -182,7 +180,7 @@ class Operon(Node):
     name = StringProperty()
     url = StringProperty()
 
-    regulon = RelationshipTo(Regulon, 'IS_FROM')
+    regulon = RelationshipTo(Regulon, 'HAS')
     gene = RelationshipTo('Gene', 'HAS')
     tfbs = RelationshipTo('TFBS', 'HAS')
 
@@ -196,8 +194,8 @@ class Gene(Node):
     function = StringProperty()
     url = StringProperty()
 
-    regulon = RelationshipTo(Regulon, 'IS_FROM')
-    operon = RelationshipTo(Operon, 'IS_FROM')
+    regulon = RelationshipTo(Regulon, 'HAS')
+    operon = RelationshipTo(Operon, 'HAS')
     tfbs = RelationshipTo('TFBS', 'HAS')
 
 
@@ -211,6 +209,6 @@ class TFBS(Node):
     sequence = StringProperty(required=True)
     url = StringProperty()
 
-    regulon = RelationshipTo(Regulon, 'IS_FROM')
-    operon = RelationshipTo(Operon, 'IS_FROM')
-    gene = RelationshipTo(Gene, 'IS_FROM')
+    regulon = RelationshipTo(Regulon, 'HAS')
+    operon = RelationshipTo(Operon, 'HAS')
+    gene = RelationshipTo(Gene, 'HAS')

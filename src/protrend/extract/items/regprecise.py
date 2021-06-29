@@ -77,8 +77,8 @@ class RegulogItem(Item):
     regulon = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
     # other outgoing relationships
-    taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
+    taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
     effector = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
     pathway = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
@@ -173,11 +173,12 @@ class RegulonItem(Item):
     tfbs = Field()
 
     # other outgoing relationships
-    regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    transcription_factor = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    rna_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
+    regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    transcription_factor = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
+                                 output_processor=TakeFirst())
+    tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    rna_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
     effector = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
     pathway = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
@@ -191,7 +192,7 @@ class OperonItem(Item):
     url = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    regulon = Field(output_processor=TakeFirst())
+    regulon = Field()
     gene = Field()
     tfbs = Field()
 
@@ -209,8 +210,8 @@ class GeneItem(Item):
     url = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    regulon = Field(output_processor=TakeFirst())
-    operon = Field(output_processor=TakeFirst())
+    regulon = Field()
+    operon = Field()
     tfbs = Field()
 
 
@@ -230,6 +231,6 @@ class TFBSItem(Item):
     url = Field(output_processor=TakeFirst())
 
     # outgoing relationship
-    regulon = Field(output_processor=TakeFirst())
-    operon = Field(output_processor=TakeFirst())
+    regulon = Field()
+    operon = Field()
     gene = Field()
