@@ -14,12 +14,8 @@ class RegPrecisePipeline(NeoPipeline):
     def __init__(self,
                  user_name: str = None,
                  password: str = None,
-                 ip: str = None,
-                 port: str = None,
-                 version: str = None,
-                 clear_version: bool = False,
-                 clear_db: bool = False,
-                 clear_schema: bool = False):
+                 *args,
+                 **kwargs):
 
         if not user_name:
             user_name = 'regprecise'
@@ -27,20 +23,10 @@ class RegPrecisePipeline(NeoPipeline):
         if not password:
             password = 'regprecise'
 
-        if not ip:
-            ip = 'localhost'
-
-        if not port:
-            port = '7687'
-
         super().__init__(user_name=user_name,
                          password=password,
-                         ip=ip,
-                         port=port,
-                         version=version,
-                         clear_version=clear_version,
-                         clear_db=clear_db,
-                         clear_schema=clear_schema)
+                         *args,
+                         **kwargs)
 
     @property
     def database(self) -> RegPreciseDB:

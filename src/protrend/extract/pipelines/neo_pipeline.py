@@ -1,7 +1,8 @@
-from typing import List
+import os
+from pathlib import Path
 
-from protrend.models.version import Version
 from protrend.models.node import Node
+from protrend.models.version import Version
 from protrend.utils.db_connection import DBSettings
 
 
@@ -12,6 +13,9 @@ class NeoPipeline:
                  password: str = None,
                  ip: str = None,
                  port: str = None,
+                 db_name: str = None,
+                 dbms: str = None,
+                 import_folder: str = None,
                  version: str = None,
                  clear_version: bool = False,
                  clear_db: bool = False,
@@ -29,10 +33,23 @@ class NeoPipeline:
         if not port:
             port = '7687'
 
+        if not db_name:
+            db_name = 'neo4j'
+
+        if not dbms:
+            dbms = ''
+
+        if not import_folder:
+            import_path = Path(os.path.abspath(__file__))
+            import_folder = os.path.join(str(import_path.parent.absolute()), 'import')
+
         self._user_name = user_name
         self._password = password
         self._ip = ip
         self._port = port
+        self._db_name = db_name
+        self._dbms = dbms
+        self._import_folder = import_folder
 
         self._database = None
         self._database_node = None
@@ -43,8 +60,6 @@ class NeoPipeline:
         self.clear_db = clear_db
         self.clear_schema = clear_schema
 
-        self._relationships = []
-
     @classmethod
     def from_crawler(cls, crawler):
 
@@ -52,6 +67,9 @@ class NeoPipeline:
         password = crawler.settings.get('password')
         ip = crawler.settings.get('ip')
         port = crawler.settings.get('port')
+        db_name = crawler.settings.get('db_name')
+        dbms = crawler.settings.get('dbms')
+        import_folder = crawler.settings.get('import_folder')
         version = crawler.settings.get('version')
         clear_version = crawler.settings.get('clear_version', False)
         clear_db = crawler.settings.get('clear_db', False)
@@ -61,14 +79,13 @@ class NeoPipeline:
                    password=password,
                    ip=ip,
                    port=port,
+                   db_name=db_name,
+                   dbms=dbms,
+                   import_folder=import_folder,
                    version=version,
                    clear_version=clear_version,
                    clear_db=clear_db,
                    clear_schema=clear_schema)
-
-    @property
-    def relationships(self) -> List[NodeRelationshipMap]:
-        return self._relationships
 
     @property
     def version(self) -> Version:
