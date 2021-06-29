@@ -58,32 +58,30 @@ class RegPreciseNode(Node):
 
 # noinspection PyAbstractClass
 class Database(RegPreciseNode):
+    property_as_id = 'name'
+
     name = StringProperty(default='regprecise')
     url = StringProperty(default='https://regprecise.lbl.gov/collections.jsp')
     doi = StringProperty(default='10.1186/1471-2164-14-745')
     authors = ArrayProperty(StringProperty(), default=['Pavel S Novichkov', 'Dmitry A Rodionov'])
     description = StringProperty(default='Collection of Manually Curated Inferences of Regulons in Prokaryotic Genomes')
 
-    taxonomy = RelationshipTo('Taxonomy', 'HAS')
-    transcription_factor = RelationshipTo('TranscriptionFactor', 'HAS')
-    transcription_factor_family = RelationshipTo('TranscriptionFactorFamily', 'HAS')
-    rna_family = RelationshipTo('RNAFamily', 'HAS')
-    effector = RelationshipTo('Effector', 'HAS')
-    pathway = RelationshipTo('Pathway', 'HAS')
-
 
 # noinspection PyAbstractClass
 class Taxonomy(RegPreciseNode):
+    property_as_id = 'collection_id'
+
     collection_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
 
-    database = RelationshipTo(Database, 'IS_FROM')
     genome = RelationshipTo('Genome', 'HAS')
 
 
 # noinspection PyAbstractClass
 class Genome(RegPreciseNode):
+    property_as_id = 'genome_id'
+
     genome_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -94,6 +92,8 @@ class Genome(RegPreciseNode):
 
 # noinspection PyAbstractClass
 class TranscriptionFactor(RegPreciseNode):
+    property_as_id = 'collection_id'
+
     collection_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -101,12 +101,13 @@ class TranscriptionFactor(RegPreciseNode):
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
 
-    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
 # noinspection PyAbstractClass
 class Regulog(RegPreciseNode):
+    property_as_id = 'regulog_id'
+
     regulog_id = IntegerProperty(required=True)
     name = StringProperty()
     url = StringProperty()
@@ -131,6 +132,8 @@ class Regulog(RegPreciseNode):
 
 # noinspection PyAbstractClass
 class TranscriptionFactorFamily(RegPreciseNode):
+    property_as_id = 'tffamily_id'
+
     tffamily_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -138,12 +141,13 @@ class TranscriptionFactorFamily(RegPreciseNode):
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
 
-    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
 # noinspection PyAbstractClass
 class RNAFamily(RegPreciseNode):
+    property_as_id = 'riboswitch_id'
+
     riboswitch_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
@@ -152,32 +156,35 @@ class RNAFamily(RegPreciseNode):
     pubmed = ArrayProperty(IntegerProperty())
     rfam = StringProperty()
 
-    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
 # noinspection PyAbstractClass
 class Effector(RegPreciseNode):
+    property_as_id = 'effector_id'
+
     effector_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
 
-    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
 # noinspection PyAbstractClass
 class Pathway(RegPreciseNode):
+    property_as_id = 'pathway_id'
+
     pathway_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
 
-    database = RelationshipTo(Database, 'IS_FROM')
     regulog = RelationshipTo('Regulog', 'HAS')
 
 
 # noinspection PyAbstractClass
 class Regulon(RegPreciseNode):
+    property_as_id = 'regulon_id'
+
     regulon_id = IntegerProperty(required=True)
     name = StringProperty()
     url = StringProperty()
@@ -207,6 +214,8 @@ class Regulon(RegPreciseNode):
 
 # noinspection PyAbstractClass
 class Operon(RegPreciseNode):
+    property_as_id = 'operon_id'
+
     operon_id = StringProperty(required=True)
     name = StringProperty()
     url = StringProperty()
@@ -218,6 +227,8 @@ class Operon(RegPreciseNode):
 
 # noinspection PyAbstractClass
 class Gene(RegPreciseNode):
+    property_as_id = 'locus_tag'
+
     locus_tag = StringProperty(required=True)
     name = StringProperty()
     function = StringProperty()
@@ -230,6 +241,8 @@ class Gene(RegPreciseNode):
 
 # noinspection PyAbstractClass
 class TFBS(RegPreciseNode):
+    property_as_id = 'tfbs_id'
+
     tfbs_id = StringProperty(required=True)
     position = IntegerProperty(required=True)
     score = FloatProperty(required=True)

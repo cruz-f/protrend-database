@@ -1,14 +1,14 @@
 from typing import Union, Dict
 
-from neomodel import (StringProperty, UniqueIdProperty, DateTimeProperty, StructuredNode,
-                      RelationshipTo)
+from neomodel import (StringProperty, RelationshipTo)
+
+from protrend.models.node import Node
 
 
-class Version(StructuredNode):
+class Version(Node):
+    property_as_id = 'name'
 
-    uid = UniqueIdProperty()
     name = StringProperty(required=True, unique_index=True)
-    created = DateTimeProperty(default_now=True)
 
     __abstract_node__ = True
 
