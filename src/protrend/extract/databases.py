@@ -6,7 +6,7 @@ class RegPreciseDB(DBSettings):
     def __init__(self,
                  user_name: str = 'regprecise',
                  password: str = 'regprecise',
-                 ip: str = 'localhost',
-                 port: str = '7687'):
+                 *args,
+                 **kwargs):
 
-        super().__init__(user_name, password, ip, port)
+        super().__init__(user_name, password, *args, **kwargs)
