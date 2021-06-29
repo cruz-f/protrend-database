@@ -1,9 +1,11 @@
 import os
 from pathlib import Path
+from typing import List
 
 from protrend.models.node import Node
 from protrend.models.version import Version
 from protrend.utils.db_connection import DBSettings
+from protrend.utils.node_importer import NodeImporter
 
 
 class NeoPipeline:
@@ -49,6 +51,7 @@ class NeoPipeline:
         self._port = port
         self._db_name = db_name
         self._dbms = dbms
+
         self._import_folder = import_folder
 
         self._database = None
@@ -86,6 +89,10 @@ class NeoPipeline:
                    clear_version=clear_version,
                    clear_db=clear_db,
                    clear_schema=clear_schema)
+
+    @property
+    def importers(self) -> List[NodeImporter]:
+        return []
 
     @property
     def version(self) -> Version:

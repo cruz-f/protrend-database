@@ -1,5 +1,3 @@
-import pandas as pd
-
 from protrend.extract.databases import RegPreciseDB
 from protrend.extract.items.regprecise import (TaxonomyItem, GenomeItem, TranscriptionFactorItem, RegulogItem,
                                                TranscriptionFactorFamilyItem, RNAFamilyItem, EffectorItem, PathwayItem,
@@ -8,6 +6,7 @@ from protrend.extract.pipelines.neo_pipeline import NeoPipeline
 from protrend.models.regprecise import Database as RegPreciseDatabase
 from protrend.models.regprecise import (RegPreciseVersion, Taxonomy, TranscriptionFactor, TranscriptionFactorFamily,
                                         RNAFamily, Effector, Pathway, Genome, Regulog, Regulon, Operon, Gene, TFBS)
+from protrend.utils.node_importer import NodeImporter
 
 
 class RegPrecisePipeline(NeoPipeline):
@@ -29,18 +28,23 @@ class RegPrecisePipeline(NeoPipeline):
                          *args,
                          **kwargs)
 
-        self.taxa = []
-        self.genomes = []
-        self.tfs = []
-        self.regulogs = []
-        self.tffams = []
-        self.rnafams = []
-        self.effectors = []
-        self.pathways = []
-        self.regulons = []
-        self.operons = []
-        self.genes = []
-        self.tfbs = []
+        self.taxa = NodeImporter(node_cls=Taxonomy, path=self._import_folder)
+        self.genomes = NodeImporter(node_cls=Genome, path=self._import_folder)
+        self.tfs = NodeImporter(node_cls=TranscriptionFactor, path=self._import_folder)
+        self.regulogs = NodeImporter(node_cls=Regulog, path=self._import_folder)
+        self.tffams = NodeImporter(node_cls=TranscriptionFactorFamily, path=self._import_folder)
+        self.rnafams = NodeImporter(node_cls=RNAFamily, path=self._import_folder)
+        self.effectors = NodeImporter(node_cls=Effector, path=self._import_folder)
+        self.pathways = NodeImporter(node_cls=Pathway, path=self._import_folder)
+        self.regulons = NodeImporter(node_cls=Regulon, path=self._import_folder)
+        self.operons = NodeImporter(node_cls=Operon, path=self._import_folder)
+        self.genes = NodeImporter(node_cls=Gene, path=self._import_folder)
+        self.tfbs = NodeImporter(node_cls=TFBS, path=self._import_folder)
+
+    @property
+    def importers(self):
+        return [self.taxa, self.genomes, self.tfs, self.regulogs, self.tffams, self.rnafams, self.effectors,
+                self.pathways, self.regulons, self.operons, self.genes, self.tfbs]
 
     @property
     def database(self) -> RegPreciseDB:
@@ -49,7 +53,9 @@ class RegPrecisePipeline(NeoPipeline):
             self._database = RegPreciseDB(user_name=self._user_name,
                                           password=self._password,
                                           ip=self._ip,
-                                          port=self._port)
+                                          port=self._port,
+                                          db_name=self._db_name,
+                                          dbms=self._dbms)
 
         return self._database
 
@@ -111,89 +117,74 @@ class RegPrecisePipeline(NeoPipeline):
 
     def close_spider(self, spider):
 
-        nodes_containers = [(self.taxa, Taxonomy),
-                            (self.genomes, Genome),
-                            (self.tfs, TranscriptionFactor),
-                            (self.regulogs, Regulog),
-                            (self.tffams, TranscriptionFactorFamily),
-                            (self.rnafams, RNAFamily),
-                            (self.effectors, Effector),
-                            (self.pathways, Pathway),
-                            (self.regulons, Regulon),
-                            (self.operons, Operon),
-                            (self.genes, Gene),
-                            (self.tfbs, TFBS)]
+        arguments = []
 
-    def process_nodes_to_df(self, nodes, node_cls):
-        series = [node.to_series() for node in nodes]
-        df = pd.DataFrame(series, columns=node_cls.cls_keys())
-        df.rename(columns={node_cls.property_as_id: f'{node_cls.property_as_id}:ID({node_cls.cls_name()})'},
-                  inplace=True)
-        return df
+        for importer in self.importers:
+            importer.build_imports()
+            arguments.append(importer.args)
 
-    def process_relationships_to_df(self, nodes, node_cls):
-        pass
+        self.database.import_csv_data(arguments=arguments)
 
     def process_item(self, item, spider):
 
         if isinstance(item, TaxonomyItem):
 
-            node = Taxonomy.from_item(item=item, save=False)
+            node = Taxonomy.from_item(item=item, version=self.version.name, save=False)
             self.taxa.append(node)
 
         elif isinstance(item, GenomeItem):
 
-            node = Genome.from_item(item=item, save=False)
+            node = Genome.from_item(item=item, version=self.version.name, save=False)
             self.genomes.append(node)
 
         elif isinstance(item, TranscriptionFactorItem):
 
-            node = TranscriptionFactor.from_item(item=item, save=False)
+            node = TranscriptionFactor.from_item(item=item, version=self.version.name, save=False)
             self.tfs.append(node)
 
         elif isinstance(item, RegulogItem):
 
-            node = Regulog.from_item(item=item, save=False)
+            node = Regulog.from_item(item=item, version=self.version.name, save=False)
             self.regulogs.append(node)
 
         elif isinstance(item, TranscriptionFactorFamilyItem):
 
-            node = TranscriptionFactorFamily.from_item(item=item, save=False)
+            node = TranscriptionFactorFamily.from_item(item=item, version=self.version.name, save=False)
             self.tffams.append(node)
 
         elif isinstance(item, RNAFamilyItem):
 
-            node = RNAFamily.from_item(item=item, save=False)
+            node = RNAFamily.from_item(item=item, version=self.version.name, save=False)
             self.rnafams.append(node)
 
         elif isinstance(item, EffectorItem):
 
-            node = Effector.from_item(item=item, save=False)
+            node = Effector.from_item(item=item, version=self.version.name, save=False)
             self.effectors.append(node)
 
         elif isinstance(item, PathwayItem):
 
-            node = Pathway.from_item(item=item, save=False)
+            node = Pathway.from_item(item=item, version=self.version.name, save=False)
             self.pathways.append(node)
 
         elif isinstance(item, RegulonItem):
 
-            node = Regulon.from_item(item=item, save=False)
+            node = Regulon.from_item(item=item, version=self.version.name, save=False)
             self.regulons.append(node)
 
         elif isinstance(item, OperonItem):
 
-            node = Operon.from_item(item=item, save=False)
+            node = Operon.from_item(item=item, version=self.version.name, save=False)
             self.operons.append(node)
 
         elif isinstance(item, GeneItem):
 
-            node = Gene.from_item(item=item, save=False)
+            node = Gene.from_item(item=item, version=self.version.name, save=False)
             self.genes.append(node)
 
         elif isinstance(item, TFBSItem):
 
-            node = TFBS.from_item(item=item, save=False)
+            node = TFBS.from_item(item=item, version=self.version.name, save=False)
             self.tfbs.append(node)
 
         else:

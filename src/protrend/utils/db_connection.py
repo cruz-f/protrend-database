@@ -5,9 +5,7 @@ from typing import Union, List, Set, Tuple
 from neomodel import db, clear_neo4j_database, install_all_labels, install_labels
 from neomodel import config
 
-
 NeoImportEntity = namedtuple('NeoImportEntity', field_names=('label', 'csv_file'))
-
 
 NeoImportsTyping = Union[List[NeoImportEntity], Set[NeoImportEntity], Tuple[NeoImportEntity]]
 
@@ -20,8 +18,7 @@ class DBSettings:
                  ip: str = 'localhost',
                  port: str = '7687',
                  db_name: str = 'neo4j',
-                 dbms: str = '',
-                 import_folder: str = ''):
+                 dbms: str = ''):
 
         self.user_name: str = user_name
         self.password: str = password
@@ -29,7 +26,6 @@ class DBSettings:
         self.port: str = port
         self.db_name: str = db_name
         self.dbms: str = dbms
-        self.import_folder: str = import_folder
 
     @property
     def db(self) -> db:
@@ -58,27 +54,19 @@ class DBSettings:
     def clear_db(clear_constraints=False, clear_indexes=False):
         clear_neo4j_database(db, clear_constraints, clear_indexes)
 
-    def import_csv_data(self,
-                        nodes: NeoImportsTyping = None,
-                        relationships: NeoImportsTyping = None):
+    def import_csv_data(self, arguments):
 
-        if nodes is None and relationships is None:
+        if not arguments:
             return
 
-        arguments = [fr"{self.dbms}\bin\neo4j-admin",
-                     "import",
-                     "--database",
-                     f"{self.db_name}"]
+        cmd_arguments = [fr"{self.dbms}\bin\neo4j-admin",
+                         "import",
+                         "--database",
+                         f"{self.db_name}"]
 
-        for node in nodes:
-            arg_node = f'--nodes={node.label}={node.csv_file}'
-            arguments.append(arg_node)
+        cmd_arguments.extend(arguments)
 
-        for relationship in relationships:
-            arg_relationship = f'--relationships={relationship.label}={relationship.csv_file}'
-            arguments.append(arg_relationship)
-
-        return subprocess.run(arguments,
+        return subprocess.run(cmd_arguments,
                               check=True,
                               text=True,
                               shell=True)
