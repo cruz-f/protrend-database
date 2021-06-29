@@ -15,49 +15,9 @@ class RegPreciseVersion(Version):
 
     database = RelationshipTo('Database', 'VERSIONING')
 
-    taxonomy = RelationshipTo('Taxonomy', 'VERSIONING')
-    genome = RelationshipTo('Genome', 'VERSIONING')
-
-    transcriptionfactor = RelationshipTo('TranscriptionFactor', 'VERSIONING')
-    regulog = RelationshipTo('Regulog', 'VERSIONING')
-
-    transcriptionfactorfamily = RelationshipTo('TranscriptionFactorFamily', 'VERSIONING')
-    rnafamily = RelationshipTo('RNAFamily', 'VERSIONING')
-    effector = RelationshipTo('Effector', 'VERSIONING')
-    pathway = RelationshipTo('Pathway', 'VERSIONING')
-
-    regulon = RelationshipTo('Regulon', 'VERSIONING')
-    operon = RelationshipTo('Operon', 'VERSIONING')
-    gene = RelationshipTo('Gene', 'VERSIONING')
-    tfbs = RelationshipTo('TFBS', 'VERSIONING')
-
-    @property
-    def versioned_nodes(self) -> Dict[str, RelationshipTo]:
-
-        return {'Database': self.database,
-                'Taxonomy': self.taxonomy,
-                'Genome': self.genome,
-                'TranscriptionFactor': self.transcriptionfactor,
-                'Regulog': self.regulog,
-                'TranscriptionFactorFamily': self.transcriptionfactorfamily,
-                'RNAFamily': self.rnafamily,
-                'Effector': self.effector,
-                'Pathway': self.pathway,
-                'Regulon': self.regulon,
-                'Operon': self.operon,
-                'Gene': self.gene,
-                'TFBS': self.tfbs}
-
-
-class RegPreciseNode(Node):
-
-    __abstract_node__ = True
-
-    version = RelationshipTo(RegPreciseVersion, 'VERSIONING')
-
 
 # noinspection PyAbstractClass
-class Database(RegPreciseNode):
+class Database(Node):
     property_as_id = 'name'
 
     name = StringProperty(default='regprecise')
@@ -66,9 +26,11 @@ class Database(RegPreciseNode):
     authors = ArrayProperty(StringProperty(), default=['Pavel S Novichkov', 'Dmitry A Rodionov'])
     description = StringProperty(default='Collection of Manually Curated Inferences of Regulons in Prokaryotic Genomes')
 
+    version = RelationshipTo(RegPreciseVersion, 'VERSIONING')
+
 
 # noinspection PyAbstractClass
-class Taxonomy(RegPreciseNode):
+class Taxonomy(Node):
     property_as_id = 'collection_id'
 
     collection_id = IntegerProperty(required=True)
@@ -79,7 +41,7 @@ class Taxonomy(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Genome(RegPreciseNode):
+class Genome(Node):
     property_as_id = 'genome_id'
 
     genome_id = IntegerProperty(required=True)
@@ -91,7 +53,7 @@ class Genome(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class TranscriptionFactor(RegPreciseNode):
+class TranscriptionFactor(Node):
     property_as_id = 'collection_id'
 
     collection_id = IntegerProperty(required=True)
@@ -105,7 +67,7 @@ class TranscriptionFactor(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Regulog(RegPreciseNode):
+class Regulog(Node):
     property_as_id = 'regulog_id'
 
     regulog_id = IntegerProperty(required=True)
@@ -131,7 +93,7 @@ class Regulog(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class TranscriptionFactorFamily(RegPreciseNode):
+class TranscriptionFactorFamily(Node):
     property_as_id = 'tffamily_id'
 
     tffamily_id = IntegerProperty(required=True)
@@ -145,7 +107,7 @@ class TranscriptionFactorFamily(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class RNAFamily(RegPreciseNode):
+class RNAFamily(Node):
     property_as_id = 'riboswitch_id'
 
     riboswitch_id = IntegerProperty(required=True)
@@ -160,7 +122,7 @@ class RNAFamily(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Effector(RegPreciseNode):
+class Effector(Node):
     property_as_id = 'effector_id'
 
     effector_id = IntegerProperty(required=True)
@@ -171,7 +133,7 @@ class Effector(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Pathway(RegPreciseNode):
+class Pathway(Node):
     property_as_id = 'pathway_id'
 
     pathway_id = IntegerProperty(required=True)
@@ -182,7 +144,7 @@ class Pathway(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Regulon(RegPreciseNode):
+class Regulon(Node):
     property_as_id = 'regulon_id'
 
     regulon_id = IntegerProperty(required=True)
@@ -213,7 +175,7 @@ class Regulon(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Operon(RegPreciseNode):
+class Operon(Node):
     property_as_id = 'operon_id'
 
     operon_id = StringProperty(required=True)
@@ -226,7 +188,7 @@ class Operon(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class Gene(RegPreciseNode):
+class Gene(Node):
     property_as_id = 'locus_tag'
 
     locus_tag = StringProperty(required=True)
@@ -240,7 +202,7 @@ class Gene(RegPreciseNode):
 
 
 # noinspection PyAbstractClass
-class TFBS(RegPreciseNode):
+class TFBS(Node):
     property_as_id = 'tfbs_id'
 
     tfbs_id = StringProperty(required=True)

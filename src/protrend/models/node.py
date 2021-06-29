@@ -67,7 +67,7 @@ class Node(StructuredNode):
         return pd.DataFrame.from_dict(cls.cls_to_dict())
 
     @classmethod
-    def from_item(cls, item: dict, version: str = None, save: bool = True) -> 'Node':
+    def from_item(cls, item: dict, save: bool = True) -> 'Node':
 
         cls_properties = cls.cls_properties()
         cls_relationships = cls.cls_relationships()
@@ -81,9 +81,6 @@ class Node(StructuredNode):
 
             elif key in cls_relationships:
                 relationships[key] = val
-
-        if version:
-            relationships['version'] = version
 
         instance = cls(**properties)
 

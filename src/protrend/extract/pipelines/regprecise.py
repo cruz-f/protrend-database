@@ -95,26 +95,6 @@ class RegPrecisePipeline(NeoPipeline):
 
         return self._database_node
 
-    def open_spider(self, spider):
-
-        self.database.connect()
-
-        if self.clear_schema:
-            self.database.clear_db(clear_constraints=True, clear_indexes=True)
-            self.database.install_all_labels()
-
-        elif self.clear_db:
-            self.database.clear_db()
-
-        elif self.clear_version:
-
-            children = self.version.get_children()
-
-            for node in children:
-                node.delete()
-
-        self.database_node.connect_to_version(self.version)
-
     def close_spider(self, spider):
 
         arguments = []
@@ -125,66 +105,70 @@ class RegPrecisePipeline(NeoPipeline):
 
         self.database.import_csv_data(arguments=arguments)
 
+        self.database.connect()
+
+        self.database_node.connect_to_version(self.version)
+
     def process_item(self, item, spider):
 
         if isinstance(item, TaxonomyItem):
 
-            node = Taxonomy.from_item(item=item, version=self.version.name, save=False)
+            node = Taxonomy.from_item(item=item, save=False)
             self.taxa.append(node)
 
         elif isinstance(item, GenomeItem):
 
-            node = Genome.from_item(item=item, version=self.version.name, save=False)
+            node = Genome.from_item(item=item, save=False)
             self.genomes.append(node)
 
         elif isinstance(item, TranscriptionFactorItem):
 
-            node = TranscriptionFactor.from_item(item=item, version=self.version.name, save=False)
+            node = TranscriptionFactor.from_item(item=item, save=False)
             self.tfs.append(node)
 
         elif isinstance(item, RegulogItem):
 
-            node = Regulog.from_item(item=item, version=self.version.name, save=False)
+            node = Regulog.from_item(item=item, save=False)
             self.regulogs.append(node)
 
         elif isinstance(item, TranscriptionFactorFamilyItem):
 
-            node = TranscriptionFactorFamily.from_item(item=item, version=self.version.name, save=False)
+            node = TranscriptionFactorFamily.from_item(item=item, save=False)
             self.tffams.append(node)
 
         elif isinstance(item, RNAFamilyItem):
 
-            node = RNAFamily.from_item(item=item, version=self.version.name, save=False)
+            node = RNAFamily.from_item(item=item, save=False)
             self.rnafams.append(node)
 
         elif isinstance(item, EffectorItem):
 
-            node = Effector.from_item(item=item, version=self.version.name, save=False)
+            node = Effector.from_item(item=item, save=False)
             self.effectors.append(node)
 
         elif isinstance(item, PathwayItem):
 
-            node = Pathway.from_item(item=item, version=self.version.name, save=False)
+            node = Pathway.from_item(item=item, save=False)
             self.pathways.append(node)
 
         elif isinstance(item, RegulonItem):
 
-            node = Regulon.from_item(item=item, version=self.version.name, save=False)
+            node = Regulon.from_item(item=item, save=False)
             self.regulons.append(node)
 
         elif isinstance(item, OperonItem):
 
-            node = Operon.from_item(item=item, version=self.version.name, save=False)
+            node = Operon.from_item(item=item, save=False)
             self.operons.append(node)
 
         elif isinstance(item, GeneItem):
 
-            node = Gene.from_item(item=item, version=self.version.name, save=False)
+            node = Gene.from_item(item=item, save=False)
             self.genes.append(node)
 
         elif isinstance(item, TFBSItem):
 
-            node = TFBS.from_item(item=item, version=self.version.name, save=False)
+            node = TFBS.from_item(item=item, save=False)
             self.tfbs.append(node)
 
         else:

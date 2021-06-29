@@ -18,10 +18,7 @@ class NeoPipeline:
                  db_name: str = None,
                  dbms: str = None,
                  import_folder: str = None,
-                 version: str = None,
-                 clear_version: bool = False,
-                 clear_db: bool = False,
-                 clear_schema: bool = False):
+                 version: str = None):
 
         if not user_name:
             user_name = 'db'
@@ -59,10 +56,6 @@ class NeoPipeline:
 
         self._version = version
 
-        self.clear_version = clear_version
-        self.clear_db = clear_db
-        self.clear_schema = clear_schema
-
     @classmethod
     def from_crawler(cls, crawler):
 
@@ -74,9 +67,6 @@ class NeoPipeline:
         dbms = crawler.settings.get('dbms')
         import_folder = crawler.settings.get('import_folder')
         version = crawler.settings.get('version')
-        clear_version = crawler.settings.get('clear_version', False)
-        clear_db = crawler.settings.get('clear_db', False)
-        clear_schema = crawler.settings.get('clear_schema', False)
 
         return cls(user_name=user_name,
                    password=password,
@@ -85,10 +75,7 @@ class NeoPipeline:
                    db_name=db_name,
                    dbms=dbms,
                    import_folder=import_folder,
-                   version=version,
-                   clear_version=clear_version,
-                   clear_db=clear_db,
-                   clear_schema=clear_schema)
+                   version=version)
 
     @property
     def importers(self) -> List[NodeImporter]:
