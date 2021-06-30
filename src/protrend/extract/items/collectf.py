@@ -6,8 +6,8 @@ from protrend.extract.processors import CollecTFProcessors
 
 
 class TaxonomyItem(Item):
-    identifier = Field(input_processor=MapCompose(CollecTFProcessors.process_tax_onclick),
-                       output_processor=TakeFirst())
+    taxonomy_id = Field(input_processor=MapCompose(CollecTFProcessors.process_tax_onclick),
+                        output_processor=TakeFirst())
     name = Field(output_processor=TakeFirst())
     url = Field(output_processor=TakeFirst())
 
@@ -40,7 +40,7 @@ class RegulonItem(Item):
 
 
 class OperonItem(Item):
-    identifier = Field(output_processor=Join(separator='_'))
+    operon_id = Field(output_processor=Join(separator='_'))
 
     # relationships
     regulon = Field()
@@ -59,8 +59,8 @@ class GeneItem(Item):
 
 
 class TFBSItem(Item):
-    identifier = Field(input_processor=MapCompose(CollecTFProcessors.process_site_identifier),
-                       output_processor=Join(separator='_'))
+    tfbs_id = Field(input_processor=MapCompose(CollecTFProcessors.process_site_identifier),
+                    output_processor=Join(separator='_'))
     site_start = Field(output_processor=TakeFirst())
     site_end = Field(output_processor=TakeFirst())
     site_strand = Field(output_processor=TakeFirst())
@@ -77,8 +77,8 @@ class TFBSItem(Item):
 
 
 class ExperimentalEvidenceItem(Item):
-    identifier = Field(input_processor=MapCompose(str.strip, CollecTFProcessors.process_evidence_identifier),
-                       output_processor=TakeFirst())
+    exp_id = Field(input_processor=MapCompose(str.strip, CollecTFProcessors.process_evidence_identifier),
+                   output_processor=TakeFirst())
 
     # relationships
     regulon = Field()

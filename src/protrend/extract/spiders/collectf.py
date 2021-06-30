@@ -44,11 +44,11 @@ class CollecTFSpider(CSVFeedSpider):
 
             taxonomy_loader = ItemLoader(item=TaxonomyItem(), selector=taxon)
 
-            taxonomy_loader.add_xpath("identifier", ".//@onclick")
+            taxonomy_loader.add_xpath("taxonomy_id", ".//@onclick")
             taxonomy_loader.add_xpath("name", ".//text()")
             taxonomy_item = taxonomy_loader.load_item()
 
-            tax_id = taxonomy_item.get("identifier")
+            tax_id = taxonomy_item.get("taxonomy_id")
             if tax_id is not None:
                 url = f'{self.motif_reports_url}/{tax_id}/'
 
@@ -97,7 +97,7 @@ class CollecTFSpider(CSVFeedSpider):
         organism_item = self.parse_organism(row=row)
 
         organism_loader = ItemLoader(item=organism_item)
-        organism_loader.add_value("taxonomy", taxonomy_item["identifier"])
+        organism_loader.add_value("taxonomy", taxonomy_item["taxonomy_id"])
         organism_item = organism_loader.load_item()
 
         taxonomy_loader = ItemLoader(item=taxonomy_item)
@@ -119,14 +119,14 @@ class CollecTFSpider(CSVFeedSpider):
         operon_item = self.parse_operon(row=row)
 
         # if there is an operon there is also genes
-        if operon_item.get('identifier'):
+        if operon_item.get('operon_id'):
 
             operon_loader = ItemLoader(item=operon_item)
             operon_loader.add_value('regulon', regulon_item['uniprot_accession'])
             operon_item = operon_loader.load_item()
 
             regulon_loader = ItemLoader(item=regulon_item)
-            regulon_loader.add_value('operon', operon_item['identifier'])
+            regulon_loader.add_value('operon', operon_item['operon_id'])
             regulon_item = regulon_loader.load_item()
 
         # genes
@@ -142,7 +142,7 @@ class CollecTFSpider(CSVFeedSpider):
 
             gene_loader = ItemLoader(item=gene_item)
             gene_loader.add_value('regulon', regulon_item['uniprot_accession'])
-            gene_loader.add_value('operon', operon_item['identifier'])
+            gene_loader.add_value('operon', operon_item['operon_id'])
             gene_loader.load_item()
 
         operon_loader.load_item()
@@ -152,28 +152,28 @@ class CollecTFSpider(CSVFeedSpider):
         tfbs_item = self.parse_tfbs(row=row, organism_name=organism_item['name'])
 
         organism_loader = ItemLoader(item=organism_item)
-        organism_loader.add_value('tfbs', tfbs_item['identifier'])
+        organism_loader.add_value('tfbs', tfbs_item['tfbs_id'])
         organism_loader.load_item()
 
         regulon_loader = ItemLoader(item=regulon_item)
-        regulon_loader.add_value('tfbs', tfbs_item['identifier'])
+        regulon_loader.add_value('tfbs', tfbs_item['tfbs_id'])
         regulon_loader.load_item()
 
         tfbs_loader = ItemLoader(item=tfbs_item)
         tfbs_loader.add_value('organism', organism_item['name'])
         tfbs_loader.add_value('regulon', regulon_item['uniprot_accession'])
 
-        if operon_item.get('identifier'):
+        if operon_item.get('operon_id'):
 
             operon_loader = ItemLoader(item=operon_item)
-            operon_loader.add_value('tfbs', tfbs_item['identifier'])
+            operon_loader.add_value('tfbs', tfbs_item['tfbs_id'])
             operon_loader.load_item()
 
-            tfbs_loader.add_value('operon', operon_item['identifier'])
+            tfbs_loader.add_value('operon', operon_item['operon_id'])
 
             for gene_item in genes_items:
                 gene_loader = ItemLoader(item=gene_item)
-                gene_loader.add_value('tfbs', tfbs_item['identifier'])
+                gene_loader.add_value('tfbs', tfbs_item['tfbs_id'])
                 gene_loader.load_item()
 
                 tfbs_loader.add_value('gene', gene_item['locus_tag'])
@@ -187,12 +187,12 @@ class CollecTFSpider(CSVFeedSpider):
         tfbs_loader = ItemLoader(item=tfbs_item)
         for exp_item in exp_items:
 
-            regulon_loader.add_value('experimental_evidence', exp_item['identifier'])
-            tfbs_loader.add_value('experimental_evidence', exp_item['identifier'])
+            regulon_loader.add_value('experimental_evidence', exp_item['exp_id'])
+            tfbs_loader.add_value('experimental_evidence', exp_item['exp_id'])
 
             exp_loader = ItemLoader(item=exp_item)
             exp_loader.add_value('regulon', regulon_item['uniprot_accession'])
-            exp_loader.add_value('tfbs', tfbs_item['identifier'])
+            exp_loader.add_value('tfbs', tfbs_item['tfbs_id'])
             exp_loader.load_item()
 
         regulon_loader.load_item()
@@ -234,7 +234,7 @@ class CollecTFSpider(CSVFeedSpider):
         operon_loader = ItemLoader(item=OperonItem())
 
         genes = row.get('regulated genes (locus_tags)', '').split(', ')
-        operon_loader.add_value('identifier', genes)
+        operon_loader.add_value('operon_id', genes)
 
         return operon_loader.load_item()
 
@@ -259,22 +259,22 @@ class CollecTFSpider(CSVFeedSpider):
 
         tfbs_loader = ItemLoader(item=TFBSItem())
 
-        tfbs_loader.add_value('identifier', organism_name)
+        tfbs_loader.add_value('tfbs_id', organism_name)
 
         site_start = row.get('site_start')
-        tfbs_loader.add_value('identifier', site_start)
+        tfbs_loader.add_value('tfbs_id', site_start)
         tfbs_loader.add_value('site_start', site_start)
 
         site_end = row.get('site_end')
-        tfbs_loader.add_value('identifier', site_end)
+        tfbs_loader.add_value('tfbs_id', site_end)
         tfbs_loader.add_value('site_end', site_end)
 
         site_strand = row.get('site_strand')
-        tfbs_loader.add_value('identifier', site_strand)
+        tfbs_loader.add_value('tfbs_id', site_strand)
         tfbs_loader.add_value('site_strand', site_strand)
 
         mode = row.get('mode')
-        tfbs_loader.add_value('identifier', mode)
+        tfbs_loader.add_value('tfbs_id', mode)
         tfbs_loader.add_value('mode', mode)
 
         sequence = row.get('sequence')
@@ -294,7 +294,7 @@ class CollecTFSpider(CSVFeedSpider):
 
         for evidence in evidences:
             exp_loader = ItemLoader(item=ExperimentalEvidenceItem())
-            exp_loader.add_value('identifier', evidence)
+            exp_loader.add_value('exp_id', evidence)
 
             exp_item = exp_loader.load_item()
             evidences_items.append(exp_item)

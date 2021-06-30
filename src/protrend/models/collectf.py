@@ -14,39 +14,11 @@ class CollecTFVersion(Version):
 
     database = RelationshipTo('Database', 'VERSIONING')
 
-    taxonomy = RelationshipTo('Taxonomy', 'VERSIONING')
-    organism = RelationshipTo('Organism', 'VERSIONING')
-    regulon = RelationshipTo('Regulon', 'VERSIONING')
-    operon = RelationshipTo('Operon', 'VERSIONING')
-    gene = RelationshipTo('Gene', 'VERSIONING')
-    tfbs = RelationshipTo('TFBS', 'VERSIONING')
-    experimentalevidence = RelationshipTo('ExperimentalEvidence', 'VERSIONING')
-
-    transcriptionfactor = RelationshipTo('TranscriptionFactor', 'VERSIONING')
-
-    @property
-    def versioned_nodes(self) -> Dict[str, RelationshipTo]:
-
-        return {'Database': self.database,
-                'Taxonomy': self.taxonomy,
-                'Organism': self.organism,
-                'Regulon': self.regulon,
-                'Operon': self.operon,
-                'Gene': self.gene,
-                'TFBS': self.tfbs,
-                'ExperimentalEvidence': self.experimentalevidence,
-                'TranscriptionFactor': self.transcriptionfactor}
-
-
-class CollecTFNode(Node):
-
-    __abstract_node__ = True
-
-    version = RelationshipTo(CollecTFVersion, 'VERSIONING')
-
 
 # noinspection PyAbstractClass
-class Database(CollecTFNode):
+class Database(Node):
+    property_as_id = 'name'
+
     name = StringProperty(default='collectf')
     url = StringProperty(default='http://www.collectf.org/browse/browse/')
     doi = StringProperty(default='10.1093/nar/gkt1123')
@@ -54,22 +26,24 @@ class Database(CollecTFNode):
     description = StringProperty(default='CollecTF: a database of experimentally validated transcription '
                                          'factor-binding sites in Bacteria')
 
-    taxonomy = RelationshipTo('Taxonomy', 'HAS')
-    transcription_factor = RelationshipTo('TranscriptionFactor', 'HAS')
+    version = RelationshipTo(CollecTFVersion, 'VERSIONING')
 
 
 # noinspection PyAbstractClass
-class Taxonomy(CollecTFNode):
-    identifier = IntegerProperty(required=True)
+class Taxonomy(Node):
+    property_as_id = 'taxonomy_id'
+
+    taxonomy_id = IntegerProperty(required=True)
     name = StringProperty(required=True)
     url = StringProperty()
 
-    database = RelationshipTo(Database, 'IS_FROM')
     organism = RelationshipTo('Organism', 'HAS')
 
 
 # noinspection PyAbstractClass
-class Organism(CollecTFNode):
+class Organism(Node):
+    property_as_id = 'name'
+
     name = StringProperty(required=True)
     genome_accession = StringProperty()
 
@@ -79,7 +53,9 @@ class Organism(CollecTFNode):
 
 
 # noinspection PyAbstractClass
-class Regulon(CollecTFNode):
+class Regulon(Node):
+    property_as_id = 'uniprot_accession'
+
     uniprot_accession = StringProperty(required=True)
     name = StringProperty()
     url = StringProperty()
@@ -93,8 +69,10 @@ class Regulon(CollecTFNode):
 
 
 # noinspection PyAbstractClass
-class Operon(CollecTFNode):
-    identifier = StringProperty(required=True)
+class Operon(Node):
+    property_as_id = 'operon_id'
+
+    operon_id = StringProperty(required=True)
 
     regulon = RelationshipTo(Regulon, 'IS_FROM')
     gene = RelationshipTo('Gene', 'HAS')
@@ -102,7 +80,9 @@ class Operon(CollecTFNode):
 
 
 # noinspection PyAbstractClass
-class Gene(CollecTFNode):
+class Gene(Node):
+    property_as_id = 'locus_tag'
+
     locus_tag = StringProperty(required=True)
 
     regulon = RelationshipTo(Regulon, 'IS_FROM')
@@ -111,8 +91,10 @@ class Gene(CollecTFNode):
 
 
 # noinspection PyAbstractClass
-class TFBS(CollecTFNode):
-    identifier = StringProperty(required=True)
+class TFBS(Node):
+    property_as_id = 'tfbs_id'
+
+    tfbs_id = StringProperty(required=True)
     site_start = IntegerProperty(required=True)
     site_end = IntegerProperty(required=True)
     site_strand = IntegerProperty(required=True)
@@ -128,16 +110,19 @@ class TFBS(CollecTFNode):
 
 
 # noinspection PyAbstractClass
-class ExperimentalEvidence(CollecTFNode):
-    identifier = StringProperty(required=True)
+class ExperimentalEvidence(Node):
+    property_as_id = 'exp_id'
+
+    exp_id = StringProperty(required=True)
 
 
 # noinspection PyAbstractClass
-class TranscriptionFactor(CollecTFNode):
+class TranscriptionFactor(Node):
+    property_as_id = 'name'
+
     name = StringProperty(required=True)
     family = StringProperty()
     description = StringProperty()
     pubmed = ArrayProperty(IntegerProperty())
 
-    database = RelationshipTo(Database, 'IS_FROM')
     regulon = RelationshipTo(Regulon, 'HAS')
