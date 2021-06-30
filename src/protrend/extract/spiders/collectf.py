@@ -2,8 +2,8 @@ from itemloaders import ItemLoader
 from scrapy import Request
 from scrapy.http import FormRequest, Response
 from scrapy.spiders import CSVFeedSpider
-# from scrapy.utils.iterators import csviter
-# from scrapy.utils.spider import iterate_spider_output
+from scrapy.utils.iterators import csviter
+from scrapy.utils.spider import iterate_spider_output
 
 from protrend.extract.items.collectf import TaxonomyItem, OrganismItem, RegulonItem, OperonItem, GeneItem, TFBSItem, \
     ExperimentalEvidenceItem, TranscriptionFactorItem, CollecTFItem
@@ -319,15 +319,15 @@ class CollecTFSpider(CSVFeedSpider):
 
         return evidences_items
 
-    # def parse_rows(self, response, **kwargs):
-    #     for row in csviter(response, self.delimiter, self.headers, self.quotechar):
-    #         ret = iterate_spider_output(self.parse_row(response, row, **kwargs))
-    #         for result_item in self.process_results(response, ret):
-    #             yield result_item
-    #
-    # def _parse(self, response, **kwargs):
-    #     response = self.adapt_response(response)
-    #     return self.parse_rows(response, **kwargs)
+    def parse_rows(self, response, **kwargs):
+        for row in csviter(response, self.delimiter, self.headers, self.quotechar):
+            ret = iterate_spider_output(self.parse_row(response, row, **kwargs))
+            for result_item in self.process_results(response, ret):
+                yield result_item
+
+    def _parse(self, response, **kwargs):
+        response = self.adapt_response(response)
+        return self.parse_rows(response, **kwargs)
 
     @staticmethod
     def parse_all_tfs(response: Response):
