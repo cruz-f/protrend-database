@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 from typing import List
 
 from protrend.models.node import Node
@@ -11,36 +9,14 @@ from protrend.utils.node_importer import NodeImporter
 class NeoPipeline:
 
     def __init__(self,
-                 user_name: str = None,
-                 password: str = None,
-                 ip: str = None,
-                 port: str = None,
-                 db_name: str = None,
-                 dbms: str = None,
-                 import_folder: str = None,
-                 version: str = None):
-
-        if not user_name:
-            user_name = 'db'
-
-        if not password:
-            password = 'db'
-
-        if not ip:
-            ip = 'localhost'
-
-        if not port:
-            port = '7687'
-
-        if not db_name:
-            db_name = 'neo4j'
-
-        if not dbms:
-            dbms = ''
-
-        if not import_folder:
-            import_path = Path(os.path.abspath(__file__))
-            import_folder = os.path.join(str(import_path.parent.absolute()), 'import')
+                 user_name: str,
+                 password: str,
+                 ip: str,
+                 port: str,
+                 db_name: str,
+                 dbms: str,
+                 import_folder: str,
+                 version: str):
 
         self._user_name = user_name
         self._password = password
@@ -88,6 +64,13 @@ class NeoPipeline:
 
     @property
     def database(self) -> DBSettings:
+        if self._database is None:
+            self._database = DBSettings(user_name=self._user_name,
+                                        password=self._password,
+                                        ip=self._ip,
+                                        port=self._port,
+                                        db_name=self._db_name,
+                                        dbms=self._dbms)
 
         return self._database
 

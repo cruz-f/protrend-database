@@ -7,12 +7,12 @@ from neomodel import db, clear_neo4j_database, install_all_labels, install_label
 class DBSettings:
 
     def __init__(self,
-                 user_name: str = 'neo4j',
-                 password: str = 'neo4j',
-                 ip: str = 'localhost',
-                 port: str = '7687',
-                 db_name: str = 'neo4j',
-                 dbms: str = ''):
+                 user_name: str,
+                 password: str,
+                 ip: str,
+                 port: str,
+                 db_name: str,
+                 dbms: str):
 
         self.user_name: str = user_name
         self.password: str = password
@@ -48,9 +48,9 @@ class DBSettings:
     def clear_db(clear_constraints=False, clear_indexes=False):
         clear_neo4j_database(db, clear_constraints, clear_indexes)
 
-    def import_csv_data(self, arguments):
+    def import_csv_data(self, *args):
 
-        if not arguments:
+        if not args:
             return
 
         cmd_arguments = [fr"{self.dbms}\bin\neo4j-admin",
@@ -58,7 +58,17 @@ class DBSettings:
                          "--database",
                          f"{self.db_name}"]
 
-        cmd_arguments.extend(arguments)
+        def sort_by_node(arg):
+            if '--nodes=' in arg:
+                return 0
+            elif '--relationships=' in arg:
+                return 1
+
+            return 2
+
+        sorted_args = sorted(args, key=sort_by_node)
+
+        cmd_arguments.extend(sorted_args)
 
         return subprocess.run(cmd_arguments,
                               check=True,

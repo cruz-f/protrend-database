@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Union
 
 from scrapy import Spider, Request, Selector
 from scrapy.http import Response
@@ -24,7 +25,7 @@ class RegPreciseSpider(Spider):
 
     allowed_domains = ["regprecise.lbl.gov"]
 
-    def __init__(self, urls=None, *args, **kwargs):
+    def __init__(self, urls: Union[str, tuple, list, set] = None, *args, **kwargs):
 
         super(RegPreciseSpider, self).__init__(*args, **kwargs)
 

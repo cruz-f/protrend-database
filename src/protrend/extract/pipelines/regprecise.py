@@ -1,4 +1,3 @@
-from protrend.extract.databases import RegPreciseDB
 from protrend.extract.items.regprecise import (TaxonomyItem, GenomeItem, TranscriptionFactorItem, RegulogItem,
                                                TranscriptionFactorFamilyItem, RNAFamilyItem, EffectorItem, PathwayItem,
                                                RegulonItem, OperonItem, GeneItem, TFBSItem)
@@ -11,22 +10,9 @@ from protrend.utils.node_importer import NodeImporter
 
 class RegPrecisePipeline(NeoPipeline):
 
-    def __init__(self,
-                 user_name: str = None,
-                 password: str = None,
-                 *args,
-                 **kwargs):
+    def __init__(self, *args, **kwargs):
 
-        if not user_name:
-            user_name = 'regprecise'
-
-        if not password:
-            password = 'regprecise'
-
-        super().__init__(user_name=user_name,
-                         password=password,
-                         *args,
-                         **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.taxa = NodeImporter(node_cls=Taxonomy, path=self._import_folder)
         self.genomes = NodeImporter(node_cls=Genome, path=self._import_folder)
@@ -45,19 +31,6 @@ class RegPrecisePipeline(NeoPipeline):
     def importers(self):
         return [self.taxa, self.genomes, self.tfs, self.regulogs, self.tffams, self.rnafams, self.effectors,
                 self.pathways, self.regulons, self.operons, self.genes, self.tfbs]
-
-    @property
-    def database(self) -> RegPreciseDB:
-
-        if self._database is None:
-            self._database = RegPreciseDB(user_name=self._user_name,
-                                          password=self._password,
-                                          ip=self._ip,
-                                          port=self._port,
-                                          db_name=self._db_name,
-                                          dbms=self._dbms)
-
-        return self._database
 
     @property
     def version(self) -> RegPreciseVersion:
@@ -97,13 +70,13 @@ class RegPrecisePipeline(NeoPipeline):
 
     def close_spider(self, spider):
 
-        arguments = []
+        args = []
 
         for importer in self.importers:
             importer.build_imports()
-            arguments.append(importer.args)
+            args.append(importer.args)
 
-        self.database.import_csv_data(arguments=arguments)
+        self.database.import_csv_data(*args)
 
         self.database.connect()
 
