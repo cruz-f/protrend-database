@@ -1,4 +1,8 @@
+import sys
+
 from scrapy import cmdline
+
+sys.path.insert(0, r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src')
 
 
 def run_spider(spider: str,
@@ -60,21 +64,24 @@ def run_spider(spider: str,
 
 
 if __name__ == "__main__":
-    reg_precise_urls = ("https://regprecise.lbl.gov/collections_tax.jsp",
-                        "https://regprecise.lbl.gov/collections_tf.jsp",
-                        "https://regprecise.lbl.gov/collections_tffam.jsp",
-                        "https://regprecise.lbl.gov/collections_rfam.jsp",
-                        "https://regprecise.lbl.gov/collections_effector.jsp",
-                        "https://regprecise.lbl.gov/collections_pathway.jsp")
+    # run_spider(spider='regprecise',
+    #            logfile='regprecise.log',
+    #            user_name='neo4j',
+    #            password='regprecise',
+    #            ip='localhost',
+    #            port='7687',
+    #            db_name='neo4j',
+    #            dbms=r'C:\Users\BiSBII\.Neo4jDesktop\relate-data\dbmss\dbms-9ebbc6bf-cbf0-456e-8fbe-3d57761bdcb8',
+    #            import_folder=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src\protrend\extract\import\regprecise',
+    #            version='0.0.0')
 
-    run_spider(spider='regprecise',
-               logfile='regprecise.log',
+    run_spider(spider='collectf',
+               logfile='collectf.log',
                user_name='neo4j',
-               password='regprecise',
+               password='collectf',
                ip='localhost',
                port='7687',
                db_name='neo4j',
-               dbms=r'C:\Users\BiSBII\.Neo4jDesktop\relate-data\dbmss\dbms-0d680ec0-bb15-4f6e-9992-aa7f72201baf',
-               import_folder=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src\protrend\extract\import\regprecise',
-               version='0.0.0',
-               urls=reg_precise_urls[3])
+               dbms=r'C:\Users\BiSBII\.Neo4jDesktop\relate-data\dbmss\dbms-1a131eeb-1263-417b-8535-cdb9a0d10811',
+               import_folder=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src\protrend\extract\import\collectf',
+               version='0.0.0')

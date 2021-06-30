@@ -53,10 +53,11 @@ class DBSettings:
         if not args:
             return
 
-        cmd_arguments = [fr"{self.dbms}\bin\neo4j-admin",
-                         "import",
-                         "--database",
-                         f"{self.db_name}"]
+        cmd_arguments = [fr'{self.dbms}\bin\neo4j-admin',
+                         'import',
+                         '--database',
+                         f'{self.db_name}',
+                         '--multiline-fields=true']
 
         def sort_by_node(arg):
             if '--nodes=' in arg:

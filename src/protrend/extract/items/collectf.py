@@ -5,6 +5,16 @@ from w3lib.html import remove_tags
 from protrend.extract.processors import CollecTFProcessors
 
 
+class CollecTFItem(Item):
+    taxonomy_item = Field()
+    organism_item = Field()
+    regulon_item = Field()
+    operon_item = Field()
+    genes_items = Field()
+    tfbs_item = Field()
+    exp_items = Field()
+
+
 class TaxonomyItem(Item):
     taxonomy_id = Field(input_processor=MapCompose(CollecTFProcessors.process_tax_onclick),
                         output_processor=TakeFirst())

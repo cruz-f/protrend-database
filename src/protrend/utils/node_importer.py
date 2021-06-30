@@ -14,7 +14,7 @@ class NodeImporter:
 
     @property
     def nodes(self) -> List[Node]:
-        return self._nodes.copy()
+        return self._nodes
 
     def append(self, node: Node):
         self._nodes.append(node)
@@ -37,12 +37,12 @@ class NodeImporter:
 
     @property
     def node_csv(self) -> str:
-        return f'{self.path}/{self.name}.csv'
+        return fr'{self.path}\{self.name}.csv'
 
     def relationship_csv(self, relationship) -> str:
         rel_type = relationship.definition['relation_type']
         out_name = relationship.definition['node_class'].cls_name()
-        return f'{self.path}/{self.name}_{rel_type}_{out_name}.csv'
+        return fr'{self.path}\{self.name}_{rel_type}_{out_name}.csv'
 
     def _build_node_import(self) -> pd.DataFrame:
         series = [node.to_series() for node in self._nodes]
@@ -52,13 +52,23 @@ class NodeImporter:
 
     def _build_relationship_import(self, name, relationship) -> pd.DataFrame:
         dfs = [node.relationship_to_df(name) for node in self.nodes]
-        df = pd.concat(dfs)
+
+        if dfs:
+            df = pd.concat(dfs)
+
+        else:
+            df = pd.DataFrame(columns=['start', 'end'])
+
         out_name = relationship.definition['node_class'].cls_name()
         df.rename(columns={'start': f':START_ID({self.name})', 'end': f':END_ID({out_name})'},
                   inplace=True)
         return df
 
     def build_imports(self):
+
+        if not self.nodes:
+            return
+
         df = self._build_node_import()
         df.to_csv(self.node_csv, index=False)
 
@@ -69,6 +79,9 @@ class NodeImporter:
 
     @property
     def args(self) -> List[str]:
+
+        if not self.nodes:
+            return []
 
         args = [f'--nodes={self.name}={self.node_csv}']
 

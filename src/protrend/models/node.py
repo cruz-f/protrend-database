@@ -118,7 +118,15 @@ class Node(StructuredNode):
     def relationships(self, value: Union[dict, tuple]):
 
         if isinstance(value, dict):
-            self._relationships = value
+
+            self._relationships = {}
+
+            for key, val in value.items():
+                if isinstance(val, (tuple, list, set)):
+                    self._relationships[key] = val
+
+                else:
+                    self._relationships[key] = [val]
 
         elif isinstance(value, tuple):
             new_rel = {value[0]: value[1]}

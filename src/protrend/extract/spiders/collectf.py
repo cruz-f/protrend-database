@@ -2,11 +2,11 @@ from itemloaders import ItemLoader
 from scrapy import Request
 from scrapy.http import FormRequest, Response
 from scrapy.spiders import CSVFeedSpider
-from scrapy.utils.iterators import csviter
-from scrapy.utils.spider import iterate_spider_output
+# from scrapy.utils.iterators import csviter
+# from scrapy.utils.spider import iterate_spider_output
 
 from protrend.extract.items.collectf import TaxonomyItem, OrganismItem, RegulonItem, OperonItem, GeneItem, TFBSItem, \
-    ExperimentalEvidenceItem, TranscriptionFactorItem
+    ExperimentalEvidenceItem, TranscriptionFactorItem, CollecTFItem
 
 
 class CollecTFSpider(CSVFeedSpider):
@@ -137,13 +137,16 @@ class CollecTFSpider(CSVFeedSpider):
 
         # if there is an operon there is also genes
         for gene_item in genes_items:
-            operon_loader.add_value('gene', gene_item['locus_tag'])
-            regulon_loader.add_value('gene', gene_item['locus_tag'])
 
-            gene_loader = ItemLoader(item=gene_item)
-            gene_loader.add_value('regulon', regulon_item['uniprot_accession'])
-            gene_loader.add_value('operon', operon_item['operon_id'])
-            gene_loader.load_item()
+            if gene_item.get('locus_tag'):
+
+                operon_loader.add_value('gene', gene_item['locus_tag'])
+                regulon_loader.add_value('gene', gene_item['locus_tag'])
+
+                gene_loader = ItemLoader(item=gene_item)
+                gene_loader.add_value('regulon', regulon_item['uniprot_accession'])
+                gene_loader.add_value('operon', operon_item['operon_id'])
+                gene_loader.load_item()
 
         operon_loader.load_item()
         regulon_loader.load_item()
@@ -172,11 +175,14 @@ class CollecTFSpider(CSVFeedSpider):
             tfbs_loader.add_value('operon', operon_item['operon_id'])
 
             for gene_item in genes_items:
-                gene_loader = ItemLoader(item=gene_item)
-                gene_loader.add_value('tfbs', tfbs_item['tfbs_id'])
-                gene_loader.load_item()
 
-                tfbs_loader.add_value('gene', gene_item['locus_tag'])
+                if gene_item.get('locus_tag'):
+
+                    gene_loader = ItemLoader(item=gene_item)
+                    gene_loader.add_value('tfbs', tfbs_item['tfbs_id'])
+                    gene_loader.load_item()
+
+                    tfbs_loader.add_value('gene', gene_item['locus_tag'])
 
         tfbs_loader.load_item()
 
@@ -198,7 +204,17 @@ class CollecTFSpider(CSVFeedSpider):
         regulon_loader.load_item()
         tfbs_loader.load_item()
 
-        return taxonomy_item, organism_item, regulon_item, operon_item, genes_items, tfbs_item, exp_items
+        collectf_loader = ItemLoader(item=CollecTFItem())
+
+        collectf_loader.add_value('taxonomy_item', taxonomy_item)
+        collectf_loader.add_value('organism_item', organism_item)
+        collectf_loader.add_value('regulon_item', regulon_item)
+        collectf_loader.add_value('operon_item', operon_item)
+        collectf_loader.add_value('genes_items', genes_items)
+        collectf_loader.add_value('tfbs_item', tfbs_item)
+        collectf_loader.add_value('exp_items', exp_items)
+
+        return collectf_loader.load_item()
 
     @staticmethod
     def parse_organism(row: dict):
@@ -247,10 +263,12 @@ class CollecTFSpider(CSVFeedSpider):
 
         for gene in genes:
             gene_loader = ItemLoader(item=GeneItem())
-            gene_loader.add_value('locus_tag', gene)
-            gene_item = gene_loader.load_item()
+            gene = gene.replace(' ', '')
+            if gene:
+                gene_loader.add_value('locus_tag', gene)
+                gene_item = gene_loader.load_item()
 
-            genes_items.append(gene_item)
+                genes_items.append(gene_item)
 
         return genes_items
 
@@ -301,15 +319,15 @@ class CollecTFSpider(CSVFeedSpider):
 
         return evidences_items
 
-    def parse_rows(self, response, **kwargs):
-        for row in csviter(response, self.delimiter, self.headers, self.quotechar):
-            ret = iterate_spider_output(self.parse_row(response, row, **kwargs))
-            for result_item in self.process_results(response, ret):
-                yield result_item
-
-    def _parse(self, response, **kwargs):
-        response = self.adapt_response(response)
-        return self.parse_rows(response, **kwargs)
+    # def parse_rows(self, response, **kwargs):
+    #     for row in csviter(response, self.delimiter, self.headers, self.quotechar):
+    #         ret = iterate_spider_output(self.parse_row(response, row, **kwargs))
+    #         for result_item in self.process_results(response, ret):
+    #             yield result_item
+    #
+    # def _parse(self, response, **kwargs):
+    #     response = self.adapt_response(response)
+    #     return self.parse_rows(response, **kwargs)
 
     @staticmethod
     def parse_all_tfs(response: Response):

@@ -62,7 +62,8 @@ DOWNLOAD_DELAY = 2
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'extract.pipelines.regprecise.RegPrecisePipeline': 800,
+    # 'extract.pipelines.regprecise.RegPrecisePipeline': 800,
+    'extract.pipelines.collectf.CollecTFPipeline': 800,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -88,3 +89,6 @@ ITEM_PIPELINES = {
 
 # Configure logging
 LOG_LEVEL = "INFO"
+
+# Configure download time
+DOWNLOAD_TIMEOUT = 600

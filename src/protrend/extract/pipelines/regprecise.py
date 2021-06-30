@@ -2,8 +2,7 @@ from protrend.extract.items.regprecise import (TaxonomyItem, GenomeItem, Transcr
                                                TranscriptionFactorFamilyItem, RNAFamilyItem, EffectorItem, PathwayItem,
                                                RegulonItem, OperonItem, GeneItem, TFBSItem)
 from protrend.extract.pipelines.neo_pipeline import NeoPipeline
-from protrend.models.regprecise import Database as RegPreciseDatabase
-from protrend.models.regprecise import (RegPreciseVersion, Taxonomy, TranscriptionFactor, TranscriptionFactorFamily,
+from protrend.models.regprecise import (Database, RegPreciseVersion, Taxonomy, TranscriptionFactor, TranscriptionFactorFamily,
                                         RNAFamily, Effector, Pathway, Genome, Regulog, Regulon, Operon, Gene, TFBS)
 from protrend.utils.node_importer import NodeImporter
 
@@ -55,14 +54,14 @@ class RegPrecisePipeline(NeoPipeline):
         return self._version
 
     @property
-    def database_node(self) -> RegPreciseDatabase:
+    def database_node(self) -> Database:
 
         if self._database_node is None:
 
-            node = RegPreciseDatabase.get_by_version(attr='name', value='regprecise', version=self.version)
+            node = Database.get_by_version(attr='name', value='regprecise', version=self.version)
 
             if node is None:
-                node = RegPreciseDatabase().save()
+                node = Database().save()
 
             self._database_node = node
 
@@ -70,17 +69,24 @@ class RegPrecisePipeline(NeoPipeline):
 
     def close_spider(self, spider):
 
-        args = []
+        cls_nodes = [importer.node_cls.cls_name()
+                     for importer in self.importers
+                     if importer.nodes]
 
+        args = []
         for importer in self.importers:
-            importer.build_imports()
-            args.append(importer.args)
+            if importer.node_cls.cls_name() in cls_nodes:
+                importer.build_imports()
+
+                for arg in importer.args:
+                    if importer.node_cls.cls_name() in arg:
+                        args.append(arg)
 
         self.database.import_csv_data(*args)
 
-        self.database.connect()
-
-        self.database_node.connect_to_version(self.version)
+        # self.database.connect()
+        #
+        # self.database_node.connect_to_version(self.version)
 
     def process_item(self, item, spider):
 
