@@ -62,7 +62,7 @@ class CollecTFSpider(CSVFeedSpider):
 
     def parse_motif_report(self, response: Response, taxonomy_item: TaxonomyItem):
 
-        form_data = {'tsv': 'Download spreadsheet (TSV)'}
+        form_data = [('tsv', 'Download spreadsheet (TSV)')]
 
         form_inputs_xpath = "//*[@id='export']/div/form/input"
         form_inputs = response.xpath(form_inputs_xpath)
@@ -73,11 +73,18 @@ class CollecTFSpider(CSVFeedSpider):
             value = form_input.attrib.get('value')
 
             if name and value:
-                form_data[name] = value
+                form_data.append((name, value))
 
-        if 'csrfmiddlewaretoken' in form_data:
-            cookies = {'csrftoken': form_data['csrfmiddlewaretoken']}
-            cb_kwargs = dict(taxonomy_item=taxonomy_item)
+        cookies = {}
+        cb_kwargs = {}
+
+        for key, val in form_data:
+            if 'csrfmiddlewaretoken' == key:
+                cookies['csrftoken'] = val
+                cb_kwargs['taxonomy_item'] = taxonomy_item
+                break
+
+        if cookies and cb_kwargs:
 
             # self.parse calls self.parse_row
             yield FormRequest(self.export_url,
@@ -193,13 +200,15 @@ class CollecTFSpider(CSVFeedSpider):
         tfbs_loader = ItemLoader(item=tfbs_item)
         for exp_item in exp_items:
 
-            regulon_loader.add_value('experimental_evidence', exp_item['exp_id'])
-            tfbs_loader.add_value('experimental_evidence', exp_item['exp_id'])
+            if exp_item.get('exp_id'):
 
-            exp_loader = ItemLoader(item=exp_item)
-            exp_loader.add_value('regulon', regulon_item['uniprot_accession'])
-            exp_loader.add_value('tfbs', tfbs_item['tfbs_id'])
-            exp_loader.load_item()
+                regulon_loader.add_value('experimental_evidence', exp_item['exp_id'])
+                tfbs_loader.add_value('experimental_evidence', exp_item['exp_id'])
+
+                exp_loader = ItemLoader(item=exp_item)
+                exp_loader.add_value('regulon', regulon_item['uniprot_accession'])
+                exp_loader.add_value('tfbs', tfbs_item['tfbs_id'])
+                exp_loader.load_item()
 
         regulon_loader.load_item()
         tfbs_loader.load_item()
