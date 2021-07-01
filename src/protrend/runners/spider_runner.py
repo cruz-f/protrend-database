@@ -61,27 +61,3 @@ def run_spider(spider: str,
         arguments.append(f"urls={urls}")
 
     return cmdline.execute(arguments)
-
-
-if __name__ == "__main__":
-    # run_spider(spider='regprecise',
-    #            logfile='regprecise.log',
-    #            user_name='neo4j',
-    #            password='regprecise',
-    #            ip='localhost',
-    #            port='7687',
-    #            db_name='neo4j',
-    #            dbms=r'C:\Users\BiSBII\.Neo4jDesktop\relate-data\dbmss\dbms-9ebbc6bf-cbf0-456e-8fbe-3d57761bdcb8',
-    #            import_folder=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src\protrend\extract\import\regprecise',
-    #            version='0.0.0')
-
-    run_spider(spider='collectf',
-               logfile='collectf.log',
-               user_name='neo4j',
-               password='collectf',
-               ip='localhost',
-               port='7687',
-               db_name='neo4j',
-               dbms=r'C:\Users\BiSBII\.Neo4jDesktop\relate-data\dbmss\dbms-1a131eeb-1263-417b-8535-cdb9a0d10811',
-               import_folder=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src\protrend\extract\import\collectf',
-               version='0.0.0')
