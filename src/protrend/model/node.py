@@ -4,7 +4,7 @@ import pandas as pd
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode)
 
 if TYPE_CHECKING:
-    from protrend.models.version import Version
+    from protrend.model.version import Version
 
 
 class Node(StructuredNode):

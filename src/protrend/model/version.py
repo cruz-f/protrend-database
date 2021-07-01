@@ -1,6 +1,6 @@
 from neomodel import (StringProperty)
 
-from protrend.models.node import Node
+from protrend.model.node import Node
 
 
 class Version(Node):
