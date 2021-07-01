@@ -1,89 +1,63 @@
-from protrend.extract.items.collectf import TaxonomyItem, OrganismItem, TranscriptionFactorItem, RegulonItem, \
-    OperonItem, GeneItem, TFBSItem, ExperimentalEvidenceItem, CollecTFItem
-from protrend.extract.pipelines.neo_pipeline import NeoPipeline
-from protrend.models.collectf import (Database, CollecTFVersion, Taxonomy, Organism,
-                                      TranscriptionFactor, Regulon, Operon, Gene, TFBS,
-                                      ExperimentalEvidence)
-from protrend.utils.node_importer import NodeImporter
+from datetime import datetime
+
+import pytz
+from scrapy.exporters import JsonLinesItemExporter
+
+from protrend.extract.items.collectf import (TaxonomyItem,
+                                             OrganismItem,
+                                             TranscriptionFactorItem,
+                                             RegulonItem,
+                                             OperonItem,
+                                             GeneItem,
+                                             TFBSItem,
+                                             ExperimentalEvidenceItem,
+                                             CollecTFItem, DatabaseItem)
+from protrend.extract.pipelines.json_pipeline import JSONPipeline, build_json_exporters
 
 
-class CollecTFPipeline(NeoPipeline):
+class CollecTFPipeline(JSONPipeline):
 
-    def __init__(self, *args, **kwargs):
+    def open_spider(self, spider):
 
-        super().__init__(*args, **kwargs)
+        self.process_db_item()
 
-        self.taxa = NodeImporter(node_cls=Taxonomy, path=self._import_folder)
-        self.organisms = NodeImporter(node_cls=Organism, path=self._import_folder)
-        self.tfs = NodeImporter(node_cls=TranscriptionFactor, path=self._import_folder)
-        self.regulons = NodeImporter(node_cls=Regulon, path=self._import_folder)
-        self.operons = NodeImporter(node_cls=Operon, path=self._import_folder)
-        self.genes = NodeImporter(node_cls=Gene, path=self._import_folder)
-        self.tfbs = NodeImporter(node_cls=TFBS, path=self._import_folder)
-        self.exps = NodeImporter(node_cls=ExperimentalEvidence, path=self._import_folder)
+        self.items_types = (TaxonomyItem,
+                            OrganismItem,
+                            TranscriptionFactorItem,
+                            RegulonItem,
+                            OperonItem,
+                            GeneItem,
+                            TFBSItem,
+                            ExperimentalEvidenceItem)
 
-    @property
-    def importers(self):
-        return [self.taxa, self.organisms, self.tfs,
-                self.regulons, self.operons, self.genes, self.tfbs,
-                self.exps]
+        self.exporters = build_json_exporters(self.staging_area, self.items_types)
 
-    @property
-    def version(self) -> CollecTFVersion:
-
-        if self._version is None:
-            versions = CollecTFVersion.nodes.order_by('-created')
-
-            if versions:
-                self._version = versions[0]
-
-            else:
-                self._version = CollecTFVersion(name='0.0.0').save()
-
-        if isinstance(self._version, str):
-            try:
-                self._version = CollecTFVersion.nodes.get(name=self._version)
-
-            except CollecTFVersion.DoesNotExist:
-
-                self._version = CollecTFVersion(name=self._version).save()
-
-        return self._version
-
-    @property
-    def database_node(self) -> Database:
-
-        if self._database_node is None:
-
-            node = Database.get_by_version(attr='name', value='collectf', version=self.version)
-
-            if node is None:
-                node = Database().save()
-
-            self._database_node = node
-
-        return self._database_node
+        for exporter, _ in self.exporters.values():
+            exporter.start_exporting()
 
     def close_spider(self, spider):
 
-        cls_nodes = [importer.node_cls.cls_name()
-                     for importer in self.importers
-                     if importer.nodes]
+        for exporter, file in self.exporters.values():
+            exporter.finish_exporting()
+            file.close()
 
-        args = []
-        for importer in self.importers:
-            if importer.node_cls.cls_name() in cls_nodes:
-                importer.build_imports()
+    def process_db_item(self):
 
-                for arg in importer.args:
-                    if importer.node_cls.cls_name() in arg:
-                        args.append(arg)
+        db_item = DatabaseItem(name='collectf',
+                               url='http://www.collectf.org/browse/browse/',
+                               doi='10.1093/nar/gkt1123',
+                               authors=['Sefa Kılıç', 'Ivan Erill'],
+                               description='CollecTF: a database of experimentally validated transcription '
+                                           'factor-binding sites in Bacteria',
+                               version=self.version,
+                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
 
-        self.database.import_csv_data(*args)
-
-        # self.database.connect()
-        #
-        # self.database_node.connect_to_version(self.version)
+        file = open(fr'{self.staging_area}/Database.json', 'wb')
+        exporter = JsonLinesItemExporter(file)
+        exporter.start_exporting()
+        exporter.export_item(db_item)
+        exporter.finish_exporting()
+        file.close()
 
     def process_item(self, item, spider):
 
@@ -92,85 +66,18 @@ class CollecTFPipeline(NeoPipeline):
             for item_container in item.values():
 
                 for it in item_container:
+                    item_name = it.__class__.__name__
+                    item_name = item_name.replace('Item', '')
 
-                    if isinstance(it, TaxonomyItem):
+                    exporter, _ = self.exporters.get(item_name, (None, None))
+                    exporter.export_item(it)
 
-                        node = Taxonomy.from_item(item=it, save=False)
-                        self.taxa.append(node)
+        else:
+            item_name = item.__class__.__name__
+            item_name = item_name.replace('Item', '')
 
-                    elif isinstance(it, OrganismItem):
+            exporter, _ = self.exporters.get(item_name, (None, None))
 
-                        node = Organism.from_item(item=it, save=False)
-                        self.organisms.append(node)
-
-                    elif isinstance(it, TranscriptionFactorItem):
-
-                        node = TranscriptionFactor.from_item(item=it, save=False)
-                        self.tfs.append(node)
-
-                    elif isinstance(it, RegulonItem):
-
-                        node = Regulon.from_item(item=it, save=False)
-                        self.regulons.append(node)
-
-                    elif isinstance(it, OperonItem):
-
-                        node = Operon.from_item(item=it, save=False)
-                        self.operons.append(node)
-
-                    elif isinstance(it, GeneItem):
-
-                        node = Gene.from_item(item=it, save=False)
-                        self.genes.append(node)
-
-                    elif isinstance(it, TFBSItem):
-
-                        node = TFBS.from_item(item=it, save=False)
-                        self.tfbs.append(node)
-
-                    elif isinstance(it, ExperimentalEvidenceItem):
-
-                        node = ExperimentalEvidence.from_item(item=it, save=False)
-                        self.exps.append(node)
-
-        elif isinstance(item, TaxonomyItem):
-
-            node = Taxonomy.from_item(item=item, save=False)
-            self.taxa.append(node)
-
-        elif isinstance(item, OrganismItem):
-
-            node = Organism.from_item(item=item, save=False)
-            self.organisms.append(node)
-
-        elif isinstance(item, TranscriptionFactorItem):
-
-            node = TranscriptionFactor.from_item(item=item, save=False)
-            self.tfs.append(node)
-
-        elif isinstance(item, RegulonItem):
-
-            node = Regulon.from_item(item=item, save=False)
-            self.regulons.append(node)
-
-        elif isinstance(item, OperonItem):
-
-            node = Operon.from_item(item=item, save=False)
-            self.operons.append(node)
-
-        elif isinstance(item, GeneItem):
-
-            node = Gene.from_item(item=item, save=False)
-            self.genes.append(node)
-
-        elif isinstance(item, TFBSItem):
-
-            node = TFBS.from_item(item=item, save=False)
-            self.tfbs.append(node)
-
-        elif isinstance(item, ExperimentalEvidenceItem):
-
-            node = ExperimentalEvidence.from_item(item=item, save=False)
-            self.exps.append(node)
+            exporter.export_item(item)
 
         return item

@@ -2,12 +2,19 @@ from itemloaders.processors import MapCompose, TakeFirst, Join
 from scrapy.item import Item, Field
 from w3lib.html import remove_tags
 
-from protrend.extract.processors import RegPreciseProcessors
+from protrend.extract.processors.regprecise import RegPreciseProcessors
 
 
-# ----------------------------
-# RegPrecise items
-# ----------------------------
+class DatabaseItem(Item):
+    name = Field()
+    url = Field()
+    doi = Field()
+    authors = Field()
+    description = Field()
+    version = Field()
+    created = Field()
+
+
 class TaxonomyItem(Item):
     collection_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
                           output_processor=TakeFirst())

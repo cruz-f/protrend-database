@@ -16,6 +16,10 @@ OperonGeneTFBS = namedtuple("OperonGeneTFBS",
 class RegPreciseSpider(Spider):
     name = "regprecise"
 
+    custom_settings = {
+        'ITEM_PIPELINES': {'extract.pipelines.regprecise.RegPrecisePipeline': 800}
+    }
+
     start_urls = ("https://regprecise.lbl.gov/collections_tax.jsp",
                   "https://regprecise.lbl.gov/collections_tf.jsp",
                   "https://regprecise.lbl.gov/collections_tffam.jsp",

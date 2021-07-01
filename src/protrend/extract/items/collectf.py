@@ -2,7 +2,17 @@ from itemloaders.processors import TakeFirst, MapCompose, Join
 from scrapy import Item, Field
 from w3lib.html import remove_tags
 
-from protrend.extract.processors import CollecTFProcessors
+from protrend.extract.processors.collectf import CollecTFProcessors
+
+
+class DatabaseItem(Item):
+    name = Field()
+    url = Field()
+    doi = Field()
+    authors = Field()
+    description = Field()
+    version = Field()
+    created = Field()
 
 
 class CollecTFItem(Item):

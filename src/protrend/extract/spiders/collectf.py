@@ -17,8 +17,14 @@ class CollecTFSpider(CSVFeedSpider):
     motif_reports_url = 'http://www.collectf.org/browse/view_motif_reports_by_taxonomy'
     motif_reports_tf_url = 'http://www.collectf.org/browse/view_motif_reports_by_TF_family'
 
+    custom_settings = {
+        'ITEM_PIPELINES': {'extract.pipelines.collectf.CollecTFPipeline': 800}
+    }
+
     start_urls = ("http://www.collectf.org/browse/browse_by_taxonomy/",
                   "http://www.collectf.org/browse/list_all_TFs/")
+
+    allowed_domains = ["collectf.org"]
 
     delimiter = '\t'
     headers = ['TF', 'TF_accession', 'genome_accession', 'organism',
