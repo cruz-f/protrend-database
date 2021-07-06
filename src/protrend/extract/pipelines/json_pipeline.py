@@ -40,7 +40,7 @@ def build_json_exporters(path: str, items_types: List[Type[Item]]) -> Dict[str, 
         item_name = item.__name__
         item_name = item_name.replace('Item', '')
 
-        file = open(fr'{path}/{item_name}.json', 'wb')
+        file = open(fr'{path}\{item_name}.json', 'wb')
         exporter = JsonLinesItemExporter(file)
         exporters[item_name] = (exporter, file)
 

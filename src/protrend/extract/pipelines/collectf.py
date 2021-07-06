@@ -19,7 +19,21 @@ class CollecTFPipeline(JSONPipeline):
 
     def open_spider(self, spider):
 
-        self.process_db_item()
+        db_item = DatabaseItem(name='collectf',
+                               url='http://www.collectf.org/browse/browse/',
+                               doi='10.1093/nar/gkt1123',
+                               authors=['Sefa Kılıç', 'Ivan Erill'],
+                               description='CollecTF: a database of experimentally validated transcription '
+                                           'factor-binding sites in Bacteria',
+                               version=self.version,
+                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
+
+        file = open(fr'{self.staging_area}\Database.json', 'wb')
+        exporter = JsonLinesItemExporter(file)
+        exporter.start_exporting()
+        exporter.export_item(db_item)
+        exporter.finish_exporting()
+        file.close()
 
         self.items_types = (TaxonomyItem,
                             OrganismItem,
@@ -40,24 +54,6 @@ class CollecTFPipeline(JSONPipeline):
         for exporter, file in self.exporters.values():
             exporter.finish_exporting()
             file.close()
-
-    def process_db_item(self):
-
-        db_item = DatabaseItem(name='collectf',
-                               url='http://www.collectf.org/browse/browse/',
-                               doi='10.1093/nar/gkt1123',
-                               authors=['Sefa Kılıç', 'Ivan Erill'],
-                               description='CollecTF: a database of experimentally validated transcription '
-                                           'factor-binding sites in Bacteria',
-                               version=self.version,
-                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
-
-        file = open(fr'{self.staging_area}/Database.json', 'wb')
-        exporter = JsonLinesItemExporter(file)
-        exporter.start_exporting()
-        exporter.export_item(db_item)
-        exporter.finish_exporting()
-        file.close()
 
     def process_item(self, item, spider):
 

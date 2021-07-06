@@ -15,7 +15,21 @@ class DBTBSPipeline(JSONPipeline):
 
     def open_spider(self, spider):
 
-        self.process_db_item()
+        db_item = DatabaseItem(name='dbtbs',
+                               url='https://dbtbs.hgc.jp/',
+                               doi='10.1093/nar/gkm910',
+                               authors=['Nicolas Sierro', 'Kenta Nakai'],
+                               description='DBTBS: a database of transcriptional regulation in Bacillus subtilis '
+                                           'containing upstream intergenic conservation information',
+                               version=self.version,
+                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
+
+        file = open(fr'{self.staging_area}\Database.json', 'wb')
+        exporter = JsonLinesItemExporter(file)
+        exporter.start_exporting()
+        exporter.export_item(db_item)
+        exporter.finish_exporting()
+        file.close()
 
         self.items_types = (DatabaseItem,
                             TranscriptionFactorItem,
@@ -33,24 +47,6 @@ class DBTBSPipeline(JSONPipeline):
         for exporter, file in self.exporters.values():
             exporter.finish_exporting()
             file.close()
-
-    def process_db_item(self):
-
-        db_item = DatabaseItem(name='dbtbs',
-                               url='https://dbtbs.hgc.jp/',
-                               doi='10.1093/nar/gkm910',
-                               authors=['Nicolas Sierro', 'Kenta Nakai'],
-                               description='DBTBS: a database of transcriptional regulation in Bacillus subtilis '
-                                           'containing upstream intergenic conservation information',
-                               version=self.version,
-                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
-
-        file = open(fr'{self.staging_area}/Database.json', 'wb')
-        exporter = JsonLinesItemExporter(file)
-        exporter.start_exporting()
-        exporter.export_item(db_item)
-        exporter.finish_exporting()
-        file.close()
 
     def process_item(self, item, spider):
 
