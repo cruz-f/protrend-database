@@ -1,3 +1,7 @@
+# Internal
+./useless
+./src/protrend/extract/staging_area
+
 # PyCharm
 .idea
 
