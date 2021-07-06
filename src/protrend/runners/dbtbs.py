@@ -9,4 +9,4 @@ if __name__ == "__main__":
 
     run_spider(spider='dbtbs',
                staging_area=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src\protrend\extract\staging_area',
-               version='0.0.0')
+               version='0.0.1')

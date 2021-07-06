@@ -40,6 +40,101 @@ class GenomeItem(Item):
     regulon = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
+class RegulonItem(Item):
+    regulon_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
+                       output_processor=TakeFirst())
+
+    name = Field(output_processor=TakeFirst())
+
+    url = Field(output_processor=TakeFirst())
+
+    regulator_type = Field(output_processor=TakeFirst())
+
+    regulator_locus_tag = Field(output_processor=TakeFirst())
+
+    rfam = Field(output_processor=TakeFirst())
+
+    regulator_family = Field(output_processor=TakeFirst())
+
+    regulation_mode = Field(output_processor=TakeFirst())
+
+    biological_process = Field(output_processor=TakeFirst())
+
+    regulation_effector = Field(output_processor=TakeFirst())
+
+    regulation_regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_regulog_name),
+                               output_processor=TakeFirst())
+
+    # outgoing relationship
+    genome = Field(output_processor=TakeFirst())
+    operon = Field()
+    gene = Field()
+    tfbs = Field()
+
+    # other outgoing relationships
+    regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    transcription_factor = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
+                                 output_processor=TakeFirst())
+    tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    rna_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
+    effector = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
+    pathway = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
+
+
+class OperonItem(Item):
+    operon_id = Field(output_processor=Join(separator='_'))
+
+    name = Field(input_processor=MapCompose(RegPreciseProcessors.process_operon_name),
+                 output_processor=TakeFirst())
+
+    url = Field(output_processor=TakeFirst())
+
+    # outgoing relationship
+    regulon = Field()
+    gene = Field()
+    tfbs = Field()
+
+
+class GeneItem(Item):
+    locus_tag = Field(input_processor=MapCompose(RegPreciseProcessors.process_locus_tag),
+                      output_processor=TakeFirst())
+
+    name = Field(input_processor=MapCompose(RegPreciseProcessors.process_name),
+                 output_processor=TakeFirst())
+
+    function = Field(input_processor=MapCompose(RegPreciseProcessors.process_function),
+                     output_processor=TakeFirst())
+
+    url = Field(output_processor=TakeFirst())
+
+    # outgoing relationship
+    regulon = Field()
+    operon = Field()
+    tfbs = Field()
+
+
+class TFBSItem(Item):
+    tfbs_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_position_str),
+                    output_processor=Join(separator='_'))
+
+    position = Field(input_processor=MapCompose(RegPreciseProcessors.process_position),
+                     output_processor=TakeFirst())
+
+    score = Field(input_processor=MapCompose(RegPreciseProcessors.process_score),
+                  output_processor=TakeFirst())
+
+    sequence = Field(input_processor=MapCompose(RegPreciseProcessors.process_sequence),
+                     output_processor=TakeFirst())
+
+    url = Field(output_processor=TakeFirst())
+
+    # outgoing relationship
+    regulon = Field()
+    operon = Field()
+    gene = Field()
+
+
 class TranscriptionFactorItem(Item):
     collection_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
                           output_processor=TakeFirst())
@@ -146,98 +241,3 @@ class PathwayItem(Item):
 
     # outgoing relationship
     regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-
-
-class RegulonItem(Item):
-    regulon_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
-                       output_processor=TakeFirst())
-
-    name = Field(output_processor=TakeFirst())
-
-    url = Field(output_processor=TakeFirst())
-
-    regulator_type = Field(output_processor=TakeFirst())
-
-    regulator_locus_tag = Field(output_processor=TakeFirst())
-
-    rfam = Field(output_processor=TakeFirst())
-
-    regulator_family = Field(output_processor=TakeFirst())
-
-    regulation_mode = Field(output_processor=TakeFirst())
-
-    biological_process = Field(output_processor=TakeFirst())
-
-    regulation_effector = Field(output_processor=TakeFirst())
-
-    regulation_regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_regulog_name),
-                               output_processor=TakeFirst())
-
-    # outgoing relationship
-    genome = Field(output_processor=TakeFirst())
-    operon = Field()
-    gene = Field()
-    tfbs = Field()
-
-    # other outgoing relationships
-    regulog = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
-    taxonomy = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
-    transcription_factor = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
-                                 output_processor=TakeFirst())
-    tf_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
-    rna_family = Field(input_processor=MapCompose(RegPreciseProcessors.process_href), output_processor=TakeFirst())
-    effector = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-    pathway = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
-
-
-class OperonItem(Item):
-    operon_id = Field(output_processor=Join(separator='_'))
-
-    name = Field(input_processor=MapCompose(RegPreciseProcessors.process_operon_name),
-                 output_processor=TakeFirst())
-
-    url = Field(output_processor=TakeFirst())
-
-    # outgoing relationship
-    regulon = Field()
-    gene = Field()
-    tfbs = Field()
-
-
-class GeneItem(Item):
-    locus_tag = Field(input_processor=MapCompose(RegPreciseProcessors.process_locus_tag),
-                      output_processor=TakeFirst())
-
-    name = Field(input_processor=MapCompose(RegPreciseProcessors.process_name),
-                 output_processor=TakeFirst())
-
-    function = Field(input_processor=MapCompose(RegPreciseProcessors.process_function),
-                     output_processor=TakeFirst())
-
-    url = Field(output_processor=TakeFirst())
-
-    # outgoing relationship
-    regulon = Field()
-    operon = Field()
-    tfbs = Field()
-
-
-class TFBSItem(Item):
-    tfbs_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_position_str),
-                    output_processor=Join(separator='_'))
-
-    position = Field(input_processor=MapCompose(RegPreciseProcessors.process_position),
-                     output_processor=TakeFirst())
-
-    score = Field(input_processor=MapCompose(RegPreciseProcessors.process_score),
-                  output_processor=TakeFirst())
-
-    sequence = Field(input_processor=MapCompose(RegPreciseProcessors.process_sequence),
-                     output_processor=TakeFirst())
-
-    url = Field(output_processor=TakeFirst())
-
-    # outgoing relationship
-    regulon = Field()
-    operon = Field()
-    gene = Field()
