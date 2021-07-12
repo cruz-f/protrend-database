@@ -13,7 +13,21 @@ class RegPrecisePipeline(JSONPipeline):
 
     def open_spider(self, spider):
 
-        self.process_db_item()
+        db_item = DatabaseItem(name='regprecise',
+                               url='https://regprecise.lbl.gov/collections.jsp',
+                               doi='10.1186/1471-2164-14-745',
+                               authors=['Pavel S Novichkov', 'Dmitry A Rodionov'],
+                               description='Collection of Manually Curated Inferences of '
+                                           'Regulons in Prokaryotic Genomes',
+                               version=self.version,
+                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
+
+        file = open(fr'{self.staging_area}\Database.json', 'wb')
+        exporter = JsonLinesItemExporter(file)
+        exporter.start_exporting()
+        exporter.export_item(db_item)
+        exporter.finish_exporting()
+        file.close()
 
         self.items_types = (TaxonomyItem,
                             GenomeItem,
@@ -38,24 +52,6 @@ class RegPrecisePipeline(JSONPipeline):
         for exporter, file in self.exporters.values():
             exporter.finish_exporting()
             file.close()
-
-    def process_db_item(self):
-
-        db_item = DatabaseItem(name='regprecise',
-                               url='https://regprecise.lbl.gov/collections.jsp',
-                               doi='10.1186/1471-2164-14-745',
-                               authors=['Pavel S Novichkov', 'Dmitry A Rodionov'],
-                               description='Collection of Manually Curated Inferences of '
-                                           'Regulons in Prokaryotic Genomes',
-                               version=self.version,
-                               created=datetime.utcnow().replace(tzinfo=pytz.utc))
-
-        file = open(fr'{self.staging_area}/Database.json', 'wb')
-        exporter = JsonLinesItemExporter(file)
-        exporter.start_exporting()
-        exporter.export_item(db_item)
-        exporter.finish_exporting()
-        file.close()
 
     def process_item(self, item, spider):
 
