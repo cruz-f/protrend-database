@@ -2,7 +2,6 @@ from contextlib import contextmanager
 
 from Bio import Entrez, SeqIO
 
-from protrend.bioapis.exception import BioException
 from protrend.bioapis.settings import ENTREZ_E_MAIL, ENTREZ_API_KEY, ENTREZ_TOOL
 from protrend.bioapis.utils import sleep
 
@@ -13,7 +12,6 @@ Entrez.tool = ENTREZ_TOOL
 
 @contextmanager
 def entrez_record(callback, **kwargs):
-
     handle = None
 
     try:
@@ -34,12 +32,13 @@ def entrez_record(callback, **kwargs):
         else:
             yield Entrez.read(handle)
 
-    except BioException as exc:
+    except:
         yield {}
 
     finally:
         if hasattr(handle, 'close'):
             handle.close()
+
 
 @sleep()
 def entrez_search(db, term, retmax=5000):
@@ -51,10 +50,13 @@ def entrez_search(db, term, retmax=5000):
 def entrez_summary(db, identifier):
     with entrez_record(Entrez.esummary, db=db, id=identifier) as records:
 
-        if records and isinstance(records, list):
+        if not records:
+            return {}
+
+        if isinstance(records, list):
             return records[0]
 
-        elif records and isinstance(records, dict):
+        elif isinstance(records, dict):
             d_sum_set = records.get('DocumentSummarySet', {})
             sum_set = d_sum_set.get('DocumentSummary', [{}])
             return sum_set[0]

@@ -4,15 +4,9 @@ from protrend.bioapis.entrez import entrez_summary
 
 class Publication(BioAPI):
 
-    def __init__(self, pmid: str = None):
-
-        super().__init__()
-
-        self._pmid = pmid
-
     @property
     def pmid(self):
-        return self._pmid
+        return self.identifier
 
     @property
     def doi(self):

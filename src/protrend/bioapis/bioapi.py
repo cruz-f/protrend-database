@@ -1,7 +1,16 @@
 class BioAPI:
 
-    def __init__(self):
+    def __init__(self, identifier: str):
+
+        if not identifier:
+            identifier = ''
+
+        self._identifier = identifier
         self._record = {}
+
+    @property
+    def identifier(self):
+        return self._identifier
 
     @property
     def record(self):

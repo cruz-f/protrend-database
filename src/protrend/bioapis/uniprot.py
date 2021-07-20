@@ -5,46 +5,45 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqIO import SeqRecord
 
+from protrend.bioapis.utils import sleep
 from protrend.utils.api_requests import request, read_response
 
 
 class UniProtAPI:
-    api = "https://www.uniprot.org/uniprot"
-    mapping = "https://www.uniprot.org/uploadlists"
+    record = "https://www.uniprot.org/uniprot"
+    record_format = 'xml'
     query_fields = ('accession', 'ec', 'gene', 'gene_exact', 'id', 'organism', 'taxonomy')
-    formats = ('html', 'tab', 'xls', 'fasta', 'gff', 'txt', 'xml', 'rdf', 'list', 'rss')
-    column_names = ('id', 'entry name', 'genes', 'genes(PREFERRED)', 'genes(ALTERNATIVE)', 'genes(OLN)', 'organism',
-                    'organism-id', 'protein names')
-    custom_columns = ('id', 'entry name', 'genes', 'genes(PREFERRED)', 'organism', 'organism-id')
-    custom_df_columns = ('Entry', 'Entry name', 'Gene names', 'Gene names  (primary )', 'Organism', 'Organism ID')
+    query_columns = ('id', 'entry name', 'genes', 'genes(PREFERRED)', 'organism', 'organism-id')
+    query_format = 'tab'
+    df_query_columns = ('Entry', 'Entry name', 'Gene names', 'Gene names  (primary )', 'Organism', 'Organism ID')
+
+    mapping = "https://www.uniprot.org/uploadlists"
+    mapping_format = 'tab'
     mapping_terms = ('P_GI', 'P_ENTREZGENEID', 'REFSEQ_NT_ID', 'P_REFSEQ_AC', 'EMBL', 'EMBL_ID',
                      'ACC', 'ACC+ID', 'SWISSPROT', 'ID')
+    df_mapping_columns = ('From', 'To')
 
 
-def fetch_uniprot_record(uniprot_accession: str, format_: str = 'xml') -> Union[None, SeqRecord, str]:
-    if format_ not in UniProtAPI.formats:
-        format_ = 'xml'
+@sleep(0.5)
+def fetch_uniprot_record(uniprot_accession: str) -> Union[None, SeqRecord]:
 
-    url = f'{UniProtAPI.api}/{uniprot_accession}.{format_}'
+    url = f'{UniProtAPI.record}/{uniprot_accession}.{UniProtAPI.record_format}'
 
     response = request(url)
 
     if not response.text:
         return
 
-    if format_ == 'xml':
-        handle = io.StringIO(response.text)
-        return SeqIO.read(handle, 'uniprot-xml')
-
-    return response.text
+    handle = io.StringIO(response.text)
+    return SeqIO.read(handle, 'uniprot-xml')
 
 
+@sleep(0.5)
 def query_uniprot(query: Dict[str, str],
-                  format_: str = 'tab',
-                  columns: Tuple[str] = None,
                   limit: str = 5,
                   sort: bool = True,
-                  output: str = 'dataframe') -> Union[None, Dict, pd.DataFrame]:
+                  output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
+
     query_str = ''
 
     for key, val in query.items():
@@ -61,70 +60,56 @@ def query_uniprot(query: Dict[str, str],
     # remove +AND+
     query_str = query_str[:-5]
 
-    if format_ not in UniProtAPI.formats:
-        format_ = 'tab'
-
-    if not columns:
-        columns = UniProtAPI.custom_columns
-
-    else:
-        columns = [col for col in columns if col in UniProtAPI.column_names]
-
-        if not columns:
-            columns = UniProtAPI.custom_columns
-
-    columns_str = ','.join(columns)
+    columns_str = ','.join(UniProtAPI.query_columns)
 
     if sort:
-        url = f'{UniProtAPI.api}/?query={query_str}&format={format_}&columns={columns_str}&limit={limit}&sort=score'
+        url = f'{UniProtAPI.record}/?query={query_str}&format={UniProtAPI.query_format}&columns={columns_str}&limit={limit}&sort=score'
 
     else:
-        url = f'{UniProtAPI.api}/?query={query_str}&format={format_}&columns={columns_str}&limit={limit}'
+        url = f'{UniProtAPI.record}/?query={query_str}&format={UniProtAPI.query_format}&columns={columns_str}&limit={limit}'
 
     response = request(url)
 
-    if format_ == 'tab':
-        sep = '\t'
+    df = read_response(response, sep='\t')
 
-        if output == 'dataframe':
-            return read_response(response, sep=sep)
+    if df.empty:
+        df = pd.DataFrame(columns=UniProtAPI.df_query_columns)
 
-        elif output == 'dict':
-            return read_response(response, sep=sep).to_dict()
+    if output == 'dataframe':
 
-    return response
+        return df
+
+    return df.to_dict()
 
 
 def map_uniprot_identifiers(identifiers: Tuple[str],
                             from_: str,
                             to: str,
-                            format_: str = 'tab',
-                            output: str = 'dataframe') -> Union[None, Dict, pd.DataFrame]:
+                            output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
 
     if from_ not in UniProtAPI.mapping_terms:
-        return
+        raise ValueError(f'Invalid from {from_}')
 
     if to not in UniProtAPI.mapping_terms:
-        return
+        raise ValueError(f'Invalid from {to}')
 
     query = ' '.join(identifiers)
 
     params = {'from': from_,
               'to': to,
-              'format': format_,
+              'format': UniProtAPI.mapping_format,
               'query': query}
 
     url = f'{UniProtAPI.mapping}/'
 
     response = request(url, params=params)
 
-    if format_ == 'tab':
-        sep = '\t'
+    df = read_response(response, sep='\t')
 
-        if output == 'dataframe':
-            return read_response(response, sep=sep)
+    if df.empty:
+        df = pd.DataFrame(columns=UniProtAPI.df_mapping_columns)
 
-        elif output == 'dict':
-            return read_response(response, sep=sep).to_dict()
+    if output == 'dataframe':
+        return df
 
-    return response
+    return df.to_dict()

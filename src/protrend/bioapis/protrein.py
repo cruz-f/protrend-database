@@ -10,22 +10,25 @@ from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
 class NCBIProtein(BioAPI):
 
     def __init__(self,
-                 protein: str = None,
-                 refseq_accession: str = None,
-                 genbank_accession: str = None,
-                 taxonomy: str = None,
-                 locus_tag: str = None,
-                 name: str = None):
+                 identifier: str = '',
+                 refseq_accession: str = '',
+                 genbank_accession: str = '',
+                 taxonomy: int = 0,
+                 locus_tag: str = '',
+                 name: str = ''):
 
-        super().__init__()
+        super().__init__(identifier)
 
-        self._protein = protein
         self._refseq_accession = refseq_accession
         self._genbank_accession = genbank_accession
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag
         self._name = name
         self._seq_record = SeqRecord(seq=Seq(''))
+
+    @property
+    def identifier(self):
+        return self.record.get('Id', self._identifier)
 
     def is_refseq(self):
         additional = self.record.get('Extra', '')
@@ -36,6 +39,14 @@ class NCBIProtein(BioAPI):
                 return True
 
         return False
+
+    @property
+    def refseq_accession(self):
+
+        if self.is_refseq():
+            return self.record.get('AccessionVersion', self._refseq_accession)
+
+        return ''
 
     def is_genbank(self):
         additional = self.record.get('Extra', '')
@@ -48,24 +59,12 @@ class NCBIProtein(BioAPI):
         return False
 
     @property
-    def protein(self):
-        return self.record.get('Id', self._protein)
-
-    @property
-    def refseq_accession(self):
-
-        if self.is_refseq():
-            return self.record.get('AccessionVersion', self._refseq_accession)
-
-        return
-
-    @property
     def genbank_accession(self):
 
         if self.is_genbank():
             return self.record.get('AccessionVersion', self._genbank_accession)
 
-        return
+        return ''
 
     @property
     def taxonomy(self):
@@ -147,8 +146,8 @@ class NCBIProtein(BioAPI):
 
     def fetch(self):
 
-        if self._protein:
-            identifier = self._protein
+        if self._identifier:
+            identifier = self._identifier
 
         elif self._genbank_accession:
             identifier = self._genbank_accession
@@ -177,25 +176,24 @@ class NCBIProtein(BioAPI):
 class UniProtProtein(BioAPI):
 
     def __init__(self,
-                 accession: str = None,
-                 taxonomy: str = None,
-                 locus_tag: str = None,
-                 name: str = None):
+                 identifier: str = '',
+                 taxonomy: int = 0,
+                 locus_tag: str = '',
+                 name: str = ''):
 
-        super().__init__()
+        super().__init__(identifier)
 
-        self._accession = accession
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag
         self._name = name
 
     @property
-    def accession(self):
-        return getattr(self.record, 'id', self._accession)
+    def identifier(self):
+        return getattr(self.record, 'id', self._identifier)
 
     @property
     def taxonomy(self):
-        dbxrefs = getattr(self.record, 'dbxrefs')
+        dbxrefs = getattr(self.record, 'dbxrefs', None)
 
         if dbxrefs:
             for ref in dbxrefs:
@@ -239,7 +237,7 @@ class UniProtProtein(BioAPI):
             for func in funcs:
                 return func
 
-        return
+        return ''
 
     @property
     def description(self):
@@ -251,7 +249,7 @@ class UniProtProtein(BioAPI):
             for func in funcs:
                 return func
 
-        return
+        return ''
 
     @property
     def synonyms(self):
@@ -306,10 +304,7 @@ class UniProtProtein(BioAPI):
             accessions = query.loc[loci_mask, 'Entry']
 
             if accessions.size == 1:
-                self._accession = accessions[0]
-
-            else:
-                self._accession = None
+                self._identifier = accessions[0]
 
             return
 
@@ -329,16 +324,13 @@ class UniProtProtein(BioAPI):
             accessions = query.loc[loci_mask, 'Entry']
 
             if accessions.size == 1:
-                self._accession = accessions[0]
-
-            else:
-                self._accession = None
+                self._identifier = accessions[0]
 
             return
 
     def fetch(self):
 
-        if not self._accession:
+        if not self._identifier:
 
             if self._locus_tag and self._taxonomy:
 
@@ -361,7 +353,7 @@ class UniProtProtein(BioAPI):
                 # it sets up the uniprot accession
                 self.parse_uniprot_query(uniprot_query)
 
-        if not self._accession:
+        if not self._identifier:
             return
 
-        self.record = fetch_uniprot_record(self._accession, 'xml')
+        self.record = fetch_uniprot_record(self._identifier, 'xml')

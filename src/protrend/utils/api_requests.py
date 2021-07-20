@@ -95,10 +95,15 @@ def request(url: str,
                         **kwargs)
 
 
-def read_response(response: requests.Response, **kwargs):
+def read_response(response: requests.Response, **kwargs) -> pd.DataFrame:
     data = response.content
-    buffer = io.StringIO(data.decode('utf-8'))
-    return pd.read_csv(buffer, **kwargs)
+
+    if data:
+
+        buffer = io.StringIO(data.decode('utf-8'))
+        return pd.read_csv(buffer, **kwargs)
+
+    return pd.DataFrame()
 
 
 def write_response(response: requests.Response, io):

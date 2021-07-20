@@ -5,24 +5,23 @@ from protrend.bioapis.entrez import entrez_summary, entrez_search
 class NCBIGene(BioAPI):
 
     def __init__(self,
-                 gene: str = None,
-                 taxonomy: str = None,
-                 locus_tag: str = None,
-                 name: str = None):
+                 identifier: str = '',
+                 taxonomy: int = 0,
+                 locus_tag: str = '',
+                 name: str = ''):
 
-        super().__init__()
+        super().__init__(identifier)
 
-        self._gene = gene
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag
         self._name = name
 
     @property
-    def gene(self):
+    def identifier(self):
         if hasattr(self.record, 'attributes'):
-            return self.record.attributes.get('uid', self._gene)
+            return self.record.attributes.get('uid', self._identifier)
 
-        return self._gene
+        return self._identifier
 
     @property
     def taxonomy(self):
@@ -42,7 +41,7 @@ class NCBIGene(BioAPI):
 
     @property
     def function(self):
-        return self.record.get('Description')
+        return self.record.get('Description', '')
 
     @property
     def synonyms(self):
@@ -57,7 +56,9 @@ class NCBIGene(BioAPI):
 
             genomic_info = genomic_infos[0]
 
-            return genomic_info.get('ChrAccVer')
+            return genomic_info.get('ChrAccVer', '')
+
+        return ''
 
     @property
     def position_left(self):
@@ -104,8 +105,8 @@ class NCBIGene(BioAPI):
 
     def fetch(self):
 
-        if self._gene:
-            identifier = self._gene
+        if self._identifier:
+            identifier = self._identifier
 
         else:
             identifier = None
