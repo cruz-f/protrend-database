@@ -1,0 +1,4 @@
+
+
+class BioException(BaseException):
+    pass
