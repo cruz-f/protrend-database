@@ -226,7 +226,7 @@ class Gene(Node):
     description = StringProperty()
     ncbi_gene = StringProperty()
     ncbi_protein = StringProperty()
-    ncbi_accession = StringProperty()
+    refseq_accession = StringProperty()
     uniprot_accession = StringProperty()
     sequence = StringProperty()
     strand = StringProperty()
