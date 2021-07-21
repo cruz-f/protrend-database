@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -27,10 +29,10 @@ class NCBIProtein(BioAPI):
         self._seq_record = SeqRecord(seq=Seq(''))
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return self.record.get('Id', self._identifier)
 
-    def is_refseq(self):
+    def is_refseq(self) -> bool:
         additional = self.record.get('Extra', '')
         extra_info = additional.split('|')
 
@@ -41,14 +43,14 @@ class NCBIProtein(BioAPI):
         return False
 
     @property
-    def refseq_accession(self):
+    def refseq_accession(self) -> str:
 
         if self.is_refseq():
             return self.record.get('AccessionVersion', self._refseq_accession)
 
         return ''
 
-    def is_genbank(self):
+    def is_genbank(self) -> bool:
         additional = self.record.get('Extra', '')
         extra_info = additional.split('|')
 
@@ -59,7 +61,7 @@ class NCBIProtein(BioAPI):
         return False
 
     @property
-    def genbank_accession(self):
+    def genbank_accession(self) -> str:
 
         if self.is_genbank():
             return self.record.get('AccessionVersion', self._genbank_accession)
@@ -67,11 +69,11 @@ class NCBIProtein(BioAPI):
         return ''
 
     @property
-    def taxonomy(self):
+    def taxonomy(self) -> int:
         return self.record.get('TaxId', self._taxonomy)
 
     @property
-    def locus_tag(self):
+    def locus_tag(self) -> str:
 
         if self.seq_record:
             for feature in self.seq_record.features:
@@ -85,7 +87,7 @@ class NCBIProtein(BioAPI):
         return self._locus_tag
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.record.get('Caption', self._name)
 
     @property
@@ -98,7 +100,7 @@ class NCBIProtein(BioAPI):
             self._seq_record = value
 
     @property
-    def synonyms(self):
+    def synonyms(self) -> List[str]:
 
         synonyms = []
 
@@ -122,10 +124,10 @@ class NCBIProtein(BioAPI):
         return synonyms
 
     @property
-    def sequence(self):
+    def sequence(self) -> str:
         return str(self.seq_record.seq)
 
-    def build_term(self):
+    def build_term(self) -> str:
 
         if self._locus_tag and self._taxonomy:
 
@@ -188,11 +190,11 @@ class UniProtProtein(BioAPI):
         self._name = name
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return getattr(self.record, 'id', self._identifier)
 
     @property
-    def taxonomy(self):
+    def taxonomy(self) -> int:
         dbxrefs = getattr(self.record, 'dbxrefs', None)
 
         if dbxrefs:
@@ -203,7 +205,7 @@ class UniProtProtein(BioAPI):
         return self._taxonomy
 
     @property
-    def locus_tag(self):
+    def locus_tag(self) -> str:
 
         annotations = getattr(self.record, 'annotations', {})
 
@@ -216,7 +218,7 @@ class UniProtProtein(BioAPI):
         return self._locus_tag
 
     @property
-    def name(self):
+    def name(self) -> str:
         annotations = getattr(self.record, 'annotations', {})
 
         if annotations:
@@ -228,7 +230,7 @@ class UniProtProtein(BioAPI):
         return self._name
 
     @property
-    def function(self):
+    def function(self) -> str:
         annotations = getattr(self.record, 'annotations', {})
 
         if annotations:
@@ -240,7 +242,7 @@ class UniProtProtein(BioAPI):
         return ''
 
     @property
-    def description(self):
+    def description(self) -> str:
         annotations = getattr(self.record, 'annotations', {})
 
         if annotations:
@@ -252,7 +254,7 @@ class UniProtProtein(BioAPI):
         return ''
 
     @property
-    def synonyms(self):
+    def synonyms(self) -> List[str]:
 
         synonyms = []
 
@@ -271,7 +273,7 @@ class UniProtProtein(BioAPI):
         return synonyms
 
     @property
-    def sequence(self):
+    def sequence(self) -> str:
         return str(getattr(self.record, 'seq', ''))
 
     def parse_uniprot_query(self, query: pd.DataFrame):

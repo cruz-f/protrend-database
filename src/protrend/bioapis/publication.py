@@ -5,23 +5,23 @@ from protrend.bioapis.entrez import entrez_summary
 class Publication(BioAPI):
 
     @property
-    def pmid(self):
+    def pmid(self) -> str:
         return self.identifier
 
     @property
-    def doi(self):
+    def doi(self) -> str:
         return self.record.get('DOI')
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self.record.get('Title')
 
     @property
-    def author(self):
+    def author(self) -> str:
         return self.record.get('LastAuthor')
 
     @property
-    def year(self):
+    def year(self) -> str:
 
         pub_date = self.record.get('PubDate')
 

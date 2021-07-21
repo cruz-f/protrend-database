@@ -4,41 +4,48 @@ from protrend.bioapis.entrez import entrez_summary, entrez_search
 
 class Organism(BioAPI):
 
-    def __init__(self, taxonomy: str = None, name: str = None):
+    def __init__(self, identifier: int = 0, name: str = ''):
 
-        super().__init__()
+        super().__init__(identifier)
 
-        self._taxonomy = taxonomy
         self._name = name
         self._assembly_record = {}
 
     @property
-    def taxonomy(self):
-        return self.record.get('Id', self._taxonomy)
+    def identifier(self) -> int:
+        return self.record.get('Id', self._identifier)
 
     @property
-    def name(self):
+    def taxonomy(self) -> int:
+        return self.identifier
+
+    @property
+    def name(self) -> str:
 
         return self.record.get('ScientificName', self._name)
 
     @property
-    def species(self):
+    def species(self) -> str:
 
         names = self.record.get('ScientificName', '').split()
 
         if names:
             return ' '.join(names[:2])
 
+        return ''
+
     @property
-    def strain(self):
+    def strain(self) -> str:
 
         names = self.record.get('ScientificName', '').split()
 
         if names:
             return ' '.join(names[2:])
 
+        return ''
+
     @property
-    def assembly_record(self):
+    def assembly_record(self) -> dict:
         return self._assembly_record
 
     @assembly_record.setter
@@ -47,35 +54,37 @@ class Organism(BioAPI):
             self._assembly_record = value
 
     @property
-    def refseq(self):
-        return self.assembly_record.get('AssemblyAccession')
+    def refseq(self) -> str:
+        return self.assembly_record.get('AssemblyAccession', '')
 
     @property
-    def refseq_ftp(self):
-        return self.assembly_record.get('FtpPath_RefSeq')
+    def refseq_ftp(self) -> str:
+        return self.assembly_record.get('FtpPath_RefSeq', '')
 
     @property
-    def genbank(self):
+    def genbank(self) -> str:
 
-        return self.assembly_record.get('Synonym', {}).get('Genbank')
-
-    @property
-    def genbank_ftp(self):
-        return self.assembly_record.get('FtpPath_GenBank')
+        return self.assembly_record.get('Synonym', {}).get('Genbank', '')
 
     @property
-    def assembly(self):
+    def genbank_ftp(self) -> str:
+        return self.assembly_record.get('FtpPath_GenBank', '')
+
+    @property
+    def assembly(self) -> str:
         if hasattr(self.assembly_record, 'attributes'):
-            return self.assembly_record.attributes.get('uid')
+            return self.assembly_record.attributes.get('uid', '')
+
+        return ''
 
     @property
-    def assembly_name(self):
-        return self.assembly_record.get('AssemblyName')
+    def assembly_name(self) -> str:
+        return self.assembly_record.get('AssemblyName', '')
 
     def get_taxonomy_record(self):
 
-        if self._taxonomy:
-            self.record = entrez_summary(db='taxonomy', identifier=self._taxonomy)
+        if self._identifier:
+            self.record = entrez_summary(db='taxonomy', identifier=self._identifier)
 
         else:
 

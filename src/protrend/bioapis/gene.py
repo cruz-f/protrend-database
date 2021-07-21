@@ -1,3 +1,5 @@
+from typing import List
+
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search
 
@@ -17,18 +19,18 @@ class NCBIGene(BioAPI):
         self._name = name
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         if hasattr(self.record, 'attributes'):
             return self.record.attributes.get('uid', self._identifier)
 
         return self._identifier
 
     @property
-    def taxonomy(self):
+    def taxonomy(self) -> int:
         return self.record.get('Organism', {}).get('TaxID', self._taxonomy)
 
     @property
-    def locus_tag(self):
+    def locus_tag(self) -> str:
 
         if self.synonyms:
             return self.synonyms[0]
@@ -36,24 +38,23 @@ class NCBIGene(BioAPI):
         return self._locus_tag
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.record.get('Name', self._name)
 
     @property
-    def function(self):
+    def function(self) -> str:
         return self.record.get('Description', '')
 
     @property
-    def synonyms(self):
+    def synonyms(self) -> List[str]:
         return self.record.get('OtherAliases', '').split(', ')
 
     @property
-    def refseq_accession(self):
+    def refseq_accession(self) -> str:
 
         genomic_infos = self.record.get('GenomicInfo')
 
         if genomic_infos:
-
             genomic_info = genomic_infos[0]
 
             return genomic_info.get('ChrAccVer', '')
@@ -61,7 +62,7 @@ class NCBIGene(BioAPI):
         return ''
 
     @property
-    def position_left(self):
+    def position_left(self) -> int:
         genomic_infos = self.record.get('GenomicInfo')
 
         if genomic_infos:
@@ -73,7 +74,7 @@ class NCBIGene(BioAPI):
                 return int(left)
 
     @property
-    def position_right(self):
+    def position_right(self) -> int:
         genomic_infos = self.record.get('GenomicInfo')
 
         if genomic_infos:
@@ -84,7 +85,7 @@ class NCBIGene(BioAPI):
             if right is not None:
                 return int(right)
 
-    def build_term(self):
+    def build_term(self) -> str:
 
         if self._locus_tag and self._taxonomy:
 
