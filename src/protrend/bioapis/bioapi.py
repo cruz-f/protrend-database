@@ -9,11 +9,11 @@ class BioAPI:
         self._record = {}
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return self._identifier
 
     @property
-    def record(self):
+    def record(self) -> dict:
         return self._record
 
     @record.setter
@@ -21,10 +21,10 @@ class BioAPI:
         if value:
             self._record = value
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         if self.record:
             return True
         return False
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
         pass
