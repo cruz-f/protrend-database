@@ -2,7 +2,7 @@ from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search
 
 
-class Organism(BioAPI):
+class NCBITaxonomyOrganism(BioAPI):
 
     def __init__(self, identifier: int = 0, name: str = ''):
 
