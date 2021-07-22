@@ -8,6 +8,7 @@ from whoosh import searching
 from whoosh.fields import Schema, TEXT
 from whoosh.qparser import QueryParser
 
+from protrend.bioapis.utils import BIO_APIS_DIR
 from protrend.utils.api_requests import request, read_response
 
 
@@ -51,8 +52,7 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
     if db not in KEGGAPI.dbs:
         raise ValueError(f'Invalid KEGG database: {db}')
 
-    cdw = os.getcwd()
-    db_file = os.path.join(cdw, f'{db}.txt')
+    db_file = os.path.join(BIO_APIS_DIR, db, f'{db}.txt')
     url = f'{KEGGAPI.list_api}/{db}'
 
     if cache and os.path.exists(db_file):
@@ -61,22 +61,25 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
     else:
         response = request(url)
         df_list = read_response(response, sep='\t', header=None)
-        df_list.to_csv(f'{db}.txt', sep='\t', index=False)
+        df_list.to_csv(db_file, sep='\t', index=False)
 
     df_list.columns = ('identifier', 'name')
 
     return df_list
 
 
-def indexing_kegg_list(df_kegg_list: pd.DataFrame, db: str, cache: bool = True) -> w_index.FileIndex:
-    cdw = os.getcwd()
-    index_dir = os.path.join(cdw, f'{db}_index')
+def indexing_kegg_list(db: str, df_kegg_list: pd.DataFrame = None, cache: bool = True) -> w_index.FileIndex:
+    index_dir = os.path.join(BIO_APIS_DIR, f'{db}_index')
 
     if cache and os.path.exists(index_dir):
         return w_index.open_dir(index_dir)
 
     elif not cache and os.path.exists(index_dir):
         shutil.rmtree(index_dir, ignore_errors=True)
+
+    if df_kegg_list is None:
+        raise ValueError(f'Invalid input: Index was not found in the default directory {index_dir} '
+                         f'and kegg list is empty')
 
     schema = Schema(identifier=TEXT(stored=True), name=TEXT(stored=True))
 

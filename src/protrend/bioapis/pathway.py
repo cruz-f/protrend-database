@@ -5,9 +5,10 @@ import whoosh.index as w_index
 
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.kegg import search_kegg_list
+from protrend.bioapis.utils import BIO_APIS_DIR
 
 
-class Pathway(BioAPI):
+class KEGGPathway(BioAPI):
 
     def __init__(self, identifier: str = '', name: str = ''):
 
@@ -40,8 +41,7 @@ class Pathway(BioAPI):
 
         if index is None:
 
-            cdw = os.getcwd()
-            index_dir = os.path.join(cdw, 'pathway_index')
+            index_dir = os.path.join(BIO_APIS_DIR, 'pathway_index')
 
             if os.path.exists(index_dir):
                 index = w_index.open_dir(index_dir)
