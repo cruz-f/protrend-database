@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Tuple, Set
 
 import pandas as pd
 import whoosh.index as w_index
@@ -90,8 +91,7 @@ def indexing_kegg_list(df_kegg_list: pd.DataFrame, db: str, cache: bool = True) 
     return index
 
 
-def _results_to_set(results: searching.Results) -> set:
-
+def _identifiers_to_set(results: searching.Results) -> set:
     results_set = set()
     for hit in results:
 
@@ -106,7 +106,33 @@ def _results_to_set(results: searching.Results) -> set:
     return results_set
 
 
-def search_kegg_list(index: w_index.FileIndex, query: str, db: str) -> set:
+def _names_to_set(results):
+
+    results_set = set()
+    for hit in results:
+
+        hit_fields = hit.fields()
+        kegg_db_names = hit_fields.get('name', '')
+        kegg_names = kegg_db_names.split(';')
+
+        if len(kegg_names) == 1:
+            results_set.add(kegg_names[0])
+
+        elif len(kegg_names) > 1:
+            results_set.update(kegg_names)
+
+    return results_set
+
+
+def _results_to_set(results: searching.Results, field: str) -> set:
+
+    if field == 'identifier':
+        return _identifiers_to_set(results)
+
+    return _names_to_set(results)
+
+
+def search_kegg_list(index: w_index.FileIndex, query: str, db: str) -> Tuple[Set[str], Set[str]]:
 
     if db == 'pathway':
         forbidden_words = KEGGAPI.pathway_common_words
@@ -114,7 +140,8 @@ def search_kegg_list(index: w_index.FileIndex, query: str, db: str) -> set:
     else:
         forbidden_words = set()
 
-    results = set()
+    identifiers_results = set()
+    names_results = set()
 
     with index.searcher() as searcher:
         parser = QueryParser("name", index.schema)
@@ -122,10 +149,10 @@ def search_kegg_list(index: w_index.FileIndex, query: str, db: str) -> set:
         query_parser = parser.parse(query)
         query_results = searcher.search(query_parser)
 
-        query_results = _results_to_set(query_results)
-        results.update(query_results)
+        identifiers_results.update(_results_to_set(query_results, 'identifier'))
+        names_results.update(_results_to_set(query_results, 'name'))
 
-        if not results:
+        if not identifiers_results:
 
             for sub_query in query.split():
 
@@ -135,7 +162,7 @@ def search_kegg_list(index: w_index.FileIndex, query: str, db: str) -> set:
 
                     sub_query_results = searcher.search(query_parser)
 
-                    sub_query_results = _results_to_set(sub_query_results)
-                    results.update(sub_query_results)
+                    identifiers_results.update(_results_to_set(sub_query_results, 'identifier'))
+                    names_results.update(_results_to_set(query_results, 'name'))
 
-        return results
+        return identifiers_results, names_results
