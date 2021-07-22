@@ -7,14 +7,14 @@ from protrend.utils.miscellaneous import args_length
 
 def _fetch_publications(identifiers: List[str],
                         cls: Type[PubMedPublication]) -> List[PubMedPublication]:
-    compounds = []
+    publications = []
 
     for identifier in identifiers:
-        compound = cls(identifier=identifier)
-        compound.fetch()
-        compounds.append(compound)
+        publication = cls(identifier=identifier)
+        publication.fetch()
+        publications.append(publication)
 
-    return compounds
+    return publications
 
 
 def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto: PublicationDTO):
