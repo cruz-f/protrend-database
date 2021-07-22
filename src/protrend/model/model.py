@@ -112,7 +112,7 @@ class Organism(Node):
 class Pathway(Node):
     # properties
     name = StringProperty(required=True)
-    kegg_pathway = StringProperty()
+    kegg_pathways = ArrayProperty(StringProperty())
 
     # relationships
     source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -156,7 +156,8 @@ class Regulator(Node):
     description = StringProperty()
     ncbi_gene = StringProperty()
     ncbi_protein = StringProperty()
-    ncbi_accession = StringProperty()
+    genbank_accession = StringProperty()
+    refseq_accession = StringProperty()
     uniprot_accession = StringProperty()
     sequence = StringProperty()
     strand = StringProperty()
@@ -270,7 +271,7 @@ class Effector(Node):
     # properties
     name = StringProperty(required=True)
     mechanism = StringProperty()
-    kegg_metabolite = StringProperty()
+    kegg_compounds = ArrayProperty(StringProperty())
 
     # relationships
     source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
