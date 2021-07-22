@@ -30,11 +30,11 @@ def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto
 def annotate_publications(dtos: List[PublicationDTO],
                           identifiers: List[str] = None) -> PublicationDTO:
     """
-    A common method to annotate a given effector with relevant information from NCBI PubMed.
+    A common method to annotate a given publication with relevant information from NCBI PubMed.
 
     A given publication is annotated as follows:
 
-        - 2º Step:
+        - 1º Step:
             - query pubmed identifiers (pmid) to NCBI PubMed database
             - retrieve publication relevant attributes
 
