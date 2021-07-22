@@ -61,8 +61,8 @@ class PathwayDTO:
 
 @dataclass
 class PublicationDTO:
-    doi: Set[str] = field(default_factory=set)
     pmid: Set[str] = field(default_factory=set)
+    doi: Set[str] = field(default_factory=set)
     title: Set[str] = field(default_factory=set)
     author: Set[str] = field(default_factory=set)
     year: Set[str] = field(default_factory=set)
