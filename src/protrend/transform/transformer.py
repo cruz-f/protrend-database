@@ -1,4 +1,3 @@
-import json
 import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Tuple
@@ -44,7 +43,14 @@ class Transformer(metaclass=ABCMeta):
         :param files: a dictionary/mapping-like object containing attribute_name-file_path pairs.
         Files parameter should map a given attribute to the respective file and pandas DataFrame.
         """
+        if not source:
+            source = ''
 
+        if not version:
+            version = ''
+
+        self._source = source
+        self._version = version
         self._df = pd.DataFrame()
         self._files = {}
         self._attrs = {}
