@@ -109,7 +109,7 @@ class Transformer(metaclass=ABCMeta):
     def __str__(self):
         return self._df.__str__()
 
-    def __getattr__(self, item):
+    def __getattr__(self, item) -> pd.DataFrame:
         if self.is_valid_key(item):
 
             df = pd.DataFrame()
@@ -121,7 +121,7 @@ class Transformer(metaclass=ABCMeta):
         if self.is_valid_key(key):
             self.attrs = (key, value)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> pd.DataFrame:
         return self._attrs.__getitem__(item)
 
     def __setitem__(self, key, value):
@@ -137,7 +137,7 @@ class Transformer(metaclass=ABCMeta):
     def items(self):
         return self._attrs.items()
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default=None) -> pd.DataFrame:
         return self._attrs.get(key, default)
 
     def update(self, values: Dict[str, pd.DataFrame]):
@@ -148,9 +148,8 @@ class Transformer(metaclass=ABCMeta):
     # --------------------------------------------------------
     # Transformer API
     # --------------------------------------------------------
-    @classmethod
     @abstractmethod
-    def read(cls, *args, **kwargs):
+    def read(self, *args, **kwargs):
 
         """
         The method responsible for reading files' mapping-like object into pandas DataFrames.
