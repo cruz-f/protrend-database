@@ -44,6 +44,11 @@ class OrganismDTO:
     phylum: Set[str] = field(default_factory=set)
     ncbi_taxonomy: Set[str] = field(default_factory=set)
     refseq_accession: Set[str] = field(default_factory=set)
+    refseq_ftp: Set[str] = field(default_factory=set)
+    genbank_accession: Set[str] = field(default_factory=set)
+    genbank_ftp: Set[str] = field(default_factory=set)
+    ncbi_assembly: Set[str] = field(default_factory=set)
+    assembly_accession: Set[str] = field(default_factory=set)
 
     def to_df(self):
         pass
