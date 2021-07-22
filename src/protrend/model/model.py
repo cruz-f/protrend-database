@@ -95,6 +95,11 @@ class Organism(Node):
     phylum = StringProperty()
     ncbi_taxonomy = StringProperty(required=True)
     refseq_accession = StringProperty()
+    refseq_ftp = StringProperty()
+    genbank_accession = StringProperty()
+    genbank_ftp = StringProperty()
+    ncbi_assembly = StringProperty()
+    assembly_accession = StringProperty()
 
     # relationships
     source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
