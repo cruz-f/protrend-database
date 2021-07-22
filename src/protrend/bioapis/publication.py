@@ -2,7 +2,7 @@ from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary
 
 
-class Publication(BioAPI):
+class PubMedPublication(BioAPI):
 
     @property
     def pmid(self) -> str:
