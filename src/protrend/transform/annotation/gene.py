@@ -143,17 +143,33 @@ def annotate_genes(dtos: List[GeneDTO],
         - 4º Step:
             - merge data into a GeneDTO
 
-    :param dtos:
-    :param loci:
-    :param names:
-    :param taxa:
-    :param uniprot_proteins:
-    :param ncbi_proteins:
-    :param ncbi_genbanks:
-    :param ncbi_refseqs:
-    :param ncbi_genes:
+
     :return:
+    :type dtos: List[GeneDTO]
+    :type loci: List[str]
+    :type names: List[str]
+    :type taxa: List[str]
+    :type uniprot_proteins: List[str]
+    :type ncbi_proteins: List[str]
+    :type ncbi_genbanks: List[str]
+    :type ncbi_refseqs: List[str]
+    :type ncbi_genes: List[str]
+
+    :rtype: List[GeneDTO]
+    
+    :param dtos: list of GeneDTO. Each gene DTO will be annotated with information from NCBI and UniProt
+    :param loci: list of locus tag identifiers to assist with the annotation
+    :param names: list of names to assist with the annotation
+    :param taxa: list of taxonomy identifiers to assist with the annotation
+    :param uniprot_proteins: list of UniProt accessions to assist with the annotation
+    :param ncbi_proteins: list of NCBI Protein identifiers to assist with the annotation
+    :param ncbi_genbanks: list of NCBI GenBank accessions to assist with the annotation
+    :param ncbi_refseqs: list of NCBI RefSeq accessions to assist with the annotation
+    :param ncbi_genes: list of NCBI Gene identifiers to assist with the annotation
+
+    :return: list of annotated GeneDTO. This function returns the same list object for convenience
     """
+
     dtos_size = len(dtos)
 
     size = args_length(loci, names, taxa, uniprot_proteins, ncbi_proteins, ncbi_genbanks, ncbi_refseqs, ncbi_genes)
