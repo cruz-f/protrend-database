@@ -12,14 +12,14 @@ from protrend.utils.miscellaneous import args_length
 def _fetch_pathways(names: List[str],
                     cls: Type[KEGGPathway],
                     index: w_index.FileIndex = None) -> List[KEGGPathway]:
-    compounds = []
+    pathways = []
 
     for name in names:
-        compound = cls(name=name)
-        compound.fetch()
-        compounds.append(compound)
+        pathway = cls(name=name)
+        pathway.fetch()
+        pathways.append(pathway)
 
-    return compounds
+    return pathways
 
 
 def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: PathwayDTO):
@@ -33,9 +33,9 @@ def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: PathwayDTO):
 def annotate_pathways(dtos: List[PathwayDTO],
                       names: List[str] = None) -> PathwayDTO:
     """
-    A common method to annotate a given effector with relevant information from KEGG Pathway.
+    A common method to annotate a given pathway with relevant information from KEGG Pathway.
 
-    A given effector is annotated as follows:
+    A given pathway is annotated as follows:
 
         - 1º Step:
             - obtain KEGG list for pathway database
