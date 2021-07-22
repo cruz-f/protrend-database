@@ -144,7 +144,6 @@ def annotate_genes(dtos: List[GeneDTO],
             - merge data into a GeneDTO
 
 
-    :return:
     :type dtos: List[GeneDTO]
     :type loci: List[str]
     :type names: List[str]
