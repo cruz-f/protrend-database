@@ -27,6 +27,7 @@ class GeneDTO:
 @dataclass
 class EffectorDTO:
     name: Set[str] = field(default_factory=set)
+    synonyms: Set[str] = field(default_factory=set)
     mechanism: Set[str] = field(default_factory=set)
     kegg_compounds: Set[str] = field(default_factory=set)
 
@@ -51,6 +52,7 @@ class OrganismDTO:
 @dataclass
 class PathwayDTO:
     name: Set[str] = field(default_factory=set)
+    synonyms: Set[str] = field(default_factory=set)
     kegg_pathways: Set[str] = field(default_factory=set)
 
     def to_df(self):
