@@ -11,7 +11,7 @@ from neomodel import (StringProperty,
 from protrend.model.node import Node
 
 # the main relationship type
-HAS = 'HAS'
+REL_TYPE = 'HAS'
 
 
 class Source(Node):
@@ -24,17 +24,17 @@ class Source(Node):
     description = StringProperty()
 
     # relationships
-    organism = RelationshipTo('Organism', HAS)
-    pathway = RelationshipTo('Pathway', HAS)
-    regulatory_family = RelationshipTo('RegulatoryFamily', HAS)
-    regulator = RelationshipTo('Regulator', HAS)
-    operon = RelationshipTo('Operon', HAS)
-    promoter = RelationshipTo('Promoter', HAS)
-    gene = RelationshipTo('Gene', HAS)
-    tfbs = RelationshipTo('TFBS', HAS)
-    effector = RelationshipTo('Effector', HAS)
-    regulon = RelationshipTo('Regulon', HAS)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    organism = RelationshipTo('Organism', REL_TYPE)
+    pathway = RelationshipTo('Pathway', REL_TYPE)
+    regulatory_family = RelationshipTo('RegulatoryFamily', REL_TYPE)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    operon = RelationshipTo('Operon', REL_TYPE)
+    promoter = RelationshipTo('Promoter', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE)
+    tfbs = RelationshipTo('TFBS', REL_TYPE)
+    effector = RelationshipTo('Effector', REL_TYPE)
+    regulon = RelationshipTo('Regulon', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class SourceRelationship(StructuredRel):
@@ -55,13 +55,13 @@ class Evidence(Node):
     description = StringProperty()
 
     # relationships
-    regulator = RelationshipTo('Regulator', HAS)
-    operon = RelationshipTo('Operon', HAS)
-    promoter = RelationshipTo('Promoter', HAS)
-    gene = RelationshipTo('Gene', HAS)
-    tfbs = RelationshipTo('TFBS', HAS)
-    regulon = RelationshipTo('Regulon', HAS)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    operon = RelationshipTo('Operon', REL_TYPE)
+    promoter = RelationshipTo('Promoter', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE)
+    tfbs = RelationshipTo('TFBS', REL_TYPE)
+    regulon = RelationshipTo('Regulon', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class Publication(Node):
@@ -73,17 +73,17 @@ class Publication(Node):
     year = StringProperty(required=True)
 
     # relationships
-    organism = RelationshipTo('Organism', HAS)
-    pathway = RelationshipTo('Pathway', HAS)
-    regulatory_family = RelationshipTo('RegulatoryFamily', HAS)
-    regulator = RelationshipTo('Regulator', HAS)
-    operon = RelationshipTo('Operon', HAS)
-    promoter = RelationshipTo('Promoter', HAS)
-    gene = RelationshipTo('Gene', HAS)
-    tfbs = RelationshipTo('TFBS', HAS)
-    effector = RelationshipTo('Effector', HAS)
-    regulon = RelationshipTo('Regulon', HAS)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    organism = RelationshipTo('Organism', REL_TYPE)
+    pathway = RelationshipTo('Pathway', REL_TYPE)
+    regulatory_family = RelationshipTo('RegulatoryFamily', REL_TYPE)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    operon = RelationshipTo('Operon', REL_TYPE)
+    promoter = RelationshipTo('Promoter', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE)
+    tfbs = RelationshipTo('TFBS', REL_TYPE)
+    effector = RelationshipTo('Effector', REL_TYPE)
+    regulon = RelationshipTo('Regulon', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class Organism(Node):
@@ -97,16 +97,16 @@ class Organism(Node):
     refseq_accession = StringProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    publication = RelationshipTo(Publication, HAS)
-    regulator = RelationshipTo('Regulator', HAS)
-    operon = RelationshipTo('Operon', HAS)
-    promoter = RelationshipTo('Promoter', HAS)
-    gene = RelationshipTo('Gene', HAS)
-    tfbs = RelationshipTo('TFBS', HAS)
-    effector = RelationshipTo('Effector', HAS)
-    regulon = RelationshipTo('Regulon', HAS)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    operon = RelationshipTo('Operon', REL_TYPE)
+    promoter = RelationshipTo('Promoter', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE)
+    tfbs = RelationshipTo('TFBS', REL_TYPE)
+    effector = RelationshipTo('Effector', REL_TYPE)
+    regulon = RelationshipTo('Regulon', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class Pathway(Node):
@@ -115,10 +115,10 @@ class Pathway(Node):
     kegg_pathway = StringProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    publication = RelationshipTo(Publication, HAS)
-    regulator = RelationshipTo('Regulator', HAS)
-    gene = RelationshipTo('Gene', HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE)
 
 
 class RegulatoryFamily(Node):
@@ -129,9 +129,9 @@ class RegulatoryFamily(Node):
     description = StringProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    publication = RelationshipTo(Publication, HAS)
-    regulator = RelationshipTo('Regulator', HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
 
 
 class OperonRelationship:
@@ -164,18 +164,18 @@ class Regulator(Node):
     position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    pathway = RelationshipTo(Pathway, HAS)
-    regulatory_family = RelationshipTo(RegulatoryFamily, HAS)
-    operon = RelationshipTo('Operon', HAS)
-    gene = RelationshipTo('Gene', HAS, model=OperonRelationship)
-    tfbs = RelationshipTo('TFBS', HAS, model=OperonRelationship)
-    effector = RelationshipTo('Effector', HAS)
-    regulon = RelationshipTo('Regulon', HAS)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    pathway = RelationshipTo(Pathway, REL_TYPE)
+    regulatory_family = RelationshipTo(RegulatoryFamily, REL_TYPE)
+    operon = RelationshipTo('Operon', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE, model=OperonRelationship)
+    tfbs = RelationshipTo('TFBS', REL_TYPE, model=OperonRelationship)
+    effector = RelationshipTo('Effector', REL_TYPE)
+    regulon = RelationshipTo('Regulon', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class Operon(Node):
@@ -189,16 +189,16 @@ class Operon(Node):
     first_gene_position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    regulator = RelationshipTo(Regulator, HAS)
-    promoter = RelationshipTo('Promoter', HAS)
-    gene = RelationshipTo('Gene', HAS, cardinality=OneOrMore)
-    tfbs = RelationshipTo('TFBS', HAS)
-    regulon = RelationshipTo('Regulon', HAS)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    regulator = RelationshipTo(Regulator, REL_TYPE)
+    promoter = RelationshipTo('Promoter', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE, cardinality=OneOrMore)
+    tfbs = RelationshipTo('TFBS', REL_TYPE)
+    regulon = RelationshipTo('Regulon', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class Promoter(Node):
@@ -209,12 +209,12 @@ class Promoter(Node):
     position_left = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    operon = RelationshipTo(Operon, HAS, cardinality=One)
-    gene = RelationshipTo('Gene', HAS, cardinality=OneOrMore, model=OperonRelationship)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    operon = RelationshipTo(Operon, REL_TYPE, cardinality=One)
+    gene = RelationshipTo('Gene', REL_TYPE, cardinality=OneOrMore, model=OperonRelationship)
 
 
 class Gene(Node):
@@ -234,17 +234,17 @@ class Gene(Node):
     position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    pathway = RelationshipTo(Pathway, HAS)
-    regulator = RelationshipTo(Regulator, HAS, model=OperonRelationship)
-    operon = RelationshipTo(Operon, HAS, cardinality=One)
-    promoter = RelationshipTo(Promoter, HAS, model=OperonRelationship)
-    tfbs = RelationshipTo('TFBS', HAS, model=OperonRelationship)
-    regulon = RelationshipTo('Regulon', HAS, model=OperonRelationship)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS, model=OperonRelationship)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    pathway = RelationshipTo(Pathway, REL_TYPE)
+    regulator = RelationshipTo(Regulator, REL_TYPE, model=OperonRelationship)
+    operon = RelationshipTo(Operon, REL_TYPE, cardinality=One)
+    promoter = RelationshipTo(Promoter, REL_TYPE, model=OperonRelationship)
+    tfbs = RelationshipTo('TFBS', REL_TYPE, model=OperonRelationship)
+    regulon = RelationshipTo('Regulon', REL_TYPE, model=OperonRelationship)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE, model=OperonRelationship)
 
 
 class TFBS(Node):
@@ -255,15 +255,15 @@ class TFBS(Node):
     position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    regulator = RelationshipTo(Regulator, HAS, model=OperonRelationship)
-    operon = RelationshipTo(Operon, HAS, cardinality=One)
-    gene = RelationshipTo(Gene, HAS, cardinality=OneOrMore, model=OperonRelationship)
-    regulon = RelationshipTo('Regulon', HAS, model=OperonRelationship)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS, model=OperonRelationship)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    regulator = RelationshipTo(Regulator, REL_TYPE, model=OperonRelationship)
+    operon = RelationshipTo(Operon, REL_TYPE, cardinality=One)
+    gene = RelationshipTo(Gene, REL_TYPE, cardinality=OneOrMore, model=OperonRelationship)
+    regulon = RelationshipTo('Regulon', REL_TYPE, model=OperonRelationship)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE, model=OperonRelationship)
 
 
 class Effector(Node):
@@ -273,11 +273,11 @@ class Effector(Node):
     kegg_metabolite = StringProperty()
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS)
-    regulator = RelationshipTo(Regulator, HAS, cardinality=OneOrMore)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE)
+    regulator = RelationshipTo(Regulator, REL_TYPE, cardinality=OneOrMore)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
 class Regulon(Node):
@@ -289,14 +289,14 @@ class Regulon(Node):
     type = StringProperty(required=True)
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    regulator = RelationshipTo(Regulator, HAS, cardinality=OneOrMore)
-    operon = RelationshipTo(Operon, HAS, cardinality=OneOrMore)
-    gene = RelationshipTo(Gene, HAS, cardinality=OneOrMore, model=OperonRelationship)
-    tfbs = RelationshipTo(TFBS, HAS, model=OperonRelationship)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    regulator = RelationshipTo(Regulator, REL_TYPE, cardinality=OneOrMore)
+    operon = RelationshipTo(Operon, REL_TYPE, cardinality=OneOrMore)
+    gene = RelationshipTo(Gene, REL_TYPE, cardinality=OneOrMore, model=OperonRelationship)
+    tfbs = RelationshipTo(TFBS, REL_TYPE, model=OperonRelationship)
 
 
 class RegulatoryInteraction(Node):
@@ -309,12 +309,12 @@ class RegulatoryInteraction(Node):
     regulatory_effect = StringProperty(required=True)
 
     # relationships
-    source = RelationshipTo(Source, HAS, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, HAS)
-    publication = RelationshipTo(Publication, HAS)
-    organism = RelationshipTo(Organism, HAS, cardinality=One)
-    regulator_in = RelationshipTo(Regulator, HAS, cardinality=One)
-    operon_out = RelationshipTo(Operon, HAS, cardinality=One)
-    gene = RelationshipTo(Gene, HAS, cardinality=OneOrMore, model=OperonRelationship)
-    tfbs = RelationshipTo(TFBS, HAS, model=OperonRelationship)
-    effector = RelationshipTo(Effector, HAS)
+    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    regulator_in = RelationshipTo(Regulator, REL_TYPE, cardinality=One)
+    operon_out = RelationshipTo(Operon, REL_TYPE, cardinality=One)
+    gene = RelationshipTo(Gene, REL_TYPE, cardinality=OneOrMore, model=OperonRelationship)
+    tfbs = RelationshipTo(TFBS, REL_TYPE, model=OperonRelationship)
+    effector = RelationshipTo(Effector, REL_TYPE)
