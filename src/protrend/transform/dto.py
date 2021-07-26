@@ -1,23 +1,24 @@
 from dataclasses import dataclass, field
-from typing import Set
+
+from protrend.utils.unique_list import UniqueList
 
 
 @dataclass
 class GeneDTO:
-    locus_tag: Set[str] = field(default_factory=set)
-    name: Set[str] = field(default_factory=set)
-    synonyms: Set[str] = field(default_factory=set)
-    function: Set[str] = field(default_factory=set)
-    description: Set[str] = field(default_factory=set)
-    ncbi_gene: Set[str] = field(default_factory=set)
-    ncbi_protein: Set[str] = field(default_factory=set)
-    genbank_accession: Set[str] = field(default_factory=set)
-    refseq_accession: Set[str] = field(default_factory=set)
-    uniprot_accession: Set[str] = field(default_factory=set)
-    sequence: Set[str] = field(default_factory=set)
-    strand: Set[str] = field(default_factory=set)
-    position_left: Set[int] = field(default_factory=set)
-    position_right: Set[int] = field(default_factory=set)
+    locus_tag: UniqueList[str] = field(default_factory=UniqueList)
+    name: UniqueList[str] = field(default_factory=UniqueList)
+    synonyms: UniqueList[str] = field(default_factory=UniqueList)
+    function: UniqueList[str] = field(default_factory=UniqueList)
+    description: UniqueList[str] = field(default_factory=UniqueList)
+    ncbi_gene: UniqueList[str] = field(default_factory=UniqueList)
+    ncbi_protein: UniqueList[str] = field(default_factory=UniqueList)
+    genbank_accession: UniqueList[str] = field(default_factory=UniqueList)
+    refseq_accession: UniqueList[str] = field(default_factory=UniqueList)
+    uniprot_accession: UniqueList[str] = field(default_factory=UniqueList)
+    sequence: UniqueList[str] = field(default_factory=UniqueList)
+    strand: UniqueList[str] = field(default_factory=UniqueList)
+    position_left: UniqueList[int] = field(default_factory=UniqueList)
+    position_right: UniqueList[int] = field(default_factory=UniqueList)
     annotation_score: int = 0
 
     def to_df(self):
@@ -26,10 +27,10 @@ class GeneDTO:
 
 @dataclass
 class EffectorDTO:
-    name: Set[str] = field(default_factory=set)
-    synonyms: Set[str] = field(default_factory=set)
-    mechanism: Set[str] = field(default_factory=set)
-    kegg_compounds: Set[str] = field(default_factory=set)
+    name: UniqueList[str] = field(default_factory=UniqueList)
+    synonyms: UniqueList[str] = field(default_factory=UniqueList)
+    mechanism: UniqueList[str] = field(default_factory=UniqueList)
+    kegg_compounds: UniqueList[str] = field(default_factory=UniqueList)
 
     def to_df(self):
         pass
@@ -37,18 +38,18 @@ class EffectorDTO:
 
 @dataclass
 class OrganismDTO:
-    name: Set[str] = field(default_factory=set)
-    species: Set[str] = field(default_factory=set)
-    strain: Set[str] = field(default_factory=set)
-    family: Set[str] = field(default_factory=set)
-    phylum: Set[str] = field(default_factory=set)
-    ncbi_taxonomy: Set[str] = field(default_factory=set)
-    refseq_accession: Set[str] = field(default_factory=set)
-    refseq_ftp: Set[str] = field(default_factory=set)
-    genbank_accession: Set[str] = field(default_factory=set)
-    genbank_ftp: Set[str] = field(default_factory=set)
-    ncbi_assembly: Set[str] = field(default_factory=set)
-    assembly_accession: Set[str] = field(default_factory=set)
+    name: UniqueList[str] = field(default_factory=UniqueList)
+    species: UniqueList[str] = field(default_factory=UniqueList)
+    strain: UniqueList[str] = field(default_factory=UniqueList)
+    family: UniqueList[str] = field(default_factory=UniqueList)
+    phylum: UniqueList[str] = field(default_factory=UniqueList)
+    ncbi_taxonomy: UniqueList[str] = field(default_factory=UniqueList)
+    refseq_accession: UniqueList[str] = field(default_factory=UniqueList)
+    refseq_ftp: UniqueList[str] = field(default_factory=UniqueList)
+    genbank_accession: UniqueList[str] = field(default_factory=UniqueList)
+    genbank_ftp: UniqueList[str] = field(default_factory=UniqueList)
+    ncbi_assembly: UniqueList[str] = field(default_factory=UniqueList)
+    assembly_accession: UniqueList[str] = field(default_factory=UniqueList)
 
     def to_df(self):
         pass
@@ -56,9 +57,9 @@ class OrganismDTO:
 
 @dataclass
 class PathwayDTO:
-    name: Set[str] = field(default_factory=set)
-    synonyms: Set[str] = field(default_factory=set)
-    kegg_pathways: Set[str] = field(default_factory=set)
+    name: UniqueList[str] = field(default_factory=UniqueList)
+    synonyms: UniqueList[str] = field(default_factory=UniqueList)
+    kegg_pathways: UniqueList[str] = field(default_factory=UniqueList)
 
     def to_df(self):
         pass
@@ -66,11 +67,11 @@ class PathwayDTO:
 
 @dataclass
 class PublicationDTO:
-    pmid: Set[str] = field(default_factory=set)
-    doi: Set[str] = field(default_factory=set)
-    title: Set[str] = field(default_factory=set)
-    author: Set[str] = field(default_factory=set)
-    year: Set[str] = field(default_factory=set)
+    pmid: UniqueList[str] = field(default_factory=UniqueList)
+    doi: UniqueList[str] = field(default_factory=UniqueList)
+    title: UniqueList[str] = field(default_factory=UniqueList)
+    author: UniqueList[str] = field(default_factory=UniqueList)
+    year: UniqueList[str] = field(default_factory=UniqueList)
 
     def to_df(self):
         pass
