@@ -2,8 +2,10 @@ import os
 from functools import partial
 from typing import Dict
 
+import numpy as np
 import pandas as pd
 
+from protrend.model.model import Organism
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.regprecise.settings import RegPreciseTransformSettings
@@ -11,6 +13,8 @@ from protrend.transform.transformer import Transformer
 
 
 class OrganismTransformer(Transformer):
+
+    node = Organism
 
     def __init__(self,
                  source: str = None,
@@ -27,6 +31,14 @@ class OrganismTransformer(Transformer):
             files = RegPreciseTransformSettings.organism
 
         super().__init__(source=source, version=version, **files)
+
+    @property
+    def df(self) -> pd.DataFrame:
+
+        if self._df.empty:
+            return pd.DataFrame(columns=list(self.node.cls_keys()))
+
+        return self._df
 
     def read(self, *args, **kwargs):
         self.read_json_lines()
@@ -50,4 +62,30 @@ class OrganismTransformer(Transformer):
         self._df = pd.concat(dfs)
 
     def integrate(self):
-        pass
+        snapshot = self.node_snapshot()
+
+        create = []
+        update = []
+        remove = []
+
+        for i, organism in self._df.iterrows():
+
+            if organism['ncbi_taxonomy']:
+
+                if organism['ncbi_taxonomy'] in snapshot.loc['ncbi_taxonomy']:
+                    update.append(i)
+
+                else:
+                    create.append(i)
+
+            elif organism['name']:
+
+                if organism['name'] in snapshot.loc['name']:
+                    update.append(i)
+
+                else:
+                    create.append(i)
+
+            else:
+                remove.append(i)
+

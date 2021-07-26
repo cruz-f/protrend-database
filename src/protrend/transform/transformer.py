@@ -5,11 +5,11 @@ from typing import Dict, Tuple
 import pandas as pd
 
 from protrend.io.json import read_json_lines
+from protrend.model.node import Node
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
 class Transformer(metaclass=ABCMeta):
-
     """
     Transformer interface.
 
@@ -20,6 +20,7 @@ class Transformer(metaclass=ABCMeta):
 
     A transformer starts with data from the staging area and ends with structured nodes and relationships.
     """
+    node: Node = None
 
     def __init__(self,
                  source: str = None,
@@ -97,7 +98,6 @@ class Transformer(metaclass=ABCMeta):
         key, df = value
 
         if self.is_valid_key(key) and isinstance(df, pd.DataFrame):
-
             self._attrs[key] = df
             setattr(self, key, df)
             return
@@ -116,7 +116,6 @@ class Transformer(metaclass=ABCMeta):
 
     def __getattr__(self, item) -> pd.DataFrame:
         if self.is_valid_key(item):
-
             df = pd.DataFrame()
             self.attrs = (item, df)
 
@@ -181,6 +180,9 @@ class Transformer(metaclass=ABCMeta):
 
     def write(self):
 
+        if not os.path.exists(self.write_path):
+            os.makedirs(self.write_path)
+
         for csv in self._write_stack:
             csv()
 
@@ -204,3 +206,6 @@ class Transformer(metaclass=ABCMeta):
             return True
 
         return False
+
+    def node_snapshot(self) -> pd.DataFrame:
+        return self.node.cls_to_df()
