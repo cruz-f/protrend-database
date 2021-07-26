@@ -1,3 +1,5 @@
+import os
+from functools import partial
 from typing import Dict
 
 import pandas as pd
@@ -33,10 +35,19 @@ class OrganismTransformer(Transformer):
 
         self.genome: pd.DataFrame
 
-        scientific_names = list(self.genome.loc[:, 'name'])
+        scientific_names = self.genome.loc[:, 'name']
 
-        dtos = [OrganismDTO(name=name) for name in scientific_names]
+        dtos = []
+        for name in scientific_names:
+            dto = OrganismDTO()
+            dto.name.append(name)
+            dtos.append(dto)
 
         dtos = annotate_organisms(dtos=dtos, names=scientific_names)
 
+        dfs = [dto.to_df() for dto in dtos]
 
+        self._df = pd.concat(dfs)
+
+    def integrate(self):
+        pass

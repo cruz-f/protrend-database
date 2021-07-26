@@ -1,77 +1,94 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
+from typing import List
 
-from protrend.utils.unique_list import UniqueList
+import pandas as pd
+
+from protrend.utils.unique_list import unique_field
 
 
 @dataclass
-class GeneDTO:
-    locus_tag: UniqueList[str] = field(default_factory=UniqueList)
-    name: UniqueList[str] = field(default_factory=UniqueList)
-    synonyms: UniqueList[str] = field(default_factory=UniqueList)
-    function: UniqueList[str] = field(default_factory=UniqueList)
-    description: UniqueList[str] = field(default_factory=UniqueList)
-    ncbi_gene: UniqueList[str] = field(default_factory=UniqueList)
-    ncbi_protein: UniqueList[str] = field(default_factory=UniqueList)
-    genbank_accession: UniqueList[str] = field(default_factory=UniqueList)
-    refseq_accession: UniqueList[str] = field(default_factory=UniqueList)
-    uniprot_accession: UniqueList[str] = field(default_factory=UniqueList)
-    sequence: UniqueList[str] = field(default_factory=UniqueList)
-    strand: UniqueList[str] = field(default_factory=UniqueList)
-    position_left: UniqueList[int] = field(default_factory=UniqueList)
-    position_right: UniqueList[int] = field(default_factory=UniqueList)
+class DTO:
+
+    def to_dict(self, ignore_fields: List[str] = None):
+
+        if not ignore_fields:
+            ignore_fields = []
+
+        result = []
+
+        for f in fields(self):
+
+            if f.name in ignore_fields:
+                continue
+
+            unique_list = getattr(self, f.name)
+            value = unique_list()
+
+            result.append((f.name, value))
+
+        return dict(result)
+
+    def to_df(self):
+
+        data = self.to_dict()
+
+        return pd.DataFrame.from_dict(data)
+
+
+@dataclass
+class GeneDTO(DTO):
+    locus_tag: List[str] = unique_field(output='take_first', init=False)
+    name: List[str] = unique_field(output='take_first', init=False)
+    synonyms: List[str] = unique_field(output='take_all', init=False)
+    function: List[str] = unique_field(output='take_first', init=False)
+    description: List[str] = unique_field(output='take_first', init=False)
+    ncbi_gene: List[str] = unique_field(output='take_first', init=False)
+    ncbi_protein: List[str] = unique_field(output='take_first', init=False)
+    genbank_accession: List[str] = unique_field(output='take_first', init=False)
+    refseq_accession: List[str] = unique_field(output='take_first', init=False)
+    uniprot_accession: List[str] = unique_field(output='take_first', init=False)
+    sequence: List[str] = unique_field(output='take_first', init=False)
+    strand: List[str] = unique_field(output='take_first', init=False)
+    position_left: List[int] = unique_field(output='take_first', init=False)
+    position_right: List[int] = unique_field(output='take_first', init=False)
     annotation_score: int = 0
 
-    def to_df(self):
-        pass
+
+@dataclass
+class EffectorDTO(DTO):
+    name: List[str] = unique_field(output='take_first', init=False)
+    synonyms: List[str] = unique_field(output='take_all', init=False)
+    mechanism: List[str] = unique_field(output='take_first', init=False)
+    kegg_compounds: List[str] = unique_field(output='take_all', init=False)
 
 
 @dataclass
-class EffectorDTO:
-    name: UniqueList[str] = field(default_factory=UniqueList)
-    synonyms: UniqueList[str] = field(default_factory=UniqueList)
-    mechanism: UniqueList[str] = field(default_factory=UniqueList)
-    kegg_compounds: UniqueList[str] = field(default_factory=UniqueList)
-
-    def to_df(self):
-        pass
-
-
-@dataclass
-class OrganismDTO:
-    name: UniqueList[str] = field(default_factory=UniqueList)
-    species: UniqueList[str] = field(default_factory=UniqueList)
-    strain: UniqueList[str] = field(default_factory=UniqueList)
-    family: UniqueList[str] = field(default_factory=UniqueList)
-    phylum: UniqueList[str] = field(default_factory=UniqueList)
-    ncbi_taxonomy: UniqueList[str] = field(default_factory=UniqueList)
-    refseq_accession: UniqueList[str] = field(default_factory=UniqueList)
-    refseq_ftp: UniqueList[str] = field(default_factory=UniqueList)
-    genbank_accession: UniqueList[str] = field(default_factory=UniqueList)
-    genbank_ftp: UniqueList[str] = field(default_factory=UniqueList)
-    ncbi_assembly: UniqueList[str] = field(default_factory=UniqueList)
-    assembly_accession: UniqueList[str] = field(default_factory=UniqueList)
-
-    def to_df(self):
-        pass
+class OrganismDTO(DTO):
+    name: List[str] = unique_field(output='take_first', init=False)
+    species: List[str] = unique_field(output='take_first', init=False)
+    strain: List[str] = unique_field(output='take_first', init=False)
+    family: List[str] = unique_field(output='take_first', init=False)
+    phylum: List[str] = unique_field(output='take_first', init=False)
+    ncbi_taxonomy: List[str] = unique_field(output='take_first', init=False)
+    refseq_accession: List[str] = unique_field(output='take_first', init=False)
+    refseq_ftp: List[str] = unique_field(output='take_first', init=False)
+    genbank_accession: List[str] = unique_field(output='take_first', init=False)
+    genbank_ftp: List[str] = unique_field(output='take_first', init=False)
+    ncbi_assembly: List[str] = unique_field(output='take_first', init=False)
+    assembly_accession: List[str] = unique_field(output='take_first', init=False)
 
 
 @dataclass
-class PathwayDTO:
-    name: UniqueList[str] = field(default_factory=UniqueList)
-    synonyms: UniqueList[str] = field(default_factory=UniqueList)
-    kegg_pathways: UniqueList[str] = field(default_factory=UniqueList)
-
-    def to_df(self):
-        pass
+class PathwayDTO(DTO):
+    name: List[str] = unique_field(output='take_first', init=False)
+    synonyms: List[str] = unique_field(output='take_all', init=False)
+    kegg_pathways: List[str] = unique_field(output='take_all', init=False)
 
 
 @dataclass
-class PublicationDTO:
-    pmid: UniqueList[str] = field(default_factory=UniqueList)
-    doi: UniqueList[str] = field(default_factory=UniqueList)
-    title: UniqueList[str] = field(default_factory=UniqueList)
-    author: UniqueList[str] = field(default_factory=UniqueList)
-    year: UniqueList[str] = field(default_factory=UniqueList)
-
-    def to_df(self):
-        pass
+class PublicationDTO(DTO):
+    pmid: List[str] = unique_field(output='take_first', init=False)
+    doi: List[str] = unique_field(output='take_first', init=False)
+    title: List[str] = unique_field(output='take_first', init=False)
+    author: List[str] = unique_field(output='take_first', init=False)
+    year: List[str] = unique_field(output='take_first', init=False)

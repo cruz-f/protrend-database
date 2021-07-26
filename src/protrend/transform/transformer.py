@@ -5,7 +5,7 @@ from typing import Dict, Tuple
 import pandas as pd
 
 from protrend.io.json import read_json_lines
-from protrend.utils.settings import STAGING_AREA_PATH
+from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
 class Transformer(metaclass=ABCMeta):
@@ -54,6 +54,7 @@ class Transformer(metaclass=ABCMeta):
         self._df = pd.DataFrame()
         self._files = {}
         self._attrs = {}
+        self._write_stack = []
 
         for key, file in files.items():
 
@@ -102,6 +103,10 @@ class Transformer(metaclass=ABCMeta):
             return
 
         raise AttributeError(f'Attribute with name {key} cannot be set')
+
+    @property
+    def write_path(self):
+        return os.path.join(DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Transformer Python API
@@ -174,9 +179,12 @@ class Transformer(metaclass=ABCMeta):
     def integrate(self):
         pass
 
-    @abstractmethod
     def write(self):
-        pass
+
+        for csv in self._write_stack:
+            csv()
+
+        self._write_stack = []
 
     # ----------------------------------------
     # Utilities methods

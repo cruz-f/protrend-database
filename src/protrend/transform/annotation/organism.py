@@ -20,16 +20,16 @@ def _fetch_organisms(identifiers: List[str],
 
 def _annotate_organism(ncbi_taxonomy: NCBITaxonomyOrganism, organism_dto: OrganismDTO):
     if ncbi_taxonomy.identifier:
-        organism_dto.name.add(ncbi_taxonomy.name)
-        organism_dto.species.add(ncbi_taxonomy.species)
-        organism_dto.strain.add(ncbi_taxonomy.strain)
-        organism_dto.ncbi_taxonomy.add(ncbi_taxonomy.taxonomy)
-        organism_dto.refseq_accession.add(ncbi_taxonomy.refseq)
-        organism_dto.refseq_ftp.add(ncbi_taxonomy.refseq_ftp)
-        organism_dto.genbank_accession.add(ncbi_taxonomy.genbank)
-        organism_dto.genbank_ftp.add(ncbi_taxonomy.genbank_ftp)
-        organism_dto.ncbi_assembly.add(ncbi_taxonomy.assembly)
-        organism_dto.assembly_accession.add(ncbi_taxonomy.assembly_name)
+        organism_dto.name.append(ncbi_taxonomy.name)
+        organism_dto.species.append(ncbi_taxonomy.species)
+        organism_dto.strain.append(ncbi_taxonomy.strain)
+        organism_dto.ncbi_taxonomy.append(ncbi_taxonomy.taxonomy)
+        organism_dto.refseq_accession.append(ncbi_taxonomy.refseq)
+        organism_dto.refseq_ftp.append(ncbi_taxonomy.refseq_ftp)
+        organism_dto.genbank_accession.append(ncbi_taxonomy.genbank)
+        organism_dto.genbank_ftp.append(ncbi_taxonomy.genbank_ftp)
+        organism_dto.ncbi_assembly.append(ncbi_taxonomy.assembly)
+        organism_dto.assembly_accession.append(ncbi_taxonomy.assembly_name)
 
 
 def annotate_organisms(dtos: List[OrganismDTO],
