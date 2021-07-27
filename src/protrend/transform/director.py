@@ -34,4 +34,7 @@ class Director:
         Transformation is performed step-wise according to the transformers order.
         """
 
-        pass
+        for transformer in self._transformers:
+            transformer.read()
+            transformer.process()
+            transformer.integrate()

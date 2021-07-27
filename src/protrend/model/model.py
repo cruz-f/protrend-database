@@ -39,7 +39,6 @@ class Source(Node):
 
 class SourceRelationship(StructuredRel):
     # base
-    uid = UniqueIdProperty()
     created = DateTimeProperty(default_now=True)
     updated = DateTimeProperty(default_now=True)
 
@@ -139,9 +138,8 @@ class RegulatoryFamily(Node):
     regulator = RelationshipTo('Regulator', REL_TYPE)
 
 
-class OperonRelationship:
+class OperonRelationship(StructuredRel):
     # base
-    uid = UniqueIdProperty()
     created = DateTimeProperty(default_now=True)
     updated = DateTimeProperty(default_now=True)
 

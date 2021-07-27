@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, List
+from typing import List, Dict, Any
 
 import pandas as pd
 import pytz
@@ -15,85 +15,187 @@ class Node(StructuredNode):
     updated = DateTimeProperty(default_now=True)
 
     identifying_property = 'protrend_id'
+    header = 'PRT'
+    entity = 'PRT'
 
     # -------------------------------------
     # Class attributes
     # -------------------------------------
     @classmethod
-    def cls_name(cls, transform: Callable = None):
-
-        if transform:
-            return transform(cls.__name__)
-
-        return cls.__name__
+    def node_name(cls):
+        return cls.__name__.lower()
 
     @classmethod
-    def cls_properties(cls) -> dict:
-
+    def node_properties(cls) -> dict:
         return dict(cls.__all_properties__)
 
     @classmethod
-    def cls_relationships(cls) -> dict:
-
+    def node_relationships(cls) -> dict:
         return dict(cls.__all_relationships__)
 
     @classmethod
-    def cls_keys(cls):
-        return cls.cls_properties().keys()
+    def node_keys(cls):
+        return cls.node_properties().keys()
 
     @classmethod
-    def cls_values(cls):
-        return cls.cls_properties().values()
+    def node_values(cls):
+        return cls.node_properties().values()
 
     @classmethod
-    def cls_items(cls):
-        return cls.cls_properties().items()
+    def node_items(cls):
+        return cls.node_properties().items()
+
+    @classmethod
+    def latest_identifier(cls):
+        protrend_identifiers = [node.identifier for node in cls.nodes.all()]
+        if protrend_identifiers:
+            sorted_identifiers = sorted(protrend_identifiers, key=_sort_by_protrend_id, reverse=True)
+            return sorted_identifiers[0]
+
+        return f'{cls.header}.{cls.entity_code}.0000000'
 
     # -------------------------------------
-    # Class dynamic attributes/methods
+    # Class methods
     # -------------------------------------
     @classmethod
-    def cls_to_dict(cls, properties: List[str] = None) -> dict:
+    def node_from_dict(cls,
+                       *nodes: Dict[str, Any],
+                       save: bool = False) -> List['Node']:
 
-        if not properties:
-            res = {key: [] for key in cls.cls_keys()}
+        structured_nodes = []
+        node_keys = list(cls.node_keys())
 
-        else:
-            cls_properties = list(cls.cls_keys())
-            res = {key: [] for key in properties
-                   if key in cls_properties}
+        for node in nodes:
 
-        for node in cls.nodes.all():
-            for key, val in node.properties.items():
-                if key in res:
+            node_kwargs = {key: val for key, val in node.items()
+                           if key in node_keys and val is not None}
+
+            if node_kwargs:
+
+                structured_node = cls(**node_kwargs)
+
+                if save:
+                    structured_node = structured_node.save()
+
+                structured_nodes.append(structured_node)
+
+        return structured_nodes
+
+    @classmethod
+    def node_update_from_dict(cls,
+                              *nodes: Dict[str, Any],
+                              save: bool = False) -> List['Node']:
+
+        structured_nodes = []
+        node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
+        all_nodes = cls.node_to_dict(to='node')
+
+        for node in nodes:
+
+            identifier = node.get(cls.identifying_property, '')
+
+            if identifier in all_nodes:
+
+                structured_node = all_nodes[identifier]
+
+                for key, val in node.items():
+
+                    if key in node_keys and val is not None:
+                        setattr(structured_node, key, val)
+
+                if save:
+                    structured_node.updated = datetime.utcnow().replace(tzinfo=pytz.utc)
+                    structured_node = structured_node.save()
+
+                structured_nodes.append(structured_node)
+
+        return structured_nodes
+
+    @classmethod
+    def node_to_dict(cls, to: str = 'dict') -> dict:
+
+        if to == 'dict':
+            res = {key: [] for key in cls.node_keys()}
+
+            for node in cls.nodes.all():
+                for key, val in node.properties.items():
                     res[key].append(val)
 
-        return res
+            return res
+
+        elif to == 'node':
+
+            return {node.identifier: node for node in cls.nodes.all()}
+
+        raise ValueError(f'Invalid output {to}')
 
     @classmethod
-    def cls_to_df(cls, properties: List[str] = None) -> pd.DataFrame:
-        return pd.DataFrame.from_dict(cls.cls_to_dict(properties))
+    def node_from_df(cls,
+                     nodes: pd.DataFrame,
+                     save: bool = False) -> List['Node']:
 
-    # -------------------------------------
-    # Class extensions
-    # -------------------------------------
+        structured_nodes = []
+        node_keys = list(cls.node_keys())
+
+        for _, node in nodes.iterrows():
+
+            node_kwargs = {key: val for key, val in node.items()
+                           if key in node_keys and val is not None}
+
+            if node_kwargs:
+
+                structured_node = cls(**node_kwargs)
+
+                if save:
+                    structured_node = structured_node.save()
+
+                structured_nodes.append(structured_node)
+
+        return structured_nodes
+
     @classmethod
-    def create_or_update(cls, *props: dict, **kwargs):
+    def node_update_from_df(cls,
+                            nodes: pd.DataFrame,
+                            save: bool = False) -> List['Node']:
 
-        for prop in props:
-            prop['updated'] = datetime.utcnow().replace(tzinfo=pytz.utc)
+        structured_nodes = []
+        node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
+        all_nodes = cls.node_to_dict(to='node')
 
-        return super(Node, cls).create_or_update(*props, **kwargs)
+        for _, node in nodes.iterrows():
+
+            identifier = node.get(cls.identifying_property, '')
+
+            if identifier in all_nodes:
+
+                structured_node = all_nodes[identifier]
+
+                for key, val in node.items():
+
+                    if key in node_keys and val is not None:
+                        setattr(structured_node, key, val)
+
+                if save:
+                    structured_node.updated = datetime.utcnow().replace(tzinfo=pytz.utc)
+                    structured_node = structured_node.save()
+
+                structured_nodes.append(structured_node)
+
+        return structured_nodes
+
+    @classmethod
+    def node_to_df(cls) -> pd.DataFrame:
+        return pd.DataFrame.from_dict(cls.node_to_dict(to='dict'))
 
     # -------------------------------------
-    # Instance dynamic attributes/methods
+    # Instance methods
     # -------------------------------------
     @property
     def identifier(self):
         return self.properties[self.identifying_property]
 
     @property
-    def properties(self) -> dict:
+    def properties(self) -> Dict[str, Any]:
         return {key: val for key, val in self.__properties__.items()
                 if val is not None}
 
@@ -111,3 +213,10 @@ class Node(StructuredNode):
 
     def to_series(self):
         return pd.Series(data=self.values(), index=self.keys())
+
+
+def _sort_by_protrend_id(identifier: str):
+
+    prt, entity, numeric_id = identifier.split('.')
+
+    return int(numeric_id)

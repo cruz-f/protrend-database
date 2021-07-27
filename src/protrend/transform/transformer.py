@@ -55,7 +55,6 @@ class Transformer(metaclass=ABCMeta):
         self._df = pd.DataFrame()
         self._files = {}
         self._attrs = {}
-        self._write_stack = []
 
         for key, file in files.items():
 
@@ -103,10 +102,6 @@ class Transformer(metaclass=ABCMeta):
             return
 
         raise AttributeError(f'Attribute with name {key} cannot be set')
-
-    @property
-    def write_path(self):
-        return os.path.join(DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Transformer Python API
@@ -171,22 +166,12 @@ class Transformer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def process(self):
+    def process(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def integrate(self):
+    def integrate(self, *args, **kwargs):
         pass
-
-    def write(self):
-
-        if not os.path.exists(self.write_path):
-            os.makedirs(self.write_path)
-
-        for csv in self._write_stack:
-            csv()
-
-        self._write_stack = []
 
     # ----------------------------------------
     # Utilities methods
@@ -199,7 +184,7 @@ class Transformer(metaclass=ABCMeta):
 
     def is_valid_key(self, key: str) -> bool:
 
-        if key not in self._attrs and not hasattr(self, key):
+        if key not in self._attrs and key not in self.__dict__:
             return True
 
         elif key in self._attrs and hasattr(self, key):
@@ -208,4 +193,6 @@ class Transformer(metaclass=ABCMeta):
         return False
 
     def node_snapshot(self) -> pd.DataFrame:
-        return self.node.cls_to_df()
+        df = self.node.node_to_df()
+        df.reset_index(inplace=True, drop=True)
+        return df
