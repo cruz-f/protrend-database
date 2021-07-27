@@ -2,7 +2,7 @@ from typing import List, Type
 
 from protrend.bioapis.organism import NCBITaxonomyOrganism
 from protrend.transform.dto import OrganismDTO
-from protrend.utils.miscellaneous import args_length
+from protrend.utils.miscellaneous import args_length, scale_arg
 
 
 def _fetch_organisms(identifiers: List[str],
@@ -65,6 +65,9 @@ def annotate_organisms(dtos: List[OrganismDTO],
 
     if size != dtos_size:
         raise ValueError(f'Invalid inputs for dto list size of {dtos_size} and args size of {size}')
+
+    identifiers = scale_arg(identifiers, size)
+    names = scale_arg(names, size)
 
     ncbi_taxonomys = _fetch_organisms(identifiers=identifiers,
                                       names=names,

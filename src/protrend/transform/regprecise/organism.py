@@ -1,8 +1,11 @@
+import os
+from functools import partial
 from typing import Dict
 
 import pandas as pd
 
 from protrend.model.model import Organism
+from protrend.model.node import protrend_id_decoder, protrend_id_encoder
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.regprecise.settings import RegPreciseTransformSettings
@@ -10,7 +13,6 @@ from protrend.transform.transformer import Transformer
 
 
 class OrganismTransformer(Transformer):
-
     node = Organism
 
     def __init__(self,
@@ -41,24 +43,22 @@ class OrganismTransformer(Transformer):
         self.read_json_lines()
 
     def process(self):
+        genome: pd.DataFrame = self.get('genome', pd.DataFrame(columns=['name']))
 
-        self.genome: pd.DataFrame
-        self.taxonomy: pd.DataFrame
-
-        scientific_names = self.genome.loc[:, 'name']
+        names = genome.loc[:, 'name']
 
         dtos = []
-        for name in scientific_names:
+        for name in names:
             dto = OrganismDTO()
             dto.name.append(name)
             dtos.append(dto)
 
-        dtos = annotate_organisms(dtos=dtos, names=scientific_names)
+        annotate_organisms(dtos=dtos, names=names)
 
-        dfs = [dto.to_df() for dto in dtos]
+        annotated_df = pd.DataFrame([dto.to_dict() for dto in dtos])
 
-        self._df = pd.concat(dfs)
-        self._df.reset_index(inplace=True, drop=True)
+        df = pd.merge(annotated_df, genome, on='name')
+        self._df = df
 
     def integrate(self, *properties):
 
@@ -67,8 +67,7 @@ class OrganismTransformer(Transformer):
 
         snapshot = self.node_snapshot()
         latest_identifier = self.node.latest_identifier()
-        *_, numeric_identifier = latest_identifier.split('.')
-        numeric_identifier = int(numeric_identifier)
+        integer = protrend_id_decoder(latest_identifier)
 
         organisms_to_create = []
         create_identifiers = []
@@ -87,9 +86,8 @@ class OrganismTransformer(Transformer):
                 snapshot_mask: pd.Series = snapshot_values == value
 
                 if snapshot_mask.any():
-
                     organisms_to_update.append(i)
-                    protend_id = snapshot[snapshot_mask, self.node.identifying_property]
+                    protend_id = snapshot.loc[snapshot_mask, self.node.identifying_property].iloc[0]
                     update_identifiers.append(protend_id)
 
                     to_create = False
@@ -97,14 +95,22 @@ class OrganismTransformer(Transformer):
 
             if to_create:
                 organisms_to_create.append(i)
-                numeric_identifier += 1
-                protend_id = f'{self.node.header}.{self.node.entity}.{numeric_identifier}'
+                integer += 1
+                protend_id = protrend_id_encoder(self.node.header, self.node.entity, integer)
                 create_identifiers.append(protend_id)
 
         organisms_to_create_df = self._df.loc[organisms_to_create, :]
         organisms_to_create_df[self.node.identifying_property] = create_identifiers
-        created_nodes = self.node.node_from_df(organisms_to_create_df)
+        self.node.node_from_df(organisms_to_create_df, save=True)
 
         organisms_to_update_df = self._df.loc[organisms_to_update, :]
         organisms_to_update_df[self.node.identifying_property] = update_identifiers
-        updated_nodes = self.node.node_update_from_df(organisms_to_update)
+        self.node.node_update_from_df(organisms_to_update_df, save=True)
+
+        df = pd.concat([organisms_to_create_df, organisms_to_update_df])
+        self._df = df
+
+        df_to_csv = self._df.copy(deep=True)
+        fp = os.path.join(self.write_path, 'organism.csv')
+        csv = partial(df_to_csv.to_csv, path_or_buf=fp)
+        self._write_stack.append(csv)

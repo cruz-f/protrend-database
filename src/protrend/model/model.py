@@ -3,7 +3,6 @@ from neomodel import (StringProperty,
                       RelationshipTo,
                       StructuredRel,
                       DateTimeProperty,
-                      UniqueIdProperty,
                       IntegerProperty,
                       One,
                       OneOrMore)
@@ -15,6 +14,8 @@ REL_TYPE = 'HAS'
 
 
 class Source(Node):
+    entity = 'SRC'
+
     # properties
     name = StringProperty(required=True)
     type = StringProperty(required=True)
@@ -49,6 +50,8 @@ class SourceRelationship(StructuredRel):
 
 
 class Evidence(Node):
+    entity = 'EVI'
+
     # properties
     name = StringProperty(required=True)
     description = StringProperty()
@@ -64,6 +67,8 @@ class Evidence(Node):
 
 
 class Publication(Node):
+    entity = 'PUB'
+
     # properties
     doi = StringProperty(required=True)
     pmid = StringProperty(required=True)
@@ -86,13 +91,15 @@ class Publication(Node):
 
 
 class Organism(Node):
+    entity = 'ORG'
+
     # properties
     name = StringProperty(required=True)
-    species = StringProperty(required=True)
+    species = StringProperty()
     strain = StringProperty()
     family = StringProperty()
     phylum = StringProperty()
-    ncbi_taxonomy = StringProperty(required=True)
+    ncbi_taxonomy = StringProperty()
     refseq_accession = StringProperty()
     refseq_ftp = StringProperty()
     genbank_accession = StringProperty()
@@ -101,7 +108,7 @@ class Organism(Node):
     assembly_accession = StringProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     publication = RelationshipTo(Publication, REL_TYPE)
     regulator = RelationshipTo('Regulator', REL_TYPE)
     operon = RelationshipTo('Operon', REL_TYPE)
@@ -114,18 +121,22 @@ class Organism(Node):
 
 
 class Pathway(Node):
+    entity = 'PTH'
+
     # properties
     name = StringProperty(required=True)
     kegg_pathways = ArrayProperty(StringProperty())
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     publication = RelationshipTo(Publication, REL_TYPE)
     regulator = RelationshipTo('Regulator', REL_TYPE)
     gene = RelationshipTo('Gene', REL_TYPE)
 
 
 class RegulatoryFamily(Node):
+    entity = 'RFAM'
+
     # properties
     name = StringProperty(required=True)
     mechanism = StringProperty(required=True)
@@ -133,7 +144,7 @@ class RegulatoryFamily(Node):
     description = StringProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     publication = RelationshipTo(Publication, REL_TYPE)
     regulator = RelationshipTo('Regulator', REL_TYPE)
 
@@ -149,6 +160,8 @@ class OperonRelationship(StructuredRel):
 
 
 class Regulator(Node):
+    entity = 'REG'
+
     # properties
     locus_tag = StringProperty(required=True)
     name = StringProperty(required=True)
@@ -168,7 +181,7 @@ class Regulator(Node):
     position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
@@ -183,6 +196,8 @@ class Regulator(Node):
 
 
 class Operon(Node):
+    entity = 'OPN'
+
     # properties
     name = StringProperty(required=True)
     promoters = ArrayProperty(StringProperty())
@@ -193,7 +208,7 @@ class Operon(Node):
     first_gene_position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
@@ -206,6 +221,8 @@ class Operon(Node):
 
 
 class Promoter(Node):
+    entity = 'PRO'
+
     # properties
     name = StringProperty(required=True)
     sequence = StringProperty()
@@ -213,7 +230,7 @@ class Promoter(Node):
     position_left = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
@@ -222,6 +239,8 @@ class Promoter(Node):
 
 
 class Gene(Node):
+    entity = 'GEN'
+
     # properties
     locus_tag = StringProperty(required=True)
     name = StringProperty(required=True)
@@ -238,7 +257,7 @@ class Gene(Node):
     position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
@@ -252,6 +271,8 @@ class Gene(Node):
 
 
 class TFBS(Node):
+    entity = 'TBS'
+
     # properties
     sequence = StringProperty(required=True)
     strand = StringProperty()
@@ -259,7 +280,7 @@ class TFBS(Node):
     position_right = IntegerProperty()
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
@@ -271,13 +292,15 @@ class TFBS(Node):
 
 
 class Effector(Node):
+    entity = 'EFC'
+
     # properties
     name = StringProperty(required=True)
     mechanism = StringProperty()
     kegg_compounds = ArrayProperty(StringProperty())
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE)
     regulator = RelationshipTo(Regulator, REL_TYPE, cardinality=OneOrMore)
@@ -285,6 +308,8 @@ class Effector(Node):
 
 
 class Regulon(Node):
+    entity = 'REN'
+
     # properties
     regulators = ArrayProperty(StringProperty(), required=True)
     operons = ArrayProperty(StringProperty(), required=True)
@@ -293,7 +318,7 @@ class Regulon(Node):
     type = StringProperty(required=True)
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
@@ -304,6 +329,7 @@ class Regulon(Node):
 
 
 class RegulatoryInteraction(Node):
+    entity = 'RIN'
     # properties
     regulator = StringProperty(required=True)
     operon = StringProperty(required=True)
@@ -313,7 +339,7 @@ class RegulatoryInteraction(Node):
     regulatory_effect = StringProperty(required=True)
 
     # relationships
-    source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)

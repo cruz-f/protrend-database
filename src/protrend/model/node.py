@@ -1,5 +1,6 @@
+from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 import pandas as pd
 import pytz
@@ -49,10 +50,10 @@ class Node(StructuredNode):
     def latest_identifier(cls):
         protrend_identifiers = [node.identifier for node in cls.nodes.all()]
         if protrend_identifiers:
-            sorted_identifiers = sorted(protrend_identifiers, key=_sort_by_protrend_id, reverse=True)
+            sorted_identifiers = sorted(protrend_identifiers, key=protrend_id_decoder, reverse=True)
             return sorted_identifiers[0]
 
-        return f'{cls.header}.{cls.entity_code}.0000000'
+        return protrend_id_encoder(cls.header, cls.entity, 0)
 
     # -------------------------------------
     # Class methods
@@ -115,10 +116,14 @@ class Node(StructuredNode):
     def node_to_dict(cls, to: str = 'dict') -> dict:
 
         if to == 'dict':
-            res = {key: [] for key in cls.node_keys()}
+            res = defaultdict(list)
 
             for node in cls.nodes.all():
-                for key, val in node.properties.items():
+
+                node_properties = node.properties
+
+                for key in cls.node_keys():
+                    val = node_properties.get(key, None)
                     res[key].append(val)
 
             return res
@@ -197,7 +202,7 @@ class Node(StructuredNode):
     @property
     def properties(self) -> Dict[str, Any]:
         return {key: val for key, val in self.__properties__.items()
-                if val is not None}
+                if val is not None and key != 'id'}
 
     def keys(self):
         return self.properties.keys()
@@ -215,8 +220,15 @@ class Node(StructuredNode):
         return pd.Series(data=self.values(), index=self.keys())
 
 
-def _sort_by_protrend_id(identifier: str):
+def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]):
 
-    prt, entity, numeric_id = identifier.split('.')
+    integer = int(integer)
 
-    return int(numeric_id)
+    return f'{header}.{entity}.{integer:7d}'
+
+
+def protrend_id_decoder(protrend_id: str):
+
+    prt, entity, integer = protrend_id.split('.')
+
+    return int(integer)

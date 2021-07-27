@@ -55,11 +55,9 @@ class Transformer(metaclass=ABCMeta):
         self._df = pd.DataFrame()
         self._files = {}
         self._attrs = {}
+        self._write_stack = []
 
         for key, file in files.items():
-
-            if hasattr(self, key):
-                raise ValueError(f'Invalid input for file {file} with key {key}')
 
             file_path = os.path.join(STAGING_AREA_PATH, source, version, file)
 
@@ -96,12 +94,12 @@ class Transformer(metaclass=ABCMeta):
 
         key, df = value
 
-        if self.is_valid_key(key) and isinstance(df, pd.DataFrame):
-            self._attrs[key] = df
-            setattr(self, key, df)
-            return
+        self._attrs[key] = df
+        return
 
-        raise AttributeError(f'Attribute with name {key} cannot be set')
+    @property
+    def write_path(self):
+        return os.path.join(DATA_LAKE_PATH, self._source, self._version)
 
     # --------------------------------------------------------
     # Transformer Python API
@@ -109,23 +107,11 @@ class Transformer(metaclass=ABCMeta):
     def __str__(self):
         return self._df.__str__()
 
-    def __getattr__(self, item) -> pd.DataFrame:
-        if self.is_valid_key(item):
-            df = pd.DataFrame()
-            self.attrs = (item, df)
-
-        return self._attrs[item]
-
-    def __setattr__(self, key, value):
-        if self.is_valid_key(key):
-            self.attrs = (key, value)
-
     def __getitem__(self, item) -> pd.DataFrame:
         return self._attrs.__getitem__(item)
 
     def __setitem__(self, key, value):
-        if self.is_valid_key(key):
-            self.attrs = (key, value)
+        self.attrs = (key, value)
 
     def keys(self):
         return self._attrs.keys()
@@ -173,6 +159,16 @@ class Transformer(metaclass=ABCMeta):
     def integrate(self, *args, **kwargs):
         pass
 
+    def write(self):
+
+        if not os.path.exists(self.write_path):
+            os.makedirs(self.write_path)
+
+        for csv in self._write_stack:
+            csv()
+
+        self._write_stack = []
+
     # ----------------------------------------
     # Utilities methods
     # ----------------------------------------
@@ -181,16 +177,6 @@ class Transformer(metaclass=ABCMeta):
         for key, file_path in self._files.items():
             df = read_json_lines(file_path)
             self.attrs = (key, df)
-
-    def is_valid_key(self, key: str) -> bool:
-
-        if key not in self._attrs and key not in self.__dict__:
-            return True
-
-        elif key in self._attrs and hasattr(self, key):
-            return True
-
-        return False
 
     def node_snapshot(self) -> pd.DataFrame:
         df = self.node.node_to_df()

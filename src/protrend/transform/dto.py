@@ -1,8 +1,6 @@
 from dataclasses import dataclass, fields
 from typing import List
 
-import pandas as pd
-
 from protrend.utils.unique_list import unique_field
 
 
@@ -27,12 +25,6 @@ class DTO:
             result.append((f.name, value))
 
         return dict(result)
-
-    def to_df(self):
-
-        data = self.to_dict()
-
-        return pd.DataFrame.from_dict(data)
 
 
 @dataclass

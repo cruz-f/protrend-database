@@ -38,3 +38,4 @@ class Director:
             transformer.read()
             transformer.process()
             transformer.integrate()
+            transformer.write()
