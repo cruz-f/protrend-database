@@ -219,6 +219,10 @@ class Node(StructuredNode):
     def to_series(self):
         return pd.Series(data=self.values(), index=self.keys())
 
+    def to_df(self):
+        data = [list(self.values())]
+        return pd.DataFrame(data=data, columns=self.keys())
+
 
 def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]):
 

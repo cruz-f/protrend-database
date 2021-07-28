@@ -1,5 +1,6 @@
 import os
 from abc import ABCMeta, abstractmethod
+from functools import partial
 from typing import Dict, Tuple
 
 import pandas as pd
@@ -158,6 +159,16 @@ class Transformer(metaclass=ABCMeta):
     @abstractmethod
     def integrate(self, *args, **kwargs):
         pass
+
+    def stack_csv(self, name: str, df: pd.DataFrame = None):
+
+        if df is None:
+            df = self._df
+
+        df_copy = df.copy(deep=True)
+        fp = os.path.join(self.write_path, f'{name}.csv')
+        csv = partial(df_copy.to_csv, path_or_buf=fp)
+        self._write_stack.append(csv)
 
     def write(self):
 

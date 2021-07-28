@@ -1,5 +1,3 @@
-import os
-from functools import partial
 from typing import Dict
 
 import pandas as pd
@@ -108,9 +106,5 @@ class OrganismTransformer(Transformer):
         self.node.node_update_from_df(organisms_to_update_df, save=True)
 
         df = pd.concat([organisms_to_create_df, organisms_to_update_df])
-        self._df = df
 
-        df_to_csv = self._df.copy(deep=True)
-        fp = os.path.join(self.write_path, 'organism.csv')
-        csv = partial(df_to_csv.to_csv, path_or_buf=fp)
-        self._write_stack.append(csv)
+        self.stack_csv('organism', df)
