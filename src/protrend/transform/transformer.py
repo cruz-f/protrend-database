@@ -157,6 +157,16 @@ class Transformer(metaclass=ABCMeta):
 
     @abstractmethod
     def load_relationships(self, *args, **kwargs):
+        # relationship dataframe structure
+        # from
+        # to
+        # from_property
+        # to_property
+
+        # relationship dataframe custom structure
+        # name
+        # url
+        # external_identifier
         pass
 
     def write(self):

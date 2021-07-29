@@ -6,6 +6,7 @@ from protrend.model.model import Organism, Source
 from protrend.model.node import protrend_id_decoder, protrend_id_encoder
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
+from protrend.transform.processors import rstrip, lstrip
 from protrend.transform.regprecise.settings import RegPreciseTransformSettings
 from protrend.transform.transformer import Transformer
 
@@ -34,22 +35,31 @@ class OrganismTransformer(Transformer):
     def read(self, *args, **kwargs):
         self.read_json_lines()
 
+    @property
+    def genome(self):
+        df = self.get('genome')
+
+        if df is not None:
+            df = df.rename(columns={'name': 'regprecise_name'})
+            df = df.drop_duplicates(subset=['regprecise_name'])
+            df['regprecise_name'] = df['regprecise_name'].map(rstrip)
+            df['regprecise_name'] = df['regprecise_name'].map(lstrip)
+
+        return df
+
     def transform(self) -> pd.DataFrame:
-        genome: pd.DataFrame = self.get('genome')
 
-        if genome is None:
-            return
+        if self.genome is None:
+            return pd.DataFrame()
 
-        names = list(genome.loc[:, 'name'])
-        genome['regprecise_name'] = names
-        del genome['name']
+        names = list(self.genome.loc[:, 'regprecise_name'])
 
         dtos = [OrganismDTO(input_value=name) for name in names]
         annotate_organisms(dtos=dtos, names=names)
 
         organisms = pd.DataFrame([dto.to_dict() for dto in dtos])
 
-        df = pd.merge(genome, organisms, left_on='regprecise_name', right_on='input_value')
+        df = pd.merge(self.genome, organisms, left_on='regprecise_name', right_on='input_value')
 
         return df
 
@@ -122,17 +132,6 @@ class OrganismTransformer(Transformer):
         return df
 
     def load_relationships(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-
-        # relationship dataframe structure
-        # from
-        # to
-        # from_property
-        # to_property
-
-        # relationship dataframe custom structure
-        # name
-        # url
-        # external_identifier
 
         n_rows, _ = df.shape
 
