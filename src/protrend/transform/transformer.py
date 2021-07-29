@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import pandas as pd
 
@@ -53,7 +53,6 @@ class Transformer(metaclass=ABCMeta):
 
         self._source = source
         self._version = version
-        self._df = pd.DataFrame()
         self._files = {}
         self._attrs = {}
         self._write_stack = []
@@ -75,10 +74,6 @@ class Transformer(metaclass=ABCMeta):
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
-    @property
-    def df(self) -> pd.DataFrame:
-        return self._df
-
     @property
     def files(self) -> Dict[str, str]:
         return self._files.copy()
@@ -106,7 +101,7 @@ class Transformer(metaclass=ABCMeta):
     # Transformer Python API
     # --------------------------------------------------------
     def __str__(self):
-        return self._df.__str__()
+        return self.attrs.__str__()
 
     def __getitem__(self, item) -> pd.DataFrame:
         return self._attrs.__getitem__(item)
@@ -153,22 +148,16 @@ class Transformer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def process(self, *args, **kwargs):
+    def transform(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def integrate(self, *args, **kwargs):
+    def load_nodes(self, *args, **kwargs):
         pass
 
-    def stack_csv(self, name: str, df: pd.DataFrame = None):
-
-        if df is None:
-            df = self._df
-
-        df_copy = df.copy(deep=True)
-        fp = os.path.join(self.write_path, f'{name}.csv')
-        csv = partial(df_copy.to_csv, path_or_buf=fp)
-        self._write_stack.append(csv)
+    @abstractmethod
+    def load_relationships(self, *args, **kwargs):
+        pass
 
     def write(self):
 
@@ -188,6 +177,16 @@ class Transformer(metaclass=ABCMeta):
         for key, file_path in self._files.items():
             df = read_json_lines(file_path)
             self.attrs = (key, df)
+
+    def stack_csv(self, name: str, df: pd.DataFrame):
+
+        df_copy = df.copy(deep=True)
+        fp = os.path.join(self.write_path, f'{name}.csv')
+        csv = partial(df_copy.to_csv, path_or_buf=fp)
+        self._write_stack.append(csv)
+
+    def last_node(self) -> Union['Node', None]:
+        return self.node.last_node()
 
     def node_snapshot(self) -> pd.DataFrame:
         df = self.node.node_to_df()

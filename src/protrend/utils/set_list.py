@@ -4,7 +4,7 @@ from functools import partial
 from typing import Sequence
 
 
-class UniqueList(UserList):
+class SetList(UserList):
 
     def __init__(self, sequence: Sequence = None, output: str = 'take_all'):
 
@@ -100,8 +100,8 @@ class UniqueList(UserList):
             return self.data[-1]
 
 
-def unique_field(output: str = None, init: bool = False):
+def set_list_field(output: str = None, init: bool = False):
 
-    unique_list = partial(UniqueList, output=output)
+    unique_list = partial(SetList, output=output)
 
     return field(default_factory=unique_list, init=init)

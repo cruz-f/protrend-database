@@ -47,13 +47,13 @@ class Node(StructuredNode):
         return cls.node_properties().items()
 
     @classmethod
-    def latest_identifier(cls):
-        protrend_identifiers = [node.identifier for node in cls.nodes.all()]
-        if protrend_identifiers:
-            sorted_identifiers = sorted(protrend_identifiers, key=protrend_id_decoder, reverse=True)
-            return sorted_identifiers[0]
+    def last_node(cls) -> Union['Node', None]:
+        nodes = cls.nodes.all()
+        if nodes:
+            sorted_nodes = sorted(nodes, key=_sort_nodes, reverse=True)
+            return sorted_nodes[0]
 
-        return protrend_id_encoder(cls.header, cls.entity, 0)
+        return None
 
     # -------------------------------------
     # Class methods
@@ -222,6 +222,11 @@ class Node(StructuredNode):
     def to_df(self):
         data = [list(self.values())]
         return pd.DataFrame(data=data, columns=self.keys())
+
+
+def _sort_nodes(node: Node):
+
+    return protrend_id_decoder(node.protrend_id)
 
 
 def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]):

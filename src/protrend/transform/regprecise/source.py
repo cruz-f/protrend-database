@@ -30,27 +30,24 @@ class SourceTransformer(Transformer):
 
         super().__init__(source=source, version=version, **files)
 
-    @property
-    def df(self) -> pd.DataFrame:
-
-        if self._df.empty:
-            return pd.DataFrame(columns=list(self.node.cls_keys()))
-
-        return self._df
-
     def read(self, *args, **kwargs):
         pass
 
-    def process(self):
+    def transform(self):
         pass
 
-    def integrate(self, *properties):
+    def load(self, *properties):
 
         snapshot = self.node_snapshot()
-        latest_identifier = self.node.latest_identifier()
-        integer = protrend_id_decoder(latest_identifier)
 
-        df = snapshot.query(f'name == regprecise & version == {self._version}')
+        last_node = self.node.last_node()
+        if last_node is None:
+            integer = 0
+
+        else:
+            integer = protrend_id_decoder(last_node.protrend_id)
+
+        df = snapshot.query(f'name == {self.name}')
 
         if df.empty:
             integer += 1
@@ -60,11 +57,10 @@ class SourceTransformer(Transformer):
                               url=self.url,
                               doi=self.doi,
                               authors=self.authors,
-                              description=self.description,
-                              version=self._version)
+                              description=self.description)
 
-            nodes = self.node.node_from_dict(regprecise, save=True)
-            node = nodes[0]
-            df = node.to_df()
+            self.node.node_from_dict(regprecise, save=True)
+
+            df = pd.DataFrame(regprecise, index=[0])
 
         self.stack_csv('source', df)
