@@ -24,11 +24,11 @@ def _fetch_compounds(names: List[str],
 
 def _annotate_compound(kegg_compound: KEGGCompound, effector_dto: EffectorDTO):
 
-    effector_dto.name.add(kegg_compound.name)
+    effector_dto.name.append(kegg_compound.name)
 
     if kegg_compound.identifier:
-        effector_dto.kegg_compounds.update(kegg_compound.kegg_identifiers)
-        effector_dto.synonyms.update(kegg_compound.kegg_names)
+        effector_dto.kegg_compounds.extend(kegg_compound.kegg_identifiers)
+        effector_dto.synonyms.extend(kegg_compound.kegg_names)
 
 
 def annotate_effectors(dtos: List[EffectorDTO],

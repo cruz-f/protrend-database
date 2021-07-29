@@ -23,11 +23,11 @@ def _fetch_pathways(names: List[str],
 
 
 def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: PathwayDTO):
-    pathway_dto.name.add(kegg_pathway.name)
+    pathway_dto.name.append(kegg_pathway.name)
 
     if kegg_pathway.identifier:
-        pathway_dto.kegg_pathways.update(kegg_pathway.kegg_identifiers)
-        pathway_dto.synonyms.update(kegg_pathway.kegg_names)
+        pathway_dto.kegg_pathways.extend(kegg_pathway.kegg_identifiers)
+        pathway_dto.synonyms.append(kegg_pathway.kegg_names)
 
 
 def annotate_pathways(dtos: List[PathwayDTO],

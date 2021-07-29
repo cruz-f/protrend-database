@@ -1,21 +1,23 @@
 from collections import UserList
 from dataclasses import field
 from functools import partial
-from typing import Sequence
+from typing import Sequence, Any
 
 
 class SetList(UserList):
 
-    def __init__(self, sequence: Sequence = None, output: str = 'take_all'):
+    def __init__(self,
+                 sequence: Sequence = None,
+                 output: str = 'take_all'):
 
         super().__init__()
 
         self.output = output
 
-        if sequence is not None:
-            sequence = self._unique_list(sequence)
+        if sequence is None:
+            sequence = []
 
-            self.data = sequence
+        self._add_elements(sequence)
 
     def __call__(self, output: str = None):
         if output is None:
@@ -29,15 +31,14 @@ class SetList(UserList):
 
         return self.take_all()
 
-    @staticmethod
-    def _unique_list(sequence):
-        lst = []
+    def _add_element(self, element: Any):
+        if element not in self.data:
+            self.data.append(element)
+
+    def _add_elements(self, sequence: Sequence):
 
         for element in sequence:
-            if element not in lst:
-                lst.append(element)
-
-        return lst
+            self._add_element(element)
 
     def __setitem__(self, i, item):
 
@@ -49,28 +50,26 @@ class SetList(UserList):
 
     def __add__(self, other):
 
-        other = self._unique_list(other)
+        other = self.__class__(other)
 
         return self.__class__(self.data + other)
 
     def __radd__(self, other):
 
-        other = self._unique_list(other)
+        other = self.__class__(other)
 
         return self.__class__(self.data + other)
 
     def __iadd__(self, other):
 
-        other = self._unique_list(other)
+        other = self.__class__(other)
+
         self.data += other
+
         return self
 
-    def add(self, item):
-        return self.append(item)
-
     def append(self, item):
-        if item not in self.data:
-            self.data.append(item)
+        self._add_element(item)
 
     def insert(self, i, item):
         if item not in self.data:
@@ -79,12 +78,9 @@ class SetList(UserList):
     def copy(self):
         return self.__class__(self)
 
-    def update(self, other):
-        return self.extend(other)
-
     def extend(self, other):
 
-        other = self._unique_list(other)
+        other = self.__class__(other)
 
         self.data.extend(other)
 

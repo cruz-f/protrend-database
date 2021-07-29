@@ -20,11 +20,11 @@ def _fetch_publications(identifiers: List[str],
 def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto: PublicationDTO):
 
     if pubmed_publication.identifier:
-        publication_dto.pmid.add(pubmed_publication.pmid)
-        publication_dto.doi.add(pubmed_publication.doi)
-        publication_dto.title.add(pubmed_publication.title)
-        publication_dto.author.add(pubmed_publication.author)
-        publication_dto.year.add(pubmed_publication.year)
+        publication_dto.pmid.append(pubmed_publication.pmid)
+        publication_dto.doi.append(pubmed_publication.doi)
+        publication_dto.title.append(pubmed_publication.title)
+        publication_dto.author.append(pubmed_publication.author)
+        publication_dto.year.append(pubmed_publication.year)
 
 
 def annotate_publications(dtos: List[PublicationDTO],

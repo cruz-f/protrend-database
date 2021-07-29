@@ -53,13 +53,13 @@ def _fetch_genes(identifiers: List[str],
 
 def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
     if uniprot_protein.identifier:
-        gene_dto.uniprot_accession.add(uniprot_protein.identifier)
-        gene_dto.locus_tag.add(uniprot_protein.locus_tag)
-        gene_dto.name.add(uniprot_protein.name)
-        gene_dto.synonyms.update(uniprot_protein.synonyms)
-        gene_dto.function.add(uniprot_protein.function)
-        gene_dto.description.add(uniprot_protein.description)
-        gene_dto.sequence.add(uniprot_protein.sequence)
+        gene_dto.uniprot_accession.append(uniprot_protein.identifier)
+        gene_dto.locus_tag.append(uniprot_protein.locus_tag)
+        gene_dto.name.append(uniprot_protein.name)
+        gene_dto.synonyms.extend(uniprot_protein.synonyms)
+        gene_dto.function.append(uniprot_protein.function)
+        gene_dto.description.append(uniprot_protein.description)
+        gene_dto.sequence.append(uniprot_protein.sequence)
 
         return 1, uniprot_protein.identifier
 
@@ -69,20 +69,20 @@ def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
 def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
     if ncbi_protein.identifier:
 
-        gene_dto.ncbi_protein.add(ncbi_protein.identifier)
-        gene_dto.locus_tag.add(ncbi_protein.locus_tag)
-        gene_dto.name.add(ncbi_protein.name)
-        gene_dto.synonyms.update(ncbi_protein.synonyms)
-        gene_dto.sequence.add(ncbi_protein.sequence)
+        gene_dto.ncbi_protein.append(ncbi_protein.identifier)
+        gene_dto.locus_tag.append(ncbi_protein.locus_tag)
+        gene_dto.name.append(ncbi_protein.name)
+        gene_dto.synonyms.extend(ncbi_protein.synonyms)
+        gene_dto.sequence.append(ncbi_protein.sequence)
 
         refseq = ''
         genbank = ''
 
         if ncbi_protein.is_refseq():
-            gene_dto.refseq_accession.add(ncbi_protein.refseq_accession)
+            gene_dto.refseq_accession.append(ncbi_protein.refseq_accession)
             refseq = ncbi_protein.refseq_accession
         else:
-            gene_dto.genbank_accession.add(ncbi_protein.genbank_accession)
+            gene_dto.genbank_accession.append(ncbi_protein.genbank_accession)
             genbank = ncbi_protein.genbank_accession
 
         return 1, ncbi_protein.identifier, refseq, genbank
@@ -92,13 +92,13 @@ def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
 
 def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
     if ncbi_gene.identifier:
-        gene_dto.ncbi_gene.add(ncbi_gene.identifier)
-        gene_dto.locus_tag.add(ncbi_gene.locus_tag)
-        gene_dto.name.add(ncbi_gene.name)
-        gene_dto.synonyms.update(ncbi_gene.synonyms)
-        gene_dto.function.add(ncbi_gene.function)
-        gene_dto.position_left.add(ncbi_gene.position_left)
-        gene_dto.position_right.add(ncbi_gene.position_right)
+        gene_dto.ncbi_gene.append(ncbi_gene.identifier)
+        gene_dto.locus_tag.append(ncbi_gene.locus_tag)
+        gene_dto.name.append(ncbi_gene.name)
+        gene_dto.synonyms.extend(ncbi_gene.synonyms)
+        gene_dto.function.append(ncbi_gene.function)
+        gene_dto.position_left.append(ncbi_gene.position_left)
+        gene_dto.position_right.append(ncbi_gene.position_right)
 
         return 1, ncbi_gene.identifier
 
@@ -106,9 +106,9 @@ def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
 
 
 def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
-    gene_dto.locus_tag.add(uniprot_protein.locus_tag)
-    gene_dto.name.add(uniprot_protein.name)
-    gene_dto.synonyms.update(uniprot_protein.synonyms)
+    gene_dto.locus_tag.append(uniprot_protein.locus_tag)
+    gene_dto.name.append(uniprot_protein.name)
+    gene_dto.synonyms.extend(uniprot_protein.synonyms)
 
 
 def annotate_genes(dtos: List[GeneDTO],
@@ -242,9 +242,9 @@ def annotate_genes(dtos: List[GeneDTO],
         uniprot_ncbi_refseq = _find_in_mapping(uniprot_id, uniprot_ncbi_refseqs)
         uniprot_ncbi_genbank = _find_in_mapping(uniprot_id, uniprot_ncbi_genbanks)
 
-        gene_dto.ncbi_protein.update(uniprot_ncbi_protein)
-        gene_dto.refseq_accession.update(uniprot_ncbi_refseq)
-        gene_dto.genbank_accession.update(uniprot_ncbi_genbank)
+        gene_dto.ncbi_protein.extend(uniprot_ncbi_protein)
+        gene_dto.refseq_accession.extend(uniprot_ncbi_refseq)
+        gene_dto.genbank_accession.extend(uniprot_ncbi_genbank)
 
         if ncbi_protein_id in uniprot_ncbi_protein:
             score += 1
