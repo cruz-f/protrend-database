@@ -1,147 +1,78 @@
-from typing import Dict, Tuple, List, Callable
+from typing import Dict, List
 
 import pandas as pd
 
 from protrend.model.model import Organism, Source
-from protrend.model.node import protrend_id_decoder, protrend_id_encoder
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
-from protrend.transform.processors import rstrip, lstrip
-from protrend.transform.regprecise.settings import RegPreciseTransformSettings
+from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
+from protrend.transform.regprecise.settings import OrganismSettings
 from protrend.transform.transformer import Transformer
 
 
 class OrganismTransformer(Transformer):
-    node = Organism
-    integration_properties = ('ncbi_taxonomy', 'name')
-    source_name = 'regprecise'
 
-    def __init__(self,
-                 source: str = None,
-                 version: str = None,
-                 **files: Dict[str, str]):
+    def __init__(self, settings: OrganismSettings = None):
 
-        if not source:
-            source = RegPreciseTransformSettings.source
+        if not settings:
+            settings = OrganismSettings()
 
-        if not version:
-            version = RegPreciseTransformSettings.version
-
-        if not files:
-            files = RegPreciseTransformSettings.organism
-
-        super().__init__(source=source, version=version, **files)
+        super().__init__(settings)
 
     def read(self, *args, **kwargs):
         self.read_json_lines()
 
-    @property
-    def genome(self):
-        df = self.get('genome')
+    def _transform_genome(self):
+        df = self.get('genome', pd.DataFrame(columns=['name']))
 
-        if df is not None:
-            df = df.rename(columns={'name': 'regprecise_name'})
-            df = df.drop_duplicates(subset=['regprecise_name'])
-            df['regprecise_name'] = df['regprecise_name'].map(rstrip)
-            df['regprecise_name'] = df['regprecise_name'].map(lstrip)
+        df = df.drop_duplicates(subset=['name'])
+
+        apply_processors(rstrip, lstrip, df=df, col='name')
+
+        df['input_value'] = df['name']
 
         return df
 
-    def transform(self) -> pd.DataFrame:
-
-        if self.genome is None:
-            return pd.DataFrame()
-
-        names = list(self.genome.loc[:, 'regprecise_name'])
+    @staticmethod
+    def _annotate_organisms(names: List[str]):
 
         dtos = [OrganismDTO(input_value=name) for name in names]
         annotate_organisms(dtos=dtos, names=names)
 
         organisms = pd.DataFrame([dto.to_dict() for dto in dtos])
 
-        df = pd.merge(self.genome, organisms, left_on='regprecise_name', right_on='input_value')
+        if organisms.empty:
+            organisms = pd.DataFrame(columns=['input_value', 'name'])
 
-        return df
+        apply_processors(nan_to_str, df=organisms, col='name')
 
-    @staticmethod
-    def find_organism(organism: pd.Series, snapshot_properties: Dict[str, pd.Series]) -> pd.Series:
+        return organisms
 
-        for prop, snapshot_values in snapshot_properties.items():
+    def transform(self) -> pd.DataFrame:
 
-            identifier = organism.get(prop, None)
+        genome = self._transform_genome()
 
-            if identifier is None:
-                continue
+        names = tuple(genome['input_value'])
 
-            snapshot_mask: pd.Series = snapshot_values == identifier
+        organisms = self._annotate_organisms(names)
 
-            if snapshot_mask.any():
-                return snapshot_mask
+        df = pd.merge(organisms, genome, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        return pd.Series([False])
+        df['name'] = df['name_annotation'].astype(str) + df['name_regprecise'].astype(str)
 
-    def integrate_nodes(self,
-                        df: pd.DataFrame,
-                        index: List[Tuple[int, str]],
-                        node_factory: Callable):
+        df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 
-        to_idx, to_ids = list(zip(*index))
-        to_df = df.loc[to_ids, :]
-        to_df[self.node.identifying_property] = to_idx
-
-        node_factory(nodes=to_df, save=True)
-        return to_df
-
-    def load_nodes(self, df, *properties) -> pd.DataFrame:
-
-        snapshot = self.node_snapshot()
-
-        if not properties:
-            properties = self.integration_properties
-
-        snapshot_properties = {prop: snapshot.loc[:, prop] for prop in properties}
-
-        last_node = self.node.last_node()
-        if last_node is None:
-            integer = 0
-
-        else:
-            integer = protrend_id_decoder(last_node.protrend_id)
-
-        to_update: List[Tuple[int, str]] = []
-        to_create: List[Tuple[int, str]] = []
-        for i, organism in df.iterrows():
-
-            organism_mask = self.find_organism(organism, snapshot_properties)
-
-            # update
-            if organism_mask.any():
-                protend_id = snapshot.loc[organism_mask, self.node.identifying_property].iloc[0]
-                to_update.append((i, protend_id))
-
-            else:
-                integer += 1
-                protend_id = protrend_id_encoder(self.node.header, self.node.entity, integer)
-                to_create.append((i, protend_id))
-
-        to_create = self.integrate_nodes(df=df, index=to_create, node_factory=self.node.node_from_df)
-        to_update = self.integrate_nodes(df=df, index=to_update, node_factory=self.node.node_update_from_df)
-
-        df = pd.concat([to_create, to_update])
-        self.stack_csv('organism', df)
         return df
 
     def load_relationships(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
 
         n_rows, _ = df.shape
 
-        from_ = ['organism'] * n_rows
-        to = ['source'] * n_rows
-        from_property = ['protrend_id'] * n_rows
-        to_property = ['name'] * n_rows
-
-        source_df = pd.DataFrame([from_, to, from_property, to_property],
-                                 columns=['from', 'to', 'from_property', 'to_property'])
+        source_df = self.make_relationship_df(n_rows=n_rows,
+                                              from_node='organism',
+                                              to_node='source',
+                                              from_property=self.node.identifying_property,
+                                              to_property='name')
 
         source_df['name'] = ['genome_id'] * n_rows
         source_df['url'] = df.loc[:, 'url']

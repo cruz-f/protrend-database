@@ -27,7 +27,7 @@ class RegulatoryFamilyTransformer(Transformer):
             version = RegPreciseTransformSettings.version
 
         if not files:
-            files = RegPreciseTransformSettings.effector
+            files = RegPreciseTransformSettings.regulatory_family
 
         super().__init__(source=source, version=version, **files)
 

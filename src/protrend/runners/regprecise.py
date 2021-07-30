@@ -23,6 +23,7 @@ if __name__ == "__main__":
                              db_name='neo4j',
                              dbms='')
     db_settings.connect()
+    db_settings.clear_db()
 
     transformer = OrganismTransformer()
     director = Director(transformer)

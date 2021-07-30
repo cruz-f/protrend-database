@@ -126,6 +126,9 @@ class Node(StructuredNode):
                     val = node_properties.get(key, None)
                     res[key].append(val)
 
+            if not res:
+                return {key: [] for key in cls.node_keys()}
+
             return res
 
         elif to == 'node':
@@ -233,7 +236,7 @@ def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]):
 
     integer = int(integer)
 
-    return f'{header}.{entity}.{integer:7d}'
+    return f'{header}.{entity}.{integer:07}'
 
 
 def protrend_id_decoder(protrend_id: str):

@@ -1,12 +1,13 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, Callable, List
 
 import pandas as pd
 
 from protrend.io.json import read_json_lines
-from protrend.model.node import Node
+from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
+from protrend.transform.settings import TransformerSettings
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
@@ -21,12 +22,8 @@ class Transformer(metaclass=ABCMeta):
 
     A transformer starts with data from the staging area and ends with structured nodes and relationships.
     """
-    node: Node = None
 
-    def __init__(self,
-                 source: str = None,
-                 version: str = None,
-                 **files: Dict[str, str]):
+    def __init__(self, settings: TransformerSettings):
 
         """
         The transform object contains and uses transformation procedures for a given neomodel node entity.
@@ -40,26 +37,23 @@ class Transformer(metaclass=ABCMeta):
         A pandas DataFrame is the main engine to read, load, process and transform data contained in these files into
         structured nodes and relationships
 
-        :param source: a given source or database listed in the staging area
-        :param version: a given version of the selected database
-        :param files: a dictionary/mapping-like object containing attribute_name-file_path pairs.
-        Files parameter should map a given attribute to the respective file and pandas DataFrame.
+        :param settings: a TransformerSettings than contains all settings for source,
+        version and files to perform the transformation on
         """
-        if not source:
-            source = ''
 
-        if not version:
-            version = ''
+        self._settings = settings
 
-        self._source = source
-        self._version = version
         self._files = {}
         self._attrs = {}
         self._write_stack = []
 
-        for key, file in files.items():
+        self._load_settings()
 
-            file_path = os.path.join(STAGING_AREA_PATH, source, version, file)
+    def _load_settings(self):
+
+        for key, file in self._settings.files.items():
+
+            file_path = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
 
             if os.path.exists(file_path):
 
@@ -75,15 +69,27 @@ class Transformer(metaclass=ABCMeta):
     # Static properties
     # --------------------------------------------------------
     @property
-    def files(self) -> Dict[str, str]:
-        return self._files.copy()
+    def settings(self) -> TransformerSettings:
+        return self._settings
 
     # --------------------------------------------------------
     # Dynamic properties
     # --------------------------------------------------------
     @property
+    def source(self) -> str:
+        return self.settings.source
+
+    @property
+    def version(self) -> str:
+        return self.settings.version
+
+    @property
+    def files(self) -> Dict[str, str]:
+        return self._files
+
+    @property
     def attrs(self) -> Dict[str, pd.DataFrame]:
-        return {key: df.copy() for key, df in self._attrs.items()}
+        return self._attrs
 
     @attrs.setter
     def attrs(self, value: Tuple[str, pd.DataFrame]):
@@ -94,8 +100,16 @@ class Transformer(metaclass=ABCMeta):
         return
 
     @property
-    def write_path(self):
-        return os.path.join(DATA_LAKE_PATH, self._source, self._version)
+    def node(self) -> Node:
+        return self.settings.node
+
+    @property
+    def node_factors(self) -> Node:
+        return self.settings.node_factors
+
+    @property
+    def write_path(self) -> str:
+        return os.path.join(DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Transformer Python API
@@ -151,9 +165,47 @@ class Transformer(metaclass=ABCMeta):
     def transform(self, *args, **kwargs):
         pass
 
-    @abstractmethod
-    def load_nodes(self, *args, **kwargs):
-        pass
+    def _load_nodes(self, df: pd.DataFrame, identifiers: List[str], node_factory: Callable) -> pd.DataFrame:
+
+        df[self.node.identifying_property] = identifiers
+        node_factory(nodes=df, save=True)
+
+        return df
+
+    def load_nodes(self, df: pd.DataFrame, *node_factors: Tuple[str]) -> pd.DataFrame:
+
+        if not node_factors:
+            node_factors = self.node_factors
+
+        # take a db snapshot for the current node
+        snapshot = self.node_snapshot()
+
+        # find matching nodes according to several node factors/properties
+        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=node_factors)
+
+        # nodes to be updated
+        update_nodes = df[nodes_mask]
+
+        snapshot_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=node_factors)
+        update_identifiers = snapshot.loc[snapshot_mask, self.node.identifying_property]
+
+        update_nodes = self._load_nodes(df=update_nodes,
+                                        identifiers=update_identifiers,
+                                        node_factory=self.node.node_update_from_df)
+
+        # nodes to be created
+        create_nodes = df[~nodes_mask]
+
+        size, _ = create_nodes.shape
+        create_identifiers = self.protrend_identifiers_batch(size)
+
+        create_nodes = self._load_nodes(df=create_nodes, identifiers=create_identifiers,
+                                        node_factory=self.node.node_from_df)
+
+        df = pd.concat([create_nodes, update_nodes], axis=0)
+        self.stack_csv(self.node.node_name(), df)
+
+        return df
 
     @abstractmethod
     def load_relationships(self, *args, **kwargs):
@@ -195,10 +247,78 @@ class Transformer(metaclass=ABCMeta):
         csv = partial(df_copy.to_csv, path_or_buf=fp)
         self._write_stack.append(csv)
 
+    @staticmethod
+    def find_nodes(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: Tuple[str]) -> pd.Series:
+
+        n_rows, _ = nodes.shape
+
+        mask = pd.Series([False] * n_rows)
+
+        factors_masks = []
+        for factor in node_factors:
+
+            if factor in nodes.columns and factor in snapshot.columns:
+                snapshot_values = snapshot[factor]
+                factor_mask = nodes[factor].isin(snapshot_values)
+                factors_masks.append(factor_mask)
+
+        if factors_masks:
+            mask = pd.concat(factors_masks, axis=1)
+            mask = mask.any(axis=1)
+
+        return mask
+
+    @staticmethod
+    def find_snapshot(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: Tuple[str]) -> pd.Series:
+
+        n_rows, _ = snapshot.shape
+
+        mask = pd.Series([False] * n_rows)
+
+        factors_masks = []
+        for factor in node_factors:
+
+            if factor in nodes.columns and factor in snapshot.columns:
+                node_values = nodes[factor]
+                factor_mask = snapshot[factor].isin(node_values)
+                factors_masks.append(factor_mask)
+
+        if factors_masks:
+            mask = pd.concat(factors_masks, axis=1)
+            mask = mask.any(axis=1)
+
+        return mask
+
+    def protrend_identifiers_batch(self, size):
+
+        last_node = self.node.last_node()
+
+        if last_node is None:
+            integer = 0
+        else:
+            integer = protrend_id_decoder(last_node.protrend_id)
+
+        return [protrend_id_encoder(self.node.header, self.node.entity, i)
+                for i in range(integer, size)]
+
+    @staticmethod
+    def make_relationship_df(n_rows: int,
+                             from_node: str,
+                             to_node: str,
+                             from_property: str,
+                             to_property: str) -> pd.DataFrame:
+
+        from_col = [from_node] * n_rows
+        to_col = [to_node] * n_rows
+        from_property_col = [from_property] * n_rows
+        to_property_col = [to_property] * n_rows
+
+        return pd.DataFrame([from_col, to_col, from_property_col, to_property_col],
+                            columns=['from', 'to', 'from_property', 'to_property'])
+
     def last_node(self) -> Union['Node', None]:
         return self.node.last_node()
 
     def node_snapshot(self) -> pd.DataFrame:
         df = self.node.node_to_df()
-        df.reset_index(inplace=True, drop=True)
         return df
