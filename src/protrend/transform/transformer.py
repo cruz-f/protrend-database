@@ -299,7 +299,7 @@ class Transformer(metaclass=ABCMeta):
             integer = protrend_id_decoder(last_node.protrend_id)
 
         return [protrend_id_encoder(self.node.header, self.node.entity, i)
-                for i in range(integer, size)]
+                for i in range(integer+1, size+1)]
 
     @staticmethod
     def make_relationship_df(n_rows: int,
@@ -308,13 +308,12 @@ class Transformer(metaclass=ABCMeta):
                              from_property: str,
                              to_property: str) -> pd.DataFrame:
 
-        from_col = [from_node] * n_rows
-        to_col = [to_node] * n_rows
-        from_property_col = [from_property] * n_rows
-        to_property_col = [to_property] * n_rows
+        relationship = {'from': [from_node] * n_rows,
+                        'to': [to_node] * n_rows,
+                        'from_property': [from_property] * n_rows,
+                        'to_property': [to_property] * n_rows}
 
-        return pd.DataFrame([from_col, to_col, from_property_col, to_property_col],
-                            columns=['from', 'to', 'from_property', 'to_property'])
+        return pd.DataFrame(relationship)
 
     def last_node(self) -> Union['Node', None]:
         return self.node.last_node()
