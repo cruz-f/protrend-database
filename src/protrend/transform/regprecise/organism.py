@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import List
 
 import pandas as pd
 
@@ -60,6 +60,10 @@ class OrganismTransformer(Transformer):
         df['name'] = df['name_annotation'].astype(str) + df['name_regprecise'].astype(str)
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
+
+        n_rows, _ = df.shape
+        df['source_db'] = ['regprecise'] * n_rows
+        df['api_key'] = ['genome_id'] * n_rows
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)

@@ -25,7 +25,7 @@ class RelationshipSettings:
         self.properties = properties
 
     def is_empty(self) -> bool:
-        if self.from_node:
+        if self.from_node is None:
             return True
 
         return False
@@ -60,10 +60,13 @@ class TransformerSettings:
                  node: Node = None,
                  node_factors: Tuple[str] = None,
                  relationships: List[RelationshipSettings] = None,
-                 **files: Dict[str, str]):
+                 files: Dict[str, str] = None):
 
         if not relationships:
             relationships = []
+
+        if not files:
+            files = {}
 
         self._source = source
         self._version = version
@@ -77,28 +80,40 @@ class TransformerSettings:
         if not self._source:
             return self.default_source
 
+        return self._source
+
     @property
     def version(self) -> str:
         if not self._version:
             return self.default_version
 
-    @property
-    def files(self) -> Dict[str, str]:
-        if not self._files:
-            return self.default_files
+        return self._version
 
     @property
     def node(self) -> Node:
         if not self._node:
             return self.default_node
 
+        return self._node
+
     @property
     def node_factors(self) -> Tuple[str]:
         if not self._node_factors:
             return self.default_node_factors
+
+        return self._node_factors
+
+    @property
+    def files(self) -> Dict[str, str]:
+        if not self._files:
+            return self.default_files
+
+        return self._files
 
     @property
     def relationships(self) -> List[RelationshipSettings]:
 
         if not self._relationships:
             return self.default_relationships
+
+        return self._relationships

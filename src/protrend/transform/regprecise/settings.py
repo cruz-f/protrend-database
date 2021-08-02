@@ -16,7 +16,9 @@ class OrganismSettings(RegPreciseSettings):
                                                   to_node=Source,
                                                   from_property=Organism.identifying_property,
                                                   to_property='name',
-                                                  **{'url': 'url',
+                                                  **{Organism.identifying_property: 'from_identifier',
+                                                     'source_db': 'to_identifier',
+                                                     'url': 'url',
                                                      'genome_id': 'external_identifier',
                                                      'api_key': 'name'})]
 

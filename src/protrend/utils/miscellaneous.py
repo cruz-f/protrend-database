@@ -6,7 +6,7 @@ camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
 
 def convert_to_snake_case(item: str):
-    return pattern.sub('_', item).lower()
+    return camel_case_pattern.sub('_', item).lower()
 
 
 def args_length(*args):
