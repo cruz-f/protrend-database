@@ -1,3 +1,14 @@
+import re
+
+
+# CamelCase to snake_case
+camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
+
+
+def convert_to_snake_case(item: str):
+    return pattern.sub('_', item).lower()
+
+
 def args_length(*args):
     size = 0
 
@@ -25,3 +36,5 @@ def scale_arg(arg, size):
         raise ValueError(f'Invalid input size of {len(arg)}')
 
     return arg
+
+

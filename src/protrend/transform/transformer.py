@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Dict, Tuple, Union, Callable, List
+from typing import Dict, Tuple, Union
 
 import pandas as pd
 
@@ -161,65 +161,112 @@ class Transformer(metaclass=ABCMeta):
 
         pass
 
-    @abstractmethod
     def transform(self, *args, **kwargs):
+
+        """
+        The method responsible for transforming multiple pandas DataFrames into an annotated, cleaned and standardized
+        pandas DataFrame ready to be integrated and transformed into structured nodes.
+
+        Interface implementation with unknown signature.
+        Concrete implementations are available at the transformer children.
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
         pass
 
-    def _load_nodes(self, df: pd.DataFrame, identifiers: List[str], node_factory: Callable) -> pd.DataFrame:
+    def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
-        df[self.node.identifying_property] = identifiers
-        node_factory(nodes=df, save=True)
+        """
+        The method responsible for integrating the transformed pandas DataFrame with the current state of the neo4j
+        database using neomodel and node class extension
 
-        return df
+        The node factors are node attributes used for data normalization and integration.
+        The node factors are used to retrieve the protrend identifier associated with each row of the database.
+        Pandas boolean masks are used to query the database improving search performance.
 
-    def load_nodes(self, df: pd.DataFrame, *node_factors: Tuple[str]) -> pd.DataFrame:
+        The nodes identified by the distinct node factors are marked as update nodes. Thus, these nodes identified by
+        their protrend identifier will be updated with new data.
 
-        if not node_factors:
-            node_factors = self.node_factors
+        The nodes missing a hit with the current state of the database will be created according
+        to the data contained in the DataFrame.
+
+        :param df: transformed pandas DataFrame
+        :return: it creates a new pandas DataFrame of the integrated data
+        """
 
         # take a db snapshot for the current node
         snapshot = self.node_snapshot()
 
         # find matching nodes according to several node factors/properties
-        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=node_factors)
+        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=self.node_factors)
 
         # nodes to be updated
         update_nodes = df[nodes_mask]
 
-        snapshot_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=node_factors)
-        update_identifiers = snapshot.loc[snapshot_mask, self.node.identifying_property]
-
-        update_nodes = self._load_nodes(df=update_nodes,
-                                        identifiers=update_identifiers,
-                                        node_factory=self.node.node_update_from_df)
+        # find/set protrend identifiers for update nodes
+        update_size, _ = update_nodes.shape
+        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=self.node_factors)
+        update_nodes[self.node.identifying_property] = snapshot.loc[ids_mask, self.node.identifying_property]
+        update_nodes['load'] = ['update'] * update_size
+        update_nodes['what'] = ['nodes'] * update_size
 
         # nodes to be created
         create_nodes = df[~nodes_mask]
 
-        size, _ = create_nodes.shape
-        create_identifiers = self.protrend_identifiers_batch(size)
+        # create/set new protrend identifiers
+        create_size, _ = create_nodes.shape
+        create_identifiers = self.protrend_identifiers_batch(create_size)
+        create_nodes[self.node.identifying_property] = create_identifiers
+        create_nodes['load'] = ['create'] * create_size
+        update_nodes['what'] = ['nodes'] * update_size
 
-        create_nodes = self._load_nodes(df=create_nodes, identifiers=create_identifiers,
-                                        node_factory=self.node.node_from_df)
-
+        # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)
-        self.stack_csv(self.node.node_name(), df)
+        df_name = f'integrated_{self.node.node_name()}'
+        self.stack_csv(df_name, df)
 
         return df
 
-    @abstractmethod
-    def load_relationships(self, *args, **kwargs):
-        # relationship dataframe structure
-        # from
-        # to
-        # from_property
-        # to_property
+    def connect(self, df: pd.DataFrame) -> Dict[Tuple[str, str], pd.DataFrame]:
 
-        # relationship dataframe custom structure
-        # name
-        # url
-        # external_identifier
-        pass
+        """
+        The method responsible for connecting an integrated pandas DataFrames to the remaining database.
+        The connect method should set up multiple connections into several pandas DataFrames
+        using either protrend identifiers or node factors
+
+        Interface implementation with unknown signature.
+        Concrete implementations are available at the transformer children.
+
+        :param df:
+        :return:
+        """
+
+        n_rows, _ = df.shape
+
+        dfs = {}
+
+        # working the relationships according to the transformer settings
+        for relationship in self._settings.relationships:
+
+            if relationship.is_empty():
+                continue
+
+            relationship_df = self.make_relationship_df(n_rows,
+                                                        relationship.from_node.node_name(),
+                                                        relationship.to_node.node_name(),
+                                                        relationship.from_property,
+                                                        relationship.to_property)
+
+            for key, val in relationship.properties.items():
+
+                if key in df.columns:
+                    relationship_df[val] = df[key]
+
+            self.stack_csv(relationship.key, relationship_df)
+            dfs[relationship.tuple_key] = relationship_df
 
     def write(self):
 
@@ -308,10 +355,12 @@ class Transformer(metaclass=ABCMeta):
                              from_property: str,
                              to_property: str) -> pd.DataFrame:
 
-        relationship = {'from': [from_node] * n_rows,
-                        'to': [to_node] * n_rows,
+        relationship = {'from_node': [from_node] * n_rows,
+                        'to_node': [to_node] * n_rows,
                         'from_property': [from_property] * n_rows,
-                        'to_property': [to_property] * n_rows}
+                        'to_property': [to_property] * n_rows,
+                        'load': ['create'] * n_rows,
+                        'what': ['relationships'] * n_rows}
 
         return pd.DataFrame(relationship)
 

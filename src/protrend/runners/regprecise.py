@@ -1,6 +1,6 @@
 import sys
 
-from protrend.transform.director import Director
+from protrend.runners.director import Director
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.utils.db_connection import DBSettings
 

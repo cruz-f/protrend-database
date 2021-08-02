@@ -1,8 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import pandas as pd
 
-from protrend.model.model import Organism, Source
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
@@ -62,24 +61,7 @@ class OrganismTransformer(Transformer):
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 
+        df_name = f'transformed_{self.node.node_name()}'
+        self.stack_csv(df_name, df)
+
         return df
-
-    def load_relationships(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-
-        n_rows, _ = df.shape
-
-        source_df = self.make_relationship_df(n_rows=n_rows,
-                                              from_node='organism',
-                                              to_node='source',
-                                              from_property=self.node.identifying_property,
-                                              to_property='name')
-
-        source_df['name'] = ['genome_id'] * n_rows
-        source_df['url'] = df.loc[:, 'url']
-        source_df['external_identifier'] = df.loc[:, 'genome_id']
-
-        self.stack_csv('organism_source', source_df)
-
-        return {(Organism.node_name(), Source.node_name()): df}
-
-

@@ -6,6 +6,8 @@ import pandas as pd
 import pytz
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty)
 
+from protrend.utils.miscellaneous import convert_to_snake_case
+
 
 class Node(StructuredNode):
     __abstract_node__ = True
@@ -24,7 +26,7 @@ class Node(StructuredNode):
     # -------------------------------------
     @classmethod
     def node_name(cls):
-        return cls.__name__.lower()
+        return convert_to_snake_case(cls.__name__.lower())
 
     @classmethod
     def node_properties(cls) -> dict:
