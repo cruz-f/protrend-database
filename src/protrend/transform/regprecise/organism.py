@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 import pandas as pd
 
@@ -47,7 +47,7 @@ class OrganismTransformer(Transformer):
 
         return organisms
 
-    def transform(self, **kwargs) -> pd.DataFrame:
+    def transform(self, **kwargs):
 
         genome = kwargs.get('genome', pd.DataFrame(columns=['name']))
         genome = self._transform_genome(genome)

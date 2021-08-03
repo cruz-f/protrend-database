@@ -1,66 +1,37 @@
-from typing import Dict
-
 import pandas as pd
 
-from protrend.model.model import Source
-from protrend.model.node import protrend_id_decoder
-from protrend.transform.regprecise.settings import RegPreciseTransformSettings
+from protrend.transform.regprecise.settings import SourceSettings
 from protrend.transform.transformer import Transformer
 
 
 class SourceTransformer(Transformer):
-    node = Source
     name = 'regprecise'
     type = 'database'
-    url = ''
-    doi = ''
-    authors = []
-    description = ''
+    url = 'https://regprecise.lbl.gov/'
+    doi = '10.1186/1471-2164-14-745'
+    authors = ['Pavel S Novichkov', 'Alexey E Kazakov', 'Dmitry A Ravcheev', 'Semen A Leyn', 'Galina Y Kovaleva',
+               'Roman A Sutormin', 'Marat D Kazanov', 'William Riehl', 'Adam P Arkin',
+               'Inna Dubchak', 'Dmitry A Rodionov']
+    description = 'RegPrecise 3.0: A resource for genome-scale exploration of transcriptional regulation in bacteria'
 
-    def __init__(self,
-                 source: str = None,
-                 version: str = None,
-                 **files: Dict[str, str]):
+    def __init__(self, settings: SourceSettings = None):
 
-        if not source:
-            source = RegPreciseTransformSettings.source
+        if not settings:
+            settings = SourceSettings()
 
-        if not version:
-            version = RegPreciseTransformSettings.version
+        super().__init__(settings)
 
-        super().__init__(source=source, version=version, **files)
+    def read(self, **kwargs):
+        return {}
 
-    def read(self, *args, **kwargs):
-        pass
+    def transform(self, **kwargs):
 
-    def transform(self):
-        pass
+        regprecise = dict(name=self.name,
+                          type=self.type,
+                          url=self.url,
+                          doi=self.doi,
+                          authors=self.authors,
+                          description=self.description)
 
-    def load(self, *properties):
+        return pd.DataFrame(regprecise, index=[0])
 
-        snapshot = self.node_snapshot()
-
-        last_node = self.node.last_node()
-        if last_node is None:
-            integer = 0
-
-        else:
-            integer = protrend_id_decoder(last_node.protrend_id)
-
-        df = snapshot.query(f'name == {self.name}')
-
-        if df.empty:
-            integer += 1
-            regprecise = dict(protrend_id=integer,
-                              name=self.name,
-                              type=self.type,
-                              url=self.url,
-                              doi=self.doi,
-                              authors=self.authors,
-                              description=self.description)
-
-            self.node.node_from_dict(regprecise, save=True)
-
-            df = pd.DataFrame(regprecise, index=[0])
-
-        self.stack_csv('source', df)
