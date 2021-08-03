@@ -1,19 +1,23 @@
-from typing import Dict
+from typing import List
 
+from protrend.model.model import Organism
 from protrend.model.node import Node
 
 
 class LoaderSettings:
     default_source: str = ''
     default_version: str = '0.0.0'
-    default_files: Dict[str, str] = {}
+    default_files: List[str] = []
     default_node: Node = Node
 
     def __init__(self,
                  source: str = None,
                  version: str = None,
                  node: Node = None,
-                 **files: Dict[str, str]):
+                 files: List[str] = None):
+
+        if not files:
+            files = []
 
         self._source = source
         self._version = version
@@ -31,7 +35,7 @@ class LoaderSettings:
             return self.default_version
 
     @property
-    def files(self) -> Dict[str, str]:
+    def files(self) -> List[str]:
         if not self._files:
             return self.default_files
 

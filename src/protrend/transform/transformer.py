@@ -44,7 +44,6 @@ class Transformer(metaclass=ABCMeta):
         self._settings = settings
 
         self._files = {}
-        self._attrs = {}
         self._write_stack = []
 
         self._load_settings()
@@ -57,10 +56,7 @@ class Transformer(metaclass=ABCMeta):
 
             if os.path.exists(file_path):
 
-                df = pd.DataFrame()
-
                 self._files[key] = file_path
-                self.attrs = (key, df)
 
             else:
                 raise FileNotFoundError(f'Could not found file {file_path} with key {key}')
@@ -88,18 +84,6 @@ class Transformer(metaclass=ABCMeta):
         return self._files
 
     @property
-    def attrs(self) -> Dict[str, pd.DataFrame]:
-        return self._attrs
-
-    @attrs.setter
-    def attrs(self, value: Tuple[str, pd.DataFrame]):
-
-        key, df = value
-
-        self._attrs[key] = df
-        return
-
-    @property
     def node(self) -> Node:
         return self.settings.node
 
@@ -112,56 +96,25 @@ class Transformer(metaclass=ABCMeta):
         return os.path.join(DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
-    # Transformer Python API
-    # --------------------------------------------------------
-    def __str__(self):
-        return self.attrs.__str__()
-
-    def __getitem__(self, item) -> pd.DataFrame:
-        return self._attrs.__getitem__(item)
-
-    def __setitem__(self, key, value):
-        self.attrs = (key, value)
-
-    def keys(self):
-        return self._attrs.keys()
-
-    def values(self):
-        return self._attrs.values()
-
-    def items(self):
-        return self._attrs.items()
-
-    def get(self, key: str, default=None) -> pd.DataFrame:
-        return self._attrs.get(key, default)
-
-    def update(self, values: Dict[str, pd.DataFrame]):
-
-        for key, val in values.items():
-            self.attrs = (key, val)
-
-    # --------------------------------------------------------
     # Transformer API
     # --------------------------------------------------------
     @abstractmethod
-    def read(self, *args, **kwargs):
+    def read(self, **kwargs) -> Dict[str, pd.DataFrame]:
 
         """
         The method responsible for reading files' mapping-like object into pandas DataFrames.
-        The pandas DataFrames are loaded into the attrs attribute.
-        Additionally, the transformer instance is loaded with the corresponding attributes
+        The pandas DataFrames are returned as a dictionary with pairs file key and DataFrame.
 
         Interface implementation with unknown signature.
-        Concrete implementations are available at the transformer children.
+        Concrete implementations are available at the transformer sub-classes.
 
-        :param args:
         :param kwargs:
         :return:
         """
 
         pass
 
-    def transform(self, *args, **kwargs):
+    def transform(self, **kwargs):
 
         """
         The method responsible for transforming multiple pandas DataFrames into an annotated, cleaned and standardized
@@ -170,7 +123,6 @@ class Transformer(metaclass=ABCMeta):
         Interface implementation with unknown signature.
         Concrete implementations are available at the transformer children.
 
-        :param args:
         :param kwargs:
         :return:
         """
@@ -281,11 +233,9 @@ class Transformer(metaclass=ABCMeta):
     # ----------------------------------------
     # Utilities methods
     # ----------------------------------------
-    def read_json_lines(self):
+    def _read_json_lines(self) -> Dict[str, pd.DataFrame]:
 
-        for key, file_path in self._files.items():
-            df = read_json_lines(file_path)
-            self.attrs = (key, df)
+        return {key: read_json_lines(file_path) for key, file_path in self._files.items()}
 
     def stack_csv(self, name: str, df: pd.DataFrame):
 

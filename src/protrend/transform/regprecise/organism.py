@@ -18,11 +18,11 @@ class OrganismTransformer(Transformer):
 
         super().__init__(settings)
 
-    def read(self, *args, **kwargs):
-        self.read_json_lines()
+    def read(self, **kwargs):
+        return self._read_json_lines()
 
-    def _transform_genome(self):
-        df = self.get('genome', pd.DataFrame(columns=['name']))
+    @staticmethod
+    def _transform_genome(df):
 
         df = df.drop_duplicates(subset=['name'])
 
@@ -33,7 +33,7 @@ class OrganismTransformer(Transformer):
         return df
 
     @staticmethod
-    def _annotate_organisms(names: List[str]):
+    def _transform_organisms(names: List[str]):
 
         dtos = [OrganismDTO(input_value=name) for name in names]
         annotate_organisms(dtos=dtos, names=names)
@@ -47,13 +47,14 @@ class OrganismTransformer(Transformer):
 
         return organisms
 
-    def transform(self) -> pd.DataFrame:
+    def transform(self, **kwargs) -> pd.DataFrame:
 
-        genome = self._transform_genome()
+        genome = kwargs.get('genome', pd.DataFrame(columns=['name']))
+        genome = self._transform_genome(genome)
 
         names = tuple(genome['input_value'])
 
-        organisms = self._annotate_organisms(names)
+        organisms = self._transform_organisms(names)
 
         df = pd.merge(organisms, genome, on='input_value', suffixes=('_annotation', '_regprecise'))
 

@@ -1,9 +1,9 @@
 import os
-from abc import abstractmethod
-from typing import Dict, Tuple
+from typing import List
 
 import pandas as pd
 
+from protrend.io.csv import read_csv
 from protrend.load.settings import LoaderSettings
 from protrend.model.node import Node
 from protrend.transform.settings import TransformerSettings
@@ -21,26 +21,21 @@ class Loader:
         """
 
         self._settings = settings
-        self._files = {}
-        self._attrs = {}
+        self._files = []
 
         self._load_settings()
 
     def _load_settings(self):
 
-        for key, file in self._settings.files.items():
+        for file in self._settings.files:
 
             file_path = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
 
             if os.path.exists(file_path):
 
-                df = pd.DataFrame()
-
-                self._files[key] = file_path
-                self.attrs = (key, df)
-
+                self._files.append(file_path)
             else:
-                raise FileNotFoundError(f'Could not found file {file_path} with key {key}')
+                raise FileNotFoundError(f'Could not found file {file_path}')
 
     # --------------------------------------------------------
     # Static properties
@@ -61,20 +56,8 @@ class Loader:
         return self.settings.version
 
     @property
-    def files(self) -> Dict[str, str]:
+    def files(self) -> List[str]:
         return self._files
-
-    @property
-    def attrs(self) -> Dict[str, pd.DataFrame]:
-        return self._attrs
-
-    @attrs.setter
-    def attrs(self, value: Tuple[str, pd.DataFrame]):
-
-        key, df = value
-
-        self._attrs[key] = df
-        return
 
     @property
     def node(self) -> Node:
@@ -87,23 +70,18 @@ class Loader:
     # --------------------------------------------------------
     # Transformer API
     # --------------------------------------------------------
-    @abstractmethod
-    def read(self, *args, **kwargs):
+    def read(self, **kwargs):
 
         """
-        The method responsible for reading files' mapping-like object into pandas DataFrames.
-        The pandas DataFrames are loaded into the attrs attribute.
-        Additionally, the transformer instance is loaded with the corresponding attributes
+        The method responsible for reading files into pandas DataFrames.
+        The pandas DataFrames are yield as result.
 
-        Interface implementation with unknown signature.
-        Concrete implementations are available at the transformer children.
-
-        :param args:
-        :param kwargs:
-        :return:
+        :param kwargs: kwargs for the pandas read_csv API
+        :return: generator of pandas DataFrame
         """
 
-        pass
+        for file_path in self._files:
+            yield read_csv(file_path, **kwargs)
 
     def load(self, df: pd.DataFrame):
 

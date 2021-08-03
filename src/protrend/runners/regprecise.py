@@ -1,5 +1,7 @@
 import sys
 
+from protrend.load.loader import Loader
+from protrend.load.settings import OrganismSettings as LoaderOrganismSettings
 from protrend.runners.director import Director
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.regprecise.settings import OrganismSettings
@@ -25,8 +27,11 @@ if __name__ == "__main__":
                              dbms='')
     db_settings.connect()
 
-    organisms_settings = OrganismSettings(files={'genome': 'Genome-test.json'})
-    transformer = OrganismTransformer(organisms_settings)
-    director = Director(transformers=[transformer])
+    transformer_settings = OrganismSettings(files={'genome': 'Genome-test.json'})
+    transformer = OrganismTransformer(transformer_settings)
+    loader_settings = LoaderOrganismSettings()
+    loader = Loader(loader_settings)
+    director = Director(transformers=[transformer],
+                        loaders=[loader])
     director.transform()
-    print()
+    director.load()

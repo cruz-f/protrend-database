@@ -40,27 +40,30 @@ class Director:
 
     def transform(self):
         """
-        Reading, processing, integrating and writing one or more file types into a node or relationship.
+        Reading, processing, transforming, cleaning, integrating and writing one or more file types
+        into multiple nodes and relationships.
         Transformation is performed step-wise according to the transformers order.
 
         :return:
         """
 
         for transformer in self._transformers:
-            transformer.read()
-            df = transformer.transform()
+            dfs = transformer.read()
+            df = transformer.transform(**dfs)
             df = transformer.integrate(df)
             transformer.connect(df)
             transformer.write()
 
     def load(self):
         """
+        Loading multiple nodes and relationships. The nodes and relationships must be encoded into a csv file created
+        by a transformer.
+        Loading is performed step-wise according to the loaders order.
 
         :return:
         """
 
         for loader in self._loaders:
-            dfs = loader.read()
 
-            for df in dfs:
+            for df in loader.read():
                 loader.load(df)
