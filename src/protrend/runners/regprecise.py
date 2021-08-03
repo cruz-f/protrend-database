@@ -1,7 +1,7 @@
 import sys
 
 from protrend.load.loader import Loader
-from protrend.load.settings import OrganismSettings as LoaderOrganismSettings
+from protrend.load.regprecise import OrganismSettings as LoaderOrganismSettings
 from protrend.runners.director import Director
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.regprecise.settings import OrganismSettings
