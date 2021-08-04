@@ -35,3 +35,5 @@ class SourceTransformer(Transformer):
 
         return pd.DataFrame(regprecise, index=[0])
 
+    def connect(self, df: pd.DataFrame):
+        return

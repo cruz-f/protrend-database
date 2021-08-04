@@ -2,6 +2,7 @@ from typing import List
 
 import pandas as pd
 
+from protrend.model.model import Source
 from protrend.transform.annotation.pathway import annotate_pathways
 from protrend.transform.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
@@ -19,7 +20,9 @@ class PathwayTransformer(Transformer):
         super().__init__(settings)
 
     def read(self, **kwargs):
-        return self._read_json_lines()
+        files = self._read_json_lines()
+
+        return super(PathwayTransformer, self).read(**files)
 
     @staticmethod
     def _transform_pathway(df):
@@ -51,21 +54,43 @@ class PathwayTransformer(Transformer):
         pathway = kwargs.get('pathway', pd.DataFrame(columns=['name']))
         pathway = self._transform_pathway(pathway)
 
-        names = tuple(pathway['input_value'])
+        names = list(pathway['input_value'])
 
-        effectors = self._transform_pathways(names)
+        pathways = self._transform_pathways(names)
 
-        df = pd.merge(effectors, pathway, on='input_value', suffixes=('_annotation', '_regprecise'))
+        df = pd.merge(pathways, pathway, on='input_value', suffixes=('_annotation', '_regprecise'))
 
         df['name'] = df['name_annotation'].astype(str) + df['name_regprecise'].astype(str)
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 
-        n_rows, _ = df.shape
-        df['source_db'] = ['regprecise'] * n_rows
-        df['api_key'] = ['pathway_id'] * n_rows
-
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
+
+    def _connect_to_source(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        size, _ = df.shape
+
+        from_identifiers = list(df[self.node.identifying_property])
+        to_identifiers = ['regprecise'] * size
+
+        kwargs = dict(url=list(df['url']),
+                      external_identifier=list(df['pathway_id']),
+                      name=['pathway_id'] * size)
+
+        return self.make_connection(size=size,
+                                    from_node=self.node,
+                                    to_node=Source,
+                                    from_property=self.node.identifying_property,
+                                    to_property='name',
+                                    from_identifiers=from_identifiers,
+                                    to_identifiers=to_identifiers,
+                                    **kwargs)
+
+    def connect(self, df: pd.DataFrame):
+
+        source_connection = self._connect_to_source(df)
+        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
+        self.stack_csv(df_name, source_connection)

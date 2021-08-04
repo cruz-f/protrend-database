@@ -27,11 +27,11 @@ def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: PathwayDTO):
 
     if kegg_pathway.identifier:
         pathway_dto.kegg_pathways.extend(kegg_pathway.kegg_identifiers)
-        pathway_dto.synonyms.append(kegg_pathway.kegg_names)
+        pathway_dto.synonyms.extend(kegg_pathway.kegg_names)
 
 
 def annotate_pathways(dtos: List[PathwayDTO],
-                      names: List[str] = None) -> PathwayDTO:
+                      names: List[str] = None) -> List[PathwayDTO]:
     """
     A common method to annotate a given pathway with relevant information from KEGG Pathway.
 

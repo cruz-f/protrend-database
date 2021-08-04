@@ -18,7 +18,7 @@ def _find_in_mapping(acc: str, mapping: pd.DataFrame):
 
 def _fetch_genes(identifiers: List[str],
                  cls: Union[Type[NCBIGene], Type[NCBIProtein], Type[UniProtProtein]],
-                 taxa: List[str],
+                 taxa: List[int],
                  loci: List[str],
                  names: List[str],
                  is_refseq: bool = False,
@@ -114,12 +114,12 @@ def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
 def annotate_genes(dtos: List[GeneDTO],
                    loci: List[str] = None,
                    names: List[str] = None,
-                   taxa: List[str] = None,
+                   taxa: List[int] = None,
                    uniprot_proteins: List[str] = None,
                    ncbi_proteins: List[str] = None,
                    ncbi_genbanks: List[str] = None,
                    ncbi_refseqs: List[str] = None,
-                   ncbi_genes: List[str] = None) -> GeneDTO:
+                   ncbi_genes: List[str] = None) -> List[GeneDTO]:
     """
     A common method to annotate a given gene with relevant information from UniProt or NCBI.
 
@@ -147,7 +147,7 @@ def annotate_genes(dtos: List[GeneDTO],
     :type dtos: List[GeneDTO]
     :type loci: List[str]
     :type names: List[str]
-    :type taxa: List[str]
+    :type taxa: List[int]
     :type uniprot_proteins: List[str]
     :type ncbi_proteins: List[str]
     :type ncbi_genbanks: List[str]

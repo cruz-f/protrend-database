@@ -1,5 +1,6 @@
 import pandas as pd
 
+from protrend.model.model import Source, Publication
 from protrend.transform.processors import remove_white_space, remove_regprecise_more, remove_multiple_white_space, \
     rstrip, lstrip, remove_pubmed, apply_processors
 from protrend.transform.regprecise.settings import RegulatoryFamilySettings
@@ -16,7 +17,9 @@ class RegulatoryFamilyTransformer(Transformer):
         super().__init__(settings)
 
     def read(self, **kwargs):
-        return self._read_json_lines()
+        files = self._read_json_lines()
+
+        return super(RegulatoryFamilyTransformer, self).read(**files)
 
     @staticmethod
     def _transform_tf_family(df):
@@ -117,51 +120,67 @@ class RegulatoryFamilyTransformer(Transformer):
 
         df = df.rename(columns={'url': 'url_rna'})
 
-        source_dbs = []
-        urls = []
-        external_identifiers = []
-        api_keys = []
-
-        for _, row in df.iterrows():
-            tf_family_id = row.get('tffamily_id', None)
-            tf_id = row.get('collection_id', None)
-            rna_id = row.get('riboswitch_id', None)
-
-            if tf_family_id:
-                db = 'regprecise'
-                url = row.get('url_tf_family')
-                external_identifier = tf_family_id
-                api_key = 'tffamily_id'
-
-            elif tf_id:
-                db = 'regprecise'
-                url = row.get('url_tf')
-                external_identifier = tf_id
-                api_key = 'collection_id'
-
-            elif rna_id:
-                db = 'regprecise'
-                url = row.get('url_rna')
-                external_identifier = rna_id
-                api_key = 'riboswitch_id'
-
-            else:
-                db = None
-                url = None
-                external_identifier = None
-                api_key = None
-
-            source_dbs.append(db)
-            urls.append(url)
-            external_identifiers.append(external_identifier)
-            api_keys.append(api_key)
-
-        df['source_db'] = source_dbs
-        df['url'] = urls
-        df['external_identifier'] = external_identifiers
-        df['api_key'] = api_keys
-
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
+
+    def _connect_to_source(self, df: pd.DataFrame, name: str) -> pd.DataFrame:
+        source_mask = df[name].notnull()
+        df = df.loc[source_mask, :]
+        size, _ = df.shape
+
+        from_identifiers = list(df['protrend_id'])
+        to_identifiers = ['regprecise'] * size
+
+        kwargs = dict(url=list(df['url']),
+                      external_identifier=list(df[name]),
+                      name=[name] * size)
+
+        return self.make_connection(size=size,
+                                    from_node=self.node,
+                                    to_node=Source,
+                                    from_property=self.node.identifying_property,
+                                    to_property='name',
+                                    from_identifiers=from_identifiers,
+                                    to_identifiers=to_identifiers,
+                                    **kwargs)
+
+    def _connect_to_publication(self, df: pd.DataFrame) -> pd.DataFrame:
+        from_identifiers = []
+        to_identifiers = []
+
+        for _, row in df.iterrows():
+
+            pubmed_row = row.get('pubmed', [])
+
+            for identifier in pubmed_row:
+
+                from_identifiers.append(df[self.node.identifying_property])
+                to_identifiers.append(identifier)
+
+        size = len(from_identifiers)
+
+        return self.make_connection(size=size,
+                                    from_node=self.node,
+                                    to_node=Publication,
+                                    from_property=self.node.identifying_property,
+                                    to_property='pmid',
+                                    from_identifiers=from_identifiers,
+                                    to_identifiers=to_identifiers)
+
+    def connect(self, df: pd.DataFrame):
+
+        tf_family_connection = self._connect_to_source(df, 'tffamily_id')
+        tf_connection = self._connect_to_source(df, 'collection_id')
+        rna_connection = self._connect_to_source(df, 'riboswitch_id')
+
+        source_connection = pd.concat([tf_family_connection, tf_connection, rna_connection], axis=0)
+
+        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
+        self.stack_csv(df_name, source_connection)
+
+        publication_connection = self._connect_to_publication(df)
+
+        df_name = f'connected_{self.node.node_name()}_{Publication.node_name()}'
+        self.stack_csv(df_name, publication_connection)

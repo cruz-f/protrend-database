@@ -1,5 +1,5 @@
 import io
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, List
 
 import pandas as pd
 from Bio import SeqIO
@@ -82,7 +82,7 @@ def query_uniprot(query: Dict[str, str],
     return df.to_dict()
 
 
-def map_uniprot_identifiers(identifiers: Tuple[str],
+def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
                             from_: str,
                             to: str,
                             output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:

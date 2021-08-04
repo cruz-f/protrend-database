@@ -32,7 +32,7 @@ def _annotate_compound(kegg_compound: KEGGCompound, effector_dto: EffectorDTO):
 
 
 def annotate_effectors(dtos: List[EffectorDTO],
-                       names: List[str] = None) -> EffectorDTO:
+                       names: List[str] = None) -> List[EffectorDTO]:
     """
     A common method to annotate a given effector with relevant information from KEGG Compound.
 

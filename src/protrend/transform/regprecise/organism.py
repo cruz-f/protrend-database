@@ -1,7 +1,8 @@
-from typing import List, Dict
+from typing import List
 
 import pandas as pd
 
+from protrend.model.model import Source
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
@@ -19,7 +20,9 @@ class OrganismTransformer(Transformer):
         super().__init__(settings)
 
     def read(self, **kwargs):
-        return self._read_json_lines()
+        files = self._read_json_lines()
+
+        return super(OrganismTransformer, self).read(**files)
 
     @staticmethod
     def _transform_genome(df):
@@ -52,7 +55,7 @@ class OrganismTransformer(Transformer):
         genome = kwargs.get('genome', pd.DataFrame(columns=['name']))
         genome = self._transform_genome(genome)
 
-        names = tuple(genome['input_value'])
+        names = list(genome['input_value'])
 
         organisms = self._transform_organisms(names)
 
@@ -62,11 +65,33 @@ class OrganismTransformer(Transformer):
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 
-        n_rows, _ = df.shape
-        df['source_db'] = ['regprecise'] * n_rows
-        df['api_key'] = ['genome_id'] * n_rows
-
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
+
+    def _connect_to_source(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        size, _ = df.shape
+
+        from_identifiers = list(df[self.node.identifying_property])
+        to_identifiers = ['regprecise'] * size
+
+        kwargs = dict(url=list(df['url']),
+                      external_identifier=list(df['genome_id']),
+                      name=['genome_id'] * size)
+
+        return self.make_connection(size=size,
+                                    from_node=self.node,
+                                    to_node=Source,
+                                    from_property=self.node.identifying_property,
+                                    to_property='name',
+                                    from_identifiers=from_identifiers,
+                                    to_identifiers=to_identifiers,
+                                    **kwargs)
+
+    def connect(self, df: pd.DataFrame):
+
+        source_connection = self._connect_to_source(df)
+        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
+        self.stack_csv(df_name, source_connection)

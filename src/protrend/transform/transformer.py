@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, List, Any, Type
 
 import pandas as pd
 
@@ -84,11 +84,11 @@ class Transformer(metaclass=ABCMeta):
         return self._files
 
     @property
-    def node(self) -> Node:
+    def node(self) -> Type[Node]:
         return self.settings.node
 
     @property
-    def node_factors(self) -> Node:
+    def node_factors(self) -> Tuple[str]:
         return self.settings.node_factors
 
     @property
@@ -112,8 +112,20 @@ class Transformer(metaclass=ABCMeta):
         :return:
         """
 
-        pass
+        for key, df in kwargs.items():
 
+            name = f'read_{key}'
+            file_name = f'{name}.csv'
+            file_path = os.path.join(self.write_path, file_name)
+
+            if os.path.exists(file_path):
+                continue
+
+            self.stack_csv(name, df)
+
+        return kwargs
+
+    @abstractmethod
     def transform(self, **kwargs):
 
         """
@@ -150,7 +162,7 @@ class Transformer(metaclass=ABCMeta):
         """
 
         # take a db snapshot for the current node
-        snapshot = self.node_snapshot()
+        snapshot = self.node_view()
 
         # find matching nodes according to several node factors/properties
         nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=self.node_factors)
@@ -180,9 +192,12 @@ class Transformer(metaclass=ABCMeta):
         df_name = f'integrated_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
+        self._stack_integrated_nodes(df)
+
         return df
 
-    def connect(self, df: pd.DataFrame) -> Dict[Tuple[str, str], pd.DataFrame]:
+    @abstractmethod
+    def connect(self, df: pd.DataFrame):
 
         """
         The method responsible for connecting an integrated pandas DataFrames to the remaining database.
@@ -195,30 +210,7 @@ class Transformer(metaclass=ABCMeta):
         :param df:
         :return:
         """
-
-        n_rows, _ = df.shape
-
-        dfs = {}
-
-        # working the relationships according to the transformer settings
-        for relationship in self._settings.relationships:
-
-            if relationship.is_empty():
-                continue
-
-            relationship_df = self.make_relationship_df(n_rows,
-                                                        relationship.from_node.node_name(),
-                                                        relationship.to_node.node_name(),
-                                                        relationship.from_property,
-                                                        relationship.to_property)
-
-            for key, val in relationship.properties.items():
-
-                if key in df.columns:
-                    relationship_df[val] = df[key]
-
-            self.stack_csv(relationship.key, relationship_df)
-            dfs[relationship.tuple_key] = relationship_df
+        pass
 
     def write(self):
 
@@ -236,6 +228,13 @@ class Transformer(metaclass=ABCMeta):
     def _read_json_lines(self) -> Dict[str, pd.DataFrame]:
 
         return {key: read_json_lines(file_path) for key, file_path in self._files.items()}
+
+    def _stack_integrated_nodes(self, df: pd.DataFrame):
+        node_cols = list(self.node.node_keys())
+        cols_to_drop = [col for col in df.columns if col in node_cols]
+        df = df.drop(cols_to_drop, axis=1)
+        df_name = f'nodes_{self.node.node_name()}'
+        self.stack_csv(df_name, df)
 
     def stack_csv(self, name: str, df: pd.DataFrame):
 
@@ -296,27 +295,37 @@ class Transformer(metaclass=ABCMeta):
             integer = protrend_id_decoder(last_node.protrend_id)
 
         return [protrend_id_encoder(self.node.header, self.node.entity, i)
-                for i in range(integer+1, size+1)]
+                for i in range(integer + 1, size + 1)]
 
     @staticmethod
-    def make_relationship_df(n_rows: int,
-                             from_node: str,
-                             to_node: str,
-                             from_property: str,
-                             to_property: str) -> pd.DataFrame:
+    def make_connection(size: int,
+                        from_node: Type[Node],
+                        to_node: Type[Node],
+                        from_property: str,
+                        to_property: str,
+                        from_identifiers: List[Any],
+                        to_identifiers: List[Any],
+                        **kwargs) -> pd.DataFrame:
 
-        relationship = {'from_node': [from_node] * n_rows,
-                        'to_node': [to_node] * n_rows,
-                        'from_property': [from_property] * n_rows,
-                        'to_property': [to_property] * n_rows,
-                        'load': ['create'] * n_rows,
-                        'what': ['relationships'] * n_rows}
+        connection = {'from_node': [from_node.node_name()] * size,
+                      'to_node': [to_node.node_name()] * size,
+                      'from_property': [from_property] * size,
+                      'to_property': [to_property] * size,
+                      'from_identifier': from_identifiers.copy(),
+                      'to_identifier': to_identifiers.copy(),
+                      'load': ['create'] * size,
+                      'what': ['relationships'] * size}
 
-        return pd.DataFrame(relationship)
+        if not kwargs:
+            kwargs = {}
+
+        connection.update(kwargs)
+
+        return pd.DataFrame(connection)
 
     def last_node(self) -> Union['Node', None]:
         return self.node.last_node()
 
-    def node_snapshot(self) -> pd.DataFrame:
+    def node_view(self) -> pd.DataFrame:
         df = self.node.node_to_df()
         return df

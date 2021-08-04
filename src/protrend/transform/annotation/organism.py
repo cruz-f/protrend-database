@@ -5,7 +5,7 @@ from protrend.transform.dto import OrganismDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
 
 
-def _fetch_organisms(identifiers: List[str],
+def _fetch_organisms(identifiers: List[int],
                      names: List[str],
                      cls: Type[NCBITaxonomyOrganism]) -> List[NCBITaxonomyOrganism]:
     organisms = []
@@ -33,8 +33,8 @@ def _annotate_organism(ncbi_taxonomy: NCBITaxonomyOrganism, organism_dto: Organi
 
 
 def annotate_organisms(dtos: List[OrganismDTO],
-                       identifiers: List[str] = None,
-                       names: List[str] = None) -> OrganismDTO:
+                       identifiers: List[int] = None,
+                       names: List[str] = None) -> List[OrganismDTO]:
     """
     A common method to annotate a given organism with relevant information from NCBI Taxonomy.
 
@@ -48,7 +48,7 @@ def annotate_organisms(dtos: List[OrganismDTO],
             - retrieve organism relevant attributes from taxonomy and assembly records
 
     :type dtos: List[OrganismDTO]
-    :type identifiers: List[str]
+    :type identifiers: List[int]
     :type names: List[str]
 
     :rtype: List[OrganismDTO]

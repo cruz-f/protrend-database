@@ -28,7 +28,7 @@ def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto
 
 
 def annotate_publications(dtos: List[PublicationDTO],
-                          identifiers: List[str] = None) -> PublicationDTO:
+                          identifiers: List[str] = None) -> List[PublicationDTO]:
     """
     A common method to annotate a given publication with relevant information from NCBI PubMed.
 
