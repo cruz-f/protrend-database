@@ -1,5 +1,7 @@
 import pandas as pd
 
+from protrend.io.csv import read_csv
+from protrend.io.json import read_json_lines
 from protrend.model.model import Source, Publication
 from protrend.transform.processors import remove_white_space, remove_regprecise_more, remove_multiple_white_space, \
     rstrip, lstrip, remove_pubmed, apply_processors
@@ -16,31 +18,13 @@ class RegulatoryFamilyTransformer(Transformer):
 
         super().__init__(settings)
 
-    def read(self, **kwargs):
-        files = self._read_json_lines()
+    def _transform_tf_family(self):
+        file_path = self._transform_stack.get('tf_family')
 
-        return super(RegulatoryFamilyTransformer, self).read(**files)
+        if not file_path:
+            return pd.DataFrame(columns=['pubmed'])
 
-    @staticmethod
-    def _transform_tf_family(df):
-        df = df.drop_duplicates(subset=['name'])
-
-        apply_processors(remove_white_space,
-                         df=df,
-                         col='name')
-
-        apply_processors(remove_regprecise_more,
-                         remove_pubmed,
-                         remove_multiple_white_space,
-                         rstrip,
-                         lstrip,
-                         df=df,
-                         col='description')
-
-        return df
-
-    @staticmethod
-    def _transform_tf(df):
+        df = read_json_lines(file_path)
 
         df = df.drop_duplicates(subset=['name'])
 
@@ -58,8 +42,15 @@ class RegulatoryFamilyTransformer(Transformer):
 
         return df
 
-    @staticmethod
-    def _transform_rna(df):
+    def _transform_tf(self):
+
+        file_path = self._transform_stack.get('tf')
+
+        if not file_path:
+            return pd.DataFrame(columns=['pubmed'])
+
+        df = read_json_lines(file_path)
+
         df = df.drop_duplicates(subset=['name'])
 
         apply_processors(remove_white_space,
@@ -76,18 +67,44 @@ class RegulatoryFamilyTransformer(Transformer):
 
         return df
 
-    def transform(self, **kwargs):
+    def _transform_rna(self):
+        file_path = self._transform_stack.get('rna')
 
-        tf_family = kwargs.get('tf_family', pd.DataFrame(columns=['name']))
-        tf_family = self._transform_tf_family(tf_family)
+        if not file_path:
+            return pd.DataFrame(columns=['pubmed'])
 
-        tf = kwargs.get('tf', pd.DataFrame(columns=['name']))
-        tf = self._transform_tf(tf)
+        df = read_json_lines(file_path)
 
-        rna = kwargs.get('rna', pd.DataFrame(columns=['name']))
-        rna = self._transform_rna(rna)
+        df = df.drop_duplicates(subset=['name'])
+
+        apply_processors(remove_white_space,
+                         df=df,
+                         col='name')
+
+        apply_processors(remove_regprecise_more,
+                         remove_pubmed,
+                         remove_multiple_white_space,
+                         rstrip,
+                         lstrip,
+                         df=df,
+                         col='description')
+
+        df = df.rename(columns={'url': 'url_rna'})
+
+        # set mechanism
+        size, _ = df.shape
+        df['mechanism'] = ['small RNA (sRNA)'] * size
+
+        return df
+
+    @staticmethod
+    def _transform_tfs(tf_family: pd.DataFrame, tf: pd.DataFrame) -> pd.DataFrame:
 
         df = pd.merge(tf_family, tf, on='name', suffixes=('_tf_family', '_tf'))
+
+        # set mechanism
+        size, _ = df.shape
+        df['mechanism'] = ['transcription factor'] * size
 
         # concat description
         df['description'] = df['description_tf_family'].astype(str) + df['description_tf'].astype(str)
@@ -102,85 +119,114 @@ class RegulatoryFamilyTransformer(Transformer):
                       'regulog_tf_family', 'regulog_tf',
                       'pubmed_tf_family', 'pubmed_tf'], axis=1)
 
-        df = pd.merge(df, rna, on='name', suffixes=('_tf', '_rna'))
+        return df
 
-        # concat description
-        df['description'] = df['description_tf'].astype(str) + df['description_rna'].astype(str)
+    def transform(self):
 
-        # concat regulog
-        df['regulog'] = df['regulog_tf'].astype(set) + df['regulog_rna'].astype(set)
+        # -------------------- TFs -------------------
+        tf_family = self._transform_tf_family()
+        tf = self._transform_tf()
+        tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
 
-        # concat pubmed
-        df['pubmed'] = df['pubmed_tf'].astype(set) + df['pubmed_rna'].astype(set)
+        rna = self._transform_rna()
 
-        df = df.drop(['description_tf', 'description_rna',
-                      'regulog_tf', 'regulog_rna',
-                      'pubmed_tf', 'pubmed_rna'],
-                     axis=1)
-
-        df = df.rename(columns={'url': 'url_rna'})
+        df = pd.concat([tfs, rna], axis=0)
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
 
-    def _connect_to_source(self, df: pd.DataFrame, name: str) -> pd.DataFrame:
-        source_mask = df[name].notnull()
-        df = df.loc[source_mask, :]
-        size, _ = df.shape
+    def _connect_to_source(self) -> pd.DataFrame:
 
-        from_identifiers = list(df['protrend_id'])
-        to_identifiers = ['regprecise'] * size
+        from_path = self._connect_stack.get('from')
+        to_path = self._connect_stack.get('to_source')
 
-        kwargs = dict(url=list(df['url']),
-                      external_identifier=list(df[name]),
-                      name=[name] * size)
+        if not from_path:
+            return pd.DataFrame()
 
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Source,
-                                    from_property=self.node.identifying_property,
-                                    to_property='name',
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers,
-                                    **kwargs)
+        if not to_path:
+            return pd.DataFrame()
 
-    def _connect_to_publication(self, df: pd.DataFrame) -> pd.DataFrame:
+        to_df = read_csv(to_path)
+        to_df = to_df.query('name == regprecise')
+        regprecise_id = to_df['protrend_id'].iloc[0]
+
+        from_df = read_csv(from_path)
+
+        tf_chain = [('tffamily_id', 'url_tf_family'),
+                    ('collection_id', 'url_tf'),
+                    ('riboswitch_id', 'url_rna')]
+
+        dfs = []
+        for key, url in tf_chain:
+            key_mask = from_df[key].notnull()
+            key_df = from_df[key_mask]
+
+            from_identifiers = key_df['protrend_id'].tolist()
+            size = len(from_identifiers)
+
+            to_identifiers = [regprecise_id] * size
+
+            kwargs = dict(url=key_df[url].tolist(),
+                          external_identifier=key_df[key].tolist(),
+                          key=[key] * size)
+
+            df = self.make_connection(size=size,
+                                      from_node=self.node,
+                                      to_node=Source,
+                                      from_identifiers=from_identifiers,
+                                      to_identifiers=to_identifiers,
+                                      kwargs=kwargs)
+
+            dfs.append(df)
+
+        return pd.concat(dfs, axis=0)
+
+    def _connect_to_publication(self) -> pd.DataFrame:
+
+        from_path = self._connect_stack.get('from')
+        to_path = self._connect_stack.get('to_publication')
+
+        if not from_path:
+            return pd.DataFrame()
+
+        if not to_path:
+            return pd.DataFrame()
+
+        from_df = read_csv(from_path)
+        to_df = read_csv(to_path)
+
         from_identifiers = []
         to_identifiers = []
 
-        for _, row in df.iterrows():
+        for i, pubmed_row in enumerate(from_df['pubmed']):
 
-            pubmed_row = row.get('pubmed', [])
+            for pmid in pubmed_row:
 
-            for identifier in pubmed_row:
+                from_id = from_df['protrend_id'].iloc[i]
+                from_identifiers.append(from_id)
 
-                from_identifiers.append(df[self.node.identifying_property])
-                to_identifiers.append(identifier)
+                mask = to_df['pmid'].values == pmid.replace(' ', '')
+                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
+                to_identifiers.append(to_id)
 
         size = len(from_identifiers)
 
         return self.make_connection(size=size,
                                     from_node=self.node,
                                     to_node=Publication,
-                                    from_property=self.node.identifying_property,
-                                    to_property='pmid',
                                     from_identifiers=from_identifiers,
                                     to_identifiers=to_identifiers)
 
-    def connect(self, df: pd.DataFrame):
+    def connect(self):
 
-        tf_family_connection = self._connect_to_source(df, 'tffamily_id')
-        tf_connection = self._connect_to_source(df, 'collection_id')
-        rna_connection = self._connect_to_source(df, 'riboswitch_id')
-
-        source_connection = pd.concat([tf_family_connection, tf_connection, rna_connection], axis=0)
+        source_connection = self._connect_to_source()
 
         df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
         self.stack_csv(df_name, source_connection)
 
-        publication_connection = self._connect_to_publication(df)
+        publication_connection = self._connect_to_publication()
 
         df_name = f'connected_{self.node.node_name()}_{Publication.node_name()}'
         self.stack_csv(df_name, publication_connection)

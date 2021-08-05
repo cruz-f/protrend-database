@@ -2,6 +2,8 @@ from typing import List
 
 import pandas as pd
 
+from protrend.io.csv import read_csv
+from protrend.io.json import read_json_lines
 from protrend.model.model import Source
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
@@ -19,13 +21,14 @@ class OrganismTransformer(Transformer):
 
         super().__init__(settings)
 
-    def read(self, **kwargs):
-        files = self._read_json_lines()
+    def _transform_genome(self):
 
-        return super(OrganismTransformer, self).read(**files)
+        file_path = self._transform_stack.get('genome')
 
-    @staticmethod
-    def _transform_genome(df):
+        if not file_path:
+            return pd.DataFrame(columns=['name', 'input_value'])
+
+        df = read_json_lines(file_path)
 
         df = df.drop_duplicates(subset=['name'])
 
@@ -50,10 +53,9 @@ class OrganismTransformer(Transformer):
 
         return organisms
 
-    def transform(self, **kwargs):
+    def transform(self):
 
-        genome = kwargs.get('genome', pd.DataFrame(columns=['name']))
-        genome = self._transform_genome(genome)
+        genome = self._transform_genome()
 
         names = list(genome['input_value'])
 
@@ -70,28 +72,40 @@ class OrganismTransformer(Transformer):
 
         return df
 
-    def _connect_to_source(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _connect_to_source(self) -> pd.DataFrame:
 
-        size, _ = df.shape
+        from_path = self._connect_stack.get('from')
+        to_path = self._connect_stack.get('to')
 
-        from_identifiers = list(df[self.node.identifying_property])
-        to_identifiers = ['regprecise'] * size
+        if not from_path:
+            return pd.DataFrame()
 
-        kwargs = dict(url=list(df['url']),
-                      external_identifier=list(df['genome_id']),
-                      name=['genome_id'] * size)
+        if not to_path:
+            return pd.DataFrame()
+
+        from_df = read_csv(from_path)
+        from_identifiers = from_df['protrend_id'].tolist()
+
+        size = len(from_identifiers)
+
+        to_df = read_csv(to_path)
+        to_df = to_df.query('name == regprecise')
+        regprecise_id = to_df['protrend_id'].iloc[0]
+        to_identifiers = [regprecise_id] * size
+
+        kwargs = dict(url=from_df['url'].tolist(),
+                      external_identifier=from_df['genome_id'].tolist(),
+                      key=['genome_id'] * size)
 
         return self.make_connection(size=size,
                                     from_node=self.node,
                                     to_node=Source,
-                                    from_property=self.node.identifying_property,
-                                    to_property='name',
                                     from_identifiers=from_identifiers,
                                     to_identifiers=to_identifiers,
-                                    **kwargs)
+                                    kwargs=kwargs)
 
-    def connect(self, df: pd.DataFrame):
+    def connect(self):
 
-        source_connection = self._connect_to_source(df)
+        source_connection = self._connect_to_source()
         df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
         self.stack_csv(df_name, source_connection)

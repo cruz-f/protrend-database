@@ -70,11 +70,11 @@ class Publication(Node):
     entity = 'PUB'
 
     # properties
-    doi = StringProperty(required=True)
-    pmid = StringProperty(required=True)
-    title = StringProperty(required=True)
-    author = StringProperty(required=True)
-    year = StringProperty(required=True)
+    doi = StringProperty()
+    pmid = StringProperty()
+    title = StringProperty()
+    author = StringProperty()
+    year = StringProperty()
 
     # relationships
     organism = RelationshipTo('Organism', REL_TYPE)
@@ -163,7 +163,7 @@ class Regulator(Node):
     entity = 'REG'
 
     # properties
-    locus_tag = StringProperty(required=True)
+    locus_tag = StringProperty()
     name = StringProperty(required=True)
     rfam = StringProperty()
     synonyms = ArrayProperty(StringProperty())
@@ -242,13 +242,14 @@ class Gene(Node):
     entity = 'GEN'
 
     # properties
-    locus_tag = StringProperty(required=True)
+    locus_tag = StringProperty()
     name = StringProperty(required=True)
     synonyms = ArrayProperty(StringProperty())
     function = StringProperty()
     description = StringProperty()
     ncbi_gene = StringProperty()
     ncbi_protein = StringProperty()
+    genbank_accession = StringProperty()
     refseq_accession = StringProperty()
     uniprot_accession = StringProperty()
     sequence = StringProperty()

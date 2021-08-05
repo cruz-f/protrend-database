@@ -6,7 +6,6 @@ import pandas as pd
 from protrend.io.csv import read_csv
 from protrend.load.settings import LoaderSettings
 from protrend.model.node import Node
-from protrend.transform.settings import TransformerSettings
 from protrend.utils.settings import DATA_LAKE_PATH
 
 
@@ -41,7 +40,7 @@ class Loader:
     # Static properties
     # --------------------------------------------------------
     @property
-    def settings(self) -> TransformerSettings:
+    def settings(self) -> LoaderSettings:
         return self._settings
 
     # --------------------------------------------------------
@@ -94,7 +93,7 @@ class Loader:
         # create nodes
         self._relationships_to_create(df=df)
 
-    def _nodes_to_update(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _nodes_to_update(self, df: pd.DataFrame):
 
         mask = (df['load'] == 'update') & (df['what'] == 'nodes')
         df = df.loc[mask, :]
@@ -104,7 +103,7 @@ class Loader:
 
         self.node.node_from_df(nodes=df, save=True)
 
-    def _nodes_to_create(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _nodes_to_create(self, df: pd.DataFrame):
 
         mask = (df['load'] == 'create') & (df['what'] == 'nodes')
         df = df.loc[mask, :]
@@ -114,7 +113,7 @@ class Loader:
 
         self.node.node_update_from_df(nodes=df, save=True)
 
-    def _relationships_to_create(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _relationships_to_create(self, df: pd.DataFrame):
 
         mask = (df['load'] == 'create') & (df['what'] == 'relationships')
         df = df.loc[mask, :]

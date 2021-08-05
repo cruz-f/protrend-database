@@ -2,6 +2,8 @@ from typing import List
 
 import pandas as pd
 
+from protrend.io.csv import read_csv
+from protrend.io.json import read_json_lines
 from protrend.model.model import Source
 from protrend.transform.annotation.effector import annotate_effectors
 from protrend.transform.dto import EffectorDTO
@@ -19,13 +21,15 @@ class EffectorTransformer(Transformer):
 
         super().__init__(settings)
 
-    def read(self, **kwargs):
-        files = self._read_json_lines()
+    def _transform_effector(self):
 
-        return super(EffectorTransformer, self).read(**files)
+        file_path = self._transform_stack.get('effector')
 
-    @staticmethod
-    def _transform_effector(df):
+        if not file_path:
+            return pd.DataFrame(columns=['name', 'input_value'])
+
+        df = read_json_lines(file_path)
+
         df = df.drop_duplicates(subset=['name'])
 
         apply_processors(rstrip, lstrip, df=df, col='name')
@@ -49,10 +53,9 @@ class EffectorTransformer(Transformer):
 
         return effectors
 
-    def transform(self, **kwargs):
+    def transform(self):
 
-        effector = kwargs.get('effector', pd.DataFrame(columns=['name']))
-        effector = self._transform_effector(effector)
+        effector = self._transform_effector()
 
         names = list(effector['input_value'])
 
@@ -69,28 +72,40 @@ class EffectorTransformer(Transformer):
 
         return df
 
-    def _connect_to_source(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _connect_to_source(self) -> pd.DataFrame:
 
-        size, _ = df.shape
+        from_path = self._connect_stack.get('from')
+        to_path = self._connect_stack.get('to')
 
-        from_identifiers = list(df[self.node.identifying_property])
-        to_identifiers = ['regprecise'] * size
+        if not from_path:
+            return pd.DataFrame()
 
-        kwargs = dict(url=list(df['url']),
-                      external_identifier=list(df['effector_id']),
-                      name=['effector_id'] * size)
+        if not to_path:
+            return pd.DataFrame()
+
+        from_df = read_csv(from_path)
+        from_identifiers = from_df['protrend_id'].tolist()
+
+        size = len(from_identifiers)
+
+        to_df = read_csv(to_path)
+        to_df = to_df.query('name == regprecise')
+        regprecise_id = to_df['protrend_id'].iloc[0]
+        to_identifiers = [regprecise_id] * size
+
+        kwargs = dict(url=from_df['url'].tolist(),
+                      external_identifier=from_df['effector_id'].tolist(),
+                      key=['effector_id'] * size)
 
         return self.make_connection(size=size,
                                     from_node=self.node,
                                     to_node=Source,
-                                    from_property=self.node.identifying_property,
-                                    to_property='name',
                                     from_identifiers=from_identifiers,
                                     to_identifiers=to_identifiers,
-                                    **kwargs)
+                                    kwargs=kwargs)
 
-    def connect(self, df: pd.DataFrame):
+    def connect(self):
 
-        source_connection = self._connect_to_source(df)
+        source_connection = self._connect_to_source()
         df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
         self.stack_csv(df_name, source_connection)

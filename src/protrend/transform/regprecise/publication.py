@@ -2,6 +2,7 @@ from typing import List, Set, Union
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines
 from protrend.transform.annotation.publication import annotate_publications
 from protrend.transform.dto import PublicationDTO
 from protrend.transform.processors import apply_processors, nan_to_str
@@ -18,13 +19,15 @@ class PublicationTransformer(Transformer):
 
         super().__init__(settings)
 
-    def read(self, **kwargs):
-        files = self._read_json_lines()
+    def _transform_tf_family(self):
 
-        return super(PublicationTransformer, self).read(**files)
+        file_path = self._transform_stack.get('tf_family')
 
-    @staticmethod
-    def _transform_tf_family(df):
+        if not file_path:
+            return pd.DataFrame(columns=['pubmed'])
+
+        df = read_json_lines(file_path)
+
         df = df.drop_duplicates(subset=['name'])
 
         df = df.drop(['tffamily_id',
@@ -36,8 +39,15 @@ class PublicationTransformer(Transformer):
 
         return df
 
-    @staticmethod
-    def _transform_tf(df):
+    def _transform_tf(self):
+
+        file_path = self._transform_stack.get('tf')
+
+        if not file_path:
+            return pd.DataFrame(columns=['pubmed'])
+
+        df = read_json_lines(file_path)
+
         df = df.drop_duplicates(subset=['name'])
 
         df = df.drop(['collection_id',
@@ -48,8 +58,14 @@ class PublicationTransformer(Transformer):
                      axis=1)
         return df
 
-    @staticmethod
-    def _transform_rna(df):
+    def _transform_rna(self):
+        file_path = self._transform_stack.get('rna')
+
+        if not file_path:
+            return pd.DataFrame(columns=['pubmed'])
+
+        df = read_json_lines(file_path)
+
         df = df.drop_duplicates(subset=['name'])
 
         df = df.drop(['riboswitch_id',
@@ -76,16 +92,13 @@ class PublicationTransformer(Transformer):
 
         return publications
 
-    def transform(self, **kwargs):
+    def transform(self):
 
-        tf_family = kwargs.get('tf_family', pd.DataFrame(columns=['name']))
-        tf_family = self._transform_tf_family(tf_family)
+        tf_family = self._transform_tf_family()
 
-        tf = kwargs.get('tf', pd.DataFrame(columns=['name']))
-        tf = self._transform_tf(tf)
+        tf = self._transform_tf()
 
-        rna = kwargs.get('rna', pd.DataFrame(columns=['name']))
-        rna = self._transform_rna(rna)
+        rna = self._transform_rna()
 
         df = pd.concat([tf_family, tf, rna], axis=0)
 
@@ -99,5 +112,5 @@ class PublicationTransformer(Transformer):
 
         return df
 
-    def connect(self, df: pd.DataFrame):
+    def connect(self):
         return

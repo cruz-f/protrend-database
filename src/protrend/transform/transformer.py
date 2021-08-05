@@ -1,11 +1,10 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Dict, Tuple, Union, List, Any, Type
+from typing import Tuple, Union, List, Any, Type, Callable, Dict
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.transform.settings import TransformerSettings
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
@@ -43,23 +42,30 @@ class Transformer(metaclass=ABCMeta):
 
         self._settings = settings
 
-        self._files = {}
+        self._transform_stack = {}
+        self._connect_stack = {}
         self._write_stack = []
 
         self._load_settings()
 
     def _load_settings(self):
 
-        for key, file in self._settings.files.items():
+        for key, file in self._settings.transform.items():
 
             file_path = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
 
             if os.path.exists(file_path):
 
-                self._files[key] = file_path
+                self._transform_stack[key] = file_path
 
             else:
                 raise FileNotFoundError(f'Could not found file {file_path} with key {key}')
+
+        for key, file in self._settings.connect.items():
+
+            file_path = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+
+            self._connect_stack[key] = file_path
 
     # --------------------------------------------------------
     # Static properties
@@ -80,10 +86,6 @@ class Transformer(metaclass=ABCMeta):
         return self.settings.version
 
     @property
-    def files(self) -> Dict[str, str]:
-        return self._files
-
-    @property
     def node(self) -> Type[Node]:
         return self.settings.node
 
@@ -92,41 +94,43 @@ class Transformer(metaclass=ABCMeta):
         return self.settings.node_factors
 
     @property
+    def transform_stack(self) -> Dict[str, str]:
+        return self._transform_stack
+
+    @property
+    def connect_stack(self) -> Dict[str, str]:
+        return self._connect_stack
+
+    @property
+    def write_stack(self) -> List[Callable]:
+        return self._write_stack
+
+    @property
+    def order(self) -> int:
+        return self.settings.order
+
+    @property
     def write_path(self) -> str:
         return os.path.join(DATA_LAKE_PATH, self.source, self.version)
+
+    # --------------------------------------------------------
+    # Python API
+    # --------------------------------------------------------
+    def __str__(self):
+        return f'{self.__class__.__name__}: {self.settings}'
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other: 'Transformer'):
+
+        return self.__class__.__name__ and other.__class__.__name__ and self.settings == other.settings
 
     # --------------------------------------------------------
     # Transformer API
     # --------------------------------------------------------
     @abstractmethod
-    def read(self, **kwargs) -> Dict[str, pd.DataFrame]:
-
-        """
-        The method responsible for reading files' mapping-like object into pandas DataFrames.
-        The pandas DataFrames are returned as a dictionary with pairs file key and DataFrame.
-
-        Interface implementation with unknown signature.
-        Concrete implementations are available at the transformer sub-classes.
-
-        :param kwargs:
-        :return:
-        """
-
-        for key, df in kwargs.items():
-
-            name = f'read_{key}'
-            file_name = f'{name}.csv'
-            file_path = os.path.join(self.write_path, file_name)
-
-            if os.path.exists(file_path):
-                continue
-
-            self.stack_csv(name, df)
-
-        return kwargs
-
-    @abstractmethod
-    def transform(self, **kwargs):
+    def transform(self):
 
         """
         The method responsible for transforming multiple pandas DataFrames into an annotated, cleaned and standardized
@@ -135,7 +139,6 @@ class Transformer(metaclass=ABCMeta):
         Interface implementation with unknown signature.
         Concrete implementations are available at the transformer children.
 
-        :param kwargs:
         :return:
         """
 
@@ -197,7 +200,7 @@ class Transformer(metaclass=ABCMeta):
         return df
 
     @abstractmethod
-    def connect(self, df: pd.DataFrame):
+    def connect(self):
 
         """
         The method responsible for connecting an integrated pandas DataFrames to the remaining database.
@@ -207,7 +210,6 @@ class Transformer(metaclass=ABCMeta):
         Interface implementation with unknown signature.
         Concrete implementations are available at the transformer children.
 
-        :param df:
         :return:
         """
         pass
@@ -225,10 +227,6 @@ class Transformer(metaclass=ABCMeta):
     # ----------------------------------------
     # Utilities methods
     # ----------------------------------------
-    def _read_json_lines(self) -> Dict[str, pd.DataFrame]:
-
-        return {key: read_json_lines(file_path) for key, file_path in self._files.items()}
-
     def _stack_integrated_nodes(self, df: pd.DataFrame):
         node_cols = list(self.node.node_keys())
         cols_to_drop = [col for col in df.columns if col in node_cols]
@@ -301,16 +299,12 @@ class Transformer(metaclass=ABCMeta):
     def make_connection(size: int,
                         from_node: Type[Node],
                         to_node: Type[Node],
-                        from_property: str,
-                        to_property: str,
                         from_identifiers: List[Any],
                         to_identifiers: List[Any],
-                        **kwargs) -> pd.DataFrame:
+                        kwargs: dict = None) -> pd.DataFrame:
 
         connection = {'from_node': [from_node.node_name()] * size,
                       'to_node': [to_node.node_name()] * size,
-                      'from_property': [from_property] * size,
-                      'to_property': [to_property] * size,
                       'from_identifier': from_identifiers.copy(),
                       'to_identifier': to_identifiers.copy(),
                       'load': ['create'] * size,

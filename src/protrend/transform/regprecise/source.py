@@ -21,9 +21,6 @@ class SourceTransformer(Transformer):
 
         super().__init__(settings)
 
-    def read(self, **kwargs):
-        return {}
-
     def transform(self, **kwargs):
 
         regprecise = dict(name=self.name,
@@ -35,5 +32,5 @@ class SourceTransformer(Transformer):
 
         return pd.DataFrame(regprecise, index=[0])
 
-    def connect(self, df: pd.DataFrame):
+    def connect(self):
         return

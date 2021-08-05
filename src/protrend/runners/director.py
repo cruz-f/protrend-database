@@ -1,16 +1,18 @@
-from typing import Tuple, Dict
-
-import pandas as pd
+from typing import Sequence, Set
 
 from protrend.load.loader import Loader
 from protrend.transform.transformer import Transformer
 
 
+def sort_by_order(transformer: Transformer):
+    return transformer.order
+
+
 class Director:
 
     def __init__(self,
-                 transformers: Tuple[Transformer] = None,
-                 loaders: Tuple[Loader] = None):
+                 transformers: Sequence[Transformer] = None,
+                 loaders: Sequence[Loader] = None):
 
         """
         Director is responsible for managing transformers and loaders.
@@ -20,10 +22,10 @@ class Director:
         The director is also responsible for sending instructions to the loaders on how to load the transformed nodes
         into the database.
 
-        :type transformers: Transformer
+        :type transformers: Sequence[Transformer]
         :param transformers: transformers for processing staging area files into nodes and relationships
 
-        :type transformers: Loader
+        :type transformers: Sequence[Loader]
         :param transformers: loaders for converting data lake files into nodes and relationships
         """
 
@@ -31,12 +33,13 @@ class Director:
         self._loaders = loaders
 
     @property
-    def transformers(self) -> Tuple[Transformer]:
-        return self._transformers
+    def transformers(self) -> Set[Transformer]:
+        transformers = set(self._transformers)
+        return set(sorted(transformers, key=sort_by_order, reverse=True))
 
     @property
-    def loaders(self) -> Tuple[Loader]:
-        return self._loaders
+    def loaders(self) -> Set[Loader]:
+        return set(self._loaders)
 
     def transform(self):
         """
@@ -47,11 +50,13 @@ class Director:
         :return:
         """
 
-        for transformer in self._transformers:
-            dfs = transformer.read()
-            df = transformer.transform(**dfs)
-            df = transformer.integrate(df)
-            transformer.connect(df)
+        for transformer in self.transformers:
+            df = transformer.transform()
+            transformer.integrate(df)
+            transformer.write()
+
+        for transformer in self.transformers:
+            transformer.connect()
             transformer.write()
 
     def load(self):
@@ -63,7 +68,7 @@ class Director:
         :return:
         """
 
-        for loader in self._loaders:
+        for loader in self.loaders:
 
             for df in loader.read():
                 loader.load(df)
