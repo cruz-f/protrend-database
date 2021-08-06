@@ -38,3 +38,10 @@ def scale_arg(arg, size):
     return arg
 
 
+def flatten_list(args):
+    return {i for arg in args for i in arg}
+
+
+def take_last(args):
+    return args.iloc[-1]
+

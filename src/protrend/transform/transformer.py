@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Any, Type, Callable, Dict
+from typing import Tuple, Union, List, Any, Type, Callable, Dict, Sequence
 
 import pandas as pd
 
@@ -163,6 +163,11 @@ class Transformer(metaclass=ABCMeta):
         :param df: transformed pandas DataFrame
         :return: it creates a new pandas DataFrame of the integrated data
         """
+        # ensure uniqueness
+        df = self.drop_duplicates(df=df,
+                                  subset=self.node_factors,
+                                  perfect_match=False,
+                                  preserve_nan=True)
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
@@ -240,6 +245,32 @@ class Transformer(metaclass=ABCMeta):
         fp = os.path.join(self.write_path, f'{name}.csv')
         csv = partial(df_copy.to_csv, path_or_buf=fp)
         self._write_stack.append(csv)
+
+    @staticmethod
+    def drop_duplicates(df: pd.DataFrame,
+                        subset: Sequence[str],
+                        perfect_match: bool = False,
+                        preserve_nan: bool = True) -> pd.DataFrame:
+
+        if perfect_match and preserve_nan:
+
+            df = df[(~df.duplicated(subset=subset)) | df[subset].isnull().any(axis=1)]
+
+        elif perfect_match and not preserve_nan:
+
+            df = df.drop_duplicates(subset=subset)
+
+        elif not perfect_match and preserve_nan:
+
+            for col in subset:
+                df = df[(~df.duplicated(subset=[col])) | df[col].isnull()]
+
+        elif not perfect_match and not preserve_nan:
+
+            for col in subset:
+                df = df.drop_duplicates(subset=[col])
+
+        return df
 
     @staticmethod
     def find_nodes(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: Tuple[str]) -> pd.Series:

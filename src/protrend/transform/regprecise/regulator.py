@@ -41,8 +41,7 @@ class RegulatorTransformer(Transformer):
 
         return df
 
-    @staticmethod
-    def _transform_tf(regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+    def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
         organism = organism[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy']]
 
@@ -50,7 +49,10 @@ class RegulatorTransformer(Transformer):
         mask = regulon['regulator_locus_tag'].notnull()
         regulon = regulon[mask]
 
-        regulon = regulon.drop_duplicates(subset=['regulator_locus_tag'])
+        regulon = self.drop_duplicates(df=regulon,
+                                       subset=['regulator_locus_tag'],
+                                       perfect_match=True,
+                                       preserve_nan=False)
 
         apply_processors(rstrip,
                          lstrip,
@@ -106,8 +108,7 @@ class RegulatorTransformer(Transformer):
 
         return genes
 
-    @staticmethod
-    def _transform_rna(regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+    def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
         organism = organism[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy']]
 
@@ -115,7 +116,10 @@ class RegulatorTransformer(Transformer):
         mask = regulon['rfam'].notnull()
         regulon = regulon[mask]
 
-        regulon = regulon.drop_duplicates(subset=['rfam', 'genome'])
+        regulon = self.drop_duplicates(df=regulon,
+                                       subset=['rfam', 'genome'],
+                                       perfect_match=True,
+                                       preserve_nan=False)
 
         apply_processors(rstrip,
                          lstrip,

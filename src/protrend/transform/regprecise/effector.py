@@ -30,7 +30,7 @@ class EffectorTransformer(Transformer):
 
         df = read_json_lines(file_path)
 
-        df = df.drop_duplicates(subset=['name'])
+        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=df, col='name')
 

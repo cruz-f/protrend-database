@@ -28,7 +28,7 @@ class PublicationTransformer(Transformer):
 
         df = read_json_lines(file_path)
 
-        df = df.drop_duplicates(subset=['name'])
+        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
 
         df = df.drop(['tffamily_id',
                       'name',
@@ -48,7 +48,7 @@ class PublicationTransformer(Transformer):
 
         df = read_json_lines(file_path)
 
-        df = df.drop_duplicates(subset=['name'])
+        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
 
         df = df.drop(['collection_id',
                       'name',
@@ -66,7 +66,7 @@ class PublicationTransformer(Transformer):
 
         df = read_json_lines(file_path)
 
-        df = df.drop_duplicates(subset=['name'])
+        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
 
         df = df.drop(['riboswitch_id',
                       'name',

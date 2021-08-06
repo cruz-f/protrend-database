@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Callable, Any
+from typing import Callable, Any, List
 
 import pandas as pd
 from w3lib.html import remove_tags
@@ -86,3 +86,11 @@ def remove_pubmed(item: str) -> str:
 @handle_nan
 def remove_html_tags(item: str) -> str:
     return remove_tags(item)
+
+
+@handle_nan
+def take_first(item: List[str]) -> str:
+    if item:
+        return item[0]
+
+    return ''

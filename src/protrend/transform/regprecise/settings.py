@@ -22,14 +22,13 @@ class GeneSettings(RegPreciseSettings):
     default_node: Gene = Gene
     default_node_factors: Tuple[str] = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
                                         'genbank_accession', 'refseq_accession',
-                                        'locus_tag', 'name')
+                                        'locus_tag')
     default_transform: Dict[str, str] = {'gene': 'Gene.json',
-                                         'organism': 'integrated_organism.csv'}
+                                         'regulator': 'integrated_regulator.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_gene.csv',
                                        'to_source': 'integrated_source.csv',
                                        'to_organism': 'integrated_organism.csv',
-                                       'to_regulator': 'integrated_regulator.csv',
-                                       'to_tfbs': 'integrated_tfbs.csv'}
+                                       'to_regulator': 'integrated_regulator.csv'}
     default_order = 80
 
 
