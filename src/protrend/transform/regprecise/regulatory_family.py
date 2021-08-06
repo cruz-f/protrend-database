@@ -202,6 +202,9 @@ class RegulatoryFamilyTransformer(Transformer):
 
         for i, pubmed_row in enumerate(from_df['pubmed']):
 
+            if not pubmed_row:
+                continue
+
             for pmid in pubmed_row:
 
                 from_id = from_df['protrend_id'].iloc[i]

@@ -78,16 +78,16 @@ class RegulatorSettings(RegPreciseSettings):
     default_node: Regulator = Regulator
     default_node_factors: Tuple[str] = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
                                         'genbank_accession', 'refseq_accession',
-                                        'locus_tag', 'rfam', 'name')
+                                        'locus_tag')
     default_transform: Dict[str, str] = {'regulon': 'Regulon.json',
                                          'organism': 'integrated_organism.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_regulator.csv',
                                        'to_source': 'integrated_source.csv',
-                                       'to_effector': 'integrated_effector.csv',
                                        'to_organism': 'integrated_organism.csv',
+                                       'to_effector': 'integrated_effector.csv',
                                        'to_pathway': 'integrated_pathway.csv',
-                                       'to_publication': 'integrated_publication.csv',
-                                       'to_regulatory_family': 'integrated_regulatory_family.csv'}
+                                       'to_regulatory_family': 'integrated_regulatory_family.csv',
+                                       'to_publication': 'integrated_publication.csv',}
     default_order = 80
 
 
