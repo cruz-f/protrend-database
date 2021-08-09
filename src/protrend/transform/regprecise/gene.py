@@ -35,24 +35,16 @@ class GeneTransformer(Transformer):
         file_path = self._transform_stack.get('regulator')
 
         if not file_path:
-            return pd.DataFrame(columns=['regulator_protrend_id', 'regulon_id',
-                                         'organism_protrend_id', 'ncbi_taxonomy'])
+            return pd.DataFrame(columns=['regulon_id', 'ncbi_taxonomy'])
 
         df = read_csv(file_path)
-
-        df = df.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         return df
 
     @staticmethod
     def _transform_gene(gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
 
-        regulator = regulator[['regulator_protrend_id', 'regulon_id', 'organism_protrend_id', 'ncbi_taxonomy']]
-
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulator,
-                         col='regulon_id')
+        regulator = regulator[['regulon_id', 'ncbi_taxonomy']]
 
         apply_processors(rstrip,
                          lstrip,
@@ -72,6 +64,7 @@ class GeneTransformer(Transformer):
                                  'tfbs': flatten_list}
 
         gene = gene.groupby(gene['locus_tag']).aggregate(aggregation_functions)
+        gene = gene.reset_index()
 
         gene['organism_regulon'] = gene['regulon']
 
@@ -82,7 +75,7 @@ class GeneTransformer(Transformer):
 
         df = pd.merge(gene, regulator, left_on='organism_regulon', right_on='regulon_id')
 
-        df = df.drop(['organism_regulon'], axis=1)
+        df = df.drop(['organism_regulon', 'regulon_id'], axis=1)
 
         df['input_value'] = df['locus_tag']
 
@@ -138,7 +131,7 @@ class GeneTransformer(Transformer):
 
         df = df.drop(['input_value',
                       'name_annotation', 'name_regprecise',
-                      'locus_tag_annotation', 'locus_tag_regprecise',
+                      'locus_tag_annotation',
                       'function_annotation', 'function_regprecise'], axis=1)
 
         df_name = f'transformed_{self.node.node_name()}'
@@ -192,13 +185,28 @@ class GeneTransformer(Transformer):
     def _connect_to_organism(self) -> pd.DataFrame:
 
         from_path = self._connect_stack.get('from')
+        to_path = self._connect_stack.get('to_organism')
 
         if not from_path:
             return pd.DataFrame()
 
         from_df = read_csv(from_path)
-        from_identifiers = from_df['protrend_id'].tolist()
-        to_identifiers = from_df['organism_protrend_id'].tolist()
+        to_df = read_csv(to_path)
+
+        from_identifiers = []
+        to_identifiers = []
+
+        for i, ncbi in enumerate(from_df['ncbi_taxonomy']):
+
+            if not ncbi:
+                continue
+
+            from_id = from_df['protrend_id'].iloc[i]
+            from_identifiers.append(from_id)
+
+            mask = to_df['ncbi_taxonomy'].values == ncbi.replace(' ', '')
+            to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
+            to_identifiers.append(to_id)
 
         size = len(from_identifiers)
 

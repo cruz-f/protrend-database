@@ -1,6 +1,7 @@
 import functools
 import re
-from typing import Callable, Any, List
+from collections import defaultdict
+from typing import Callable, Any, List, Union
 
 import pandas as pd
 from w3lib.html import remove_tags
@@ -40,6 +41,46 @@ def handle_nan(fn):
         return item
 
     return wrapper
+
+
+@handle_nan
+def operon_name(items: list) -> str:
+
+    if items:
+
+        names = defaultdict(int)
+
+        for item in items:
+
+            name = ''.join(letter for letter in item if letter.islower())
+
+            if name:
+                defaultdict[name] += 1
+
+        name = items[0]
+        best_score = 0
+
+        for key, val in names.items():
+
+            if val > best_score:
+                best_score = val
+                name = key
+
+        return name
+
+    return ''
+
+
+@handle_nan
+def str_join(item: list) -> str:
+    return '_'.join(item)
+
+
+@handle_nan
+def null_to_nan(item: str) -> Union[None, str]:
+    if item == 'null':
+        return None
+    return item
 
 
 def nan_to_str(item: Any) -> str:
