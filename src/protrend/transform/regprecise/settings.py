@@ -34,7 +34,7 @@ class GeneSettings(RegPreciseSettings):
 
 class OperonSettings(RegPreciseSettings):
     default_node: Operon = Operon
-    default_node_factors: Tuple[str] = ('name',)
+    default_node_factors: Tuple[str] = ('genes',)
     default_transform: Dict[str, str] = {'operon': 'Operon.json',
                                          'gene': 'integrated_gene.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_operon.csv',

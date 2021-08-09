@@ -72,8 +72,14 @@ def operon_name(items: list) -> str:
 
 
 @handle_nan
-def str_join(item: list) -> str:
-    return '_'.join(item)
+def genes_to_hash(items: list) -> str:
+    items = sorted(items)
+    return '_'.join(items)
+
+
+@handle_nan
+def str_join(items: list) -> str:
+    return '_'.join(items)
 
 
 @handle_nan

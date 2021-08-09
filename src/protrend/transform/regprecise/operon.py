@@ -9,7 +9,7 @@ from protrend.model.model import Source, Organism
 from protrend.transform.annotation.gene import annotate_genes
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str, take_first, null_to_nan, \
-    str_join, operon_name
+    str_join, operon_name, genes_to_hash
 from protrend.transform.regprecise.settings import GeneSettings, OperonSettings
 from protrend.transform.transformer import Transformer
 from protrend.utils.graph import build_graph, find_connected_nodes
@@ -250,6 +250,53 @@ class OperonTransformer(Transformer):
         self.stack_csv(df_name, operon)
 
         return operon
+
+    def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        # ensure uniqueness
+        df = self.drop_duplicates(df=df,
+                                  subset=self.node_factors,
+                                  perfect_match=False,
+                                  preserve_nan=True)
+
+        df['genes_id'] = df['genes'].map(genes_to_hash)
+
+        # take a db snapshot for the current node
+        snapshot = self.node_view()
+        snapshot['genes_id'] = snapshot['genes'].map(genes_to_hash)
+
+        # find matching nodes according to several node factors/properties
+        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id', ))
+
+        # nodes to be updated
+        update_nodes = df[nodes_mask]
+
+        # find/set protrend identifiers for update nodes
+        update_size, _ = update_nodes.shape
+        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=('genes_id', ))
+        update_nodes[self.node.identifying_property] = snapshot.loc[ids_mask, self.node.identifying_property]
+        update_nodes['load'] = ['update'] * update_size
+        update_nodes['what'] = ['nodes'] * update_size
+
+        # nodes to be created
+        create_nodes = df[~nodes_mask]
+
+        # create/set new protrend identifiers
+        create_size, _ = create_nodes.shape
+        create_identifiers = self.protrend_identifiers_batch(create_size)
+        create_nodes[self.node.identifying_property] = create_identifiers
+        create_nodes['load'] = ['create'] * create_size
+        update_nodes['what'] = ['nodes'] * update_size
+
+        # concat both dataframes
+        df = pd.concat([create_nodes, update_nodes], axis=0)
+        df.drop(columns=['genes_id'], axis=1)
+        df_name = f'integrated_{self.node.node_name()}'
+        self.stack_csv(df_name, df)
+
+        self._stack_integrated_nodes(df)
+
+        return df
 
     def _connect_to_source(self) -> pd.DataFrame:
 
