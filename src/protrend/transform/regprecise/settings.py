@@ -1,7 +1,7 @@
 from typing import Dict, Tuple
 
 from protrend.model.model import Organism, Pathway, RegulatoryFamily, Effector, Source, Publication, Regulator, Gene, \
-    Operon, Regulon, RegulatoryInteraction, TFBS
+    Operon, TFBS
 from protrend.transform.settings import TransformerSettings
 
 
@@ -34,7 +34,7 @@ class GeneSettings(RegPreciseSettings):
 
 class OperonSettings(RegPreciseSettings):
     default_node: Operon = Operon
-    default_node_factors: Tuple[str] = ('genes',)
+    default_node_factors: Tuple[str] = ()
     default_transform: Dict[str, str] = {'operon': 'Operon.json',
                                          'gene': 'integrated_gene.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_operon.csv',
@@ -90,42 +90,6 @@ class RegulatorSettings(RegPreciseSettings):
     default_order = 80
 
 
-class RegulatoryInteractionSettings(RegPreciseSettings):
-    default_node: RegulatoryInteraction = RegulatoryInteraction
-    default_node_factors: Tuple[str] = ('regulator', 'operon', 'genes', 'tfbss', 'effectors', 'regulatory_effect')
-    default_transform: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
-                                         'operon': 'integrated_operon.csv',
-                                         'gene': 'integrated_gene.csv',
-                                         'tfbs': 'integrated_tfbs.csv',
-                                         'effector': 'integrated_effector.csv'}
-    default_connect: Dict[str, str] = {'from': 'integrated_operon.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_organism.csv',
-                                       'to_effector': 'integrated_effector.csv',
-                                       'to_regulator': 'integrated_regulator.csv',
-                                       'to_operon': 'integrated_operon.csv',
-                                       'to_gene': 'integrated_gene.csv',
-                                       'to_tfbs': 'integrated_tfbs.csv'}
-    default_order = 60
-
-
-class RegulonSettings(RegPreciseSettings):
-    default_node: Regulon = Regulon
-    default_node_factors: Tuple[str] = ('regulator', 'operon', 'genes', 'tfbss')
-    default_transform: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
-                                         'operon': 'integrated_operon.csv',
-                                         'gene': 'integrated_gene.csv',
-                                         'tfbs': 'integrated_tfbs.csv'}
-    default_connect: Dict[str, str] = {'from': 'integrated_operon.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_organism.csv',
-                                       'to_regulator': 'integrated_regulator.csv',
-                                       'to_operon': 'integrated_operon.csv',
-                                       'to_gene': 'integrated_gene.csv',
-                                       'to_tfbs': 'integrated_tfbs.csv'}
-    default_order = 60
-
-
 class RegulatoryFamilySettings(RegPreciseSettings):
     default_node: RegulatoryFamily = RegulatoryFamily
     default_node_factors: Tuple[str] = ('name', 'rfam')
@@ -148,11 +112,11 @@ class TFBSSettings(RegPreciseSettings):
     default_node: TFBS = TFBS
     default_node_factors: Tuple[str] = ()
     default_transform: Dict[str, str] = {'tfbs': 'TFBS.json',
-                                         'organism': 'integrated_organism.csv'}
+                                         'gene': 'integrated_gene.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_gene.csv',
                                        'to_source': 'integrated_source.csv',
                                        'to_organism': 'integrated_organism.csv',
                                        'to_regulator': 'integrated_regulator.csv',
                                        'to_operon': 'integrated_operon.csv',
                                        'to_gene': 'integrated_gene.csv'}
-    default_order = 80
+    default_order = 70

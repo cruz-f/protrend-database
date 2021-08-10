@@ -1,6 +1,5 @@
 import re
 
-
 # CamelCase to snake_case
 camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
@@ -44,4 +43,3 @@ def flatten_list(args):
 
 def take_last(args):
     return args.iloc[-1]
-

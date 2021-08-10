@@ -34,6 +34,7 @@ def handle_nan(fn):
     :param fn: Callable
     :return: the item or the results of the processor
     """
+
     @functools.wraps(fn)
     def wrapper(item):
         if item:
@@ -44,8 +45,20 @@ def handle_nan(fn):
 
 
 @handle_nan
-def operon_name(items: list) -> str:
+def remove_ellipsis(item: str) -> str:
+    if item.endswith('...'):
+        return item[:-3]
 
+    return item
+
+
+@handle_nan
+def upper_case(item: str) -> str:
+    return item.upper()
+
+
+@handle_nan
+def operon_name(items: list) -> str:
     if items:
 
         names = defaultdict(int)
@@ -141,3 +154,134 @@ def take_first(item: List[str]) -> str:
         return item[0]
 
     return ''
+
+
+def operon_strand(previous_strand: str = None,
+                  current_strand: str = None,
+                  default_strand: str = 'NA') -> str:
+    strand = None
+
+    if previous_strand is None:
+        previous_strand = ''
+
+    if current_strand is None:
+        current_strand = ''
+
+    if current_strand in ('forward', 'reverse'):
+        strand = current_strand
+
+    elif previous_strand in ('forward', 'reverse'):
+        strand = previous_strand
+
+    if strand is None:
+        strand = default_strand
+
+    return strand
+
+
+def operon_left_position(strand: str,
+                         previous_left: int = None,
+                         current_left: int = None,
+                         default_left: Union[str, int] = 'NA') -> Union[str, int]:
+    left = default_left
+
+    if previous_left is None:
+        previous_left = 0
+
+    if current_left is None:
+        current_left = 0
+
+    if strand in ('forward', 'NA'):
+
+        if current_left < previous_left:
+            left = current_left
+
+        elif previous_left < current_left:
+            left = previous_left
+
+        elif previous_left == current_left and current_left != 0:
+            left = previous_left
+
+    elif strand == 'reverse':
+
+        if current_left > previous_left:
+            left = current_left
+
+        elif previous_left > current_left:
+            left = previous_left
+
+        elif previous_left == current_left and current_left != 0:
+            left = previous_left
+
+    return left
+
+
+def operon_right_position(strand: str,
+                          previous_right: int = None,
+                          current_right: int = None,
+                          default_right: Union[str, int] = 'NA') -> Union[str, int]:
+    right = default_right
+
+    if previous_right is None:
+        previous_right = 0
+
+    if current_right is None:
+        current_right = 0
+
+    if strand in ('forward', 'NA'):
+
+        if current_right > previous_right:
+            right = current_right
+
+        elif previous_right > current_right:
+            right = previous_right
+
+        elif previous_right == current_right and current_right != 0:
+            right = previous_right
+
+    elif strand == 'reverse':
+
+        if current_right < previous_right:
+            right = current_right
+
+        elif previous_right < current_right:
+            right = previous_right
+
+        elif previous_right == current_right and current_right != 0:
+            right = previous_right
+
+    return right
+
+
+def tfbs_left_position(strand: str,
+                       gene_position: Union[str, int, None],
+                       gene_relative_position: int,
+                       default: Union[str, int] = 'NA'):
+    if gene_position == 'NA' or gene_position is None:
+        return default
+
+    if strand in ('forward', 'NA'):
+        return gene_position + gene_relative_position
+
+    elif strand == 'reverse':
+        return gene_position - gene_relative_position
+
+    return default
+
+
+def tfbs_right_position(strand: str,
+                        gene_position: Union[str, int],
+                        gene_relative_position: int,
+                        tfbs_length: int,
+                        default: Union[str, int] = 'NA'):
+
+    if gene_position == 'NA' or gene_position is None:
+        return default
+
+    if strand in ('forward', 'NA'):
+        return gene_position + (gene_relative_position + tfbs_length)
+
+    elif strand == 'reverse':
+        return gene_position - (gene_relative_position + tfbs_length)
+
+    return default

@@ -1,19 +1,16 @@
 from collections import defaultdict
-from typing import List, Union
 
 import pandas as pd
 
 from protrend.io.csv import read_csv
 from protrend.io.json import read_json_lines
-from protrend.model.model import Source, Organism
-from protrend.transform.annotation.gene import annotate_genes
-from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str, take_first, null_to_nan, \
-    str_join, operon_name, genes_to_hash
-from protrend.transform.regprecise.settings import GeneSettings, OperonSettings
+from protrend.model.model import Source
+from protrend.transform.processors import apply_processors, str_join, operon_name, genes_to_hash, operon_strand, \
+    operon_left_position, operon_right_position
+from protrend.transform.regprecise.settings import OperonSettings
 from protrend.transform.transformer import Transformer
 from protrend.utils.graph import build_graph, find_connected_nodes
-from protrend.utils.miscellaneous import take_last, flatten_list
+from protrend.utils.miscellaneous import flatten_list
 
 
 class OperonTransformer(Transformer):
@@ -182,9 +179,7 @@ class OperonTransformer(Transformer):
 
             df = df.dropna(subset=['protrend_id'])
 
-            df = df.rename(columns={'protrend_id': 'gene_protrend_id'})
-
-        df = df.set_index(df['gene_protrend_id'])
+        df = df.set_index(df['protrend_id'])
 
         strands = []
         positions_left = []
@@ -192,33 +187,27 @@ class OperonTransformer(Transformer):
 
         for genes in operon['genes']:
 
-            operon_strand = None
+            op_strand = None
+
+            for gene in genes:
+                gene_strand = df.loc[gene, 'strand']
+                op_strand = operon_strand(previous_strand=op_strand,
+                                          current_strand=gene_strand)
+
             operon_left = None
             operon_right = None
 
             for gene in genes:
-
-                gene_strand = df.loc[gene, 'strand']
                 gene_left = df.loc[gene, 'position_left']
                 gene_right = df.loc[gene, 'position_right']
 
-                if gene_strand and operon_strand is None:
-                    operon_strand = str(gene_strand)
+                operon_left = operon_left_position(strand=op_strand,
+                                                   previous_left=operon_left,
+                                                   current_left=gene_left)
 
-                if gene_left and operon_left is None:
-                    operon_left = int(gene_left)
-
-                elif gene_left and gene_left < operon_left:
-                    operon_left = int(gene_left)
-
-                if gene_right and operon_right is None:
-                    operon_right = int(gene_right)
-
-                elif gene_right and gene_right > operon_right:
-                    operon_right = int(gene_right)
-
-            if operon_strand is None:
-                operon_strand = 'forward'
+                operon_right = operon_right_position(strand=op_strand,
+                                                     previous_right=operon_right,
+                                                     current_right=gene_right)
 
             strands.append(operon_strand)
             positions_left.append(positions_left)
@@ -266,14 +255,14 @@ class OperonTransformer(Transformer):
         snapshot['genes_id'] = snapshot['genes'].map(genes_to_hash)
 
         # find matching nodes according to several node factors/properties
-        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id', ))
+        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id',))
 
         # nodes to be updated
         update_nodes = df[nodes_mask]
 
         # find/set protrend identifiers for update nodes
         update_size, _ = update_nodes.shape
-        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=('genes_id', ))
+        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=('genes_id',))
         update_nodes[self.node.identifying_property] = snapshot.loc[ids_mask, self.node.identifying_property]
         update_nodes['load'] = ['update'] * update_size
         update_nodes['what'] = ['nodes'] * update_size
@@ -321,7 +310,6 @@ class OperonTransformer(Transformer):
             regulons = row['regulon']
 
             for url, regulon in zip(urls, regulons):
-
                 from_identifiers.append(from_id)
                 kwargs['url'].append(url)
                 kwargs['external_identifier'].append(regulon)
