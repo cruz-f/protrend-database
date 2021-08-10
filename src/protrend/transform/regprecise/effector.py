@@ -38,17 +38,13 @@ class EffectorTransformer(DefaultTransformer):
 
         return df
 
-    def _transform_effectors(self, names: List[str]):
+    @staticmethod
+    def _transform_effectors(names: List[str]):
 
         dtos = [EffectorDTO(input_value=name) for name in names]
         annotate_effectors(dtos=dtos, names=names)
 
-        effectors = pd.DataFrame([dto.to_dict() for dto in dtos])
-
-        if effectors.empty:
-            effectors = pd.DataFrame(columns=self.columns)
-
-        return effectors
+        return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
 
@@ -68,7 +64,7 @@ class EffectorTransformer(DefaultTransformer):
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 
         if df.empty:
-            df = pd.DataFrame(columns=self.columns)
+            df = self.make_empty_frame()
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)

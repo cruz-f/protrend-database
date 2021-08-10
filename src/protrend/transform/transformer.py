@@ -320,6 +320,10 @@ class DefaultTransformer(Transformer):
 
         super().__init__(settings)
 
+    def make_empty_frame(self) -> pd.DataFrame:
+        cols = [col for col in self.columns if col != 'protrend_id']
+        return pd.DataFrame(columns=cols)
+
     @abstractmethod
     def transform(self):
         pass

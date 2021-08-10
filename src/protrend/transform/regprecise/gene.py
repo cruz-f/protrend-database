@@ -7,21 +7,26 @@ from protrend.io.csv import read_csv
 from protrend.io.json import read_json_lines
 from protrend.model.model import Source, Organism
 from protrend.transform.annotation.gene import annotate_genes
+from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, take_first
-from protrend.transform.regprecise.settings import GeneSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.settings import GeneSettings, GeneToSource
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import DefaultTransformer
 from protrend.utils.miscellaneous import take_last, flatten_list
 
 
-class GeneTransformer(Transformer):
-
-    def __init__(self, settings: GeneSettings = None):
-
-        if not settings:
-            settings = GeneSettings()
-
-        super().__init__(settings)
+class GeneTransformer(DefaultTransformer):
+    default_settings = GeneSettings
+    columns = {'protrend_id',
+               'locus_tag', 'name', 'synonyms', 'function', 'description',
+               'ncbi_gene', 'ncbi_protein', 'genbank_accession',
+               'refseq_accession', 'uniprot_accession',
+               'sequence', 'strand', 'position_left', 'position_right',
+               'annotation_score',
+               'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+               'regulator_protrend_id', 'regulon_id', 'locus_tag_regprecise'}
 
     def _read_gene(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('gene')
@@ -41,18 +46,7 @@ class GeneTransformer(Transformer):
             df = read_csv(file_path)
 
         else:
-            df = pd.DataFrame(columns=['protrend_id',
-                                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-                                       'mechanism',
-                                       'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
-                                       'biological_process', 'regulation_effector', 'regulation_regulog',
-                                       'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
-                                       'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
-                                       'regulation_mode', 'transcription_factor', 'tf_family',
-                                       'locus_tag', 'synonyms', 'function', 'description',
-                                       'ncbi_gene', 'ncbi_protein',
-                                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                       'sequence', 'strand', 'position_left', 'position_right', 'annotation_score'])
+            df = pd.DataFrame(columns=RegulatorTransformer.columns)
 
         df = df.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
@@ -106,8 +100,6 @@ class GeneTransformer(Transformer):
         for dto, name in zip(dtos, names):
             dto.synonyms.append(name)
 
-        genes = pd.DataFrame([dto.to_dict() for dto in dtos])
-
         # locus_tag: List[str]
         # name: List[str]
         # synonyms: List[str]
@@ -124,22 +116,7 @@ class GeneTransformer(Transformer):
         # position_right: List[int]
         # annotation_score: int
 
-        genes_cols = ['input_value',
-                      'locus_tag', 'name',
-                      'synonyms', 'function',
-                      'description'
-                      'ncbi_gene', 'ncbi_protein',
-                      'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                      'sequence',
-                      'strand',
-                      'position_left',
-                      'position_right',
-                      'annotation_score']
-
-        if genes.empty:
-            genes = pd.DataFrame(columns=genes_cols)
-
-        return genes
+        return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
         gene = self._read_gene()
@@ -162,97 +139,65 @@ class GeneTransformer(Transformer):
         df['function'] = df['function_annotation']
 
         df = df.drop(['input_value',
-                      'name_annotation', 'name_regprecise',
+                      'name_annotation',
+                      'name_regprecise',
                       'locus_tag_annotation',
-                      'function_annotation', 'function_regprecise'], axis=1)
+                      'function_annotation',
+                      'function_regprecise'], axis=1)
+
+        if df.empty:
+            df = self.make_empty_frame()
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
 
-    def _connect_to_source(self) -> pd.DataFrame:
 
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_source')
+class GeneToSourceConnector(DefaultConnector):
+    default_settings = GeneToSource
 
-        if not from_path:
-            return pd.DataFrame()
+    def _read_gene(self) -> pd.DataFrame:
+        file_path = self._connect_stack.get('gene')
 
-        if not to_path:
-            return pd.DataFrame()
+        if file_path:
+            df = read_csv(file_path)
 
-        from_df = read_csv(from_path)
+        else:
+            df = pd.DataFrame(columns=GeneTransformer.columns)
 
-        from_identifiers = []
-        kwargs = defaultdict(list)
+        return df
 
-        for _, row in from_df.iterrows():
+    def _read_source(self) -> pd.DataFrame:
+        file_path = self._connect_stack.get('source')
 
-            from_id = row['protrend_id']
-            urls = row['url']
-            regulons = row['regulon']
+        if file_path:
+            df = read_csv(file_path)
 
-            for url, regulon in zip(urls, regulons):
-                from_identifiers.append(from_id)
-                kwargs['url'].append(url)
-                kwargs['external_identifier'].append(regulon)
-                kwargs['key'].append('regulon_id')
+        else:
+            df = pd.DataFrame(columns=SourceTransformer.columns)
 
-        size = len(from_identifiers)
-
-        to_df = read_csv(to_path)
-        to_df = to_df.query('name == regprecise')
-        regprecise_id = to_df['protrend_id'].iloc[0]
-        to_identifiers = [regprecise_id] * size
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Source,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers,
-                                    kwargs=kwargs)
-
-    def _connect_to_organism(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_organism')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        to_df = read_csv(to_path)
-
-        from_identifiers = []
-        to_identifiers = []
-
-        for i, ncbi in enumerate(from_df['ncbi_taxonomy']):
-
-            if not ncbi:
-                continue
-
-            from_id = from_df['protrend_id'].iloc[i]
-            from_identifiers.append(from_id)
-
-            mask = to_df['ncbi_taxonomy'].values == ncbi.replace(' ', '')
-            to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-            to_identifiers.append(to_id)
-
-        size = len(from_identifiers)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Organism,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers)
+        return df
 
     def connect(self):
 
-        connection = self._connect_to_source()
-        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
-        self.stack_csv(df_name, connection)
+        gene = self._read_gene()
+        gene = gene.explode('regulon')
+        source = self._read_source()
 
-        connection = self._connect_to_organism()
-        df_name = f'connected_{self.node.node_name()}_{Organism.node_name()}'
-        self.stack_csv(df_name, connection)
+        from_identifiers = gene['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = source['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        kwargs = dict(url=gene['url'].tolist(),
+                      external_identifier=gene['regulon'].tolist(),
+                      key=['regulon_id'] * size)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_csv(df)

@@ -128,21 +128,8 @@ class EffectorToSource(RegPreciseConnections):
                                        'source': 'integrated_source.csv'}
 
 
-class EffectorToRegulator(RegPreciseConnections):
-    default_from_node = Effector
-    default_to_node = Regulator
-    default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
-                                       'regulator': 'integrated_regulator.csv'}
-
-
 class GeneToSource(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = Source
     default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv',
                                        'source': 'integrated_source.csv'}
-
-
-class GeneToOrganism(RegPreciseConnections):
-    default_from_node = Gene
-    default_to_node = Source
-    default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv'}
