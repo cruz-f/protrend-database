@@ -194,7 +194,8 @@ class OperonTransformer(Transformer):
 
         return operon
 
-    def _operon_coordinates(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _operon_coordinates(operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
 
         gene = gene.set_index(gene['gene_protrend_id'])
 

@@ -27,8 +27,7 @@ class GeneSettings(RegPreciseSettings):
                                          'regulator': 'integrated_regulator.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_gene.csv',
                                        'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_organism.csv',
-                                       'to_regulator': 'integrated_regulator.csv'}
+                                       'to_organism': 'integrated_gene.csv'}
     default_order = 80
 
 
@@ -39,10 +38,9 @@ class OperonSettings(RegPreciseSettings):
                                          'gene': 'integrated_gene.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_operon.csv',
                                        'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_organism.csv',
-                                       'to_regulator': 'integrated_regulator.csv',
-                                       'to_gene': 'integrated_gene.csv',
-                                       'to_tfbs': 'integrated_tfbs.csv'}
+                                       'to_organism': 'integrated_regulator.csv',
+                                       'to_gene': 'integrated_operon.csv',
+                                       'to_tfbs': 'integrated_operon.csv', }
     default_order = 70
 
 
@@ -86,7 +84,9 @@ class RegulatorSettings(RegPreciseSettings):
                                        'to_effector': 'integrated_effector.csv',
                                        'to_pathway': 'integrated_pathway.csv',
                                        'to_regulatory_family': 'integrated_regulatory_family.csv',
-                                       'to_publication': 'integrated_publication.csv',}
+                                       'to_operon': 'integrated_operon.csv',
+                                       'to_gene': 'integrated_operon.csv',
+                                       'to_tfbs': 'integrated_operon.csv'}
     default_order = 90
 
 
@@ -115,8 +115,5 @@ class TFBSSettings(RegPreciseSettings):
                                          'gene': 'integrated_gene.csv'}
     default_connect: Dict[str, str] = {'from': 'integrated_gene.csv',
                                        'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_organism.csv',
-                                       'to_regulator': 'integrated_regulator.csv',
-                                       'to_operon': 'integrated_operon.csv',
-                                       'to_gene': 'integrated_gene.csv'}
+                                       'to_organism': 'integrated_regulator.csv'}
     default_order = 70

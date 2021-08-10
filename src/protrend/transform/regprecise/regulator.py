@@ -342,16 +342,16 @@ class RegulatorTransformer(Transformer):
                                     from_identifiers=from_identifiers,
                                     to_identifiers=to_identifiers)
 
-    def _connect_to_regulatory_family_publication(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _connect_to_regulatory_family(self) -> pd.DataFrame:
 
         from_path = self._connect_stack.get('from')
         to_path = self._connect_stack.get('to_regulatory_family')
 
         if not from_path:
-            return pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame()
 
         if not to_path:
-            return pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame()
 
         from_df = read_csv(from_path)
         to_df = read_csv(to_path)
@@ -389,45 +389,11 @@ class RegulatorTransformer(Transformer):
 
         size = len(from_identifiers)
 
-        from_reg_to_fam = self.make_connection(size=size,
-                                               from_node=self.node,
-                                               to_node=RegulatoryFamily,
-                                               from_identifiers=from_identifiers,
-                                               to_identifiers=to_identifiers)
-
-        to_path_pub = self._connect_stack.get('to_publication')
-
-        if not to_path_pub:
-            return from_reg_to_fam, pd.DataFrame()
-
-        from_pub_ids = []
-        to_pub_ids = []
-
-        for from_id, to_id in zip(from_identifiers, to_identifiers):
-
-            mask = to_df['protrend_id'] == to_id
-            pubmed_row = to_df.loc[mask, 'pubmed']
-
-            if not pubmed_row:
-                continue
-
-            for pmid in pubmed_row:
-                from_pub_ids.append(from_id)
-
-                pmid_mask = to_path_pub['pmid'].values == pmid.replace(' ', '')
-                pub_id = to_path_pub.loc[pmid_mask, 'protrend_id'].iloc[0]
-
-                to_pub_ids.append(pub_id)
-
-        size = len(from_pub_ids)
-
-        from_reg_to_pub = self.make_connection(size=size,
-                                               from_node=self.node,
-                                               to_node=Publication,
-                                               from_identifiers=from_pub_ids,
-                                               to_identifiers=to_pub_ids)
-
-        return from_reg_to_fam, from_reg_to_pub
+        return self.make_connection(size=size,
+                                    from_node=self.node,
+                                    to_node=RegulatoryFamily,
+                                    from_identifiers=from_identifiers,
+                                    to_identifiers=to_identifiers)
 
     def connect(self):
 
@@ -447,10 +413,6 @@ class RegulatorTransformer(Transformer):
         df_name = f'connected_{self.node.node_name()}_{Pathway.node_name()}'
         self.stack_csv(df_name, connection)
 
-        fam_connection, pub_connection = self._connect_to_regulatory_family_publication()
-
+        connection = self._connect_to_regulatory_family()
         df_name = f'connected_{self.node.node_name()}_{RegulatoryFamily.node_name()}'
-        self.stack_csv(df_name, fam_connection)
-
-        df_name = f'connected_{self.node.node_name()}_{Publication.node_name()}'
-        self.stack_csv(df_name, pub_connection)
+        self.stack_csv(df_name, connection)
