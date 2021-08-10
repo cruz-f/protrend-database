@@ -11,7 +11,18 @@ from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import RegulatorSettings
 from protrend.transform.transformer import Transformer
 
-
+# 'protrend_id',
+#                                        'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+#                                        'mechanism',
+#                                        'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+#                                        'biological_process', 'regulation_effector', 'regulation_regulog',
+#                                        'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
+#                                        'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
+#                                        'regulation_mode', 'transcription_factor', 'tf_family',
+#                                        'locus_tag', 'synonyms', 'function', 'description',
+#                                        'ncbi_gene', 'ncbi_protein',
+#                                        'genbank_accession', 'refseq_accession', 'uniprot_accession',
+#                                        'sequence', 'strand', 'position_left', 'position_right', 'annotation_score'
 class RegulatorTransformer(Transformer):
 
     def __init__(self, settings: RegulatorSettings = None):

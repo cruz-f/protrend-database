@@ -133,3 +133,10 @@ class GeneToSource(RegPreciseConnections):
     default_to_node = Source
     default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv',
                                        'source': 'integrated_source.csv'}
+
+
+class OperonToSource(RegPreciseConnections):
+    default_from_node = Operon
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
+                                       'source': 'integrated_source.csv'}

@@ -13,7 +13,11 @@ from protrend.transform.transformer import Transformer
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
-
+# 'protrend_id',
+#                                        'position', 'score', 'sequence',
+#                                        'tfbs_id', 'url', 'regulon',
+#                                        'operon', 'gene', 'tfbs_id_old',
+#                                        'position_left', 'position_right'
 class TFBSTransformer(Transformer):
 
     def __init__(self, settings: TFBSSettings = None):

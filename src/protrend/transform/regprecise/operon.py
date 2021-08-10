@@ -2,22 +2,27 @@ import pandas as pd
 
 from protrend.io.csv import read_csv
 from protrend.io.json import read_json_lines
+from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import apply_processors, str_join, operon_name, genes_to_hash, operon_strand, \
     operon_left_position, operon_right_position
-from protrend.transform.regprecise.settings import OperonSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.gene import GeneTransformer
+from protrend.transform.regprecise.settings import OperonSettings, OperonToSource
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.regprecise.tfbs import TFBSTransformer
+from protrend.transform.transformer import DefaultTransformer
 from protrend.utils.graph import build_graph, find_connected_nodes
 from protrend.utils.miscellaneous import flatten_list
 
 
-class OperonTransformer(Transformer):
-
-    def __init__(self, settings: OperonSettings = None):
-
-        if not settings:
-            settings = OperonSettings()
-
-        super().__init__(settings)
+class OperonTransformer(DefaultTransformer):
+    default_settings = OperonSettings
+    columns = {'protrend_id',
+               'operon_id', 'name', 'url', 'regulon', 'tfbs',
+               'tfbss',
+               'operon_id_old', 'operon_id_new', 'locus_tag', 'locus_tag_regprecise',
+               'genes',
+               'first_gene_position_left',
+               'last_gene_position_right', }
 
     def _read_operon(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('operon')
@@ -38,21 +43,7 @@ class OperonTransformer(Transformer):
             df = read_csv(file_path)
 
         else:
-            df = pd.DataFrame(columns=['protrend_id',
-                                       'url', 'regulon', 'operon', 'tfbs',
-                                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-                                       'regulator_protrend_id', 'regulon_id',
-                                       'locus_tag', 'name',
-                                       'synonyms', 'function',
-                                       'description'
-                                       'ncbi_gene', 'ncbi_protein',
-                                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                       'sequence',
-                                       'strand',
-                                       'position_left',
-                                       'position_right',
-                                       'annotation_score'
-                                       'locus_tag_regprecise'])
+            df = pd.DataFrame(columns=[GeneTransformer.columns])
 
         df = df.rename(columns={'protrend_id': 'gene_protrend_id'})
 
@@ -70,11 +61,7 @@ class OperonTransformer(Transformer):
             df = read_csv(file_path)
 
         else:
-            df = pd.DataFrame(columns=['protrend_id',
-                                       'position', 'score', 'sequence',
-                                       'tfbs_id', 'url', 'regulon',
-                                       'operon', 'gene', 'tfbs_id_old',
-                                       'position_left', 'position_right'])
+            df = pd.DataFrame(columns=[TFBSTransformer.columns])
 
         df = df.dropna(subset=['protrend_id'])
 
@@ -254,6 +241,9 @@ class OperonTransformer(Transformer):
 
         df = self._operon_coordinates(operon=operon, gene=gene)
 
+        if df.empty:
+            df = self.make_empty_frame()
+
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
@@ -306,5 +296,51 @@ class OperonTransformer(Transformer):
 
         return df
 
+
+class OperonToSourceConnector(DefaultConnector):
+    default_settings = OperonToSource
+
+    def _read_operon(self) -> pd.DataFrame:
+        file_path = self._connect_stack.get('operon')
+
+        if file_path:
+            df = read_csv(file_path)
+
+        else:
+            df = pd.DataFrame(columns=OperonTransformer.columns)
+
+        return df
+
+    def _read_source(self) -> pd.DataFrame:
+        file_path = self._connect_stack.get('source')
+
+        if file_path:
+            df = read_csv(file_path)
+
+        else:
+            df = pd.DataFrame(columns=SourceTransformer.columns)
+
+        return df
+
     def connect(self):
-        pass
+
+        operon = self._read_operon()
+        operon = operon.explode('regulon')
+        source = self._read_source()
+
+        from_identifiers = operon['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = source['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        kwargs = dict(url=operon['url'].tolist(),
+                      external_identifier=operon['regulon'].tolist(),
+                      key=['regulon_id'] * size)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_csv(df)
