@@ -1,6 +1,7 @@
 from typing import Sequence, Set
 
 from protrend.load.loader import Loader
+from protrend.transform.connector import Connector
 from protrend.transform.transformer import Transformer
 
 
@@ -12,6 +13,7 @@ class Director:
 
     def __init__(self,
                  transformers: Sequence[Transformer] = None,
+                 connectors: Sequence[Connector] = None,
                  loaders: Sequence[Loader] = None):
 
         """
@@ -23,13 +25,17 @@ class Director:
         into the database.
 
         :type transformers: Sequence[Transformer]
-        :param transformers: transformers for processing staging area files into nodes and relationships
+        :param transformers: transformers for processing staging area files into nodes
 
-        :type transformers: Sequence[Loader]
-        :param transformers: loaders for converting data lake files into nodes and relationships
+        :type connectors: Sequence[Connector]
+        :param connectors: connectors for processing staging area files into relationships
+
+        :type loaders: Sequence[Loader]
+        :param loaders: loaders for converting data lake files into nodes and relationships
         """
 
         self._transformers = transformers
+        self._connectors = connectors
         self._loaders = loaders
 
     @property
@@ -38,13 +44,17 @@ class Director:
         return set(sorted(transformers, key=sort_by_order, reverse=True))
 
     @property
+    def connectors(self) -> Set[Connector]:
+        return set(self._connectors)
+
+    @property
     def loaders(self) -> Set[Loader]:
         return set(self._loaders)
 
     def transform(self):
         """
         Reading, processing, transforming, cleaning, integrating and writing one or more file types
-        into multiple nodes and relationships.
+        into multiple nodes.
         Transformation is performed step-wise according to the transformers order.
 
         :return:
@@ -55,9 +65,17 @@ class Director:
             transformer.integrate(df)
             transformer.write()
 
-        for transformer in self.transformers:
-            transformer.connect()
-            transformer.write()
+    def connect(self):
+        """
+        Reading, processing, transforming, cleaning, integrating and writing one or more file types
+        into multiple relationships.
+
+        :return:
+        """
+
+        for connector in self.connectors:
+            connector.connect()
+            connector.write()
 
     def load(self):
         """

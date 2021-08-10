@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Any, Type, Callable, Dict, Sequence
+from typing import Tuple, Union, List, Type, Callable, Dict, Sequence
 
 import pandas as pd
 
@@ -15,11 +15,10 @@ class Transformer(metaclass=ABCMeta):
     Transformer interface.
 
     The following methods must be implemented to set up a transformer for each node
-    and relationship
 
-    A transformer is responsible for reading, processing, integrating and writing node and relationships files.
+    A transformer is responsible for reading, processing, integrating and writing node files.
 
-    A transformer starts with data from the staging area and ends with structured nodes and relationships.
+    A transformer starts with data from the staging area and ends with structured nodes.
     """
 
     def __init__(self, settings: TransformerSettings):
@@ -31,10 +30,8 @@ class Transformer(metaclass=ABCMeta):
         A given source/database contained in the staging area must be provided
         together with the files required for the transformation to take place.
 
-        An attribute will be created for each key-value pair in the files' mapping-like object.
-
         A pandas DataFrame is the main engine to read, load, process and transform data contained in these files into
-        structured nodes and relationships
+        structured nodes
 
         :param settings: a TransformerSettings than contains all settings for source,
         version and files to perform the transformation on
@@ -60,12 +57,6 @@ class Transformer(metaclass=ABCMeta):
 
             else:
                 raise FileNotFoundError(f'Could not found file {file_path} with key {key}')
-
-        for key, file in self._settings.connect.items():
-
-            file_path = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
-
-            self._connect_stack[key] = file_path
 
     # --------------------------------------------------------
     # Static properties
@@ -204,21 +195,6 @@ class Transformer(metaclass=ABCMeta):
 
         return df
 
-    @abstractmethod
-    def connect(self):
-
-        """
-        The method responsible for connecting an integrated pandas DataFrames to the remaining database.
-        The connect method should set up multiple connections into several pandas DataFrames
-        using either protrend identifiers or node factors
-
-        Interface implementation with unknown signature.
-        Concrete implementations are available at the transformer children.
-
-        :return:
-        """
-        pass
-
     def write(self):
 
         if not os.path.exists(self.write_path):
@@ -325,28 +301,6 @@ class Transformer(metaclass=ABCMeta):
 
         return [protrend_id_encoder(self.node.header, self.node.entity, i)
                 for i in range(integer + 1, size + 1)]
-
-    @staticmethod
-    def make_connection(size: int,
-                        from_node: Type[Node],
-                        to_node: Type[Node],
-                        from_identifiers: List[Any],
-                        to_identifiers: List[Any],
-                        kwargs: dict = None) -> pd.DataFrame:
-
-        connection = {'from_node': [from_node.node_name()] * size,
-                      'to_node': [to_node.node_name()] * size,
-                      'from_identifier': from_identifiers.copy(),
-                      'to_identifier': to_identifiers.copy(),
-                      'load': ['create'] * size,
-                      'what': ['relationships'] * size}
-
-        if not kwargs:
-            kwargs = {}
-
-        connection.update(kwargs)
-
-        return pd.DataFrame(connection)
 
     def last_node(self) -> Union['Node', None]:
         return self.node.last_node()

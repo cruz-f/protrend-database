@@ -2,7 +2,7 @@ from typing import Dict, Tuple
 
 from protrend.model.model import Organism, Pathway, RegulatoryFamily, Effector, Source, Publication, Regulator, Gene, \
     Operon, TFBS
-from protrend.transform.settings import TransformerSettings
+from protrend.transform.settings import TransformerSettings, ConnectorSettings
 
 
 class RegPreciseSettings(TransformerSettings):
@@ -13,8 +13,6 @@ class EffectorSettings(RegPreciseSettings):
     default_node: Effector = Effector
     default_node_factors: Tuple[str] = ('name',)
     default_transform: Dict[str, str] = {'effector': 'Effector.json'}
-    default_connect: Dict[str, str] = {'from': 'integrated_effector.csv',
-                                       'to': 'integrated_source.csv'}
     default_order = 100
 
 
@@ -117,3 +115,34 @@ class TFBSSettings(RegPreciseSettings):
                                        'to_source': 'integrated_source.csv',
                                        'to_organism': 'integrated_regulator.csv'}
     default_order = 70
+
+
+class RegPreciseConnections(ConnectorSettings):
+    default_source: str = 'regprecise'
+
+
+class EffectorToSource(RegPreciseConnections):
+    default_from_node = Effector
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
+                                       'source': 'integrated_source.csv'}
+
+
+class EffectorToRegulator(RegPreciseConnections):
+    default_from_node = Effector
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
+                                       'regulator': 'integrated_regulator.csv'}
+
+
+class GeneToSource(RegPreciseConnections):
+    default_from_node = Gene
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv',
+                                       'source': 'integrated_source.csv'}
+
+
+class GeneToOrganism(RegPreciseConnections):
+    default_from_node = Gene
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv'}
