@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Type, Callable, Dict, Sequence
+from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set
 
 import pandas as pd
 
@@ -308,3 +308,18 @@ class Transformer(metaclass=ABCMeta):
     def node_view(self) -> pd.DataFrame:
         df = self.node.node_to_df()
         return df
+
+
+class DefaultTransformer(Transformer):
+    default_settings: Type[TransformerSettings] = TransformerSettings
+    columns: Set[str] = set()
+
+    def __init__(self, settings: TransformerSettings = None):
+        if not settings:
+            settings = self.default_settings()
+
+        super().__init__(settings)
+
+    @abstractmethod
+    def transform(self):
+        pass

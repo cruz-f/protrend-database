@@ -1,10 +1,10 @@
 import pandas as pd
 
 from protrend.transform.regprecise.settings import SourceSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.transformer import DefaultTransformer
 
 
-class SourceTransformer(Transformer):
+class SourceTransformer(DefaultTransformer):
     name = 'regprecise'
     type = 'database'
     url = 'https://regprecise.lbl.gov/'
@@ -14,14 +14,10 @@ class SourceTransformer(Transformer):
                'Inna Dubchak', 'Dmitry A Rodionov']
     description = 'RegPrecise 3.0: A resource for genome-scale exploration of transcriptional regulation in bacteria'
 
-    def __init__(self, settings: SourceSettings = None):
+    default_settings = SourceSettings
+    columns = {'protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'}
 
-        if not settings:
-            settings = SourceSettings()
-
-        super().__init__(settings)
-
-    def transform(self, **kwargs):
+    def transform(self):
 
         regprecise = dict(name=self.name,
                           type=self.type,
@@ -31,6 +27,3 @@ class SourceTransformer(Transformer):
                           description=self.description)
 
         return pd.DataFrame(regprecise, index=[0])
-
-    def connect(self):
-        return

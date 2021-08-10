@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import List, Any, Type, Callable, Dict
+from typing import List, Any, Type, Callable, Dict, Set
 
 import pandas as pd
 
@@ -123,7 +123,9 @@ class Connector(metaclass=ABCMeta):
 
         self._write_stack = []
 
-    def stack_csv(self, name: str, df: pd.DataFrame):
+    def stack_csv(self, df: pd.DataFrame):
+
+        name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}'
 
         df_copy = df.copy(deep=True)
         fp = os.path.join(self.write_path, f'{name}.csv')
@@ -149,3 +151,17 @@ class Connector(metaclass=ABCMeta):
         connection.update(kwargs)
 
         return pd.DataFrame(connection)
+
+
+class DefaultConnector(Connector):
+    default_settings: Type[ConnectorSettings] = ConnectorSettings
+
+    def __init__(self, settings: ConnectorSettings = None):
+        if not settings:
+            settings = self.default_settings()
+
+        super().__init__(settings)
+
+    @abstractmethod
+    def connect(self):
+        pass
