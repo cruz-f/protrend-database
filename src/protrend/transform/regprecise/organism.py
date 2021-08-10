@@ -4,22 +4,22 @@ import pandas as pd
 
 from protrend.io.csv import read_csv
 from protrend.io.json import read_json_lines
-from protrend.model.model import Source
 from protrend.transform.annotation.organism import annotate_organisms
+from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise.settings import OrganismSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import DefaultTransformer
 
 
-class OrganismTransformer(Transformer):
-
-    def __init__(self, settings: OrganismSettings = None):
-
-        if not settings:
-            settings = OrganismSettings()
-
-        super().__init__(settings)
+class OrganismTransformer(DefaultTransformer):
+    default_settings = OrganismSettings
+    columns = {'genome_id', 'name', 'taxonomy', 'url', 'regulon',
+               'species', 'strain', 'family', 'phylum',
+               'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+               'genbank_accession', 'genbank_ftp',
+               'ncbi_assembly', 'assembly_accession'}
 
     def _read_genome(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('genome')
@@ -48,8 +48,6 @@ class OrganismTransformer(Transformer):
         dtos = [OrganismDTO(input_value=name) for name in names]
         annotate_organisms(dtos=dtos, names=names)
 
-        organisms = pd.DataFrame([dto.to_dict() for dto in dtos])
-
         # name: List[str]
         # species: List[str]
         # strain: List[str]
@@ -63,14 +61,7 @@ class OrganismTransformer(Transformer):
         # ncbi_assembly: List[str]
         # assembly_accession: List[str]
 
-        if organisms.empty:
-            organisms = pd.DataFrame(columns=['input_value', 'name',
-                                              'species', 'strain', 'family', 'phylum',
-                                              'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
-                                              'genbank_accession', 'genbank_ftp',
-                                              'ncbi_assembly', 'assembly_accession'])
-
-        return organisms
+        return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
 
@@ -89,45 +80,58 @@ class OrganismTransformer(Transformer):
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 
+        if df.empty:
+            df = self.make_empty_frame()
+
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
 
-    def _connect_to_source(self) -> pd.DataFrame:
 
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to')
+class OrganismToSourceConnector(DefaultConnector):
+    default_settings = OrganismToSource
 
-        if not from_path:
-            return pd.DataFrame()
+    def _read_organism(self) -> pd.DataFrame:
+        file_path = self._connect_stack.get('organism')
 
-        if not to_path:
-            return pd.DataFrame()
+        if file_path:
+            df = read_csv(file_path)
 
-        from_df = read_csv(from_path)
-        from_identifiers = from_df['protrend_id'].tolist()
+        else:
+            df = pd.DataFrame(columns=OrganismTransformer.columns)
 
-        size = len(from_identifiers)
+        return df
 
-        to_df = read_csv(to_path)
-        to_df = to_df.query('name == regprecise')
-        regprecise_id = to_df['protrend_id'].iloc[0]
-        to_identifiers = [regprecise_id] * size
+    def _read_source(self) -> pd.DataFrame:
+        file_path = self._connect_stack.get('source')
 
-        kwargs = dict(url=from_df['url'].tolist(),
-                      external_identifier=from_df['genome_id'].tolist(),
-                      key=['genome_id'] * size)
+        if file_path:
+            df = read_csv(file_path)
 
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Source,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers,
-                                    kwargs=kwargs)
+        else:
+            df = pd.DataFrame(columns=SourceTransformer.columns)
+
+        return df
 
     def connect(self):
 
-        source_connection = self._connect_to_source()
-        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
-        self.stack_csv(df_name, source_connection)
+        organism = self._read_organism()
+        source = self._read_source()
+
+        from_identifiers = organism['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = source['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        kwargs = dict(url=organism['url'].tolist(),
+                      external_identifier=organism['genome_id'].tolist(),
+                      key=['genome_id'] * size)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_csv(df)

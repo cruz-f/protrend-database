@@ -140,3 +140,10 @@ class OperonToSource(RegPreciseConnections):
     default_to_node = Source
     default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
                                        'source': 'integrated_source.csv'}
+
+
+class OrganismToSource(RegPreciseConnections):
+    default_from_node = Organism
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'organism': 'integrated_organism.csv',
+                                       'source': 'integrated_source.csv'}
