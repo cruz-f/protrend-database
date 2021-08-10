@@ -19,62 +19,59 @@ class PublicationTransformer(Transformer):
 
         super().__init__(settings)
 
-    def _transform_tf_family(self):
-
+    def _read_tf_family(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('tf_family')
 
-        if not file_path:
-            return pd.DataFrame(columns=['pubmed'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
-
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
-
-        df = df.drop(['tffamily_id',
-                      'name',
-                      'url',
-                      'description',
-                      'regulog'],
-                     axis=1)
+        else:
+            df = pd.DataFrame(columns=['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
 
         return df
 
-    def _transform_tf(self):
-
+    def _read_tf(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('tf')
 
-        if not file_path:
-            return pd.DataFrame(columns=['pubmed'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
 
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
-
-        df = df.drop(['collection_id',
-                      'name',
-                      'url',
-                      'description',
-                      'regulog'],
-                     axis=1)
         return df
 
-    def _transform_rna(self):
+    def _read_rna(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('rna')
 
-        if not file_path:
-            return pd.DataFrame(columns=['pubmed'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
+        return df
 
-        df = df.drop(['riboswitch_id',
-                      'name',
-                      'url',
-                      'description',
-                      'rfam'
-                      'regulog'],
-                     axis=1)
+    def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
+
+        df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
+
+        df = df.drop(columns=['tffamily_id', 'name', 'url', 'description', 'regulog'], axis=1)
+
+        return df
+
+    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+
+        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
+
+        df = df.drop(columns=['collection_id', 'name', 'url', 'description', 'regulog'], axis=1)
+        return df
+
+    def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
+
+        df = self.drop_duplicates(df=rna, subset=['name'], perfect_match=True, preserve_nan=False)
+
+        df = df.drop(columns=['riboswitch_id', 'name', 'url', 'description', 'rfam' 'regulog'], axis=1)
         return df
 
     @staticmethod
@@ -94,11 +91,14 @@ class PublicationTransformer(Transformer):
 
     def transform(self):
 
-        tf_family = self._transform_tf_family()
+        tf_family = self._read_tf_family()
+        tf_family = self._transform_tf_family(tf_family)
 
-        tf = self._transform_tf()
+        tf = self._read_tf()
+        tf = self._transform_tf(tf)
 
-        rna = self._transform_rna()
+        rna = self._read_rna()
+        rna = self._transform_rna(rna)
 
         df = pd.concat([tf_family, tf, rna], axis=0)
 

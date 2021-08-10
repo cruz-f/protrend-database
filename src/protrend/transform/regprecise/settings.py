@@ -15,7 +15,7 @@ class EffectorSettings(RegPreciseSettings):
     default_transform: Dict[str, str] = {'effector': 'Effector.json'}
     default_connect: Dict[str, str] = {'from': 'integrated_effector.csv',
                                        'to': 'integrated_source.csv'}
-    default_order = 90
+    default_order = 100
 
 
 class GeneSettings(RegPreciseSettings):
@@ -52,7 +52,7 @@ class OrganismSettings(RegPreciseSettings):
     default_transform: Dict[str, str] = {'genome': 'Genome.json'}
     default_connect: Dict[str, str] = {'from': 'integrated_organism.csv',
                                        'to': 'integrated_source.csv'}
-    default_order = 90
+    default_order = 100
 
 
 class PathwaySettings(RegPreciseSettings):
@@ -61,7 +61,7 @@ class PathwaySettings(RegPreciseSettings):
     default_transform: Dict[str, str] = {'pathway': 'Pathway.json'}
     default_connect: Dict[str, str] = {'from': 'integrated_pathway.csv',
                                        'to': 'integrated_source.csv'}
-    default_order = 90
+    default_order = 100
 
 
 class PublicationSettings(RegPreciseSettings):
@@ -87,7 +87,7 @@ class RegulatorSettings(RegPreciseSettings):
                                        'to_pathway': 'integrated_pathway.csv',
                                        'to_regulatory_family': 'integrated_regulatory_family.csv',
                                        'to_publication': 'integrated_publication.csv',}
-    default_order = 80
+    default_order = 90
 
 
 class RegulatoryFamilySettings(RegPreciseSettings):
@@ -99,7 +99,7 @@ class RegulatoryFamilySettings(RegPreciseSettings):
     default_connect: Dict[str, str] = {'from': 'integrated_regulatory_family.csv',
                                        'to_source': 'integrated_source.csv',
                                        'to_publication': 'integrated_publication.csv'}
-    default_order = 90
+    default_order = 100
 
 
 class SourceSettings(RegPreciseSettings):

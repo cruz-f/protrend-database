@@ -7,7 +7,7 @@ from protrend.io.json import read_json_lines
 from protrend.model.model import Source, Organism, Effector, Pathway, RegulatoryFamily, Publication
 from protrend.transform.annotation.gene import annotate_genes
 from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import RegulatorSettings
 from protrend.transform.transformer import Transformer
 
@@ -24,26 +24,39 @@ class RegulatorTransformer(Transformer):
     def _read_regulon(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('regulon')
 
-        if not file_path:
-            return pd.DataFrame(columns=['name', 'rfam', 'regulator_locus_tag'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        return read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+                                       'biological_process', 'regulation_effector', 'regulation_regulog',
+                                       'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
+                                       'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
+                                       'regulation_mode', 'transcription_factor', 'tf_family'])
+
+        return df
 
     def _read_organism(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('organism')
 
-        if not file_path:
-            return pd.DataFrame(columns=['organism_protrend_id', 'genome_id', 'ncbi_taxonomy'])
+        if file_path:
+            df = read_csv(file_path)
 
-        df = read_csv(file_path)
+        else:
+            df = pd.DataFrame(columns=['protrend_id',
+                                       'genome_id', 'name', 'taxonomy', 'url', 'regulon',
+                                       'species', 'strain', 'family', 'phylum',
+                                       'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+                                       'genbank_accession', 'genbank_ftp',
+                                       'ncbi_assembly', 'assembly_accession'])
 
         df = df.rename(columns={'protrend_id': 'organism_protrend_id'})
+
+        df = df[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy']]
 
         return df
 
     def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-
-        organism = organism[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy']]
 
         # filter tfs only
         mask = regulon['regulator_locus_tag'].notnull()
@@ -57,12 +70,12 @@ class RegulatorTransformer(Transformer):
         apply_processors(rstrip,
                          lstrip,
                          df=regulon,
-                         col='name')
+                         col='regulator_locus_tag')
 
         apply_processors(rstrip,
                          lstrip,
                          df=regulon,
-                         col='regulator_locus_tag')
+                         col='name')
 
         apply_processors(rstrip,
                          lstrip,
@@ -70,11 +83,44 @@ class RegulatorTransformer(Transformer):
                          col='genome_id')
 
         regulon['mechanism'] = ['transcription factor'] * regulon.shape[0]
-        regulon = regulon.drop(['regulator_type'], axis=1)
 
         df = pd.merge(regulon, organism, left_on='genome', right_on='genome_id')
 
         df['input_value'] = df['regulator_locus_tag']
+
+        return df
+
+    def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+
+        # filter rna only
+        mask = regulon['rfam'].notnull()
+        regulon = regulon[mask]
+
+        regulon = self.drop_duplicates(df=regulon,
+                                       subset=['rfam', 'genome'],
+                                       perfect_match=True,
+                                       preserve_nan=False)
+
+        apply_processors(rstrip,
+                         lstrip,
+                         df=regulon,
+                         col='rfam')
+
+        apply_processors(rstrip,
+                         lstrip,
+                         df=regulon,
+                         col='name')
+
+        apply_processors(rstrip,
+                         lstrip,
+                         df=organism,
+                         col='genome_id')
+
+        regulon['mechanism'] = ['small RNA (sRNA)'] * regulon.shape[0]
+
+        df = pd.merge(regulon, organism, left_on='genome', right_on='genome_id')
+
+        df['input_value'] = df['name']
 
         return df
 
@@ -91,59 +137,36 @@ class RegulatorTransformer(Transformer):
 
         # locus_tag: List[str]
         # name: List[str]
+        # synonyms: List[str]
+        # function: List[str]
+        # description: List[str]
         # ncbi_gene: List[str]
         # ncbi_protein: List[str]
         # genbank_accession: List[str]
         # refseq_accession: List[str]
         # uniprot_accession: List[str]
+        # sequence: List[str]
+        # strand: List[str]
+        # position_left: List[int]
+        # position_right: List[int]
+        # annotation_score: int
 
-        genes_cols = ['input_value', 'locus_tag', 'name', 'ncbi_gene', 'ncbi_protein',
-                      'genbank_accession', 'refseq_accession', 'uniprot_accession']
+        genes_cols = ['input_value',
+                      'locus_tag', 'name',
+                      'synonyms', 'function',
+                      'description'
+                      'ncbi_gene', 'ncbi_protein',
+                      'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                      'sequence',
+                      'strand',
+                      'position_left',
+                      'position_right',
+                      'annotation_score']
 
         if genes.empty:
             genes = pd.DataFrame(columns=genes_cols)
 
-        for col in genes_cols:
-            apply_processors(nan_to_str, df=genes, col=col)
-
         return genes
-
-    def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-
-        organism = organism[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy']]
-
-        # filter rna only
-        mask = regulon['rfam'].notnull()
-        regulon = regulon[mask]
-
-        regulon = self.drop_duplicates(df=regulon,
-                                       subset=['rfam', 'genome'],
-                                       perfect_match=True,
-                                       preserve_nan=False)
-
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulon,
-                         col='name')
-
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulon,
-                         col='rfam')
-
-        apply_processors(rstrip,
-                         lstrip,
-                         df=organism,
-                         col='genome_id')
-
-        regulon['mechanism'] = ['small RNA (sRNA)'] * regulon.shape[0]
-        regulon = regulon.drop(['regulator_type'], axis=1)
-
-        df = pd.merge(regulon, organism, left_on='genome', right_on='genome_id')
-
-        df['input_value'] = df['name']
-
-        return df
 
     def transform(self):
         regulon = self._read_regulon()
@@ -160,6 +183,8 @@ class RegulatorTransformer(Transformer):
 
         tf_df = pd.merge(tf_genes, tf, on='input_value', suffixes=('_annotation', '_regprecise'))
 
+        # TODO: choose annotation if available
+
         tf_df['name'] = tf_df['name_annotation']
 
         tf_df = tf_df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
@@ -174,6 +199,8 @@ class RegulatorTransformer(Transformer):
         rna_genes = self._annotate_genes(loci, names, taxa)
 
         rna_df = pd.merge(rna_genes, rna, on='input_value', suffixes=('_annotation', '_regprecise'))
+
+        # TODO: choose annotation if available
 
         tf_df['name'] = tf_df['name_annotation']
 

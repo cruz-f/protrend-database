@@ -21,15 +21,20 @@ class PathwayTransformer(Transformer):
 
         super().__init__(settings)
 
-    def _transform_pathway(self):
+    def _read_pathway(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('pathway')
 
-        if not file_path:
-            return pd.DataFrame(columns=['name', 'input_value'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['pathway_id', 'name', 'url', 'regulog'])
 
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
+        return df
+
+    def _transform_pathway(self, pathway: pd.DataFrame) -> pd.DataFrame:
+
+        df = self.drop_duplicates(df=pathway, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=df, col='name')
 
@@ -54,7 +59,8 @@ class PathwayTransformer(Transformer):
 
     def transform(self):
 
-        pathway = self._transform_pathway()
+        pathway = self._read_pathway()
+        pathway = self._transform_pathway(pathway)
 
         names = list(pathway['input_value'])
 

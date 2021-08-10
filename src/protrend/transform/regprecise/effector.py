@@ -21,16 +21,20 @@ class EffectorTransformer(Transformer):
 
         super().__init__(settings)
 
-    def _transform_effector(self):
-
+    def _read_effector(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('effector')
 
-        if not file_path:
-            return pd.DataFrame(columns=['name', 'input_value'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['effector_id', 'name', 'url', 'regulog'])
 
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
+        return df
+
+    def _transform_effector(self, effector: pd.DataFrame):
+
+        df = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=df, col='name')
 
@@ -55,7 +59,8 @@ class EffectorTransformer(Transformer):
 
     def transform(self):
 
-        effector = self._transform_effector()
+        effector = self._read_effector()
+        effector = self._transform_effector(effector)
 
         names = list(effector['input_value'])
 
@@ -63,7 +68,9 @@ class EffectorTransformer(Transformer):
 
         df = pd.merge(effectors, effector, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        df['name'] = df['name_annotation'].astype(str) + df['name_regprecise'].astype(str)
+        # TODO: choose annotation if available
+
+        df['name'] = df['name_annotation']
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 

@@ -1,10 +1,7 @@
-from collections import defaultdict
-
 import pandas as pd
 
 from protrend.io.csv import read_csv
 from protrend.io.json import read_json_lines
-from protrend.model.model import Source
 from protrend.transform.processors import apply_processors, str_join, operon_name, genes_to_hash, operon_strand, \
     operon_left_position, operon_right_position
 from protrend.transform.regprecise.settings import OperonSettings
@@ -25,40 +22,65 @@ class OperonTransformer(Transformer):
     def _read_operon(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('operon')
 
-        if not file_path:
-            return pd.DataFrame(columns=['operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        return read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'])
+
+        return df
 
     def _read_gene(self) -> pd.DataFrame:
+
         file_path = self._transform_stack.get('gene')
 
-        if not file_path:
-            return pd.DataFrame(columns=['gene_protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise'])
+        if file_path:
+            df = read_csv(file_path)
 
-        df = read_csv(file_path)
-
-        df = df.dropna(subset=['protrend_id'])
+        else:
+            df = pd.DataFrame(columns=['protrend_id',
+                                       'url', 'regulon', 'operon', 'tfbs',
+                                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+                                       'regulator_protrend_id', 'regulon_id',
+                                       'locus_tag', 'name',
+                                       'synonyms', 'function',
+                                       'description'
+                                       'ncbi_gene', 'ncbi_protein',
+                                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                                       'sequence',
+                                       'strand',
+                                       'position_left',
+                                       'position_right',
+                                       'annotation_score'
+                                       'locus_tag_regprecise'])
 
         df = df.rename(columns={'protrend_id': 'gene_protrend_id'})
 
-        df = df[['gene_protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise']]
+        df = df.dropna(subset=['gene_protrend_id'])
+
+        df = df[['gene_protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise',
+                 'strand', 'position_left', 'position_right']]
 
         return df
 
     def _read_tfbs(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('tfbs')
 
-        if not file_path:
-            return pd.DataFrame(columns=['tfbs_protrend_id', 'tfbs_id'])
+        if file_path:
+            df = read_csv(file_path)
 
-        df = read_csv(file_path)
+        else:
+            df = pd.DataFrame(columns=['protrend_id',
+                                       'position', 'score', 'sequence',
+                                       'tfbs_id', 'url', 'regulon',
+                                       'operon', 'gene', 'tfbs_id_old',
+                                       'position_left', 'position_right'])
 
-        df = df.dropna(subset=['tfbs_protrend_id'])
+        df = df.dropna(subset=['protrend_id'])
 
         df = df.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
-        df = df[['tfbs_protrend_id', 'tfbs_id', 'operon']]
+        df = df[['tfbs_protrend_id', 'operon']]
 
         return df
 
@@ -67,11 +89,13 @@ class OperonTransformer(Transformer):
 
         # group duplicates
         operon_by_gene = operon.explode('gene')
+
         agg_funcs = {'operon_id': set,
-                     'url': set,
+                     'url': flatten_list,
                      'regulon': flatten_list,
-                     'tfbss': flatten_list,
-                     'tfbs_old': flatten_list}
+                     'tfbs': flatten_list,
+                     'tfbss': flatten_list}
+
         operon_by_gene = operon_by_gene.groupby(['gene']).aggregate(agg_funcs)
         operon_by_gene = operon_by_gene.reset_index()
 
@@ -111,8 +135,8 @@ class OperonTransformer(Transformer):
         agg_funcs = {'operon_id_old': flatten_list,
                      'url': flatten_list,
                      'regulon': flatten_list,
+                     'tfbs': flatten_list,
                      'tfbss': flatten_list,
-                     'tfbs_old': flatten_list,
                      'gene': set}
 
         operon = operon.groupby(['operon_id_new']).aggregate(agg_funcs)
@@ -128,20 +152,22 @@ class OperonTransformer(Transformer):
         agg_funcs = {'operon_id_old': flatten_list,
                      'url': flatten_list,
                      'regulon': flatten_list,
+                     'tfbs': flatten_list,
                      'tfbss': flatten_list,
-                     'tfbs_old': flatten_list,
+                     'name': set,
                      'gene_protrend_id': set,
-                     'name': set}
+                     'locus_tag': set,
+                     'locus_tag_regprecise': set}
 
         operon = operon_by_gene.groupby(['operon_id_new']).aggregate(agg_funcs)
         operon = operon.reset_index()
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
-        operon['operon_id_new'] = operon['genes']
+        operon['operon_id'] = operon['genes']
 
         apply_processors(str_join,
                          df=operon,
-                         col='operon_id_new')
+                         col='operon_id')
 
         apply_processors(operon_name,
                          df=operon,
@@ -157,29 +183,20 @@ class OperonTransformer(Transformer):
 
         agg_funcs = {'url': set,
                      'regulon': flatten_list,
-                     'tfbs_id': set,
-                     'tfbs_protrend_id': set,
-                     'gene': flatten_list}
+                     'tfbs': flatten_list,
+                     'gene': flatten_list,
+                     'tfbs_protrend_id': set}
 
         operon = operon.groupby(['operon_id']).aggregate(agg_funcs)
+        operon = operon.reset_index()
 
-        operon = operon.rename(columns={'tfbs_id': 'tfbs_old',
-                                        'tfbs_protrend_id': 'tfbss'})
+        operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
 
         return operon
 
-    def _add_operon_coordinates(self, operon: pd.DataFrame) -> pd.DataFrame:
-        file_path = self._transform_stack.get('gene')
+    def _operon_coordinates(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
 
-        if not file_path:
-            df = pd.DataFrame(columns=['gene_protrend_id', 'strand', 'position_left', 'position_right'])
-
-        else:
-            df = read_csv(file_path)
-
-            df = df.dropna(subset=['protrend_id'])
-
-        df = df.set_index(df['protrend_id'])
+        gene = gene.set_index(gene['gene_protrend_id'])
 
         strands = []
         positions_left = []
@@ -189,25 +206,25 @@ class OperonTransformer(Transformer):
 
             op_strand = None
 
-            for gene in genes:
-                gene_strand = df.loc[gene, 'strand']
+            for op_gene in genes:
+                op_gene_strand = gene.loc[op_gene, 'strand']
                 op_strand = operon_strand(previous_strand=op_strand,
-                                          current_strand=gene_strand)
+                                          current_strand=op_gene_strand)
 
             operon_left = None
             operon_right = None
 
-            for gene in genes:
-                gene_left = df.loc[gene, 'position_left']
-                gene_right = df.loc[gene, 'position_right']
+            for op_gene in genes:
+                op_gene_left = gene.loc[op_gene, 'position_left']
+                op_gene_right = gene.loc[op_gene, 'position_right']
 
                 operon_left = operon_left_position(strand=op_strand,
                                                    previous_left=operon_left,
-                                                   current_left=gene_left)
+                                                   current_left=op_gene_left)
 
                 operon_right = operon_right_position(strand=op_strand,
                                                      previous_right=operon_right,
-                                                     current_right=gene_right)
+                                                     current_right=op_gene_right)
 
             strands.append(operon_strand)
             positions_left.append(positions_left)
@@ -221,7 +238,7 @@ class OperonTransformer(Transformer):
     def transform(self):
         operon = self._read_operon()
         operon = self.drop_duplicates(df=operon, subset=['operon_id'], perfect_match=True, preserve_nan=True)
-        operon = operon.drop(['name'], axis=1)
+        operon = operon.drop(columns=['name'], axis=1)
 
         gene = self._read_gene()
         tfbs = self._read_tfbs()
@@ -233,12 +250,13 @@ class OperonTransformer(Transformer):
         # last_gene_position_right
         operon = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
         operon = self._transform_operon_by_gene(operon=operon, gene=gene)
-        operon = self._add_operon_coordinates(operon=operon)
+
+        df = self._operon_coordinates(operon=operon, gene=gene)
 
         df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, operon)
+        self.stack_csv(df_name, df)
 
-        return operon
+        return df
 
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
@@ -287,54 +305,5 @@ class OperonTransformer(Transformer):
 
         return df
 
-    def _connect_to_source(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_source')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        if not to_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-
-        from_identifiers = []
-        kwargs = defaultdict(list)
-
-        for _, row in from_df.iterrows():
-
-            from_id = row['protrend_id']
-            urls = row['url']
-            regulons = row['regulon']
-
-            for url, regulon in zip(urls, regulons):
-                from_identifiers.append(from_id)
-                kwargs['url'].append(url)
-                kwargs['external_identifier'].append(regulon)
-                kwargs['key'].append('regulon_id')
-
-        size = len(from_identifiers)
-
-        to_df = read_csv(to_path)
-        to_df = to_df.query('name == regprecise')
-        regprecise_id = to_df['protrend_id'].iloc[0]
-        to_identifiers = [regprecise_id] * size
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Source,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers,
-                                    kwargs=kwargs)
-
     def connect(self):
-        connection = self._connect_to_source()
-        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
-        self.stack_csv(df_name, connection)
-
-        #
-        # connection = self._connect_to_organism()
-        # df_name = f'connected_{self.node.node_name()}_{Organism.node_name()}'
-        # self.stack_csv(df_name, connection)
+        pass

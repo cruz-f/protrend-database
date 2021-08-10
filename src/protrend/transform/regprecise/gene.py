@@ -8,7 +8,7 @@ from protrend.io.json import read_json_lines
 from protrend.model.model import Source, Organism
 from protrend.transform.annotation.gene import annotate_genes
 from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str, take_first
+from protrend.transform.processors import rstrip, lstrip, apply_processors, take_first
 from protrend.transform.regprecise.settings import GeneSettings
 from protrend.transform.transformer import Transformer
 from protrend.utils.miscellaneous import take_last, flatten_list
@@ -26,25 +26,43 @@ class GeneTransformer(Transformer):
     def _read_gene(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('gene')
 
-        if not file_path:
-            return pd.DataFrame(columns=['locus_tag', 'name'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        return read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'])
+
+        return df
 
     def _read_regulator(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('regulator')
 
-        if not file_path:
-            return pd.DataFrame(columns=['regulon_id', 'ncbi_taxonomy'])
+        if file_path:
+            df = read_csv(file_path)
 
-        df = read_csv(file_path)
+        else:
+            df = pd.DataFrame(columns=['protrend_id',
+                                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+                                       'mechanism',
+                                       'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+                                       'biological_process', 'regulation_effector', 'regulation_regulog',
+                                       'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
+                                       'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
+                                       'regulation_mode', 'transcription_factor', 'tf_family',
+                                       'locus_tag', 'synonyms', 'function', 'description',
+                                       'ncbi_gene', 'ncbi_protein',
+                                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                                       'sequence', 'strand', 'position_left', 'position_right', 'annotation_score'])
+
+        df = df.rename(columns={'protrend_id': 'regulator_protrend_id'})
+
+        df = df[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+                 'regulator_protrend_id', 'regulon_id']]
 
         return df
 
     @staticmethod
     def _transform_gene(gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
-
-        regulator = regulator[['regulon_id', 'ncbi_taxonomy']]
 
         apply_processors(rstrip,
                          lstrip,
@@ -66,16 +84,14 @@ class GeneTransformer(Transformer):
         gene = gene.groupby(gene['locus_tag']).aggregate(aggregation_functions)
         gene = gene.reset_index()
 
-        gene['organism_regulon'] = gene['regulon']
+        gene['regulon_id'] = gene['regulon']
 
         # keeping only one, since we only want to get the ncbi taxonomy of each gene.
         apply_processors(take_first,
                          df=gene,
-                         col='organism_regulon')
+                         col='regulon_id')
 
-        df = pd.merge(gene, regulator, left_on='organism_regulon', right_on='regulon_id')
-
-        df = df.drop(['organism_regulon', 'regulon_id'], axis=1)
+        df = pd.merge(gene, regulator, on='regulon_id')
 
         df['input_value'] = df['locus_tag']
 
@@ -94,20 +110,34 @@ class GeneTransformer(Transformer):
 
         # locus_tag: List[str]
         # name: List[str]
+        # synonyms: List[str]
+        # function: List[str]
+        # description: List[str]
         # ncbi_gene: List[str]
         # ncbi_protein: List[str]
         # genbank_accession: List[str]
         # refseq_accession: List[str]
         # uniprot_accession: List[str]
+        # sequence: List[str]
+        # strand: List[str]
+        # position_left: List[int]
+        # position_right: List[int]
+        # annotation_score: int
 
-        genes_cols = ['input_value', 'locus_tag', 'name', 'ncbi_gene', 'ncbi_protein',
-                      'genbank_accession', 'refseq_accession', 'uniprot_accession']
+        genes_cols = ['input_value',
+                      'locus_tag', 'name',
+                      'synonyms', 'function',
+                      'description'
+                      'ncbi_gene', 'ncbi_protein',
+                      'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                      'sequence',
+                      'strand',
+                      'position_left',
+                      'position_right',
+                      'annotation_score']
 
         if genes.empty:
             genes = pd.DataFrame(columns=genes_cols)
-
-        for col in genes_cols:
-            apply_processors(nan_to_str, df=genes, col=col)
 
         return genes
 
@@ -117,13 +147,15 @@ class GeneTransformer(Transformer):
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
 
-        loci = gene['locus_tag'].tolist()
+        loci = gene['input_value'].tolist()
         names = gene['name'].tolist()
         taxa = gene['ncbi_taxonomy'].tolist()
 
         genes = self._annotate_genes(loci, names, taxa)
 
         df = pd.merge(genes, gene, on='input_value', suffixes=('_annotation', '_regprecise'))
+
+        # TODO: choose annotation if available
 
         df['locus_tag'] = df['locus_tag_annotation']
         df['name'] = df['name_annotation']
@@ -162,7 +194,6 @@ class GeneTransformer(Transformer):
             regulons = row['regulon']
 
             for url, regulon in zip(urls, regulons):
-
                 from_identifiers.append(from_id)
                 kwargs['url'].append(url)
                 kwargs['external_identifier'].append(regulon)

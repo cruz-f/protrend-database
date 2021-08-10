@@ -7,7 +7,7 @@ from protrend.io.json import read_json_lines
 from protrend.model.model import Source
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.dto import OrganismDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import OrganismSettings
 from protrend.transform.transformer import Transformer
 
@@ -21,22 +21,26 @@ class OrganismTransformer(Transformer):
 
         super().__init__(settings)
 
-    def _transform_genome(self):
-
+    def _read_genome(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('genome')
 
-        if not file_path:
-            return pd.DataFrame(columns=['name', 'input_value'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
-
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
-
-        apply_processors(rstrip, lstrip, df=df, col='name')
-
-        df['input_value'] = df['name']
+        else:
+            df = pd.DataFrame(columns=['genome_id', 'name', 'taxonomy', 'url', 'regulon'])
 
         return df
+
+    def _transform_genome(self, genome: pd.DataFrame) -> pd.DataFrame:
+
+        genome = self.drop_duplicates(df=genome, subset=['name'], perfect_match=True, preserve_nan=False)
+
+        apply_processors(rstrip, lstrip, df=genome, col='name')
+
+        genome['input_value'] = genome['name']
+
+        return genome
 
     @staticmethod
     def _transform_organisms(names: List[str]):
@@ -46,16 +50,32 @@ class OrganismTransformer(Transformer):
 
         organisms = pd.DataFrame([dto.to_dict() for dto in dtos])
 
-        if organisms.empty:
-            organisms = pd.DataFrame(columns=['input_value', 'name'])
+        # name: List[str]
+        # species: List[str]
+        # strain: List[str]
+        # family: List[str]
+        # phylum: List[str]
+        # ncbi_taxonomy: List[int]
+        # refseq_accession: List[str]
+        # refseq_ftp: List[str]
+        # genbank_accession: List[str]
+        # genbank_ftp: List[str]
+        # ncbi_assembly: List[str]
+        # assembly_accession: List[str]
 
-        apply_processors(nan_to_str, df=organisms, col='name')
+        if organisms.empty:
+            organisms = pd.DataFrame(columns=['input_value', 'name',
+                                              'species', 'strain', 'family', 'phylum',
+                                              'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+                                              'genbank_accession', 'genbank_ftp',
+                                              'ncbi_assembly', 'assembly_accession'])
 
         return organisms
 
     def transform(self):
 
-        genome = self._transform_genome()
+        genome = self._read_genome()
+        genome = self._transform_genome(genome)
 
         names = list(genome['input_value'])
 
@@ -63,7 +83,9 @@ class OrganismTransformer(Transformer):
 
         df = pd.merge(organisms, genome, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        df['name'] = df['name_annotation'].astype(str) + df['name_regprecise'].astype(str)
+        # TODO: choose annotation if available
+
+        df['name'] = df['name_annotation']
 
         df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
 

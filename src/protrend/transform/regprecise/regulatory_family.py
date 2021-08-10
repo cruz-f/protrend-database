@@ -18,40 +18,42 @@ class RegulatoryFamilyTransformer(Transformer):
 
         super().__init__(settings)
 
-    def _transform_tf_family(self):
+    def _read_tf_family(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('tf_family')
 
-        if not file_path:
-            return pd.DataFrame(columns=['pubmed'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
-
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
-
-        apply_processors(remove_white_space,
-                         df=df,
-                         col='name')
-
-        apply_processors(remove_regprecise_more,
-                         remove_pubmed,
-                         remove_multiple_white_space,
-                         rstrip,
-                         lstrip,
-                         df=df,
-                         col='description')
+        else:
+            df = pd.DataFrame(columns=['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
 
         return df
 
-    def _transform_tf(self):
-
+    def _read_tf(self) -> pd.DataFrame:
         file_path = self._transform_stack.get('tf')
 
-        if not file_path:
-            return pd.DataFrame(columns=['pubmed'])
+        if file_path:
+            df = read_json_lines(file_path)
 
-        df = read_json_lines(file_path)
+        else:
+            df = pd.DataFrame(columns=['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
 
-        df = self.drop_duplicates(df=df, subset=['name'], perfect_match=True, preserve_nan=False)
+        return df
+
+    def _read_rna(self) -> pd.DataFrame:
+        file_path = self._transform_stack.get('rna')
+
+        if file_path:
+            df = read_json_lines(file_path)
+
+        else:
+            df = pd.DataFrame(columns=['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
+
+        return df
+
+    def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
+
+        df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(remove_white_space,
                          df=df,
@@ -67,15 +69,27 @@ class RegulatoryFamilyTransformer(Transformer):
 
         return df
 
-    def _transform_rna(self):
-        file_path = self._transform_stack.get('rna')
+    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
 
-        if not file_path:
-            return pd.DataFrame(columns=['pubmed'])
+        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        df = read_json_lines(file_path)
+        apply_processors(remove_white_space,
+                         df=df,
+                         col='name')
 
-        df = self.drop_duplicates(df=df, subset=['rfam'], perfect_match=True, preserve_nan=False)
+        apply_processors(remove_regprecise_more,
+                         remove_pubmed,
+                         remove_multiple_white_space,
+                         rstrip,
+                         lstrip,
+                         df=df,
+                         col='description')
+
+        return df
+
+    def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
+
+        df = self.drop_duplicates(df=rna, subset=['rfam'], perfect_match=True, preserve_nan=False)
 
         apply_processors(remove_white_space,
                          df=df,
@@ -128,11 +142,14 @@ class RegulatoryFamilyTransformer(Transformer):
     def transform(self):
 
         # -------------------- TFs -------------------
-        tf_family = self._transform_tf_family()
-        tf = self._transform_tf()
+        tf_family = self._read_tf_family()
+        tf_family = self._transform_tf_family(tf_family)
+        tf = self._read_tf()
+        tf = self._transform_tf(tf)
         tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
 
-        rna = self._transform_rna()
+        rna = self._read_rna()
+        rna = self._transform_rna(rna)
 
         df = pd.concat([tfs, rna], axis=0)
 

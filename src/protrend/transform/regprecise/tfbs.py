@@ -23,6 +23,53 @@ class TFBSTransformer(Transformer):
 
         super().__init__(settings)
 
+    def _read_tfbs(self) -> pd.DataFrame:
+        file_path = self._transform_stack.get('tfbs')
+
+        if file_path:
+            df = read_json_lines(file_path)
+
+        else:
+            df = pd.DataFrame(columns=['position', 'score', 'sequence',
+                                       'tfbs_id', 'url', 'regulon',
+                                       'operon', 'gene'])
+
+        return df
+
+    def _read_gene(self) -> pd.DataFrame:
+
+        file_path = self._transform_stack.get('gene')
+
+        if file_path:
+            df = read_csv(file_path)
+
+        else:
+            df = pd.DataFrame(columns=['protrend_id',
+                                       'url', 'regulon', 'operon', 'tfbs',
+                                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+                                       'regulator_protrend_id', 'regulon_id',
+                                       'locus_tag', 'name',
+                                       'synonyms', 'function',
+                                       'description'
+                                       'ncbi_gene', 'ncbi_protein',
+                                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                                       'sequence',
+                                       'strand',
+                                       'position_left',
+                                       'position_right',
+                                       'annotation_score'
+                                       'locus_tag_regprecise'])
+
+        df = df.dropna(subset=['protrend_id'])
+        df = df.dropna(subset=['locus_tag_regprecise'])
+        df = df.drop_duplicates(subset=['locus_tag_regprecise'])
+
+        df = df[['strand', 'position_left', 'locus_tag_regprecise']]
+
+        df = df.set_index(df['locus_tag_regprecise'])
+
+        return df
+
     @staticmethod
     def _reduce_sequence(position, sequence):
 
@@ -72,6 +119,7 @@ class TFBSTransformer(Transformer):
         for _, row in df.iterrows():
 
             position = row['position']
+            score = row['score']
             sequence = row['sequence']
             tfbs_id = row['tfbs_id']
             url = row['url']
@@ -85,6 +133,7 @@ class TFBSTransformer(Transformer):
                 new_tfbs_id = self._new_tfbs_identifier(tfbs_id, pos)
 
                 res['position'].append(pos)
+                res['score'].append(score)
                 res['sequence'].append(seq)
                 res['tfbs_id_old'].append(tfbs_id)
                 res['tfbs_id'].append(new_tfbs_id)
@@ -95,17 +144,9 @@ class TFBSTransformer(Transformer):
 
         return pd.DataFrame(res)
 
-    def _transform_tfbs(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tfbs')
+    def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
 
-        if not file_path:
-            return pd.DataFrame(columns=['position', 'score', 'sequence',
-                                         'tfbs_id', 'url', 'regulon',
-                                         'operon', 'gene'])
-
-        tfbs = read_json_lines(file_path)
         tfbs = tfbs.drop_duplicates(subset=['tfbs_id'])
-        tfbs = tfbs.drop(columns=['score'], axis=1)
         tfbs = tfbs.dropna(subset=['sequence'])
         tfbs = tfbs.reset_index(drop=True)
 
@@ -123,21 +164,8 @@ class TFBSTransformer(Transformer):
 
         return tfbs
 
-    def _add_tfbs_coordinates(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-
-        file_path = self._transform_stack.get('gene')
-
-        if not file_path:
-            df = pd.DataFrame(columns=['gene_protrend_id', 'strand', 'position_left', 'position_right'])
-
-        else:
-            df = read_csv(file_path)
-
-            df = df.dropna(subset=['protrend_id'])
-
-            df = df.drop_duplicates(subset=['locus_tag_regprecise'])
-
-        df = df.set_index(df['locus_tag_regprecise'])
+    @staticmethod
+    def _tfbs_coordinates(tfbs: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
 
         strands = []
         positions_left = []
@@ -147,19 +175,19 @@ class TFBSTransformer(Transformer):
 
             op_strand = None
 
-            for gene in genes:
-                gene_strand = df.loc[gene, 'strand']
+            for ge in genes:
+                ge_strand = gene.loc[ge, 'strand']
                 op_strand = operon_strand(previous_strand=op_strand,
-                                          current_strand=gene_strand)
+                                          current_strand=ge_strand)
 
             operon_left = None
 
-            for gene in genes:
-                gene_left = df.loc[gene, 'position_left']
+            for ge in genes:
+                ge_left = gene.loc[ge, 'position_left']
 
                 operon_left = operon_left_position(strand=op_strand,
                                                    previous_left=operon_left,
-                                                   current_left=gene_left)
+                                                   current_left=ge_left)
 
             tfbs_left = tfbs_left_position(strand=op_strand,
                                            gene_position=operon_left,
@@ -180,8 +208,12 @@ class TFBSTransformer(Transformer):
         return tfbs
 
     def transform(self):
-        tfbs = self._transform_tfbs()
-        df = self._add_tfbs_coordinates(tfbs)
+        tfbs = self._read_tfbs()
+        tfbs = self._transform_tfbs(tfbs)
+
+        gene = self._read_gene()
+
+        df = self._tfbs_coordinates(tfbs, gene)
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
