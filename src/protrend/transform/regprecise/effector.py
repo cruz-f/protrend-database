@@ -2,8 +2,7 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
+from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.effector import annotate_effectors
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import EffectorDTO
@@ -16,20 +15,9 @@ from protrend.transform.transformer import DefaultTransformer
 class EffectorTransformer(DefaultTransformer):
     default_settings = EffectorSettings
     columns = {'protrend_id', 'effector_id', 'name', 'url', 'regulog', 'mechanism', 'synonyms', 'kegg_compounds'}
-
-    def _read_effector(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('effector')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['effector_id', 'name', 'url', 'regulog'])
-
-        return df
+    read_columns = {'effector_id', 'name', 'url', 'regulog'}
 
     def _transform_effector(self, effector: pd.DataFrame):
-
         df = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=df, col='name')
@@ -40,15 +28,13 @@ class EffectorTransformer(DefaultTransformer):
 
     @staticmethod
     def _transform_effectors(names: List[str]):
-
         dtos = [EffectorDTO(input_value=name) for name in names]
         annotate_effectors(dtos=dtos, names=names)
 
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-
-        effector = self._read_effector()
+        effector = read_from_stack(tl=self, file='effector', json=True, default_columns=self.read_columns)
         effector = self._transform_effector(effector)
 
         names = list(effector['input_value'])
@@ -57,11 +43,9 @@ class EffectorTransformer(DefaultTransformer):
 
         df = pd.merge(effectors, effector, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: choose annotation if available
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
-        df['name'] = df['name_annotation']
-
-        df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
+        df = df.drop(['input_value'], axis=1)
 
         if df.empty:
             df = self.make_empty_frame()
@@ -75,32 +59,9 @@ class EffectorTransformer(DefaultTransformer):
 class EffectorToSourceConnector(DefaultConnector):
     default_settings = EffectorToSource
 
-    def _read_effector(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('effector')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=EffectorTransformer.columns)
-
-        return df
-
-    def _read_source(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('source')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=SourceTransformer.columns)
-
-        return df
-
     def connect(self):
-
-        effector = self._read_effector()
-        source = self._read_source()
+        effector = read_from_stack(tl=self, file='effector', json=False, default_columns=EffectorTransformer.columns)
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
         from_identifiers = effector['protrend_id'].tolist()
         size = len(from_identifiers)

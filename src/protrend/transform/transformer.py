@@ -1,8 +1,9 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set
+from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set, Any
 
+import numpy as np
 import pandas as pd
 
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
@@ -221,6 +222,16 @@ class Transformer(metaclass=ABCMeta):
         fp = os.path.join(self.write_path, f'{name}.csv')
         csv = partial(df_copy.to_csv, path_or_buf=fp)
         self._write_stack.append(csv)
+
+    @staticmethod
+    def merge_columns(df: pd.DataFrame, column: str, left: str, right: str, fill: Any = '') -> pd.DataFrame:
+
+        df = df.copy()
+        df[left].fillna(fill)
+        df[right].fillna(fill)
+        df[column] = df[left] + df[right]
+        df[column] = df[column].replace(fill, np.nan)
+        return df.drop(columns=[left, right])
 
     @staticmethod
     def drop_duplicates(df: pd.DataFrame,
