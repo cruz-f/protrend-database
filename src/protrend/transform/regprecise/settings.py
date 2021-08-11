@@ -195,3 +195,9 @@ class OperonToOrganism(RegPreciseConnections):
     default_to_node = Organism
     default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
                                        'operon': 'integrated_operon.csv'}
+
+
+class GeneToOrganism(RegPreciseConnections):
+    default_from_node = Gene
+    default_to_node = Organism
+    default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv'}
