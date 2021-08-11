@@ -4,6 +4,7 @@ import pandas as pd
 
 from protrend.io.csv import read_csv
 from protrend.io.json import read_json_lines
+from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import OrganismDTO
@@ -20,17 +21,7 @@ class OrganismTransformer(DefaultTransformer):
                'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                'genbank_accession', 'genbank_ftp',
                'ncbi_assembly', 'assembly_accession'}
-
-    def _read_genome(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('genome')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['genome_id', 'name', 'taxonomy', 'url', 'regulon'])
-
-        return df
+    read_columns = {'genome_id', 'name', 'taxonomy', 'url', 'regulon'}
 
     def _transform_genome(self, genome: pd.DataFrame) -> pd.DataFrame:
 
@@ -65,7 +56,7 @@ class OrganismTransformer(DefaultTransformer):
 
     def transform(self):
 
-        genome = self._read_genome()
+        genome = read_from_stack(tl=self, file='genome', json=True, default_columns=self.read_columns)
         genome = self._transform_genome(genome)
 
         names = list(genome['input_value'])
@@ -74,11 +65,9 @@ class OrganismTransformer(DefaultTransformer):
 
         df = pd.merge(organisms, genome, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: choose annotation if available
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
-        df['name'] = df['name_annotation']
-
-        df = df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
+        df = df.drop(['input_value'], axis=1)
 
         if df.empty:
             df = self.make_empty_frame()
@@ -92,32 +81,9 @@ class OrganismTransformer(DefaultTransformer):
 class OrganismToSourceConnector(DefaultConnector):
     default_settings = OrganismToSource
 
-    def _read_organism(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('organism')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=OrganismTransformer.columns)
-
-        return df
-
-    def _read_source(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('source')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=SourceTransformer.columns)
-
-        return df
-
     def connect(self):
-
-        organism = self._read_organism()
-        source = self._read_source()
+        organism = read_from_stack(tl=self, file='organism', json=False, default_columns=OrganismTransformer.columns)
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
         from_identifiers = organism['protrend_id'].tolist()
         size = len(from_identifiers)
