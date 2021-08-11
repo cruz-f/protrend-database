@@ -1,7 +1,6 @@
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
+from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import apply_processors, str_join, operon_name, genes_to_hash, operon_strand, \
     operon_left_position, operon_right_position
@@ -23,53 +22,7 @@ class OperonTransformer(DefaultTransformer):
                'genes',
                'first_gene_position_left',
                'last_gene_position_right', }
-
-    def _read_operon(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('operon')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'])
-
-        return df
-
-    def _read_gene(self) -> pd.DataFrame:
-
-        file_path = self._transform_stack.get('gene')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=[GeneTransformer.columns])
-
-        df = df.rename(columns={'protrend_id': 'gene_protrend_id'})
-
-        df = df.dropna(subset=['gene_protrend_id'])
-
-        df = df[['gene_protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise',
-                 'strand', 'position_left', 'position_right']]
-
-        return df
-
-    def _read_tfbs(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tfbs')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=[TFBSTransformer.columns])
-
-        df = df.dropna(subset=['protrend_id'])
-
-        df = df.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-
-        df = df[['tfbs_protrend_id', 'operon']]
-
-        return df
+    read_columns = {'operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'}
 
     @staticmethod
     def _operon_by_gene(operon: pd.DataFrame) -> pd.DataFrame:
@@ -224,12 +177,20 @@ class OperonTransformer(DefaultTransformer):
         return operon
 
     def transform(self):
-        operon = self._read_operon()
+        operon = read_from_stack(tl=self, file='operon', json=True, default_columns=self.read_columns)
         operon = self.drop_duplicates(df=operon, subset=['operon_id'], perfect_match=True, preserve_nan=True)
         operon = operon.drop(columns=['name'], axis=1)
 
-        gene = self._read_gene()
-        tfbs = self._read_tfbs()
+        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = gene[['protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise', 'strand', 'position_left',
+                     'position_right']]
+        gene = gene.dropna(subset=['protrend_id'])
+        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
+
+        tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
+        tfbs = tfbs[['protrend_id', 'operon']]
+        tfbs = tfbs.dropna(subset=['protrend_id'])
+        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
         # genes
         # tfbss
@@ -300,33 +261,10 @@ class OperonTransformer(DefaultTransformer):
 class OperonToSourceConnector(DefaultConnector):
     default_settings = OperonToSource
 
-    def _read_operon(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('operon')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=OperonTransformer.columns)
-
-        return df
-
-    def _read_source(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('source')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=SourceTransformer.columns)
-
-        return df
-
     def connect(self):
-
-        operon = self._read_operon()
+        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
         operon = operon.explode('regulon')
-        source = self._read_source()
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
         from_identifiers = operon['protrend_id'].tolist()
         size = len(from_identifiers)
