@@ -168,3 +168,10 @@ class RegulatoryFamilyToSource(RegPreciseConnections):
     default_to_node = Source
     default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
                                        'source': 'integrated_source.csv'}
+
+
+class TFBSToSource(RegPreciseConnections):
+    default_from_node = TFBS
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'tfbs': 'integrated_tfbs.csv',
+                                       'source': 'integrated_source.csv'}

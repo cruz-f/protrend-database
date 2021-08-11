@@ -4,75 +4,25 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
-from protrend.transform.processors import apply_processors, remove_ellipsis, \
-    upper_case, tfbs_left_position, operon_left_position, operon_strand, tfbs_right_position
-from protrend.transform.regprecise.settings import TFBSSettings
-from protrend.transform.transformer import Transformer
+from protrend.io.utils import read_from_stack
+from protrend.transform.connector import DefaultConnector
+from protrend.transform.processors import (apply_processors, remove_ellipsis,
+                                           upper_case, tfbs_left_position, operon_left_position, operon_strand,
+                                           tfbs_right_position)
+from protrend.transform.regprecise.gene import GeneTransformer
+from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import DefaultTransformer
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
-# 'protrend_id',
-#                                        'position', 'score', 'sequence',
-#                                        'tfbs_id', 'url', 'regulon',
-#                                        'operon', 'gene', 'tfbs_id_old',
-#                                        'position_left', 'position_right'
-class TFBSTransformer(Transformer):
 
-    def __init__(self, settings: TFBSSettings = None):
-
-        if not settings:
-            settings = TFBSSettings()
-
-        super().__init__(settings)
-
-    def _read_tfbs(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tfbs')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['position', 'score', 'sequence',
-                                       'tfbs_id', 'url', 'regulon',
-                                       'operon', 'gene'])
-
-        return df
-
-    def _read_gene(self) -> pd.DataFrame:
-
-        file_path = self._transform_stack.get('gene')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['protrend_id',
-                                       'url', 'regulon', 'operon', 'tfbs',
-                                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-                                       'regulator_protrend_id', 'regulon_id',
-                                       'locus_tag', 'name',
-                                       'synonyms', 'function',
-                                       'description'
-                                       'ncbi_gene', 'ncbi_protein',
-                                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                       'sequence',
-                                       'strand',
-                                       'position_left',
-                                       'position_right',
-                                       'annotation_score'
-                                       'locus_tag_regprecise'])
-
-        df = df.dropna(subset=['protrend_id'])
-        df = df.dropna(subset=['locus_tag_regprecise'])
-        df = df.drop_duplicates(subset=['locus_tag_regprecise'])
-
-        df = df[['strand', 'position_left', 'locus_tag_regprecise']]
-
-        df = df.set_index(df['locus_tag_regprecise'])
-
-        return df
+class TFBSTransformer(DefaultTransformer):
+    default_settings = TFBSSettings
+    columns = {'protrend_id',
+               'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene',
+               'tfbs_id_old', 'position_left', 'position_right'}
+    read_columns = {'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene'}
 
     @staticmethod
     def _reduce_sequence(position, sequence):
@@ -212,18 +162,46 @@ class TFBSTransformer(Transformer):
         return tfbs
 
     def transform(self):
-        tfbs = self._read_tfbs()
+        tfbs = read_from_stack(tl=self, file='tfbs', json=True, default_columns=self.read_columns)
         tfbs = self._transform_tfbs(tfbs)
 
-        gene = self._read_gene()
+        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = gene[['strand', 'position_left', 'locus_tag_regprecise']]
+        gene = gene.dropna(subset=['locus_tag_regprecise'])
+        gene = gene.drop_duplicates(subset=['locus_tag_regprecise'])
+        gene = gene.set_index(gene['locus_tag_regprecise'])
 
         df = self._tfbs_coordinates(tfbs, gene)
+
+        if df.empty:
+            df = self.make_empty_frame()
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
 
-    def connect(self):
 
-        pass
+class TFBSToSourceConnector(DefaultConnector):
+    default_settings = TFBSToSource
+
+    def connect(self):
+        tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+
+        from_identifiers = tfbs['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = source['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        kwargs = dict(url=tfbs['url'].tolist(),
+                      external_identifier=tfbs['regulon'].tolist(),
+                      key=['regulon_id'] * size)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_csv(df)
