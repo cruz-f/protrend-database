@@ -1,71 +1,38 @@
-from typing import List, Union, Tuple
+from typing import List, Union
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
-from protrend.model.model import Source, Organism, Effector, Pathway, RegulatoryFamily, Publication
+from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.gene import annotate_genes
+from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise.settings import RegulatorSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.organism import OrganismTransformer
+from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import DefaultTransformer
 
-# 'protrend_id',
-#                                        'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-#                                        'mechanism',
-#                                        'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
-#                                        'biological_process', 'regulation_effector', 'regulation_regulog',
-#                                        'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
-#                                        'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
-#                                        'regulation_mode', 'transcription_factor', 'tf_family',
-#                                        'locus_tag', 'synonyms', 'function', 'description',
-#                                        'ncbi_gene', 'ncbi_protein',
-#                                        'genbank_accession', 'refseq_accession', 'uniprot_accession',
-#                                        'sequence', 'strand', 'position_left', 'position_right', 'annotation_score'
-class RegulatorTransformer(Transformer):
 
-    def __init__(self, settings: RegulatorSettings = None):
+class RegulatorTransformer(DefaultTransformer):
+    default_settings = RegulatorSettings
+    columns = {'protrend_id',
+               'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
+               'mechanism',
+               'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+               'biological_process', 'regulation_effector', 'regulation_regulog',
+               'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
+               'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
+               'regulation_mode', 'transcription_factor', 'tf_family',
+               'locus_tag', 'synonyms', 'function', 'description',
+               'ncbi_gene', 'ncbi_protein',
+               'genbank_accession', 'refseq_accession', 'uniprot_accession',
+               'sequence', 'strand', 'position_left', 'position_right', 'annotation_score', }
 
-        if not settings:
-            settings = RegulatorSettings()
-
-        super().__init__(settings)
-
-    def _read_regulon(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('regulon')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
-                                       'biological_process', 'regulation_effector', 'regulation_regulog',
-                                       'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
-                                       'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
-                                       'regulation_mode', 'transcription_factor', 'tf_family'])
-
-        return df
-
-    def _read_organism(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('organism')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['protrend_id',
-                                       'genome_id', 'name', 'taxonomy', 'url', 'regulon',
-                                       'species', 'strain', 'family', 'phylum',
-                                       'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
-                                       'genbank_accession', 'genbank_ftp',
-                                       'ncbi_assembly', 'assembly_accession'])
-
-        df = df.rename(columns={'protrend_id': 'organism_protrend_id'})
-
-        df = df[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy']]
-
-        return df
+    read_columns = {'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+                    'biological_process', 'regulation_effector', 'regulation_regulog',
+                    'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
+                    'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
+                    'regulation_mode', 'transcription_factor', 'tf_family'}
 
     def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
@@ -144,8 +111,6 @@ class RegulatorTransformer(Transformer):
         for dto, name in zip(dtos, names):
             dto.synonyms.append(name)
 
-        genes = pd.DataFrame([dto.to_dict() for dto in dtos])
-
         # locus_tag: List[str]
         # name: List[str]
         # synonyms: List[str]
@@ -162,26 +127,13 @@ class RegulatorTransformer(Transformer):
         # position_right: List[int]
         # annotation_score: int
 
-        genes_cols = ['input_value',
-                      'locus_tag', 'name',
-                      'synonyms', 'function',
-                      'description'
-                      'ncbi_gene', 'ncbi_protein',
-                      'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                      'sequence',
-                      'strand',
-                      'position_left',
-                      'position_right',
-                      'annotation_score']
-
-        if genes.empty:
-            genes = pd.DataFrame(columns=genes_cols)
-
-        return genes
+        return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        regulon = self._read_regulon()
-        organism = self._read_organism()
+        regulon = read_from_stack(tl=self, file='regulon', json=True, default_columns=self.read_columns)
+        organism = read_from_stack(tl=self, file='organism', json=False, default_columns=OrganismTransformer.columns)
+        organism = organism[['protrend_id', 'genome_id', 'ncbi_taxonomy']]
+        organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
 
         # ------------------ regulon of type TF --------------------------------
         tf = self._transform_tf(regulon=regulon, organism=organism)
@@ -194,11 +146,9 @@ class RegulatorTransformer(Transformer):
 
         tf_df = pd.merge(tf_genes, tf, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: choose annotation if available
+        tf_df = self.merge_columns(df=tf_df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
-        tf_df['name'] = tf_df['name_annotation']
-
-        tf_df = tf_df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
+        tf_df = tf_df.drop(['input_value'], axis=1)
 
         # ------------------ regulon of type RNA --------------------------------
         rna = self._transform_rna(regulon=regulon, organism=organism)
@@ -211,219 +161,43 @@ class RegulatorTransformer(Transformer):
 
         rna_df = pd.merge(rna_genes, rna, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: choose annotation if available
+        rna_df = self.merge_columns(df=rna_df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
-        tf_df['name'] = tf_df['name_annotation']
-
-        tf_df = tf_df.drop(['input_value', 'name_annotation', 'name_regprecise'], axis=1)
+        rna_df = rna_df.drop(['input_value'], axis=1)
 
         # --------------------- concat DFs --------------------------------------
 
         df = pd.concat([tf_df, rna_df], axis=0)
+
+        if df.empty:
+            df = self.make_empty_frame()
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
 
-    def _connect_to_source(self) -> pd.DataFrame:
 
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_source')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        if not to_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        from_identifiers = from_df['protrend_id'].tolist()
-
-        size = len(from_identifiers)
-
-        to_df = read_csv(to_path)
-        to_df = to_df.query('name == regprecise')
-        regprecise_id = to_df['protrend_id'].iloc[0]
-        to_identifiers = [regprecise_id] * size
-
-        kwargs = dict(url=from_df['url'].tolist(),
-                      external_identifier=from_df['regulon_id'].tolist(),
-                      key=['regulon_id'] * size)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Source,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers,
-                                    kwargs=kwargs)
-
-    def _connect_to_organism(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        from_identifiers = from_df['protrend_id'].tolist()
-        to_identifiers = from_df['organism_protrend_id'].tolist()
-
-        size = len(from_identifiers)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Organism,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers)
-
-    def _connect_to_effector(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_effector')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        if not to_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        to_df = read_csv(to_path)
-
-        from_identifiers = []
-        to_identifiers = []
-
-        for i, effector_row in enumerate(from_df['effector']):
-
-            if not effector_row:
-                continue
-
-            for effector_id in effector_row:
-                from_id = from_df['protrend_id'].iloc[i]
-                from_identifiers.append(from_id)
-
-                mask = to_df['effector_id'].values == effector_id.replace(' ', '')
-                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-                to_identifiers.append(to_id)
-
-        size = len(from_identifiers)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Effector,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers)
-
-    def _connect_to_pathway(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_pathway')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        if not to_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        to_df = read_csv(to_path)
-
-        from_identifiers = []
-        to_identifiers = []
-
-        for i, pathway_row in enumerate(from_df['pathway']):
-
-            if not pathway_row:
-                continue
-
-            for effector_id in pathway_row:
-                from_id = from_df['protrend_id'].iloc[i]
-                from_identifiers.append(from_id)
-
-                mask = to_df['pathway_id'].values == effector_id.replace(' ', '')
-                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-                to_identifiers.append(to_id)
-
-        size = len(from_identifiers)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Pathway,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers)
-
-    def _connect_to_regulatory_family(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_regulatory_family')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        if not to_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        to_df = read_csv(to_path)
-
-        from_identifiers = []
-        to_identifiers = []
-
-        for i, (tf_family, tf, rna_family) in enumerate(zip(from_df['rna_family'],
-                                                            from_df['transcription_factor'],
-                                                            from_df['tf_family'])):
-
-            if tf_family:
-                from_id = from_df['protrend_id'].iloc[i]
-                from_identifiers.append(from_id)
-
-                mask = to_df['tffamily_id'].values == tf_family.replace(' ', '')
-                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-                to_identifiers.append(to_id)
-
-            elif tf:
-                from_id = from_df['protrend_id'].iloc[i]
-                from_identifiers.append(from_id)
-
-                mask = to_df['collection_id'].values == tf.replace(' ', '')
-                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-                to_identifiers.append(to_id)
-
-            elif rna_family:
-                from_id = from_df['protrend_id'].iloc[i]
-                from_identifiers.append(from_id)
-
-                mask = to_df['riboswitch_id'].values == rna_family.replace(' ', '')
-                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-                to_identifiers.append(to_id)
-
-        size = len(from_identifiers)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=RegulatoryFamily,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers)
+class RegulatorToSourceConnector(DefaultConnector):
+    default_settings = RegulatorToSource
 
     def connect(self):
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
-        connection = self._connect_to_source()
-        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
-        self.stack_csv(df_name, connection)
+        from_identifiers = regulator['protrend_id'].tolist()
+        size = len(from_identifiers)
 
-        connection = self._connect_to_organism()
-        df_name = f'connected_{self.node.node_name()}_{Organism.node_name()}'
-        self.stack_csv(df_name, connection)
+        protrend_id = source['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
 
-        connection = self._connect_to_effector()
-        df_name = f'connected_{self.node.node_name()}_{Effector.node_name()}'
-        self.stack_csv(df_name, connection)
+        kwargs = dict(url=regulator['url'].tolist(),
+                      external_identifier=regulator['regulon_id'].tolist(),
+                      key=['regulon_id'] * size)
 
-        connection = self._connect_to_pathway()
-        df_name = f'connected_{self.node.node_name()}_{Pathway.node_name()}'
-        self.stack_csv(df_name, connection)
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
 
-        connection = self._connect_to_regulatory_family()
-        df_name = f'connected_{self.node.node_name()}_{RegulatoryFamily.node_name()}'
-        self.stack_csv(df_name, connection)
+        self.stack_csv(df)

@@ -154,3 +154,10 @@ class PathwayToSource(RegPreciseConnections):
     default_to_node = Source
     default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
                                        'source': 'integrated_source.csv'}
+
+
+class RegulatorToSource(RegPreciseConnections):
+    default_from_node = Regulator
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
+                                       'source': 'integrated_source.csv'}
