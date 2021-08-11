@@ -199,8 +199,7 @@ class TFBSToSourceConnector(DefaultConnector):
                       external_identifier=tfbs['regulon'].tolist(),
                       key=['regulon_id'] * size)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
@@ -222,10 +221,8 @@ class TFBSToOrganismConnector(DefaultConnector):
 
         from_identifiers = merged['protrend_id_tfbs'].tolist()
         to_identifiers = merged['organism_protrend_id'].tolist()
-        size = len(to_identifiers)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
         self.stack_csv(df)

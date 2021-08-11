@@ -149,8 +149,7 @@ class GeneToSourceConnector(DefaultConnector):
                       external_identifier=gene['regulon'].tolist(),
                       key=['regulon_id'] * size)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
@@ -165,10 +164,8 @@ class GeneToOrganismConnector(DefaultConnector):
 
         from_identifiers = gene['protrend_id'].tolist()
         to_identifiers = gene['organism_protrend_id'].tolist()
-        size = len(to_identifiers)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
         self.stack_csv(df)

@@ -133,10 +133,11 @@ class Connector(metaclass=ABCMeta):
         self._write_stack.append(csv)
 
     def make_connection(self,
-                        size: int,
                         from_identifiers: List[Any],
                         to_identifiers: List[Any],
                         kwargs: dict = None) -> pd.DataFrame:
+
+        size = len(from_identifiers)
 
         connection = {'from_node': [self.from_node.node_name()] * size,
                       'to_node': [self.to_node.node_name()] * size,

@@ -94,8 +94,7 @@ class OrganismToSourceConnector(DefaultConnector):
                       external_identifier=organism['genome_id'].tolist(),
                       key=['genome_id'] * size)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 

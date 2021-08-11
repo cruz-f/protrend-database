@@ -230,3 +230,10 @@ class PathwayToGene(RegPreciseConnections):
     default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
                                        'regulator': 'integrated_regulator.csv',
                                        'gene': 'integrated_gene.csv'}
+
+
+class RegulatoryFamilyToRegulator(RegPreciseConnections):
+    default_from_node = RegulatoryFamily
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
+                                       'regulator': 'integrated_regulator.csv'}

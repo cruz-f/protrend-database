@@ -84,8 +84,7 @@ class PathwayToSourceConnector(DefaultConnector):
                       external_identifier=pathway['pathway_id'].tolist(),
                       key=['pathway_id'] * size)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
@@ -108,10 +107,8 @@ class PathwayToRegulatorConnector(DefaultConnector):
 
         from_identifiers = merged['protrend_id_pathway'].tolist()
         to_identifiers = merged['protrend_id_regulator'].tolist()
-        size = len(from_identifiers)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
         self.stack_csv(df)
@@ -142,10 +139,8 @@ class PathwayToGeneConnector(DefaultConnector):
 
         from_identifiers = merged['protrend_id_pathway'].tolist()
         to_identifiers = merged['protrend_id'].tolist()
-        size = len(from_identifiers)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
         self.stack_csv(df)

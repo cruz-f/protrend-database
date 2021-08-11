@@ -194,8 +194,7 @@ class RegulatorToSourceConnector(DefaultConnector):
                       external_identifier=regulator['regulon_id'].tolist(),
                       key=['regulon_id'] * size)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
@@ -210,10 +209,8 @@ class RegulatorToOrganismConnector(DefaultConnector):
 
         from_identifiers = regulator['protrend_id'].tolist()
         to_identifiers = regulator['organism_protrend_id'].tolist()
-        size = len(to_identifiers)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
         self.stack_csv(df)
