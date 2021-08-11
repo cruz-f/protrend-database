@@ -1,58 +1,26 @@
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
-from protrend.model.model import Source, Publication
-from protrend.transform.processors import remove_white_space, remove_regprecise_more, remove_multiple_white_space, \
-    rstrip, lstrip, remove_pubmed, apply_processors
-from protrend.transform.regprecise.settings import RegulatoryFamilySettings
-from protrend.transform.transformer import Transformer
+from protrend.io.utils import read_from_stack
+from protrend.transform.connector import DefaultConnector
+from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
+                                           rstrip, lstrip, remove_pubmed, apply_processors)
+from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import DefaultTransformer
 
 
-class RegulatoryFamilyTransformer(Transformer):
+class RegulatoryFamilyTransformer(DefaultTransformer):
+    default_settings = RegulatoryFamilySettings
+    columns = {'protrend_id',
+               'mechanism'
+               'tffamily_id', 'riboswitch_id', 'collection_id', 'name', 'url_tf_family', 'url_tf', 'url_rna',
+               'description', 'pubmed', 'rfam', 'regulog'}
 
-    def __init__(self, settings: RegulatoryFamilySettings = None):
-
-        if not settings:
-            settings = RegulatoryFamilySettings()
-
-        super().__init__(settings)
-
-    def _read_tf_family(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tf_family')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-
-        return df
-
-    def _read_tf(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tf')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-
-        return df
-
-    def _read_rna(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('rna')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
-
-        return df
+    tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
+    tf_columns = {'collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
+    rna_columns = {'riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'}
 
     def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(remove_white_space,
@@ -70,7 +38,6 @@ class RegulatoryFamilyTransformer(Transformer):
         return df
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(remove_white_space,
@@ -88,7 +55,6 @@ class RegulatoryFamilyTransformer(Transformer):
         return df
 
     def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=rna, subset=['rfam'], perfect_match=True, preserve_nan=False)
 
         apply_processors(remove_white_space,
@@ -115,9 +81,7 @@ class RegulatoryFamilyTransformer(Transformer):
 
         return df
 
-    @staticmethod
-    def _transform_tfs(tf_family: pd.DataFrame, tf: pd.DataFrame) -> pd.DataFrame:
-
+    def _transform_tfs(self, tf_family: pd.DataFrame, tf: pd.DataFrame) -> pd.DataFrame:
         df = pd.merge(tf_family, tf, on='name', suffixes=('_tf_family', '_tf'))
 
         # set mechanism
@@ -125,55 +89,55 @@ class RegulatoryFamilyTransformer(Transformer):
         df['mechanism'] = ['transcription factor'] * size
 
         # concat description
-        df['description'] = df['description_tf_family'].astype(str) + df['description_tf'].astype(str)
-
-        # concat regulog
-        df['regulog'] = df['regulog_tf_family'].astype(set) + df['regulog_tf'].astype(set)
+        df = self.merge_columns(df=df, column='description', left='description_tf_family',
+                                right='description_tf', fill='')
 
         # concat pubmed
-        df['pubmed'] = df['pubmed_tf_family'].astype(set) + df['pubmed_tf'].astype(set)
+        apply_processors(set, df=df, col='pubmed_tf_family')
+        apply_processors(set, df=df, col='pubmed_tf')
+        df = self.merge_columns(df=df, column='pubmed', left='pubmed_tf_family',
+                                right='regulog_tf', fill=set())
 
-        df = df.drop(['description_tf_family', 'description_tf',
-                      'regulog_tf_family', 'regulog_tf',
-                      'pubmed_tf_family', 'pubmed_tf'], axis=1)
+        # concat regulog
+        apply_processors(set, df=df, col='regulog_tf_family')
+        apply_processors(set, df=df, col='regulog_tf')
+        df = self.merge_columns(df=df, column='regulog', left='regulog_tf_family',
+                                right='regulog_tf', fill=set())
 
         return df
 
     def transform(self):
-
         # -------------------- TFs -------------------
-        tf_family = self._read_tf_family()
+        tf_family = read_from_stack(tl=self, file='tf_family', json=True, default_columns=self.tf_family_columns)
         tf_family = self._transform_tf_family(tf_family)
-        tf = self._read_tf()
+        tf = read_from_stack(tl=self, file='tf', json=True, default_columns=self.tf_columns)
         tf = self._transform_tf(tf)
         tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
 
-        rna = self._read_rna()
+        # -------------------- RNAs -------------------
+        rna = read_from_stack(tl=self, file='rna', json=True, default_columns=self.rna_columns)
         rna = self._transform_rna(rna)
 
         df = pd.concat([tfs, rna], axis=0)
+
+        if df.empty:
+            df = self.make_empty_frame()
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
 
-    def _connect_to_source(self) -> pd.DataFrame:
 
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_source')
+class RegulatoryFamilyToSourceConnector(DefaultConnector):
+    default_settings = RegulatoryFamilyToSource
 
-        if not from_path:
-            return pd.DataFrame()
+    def connect(self):
+        regulatory_family = read_from_stack(tl=self, file='regulatory_family', json=False,
+                                            default_columns=RegulatoryFamilyTransformer.columns)
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
-        if not to_path:
-            return pd.DataFrame()
-
-        to_df = read_csv(to_path)
-        to_df = to_df.query('name == regprecise')
-        regprecise_id = to_df['protrend_id'].iloc[0]
-
-        from_df = read_csv(from_path)
+        protrend_id = source['protrend_id'].iloc[0]
 
         tf_chain = [('tffamily_id', 'url_tf_family'),
                     ('collection_id', 'url_tf'),
@@ -181,21 +145,19 @@ class RegulatoryFamilyTransformer(Transformer):
 
         dfs = []
         for key, url in tf_chain:
-            key_mask = from_df[key].notnull()
-            key_df = from_df[key_mask]
+            key_mask = regulatory_family[key].notnull()
+            key_df = regulatory_family[key_mask]
 
             from_identifiers = key_df['protrend_id'].tolist()
             size = len(from_identifiers)
 
-            to_identifiers = [regprecise_id] * size
+            to_identifiers = [protrend_id] * size
 
             kwargs = dict(url=key_df[url].tolist(),
                           external_identifier=key_df[key].tolist(),
                           key=[key] * size)
 
             df = self.make_connection(size=size,
-                                      from_node=self.node,
-                                      to_node=Source,
                                       from_identifiers=from_identifiers,
                                       to_identifiers=to_identifiers,
                                       kwargs=kwargs)
@@ -203,54 +165,3 @@ class RegulatoryFamilyTransformer(Transformer):
             dfs.append(df)
 
         return pd.concat(dfs, axis=0)
-
-    def _connect_to_publication(self) -> pd.DataFrame:
-
-        from_path = self._connect_stack.get('from')
-        to_path = self._connect_stack.get('to_publication')
-
-        if not from_path:
-            return pd.DataFrame()
-
-        if not to_path:
-            return pd.DataFrame()
-
-        from_df = read_csv(from_path)
-        to_df = read_csv(to_path)
-
-        from_identifiers = []
-        to_identifiers = []
-
-        for i, pubmed_row in enumerate(from_df['pubmed']):
-
-            if not pubmed_row:
-                continue
-
-            for pmid in pubmed_row:
-
-                from_id = from_df['protrend_id'].iloc[i]
-                from_identifiers.append(from_id)
-
-                mask = to_df['pmid'].values == pmid.replace(' ', '')
-                to_id = to_df.loc[mask, 'protrend_id'].iloc[0]
-                to_identifiers.append(to_id)
-
-        size = len(from_identifiers)
-
-        return self.make_connection(size=size,
-                                    from_node=self.node,
-                                    to_node=Publication,
-                                    from_identifiers=from_identifiers,
-                                    to_identifiers=to_identifiers)
-
-    def connect(self):
-
-        source_connection = self._connect_to_source()
-
-        df_name = f'connected_{self.node.node_name()}_{Source.node_name()}'
-        self.stack_csv(df_name, source_connection)
-
-        publication_connection = self._connect_to_publication()
-
-        df_name = f'connected_{self.node.node_name()}_{Publication.node_name()}'
-        self.stack_csv(df_name, publication_connection)

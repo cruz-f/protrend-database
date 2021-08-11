@@ -161,3 +161,10 @@ class RegulatorToSource(RegPreciseConnections):
     default_to_node = Source
     default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
                                        'source': 'integrated_source.csv'}
+
+
+class RegulatoryFamilyToSource(RegPreciseConnections):
+    default_from_node = RegulatoryFamily
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
+                                       'source': 'integrated_source.csv'}

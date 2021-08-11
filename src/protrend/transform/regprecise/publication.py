@@ -11,7 +11,8 @@ from protrend.transform.transformer import DefaultTransformer
 
 class PublicationTransformer(DefaultTransformer):
     default_settings = PublicationSettings
-    columns = {'pmid', 'doi', 'title', 'author', 'year'}
+    columns = {'protrend_id',
+               'pmid', 'doi', 'title', 'author', 'year'}
     tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
     tf_columns = {'collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
     rna_columns = {'riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'}
