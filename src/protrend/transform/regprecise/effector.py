@@ -7,7 +7,8 @@ from protrend.transform.annotation.effector import annotate_effectors
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise.settings import EffectorSettings, EffectorToSource
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.settings import EffectorSettings, EffectorToSource, EffectorToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -77,5 +78,31 @@ class EffectorToSourceConnector(DefaultConnector):
                                   from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
+
+        self.stack_csv(df)
+
+
+class EffectorToOrganismConnector(DefaultConnector):
+    default_settings = EffectorToOrganism
+
+    def connect(self):
+        effector = read_from_stack(tl=self, file='effector', json=False, default_columns=EffectorTransformer.columns)
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = regulator.explode('effector')
+
+        merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
+                          suffixes=('_effector', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_effector'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['organism_protrend_id'])
+        merged = merged.drop_duplicates(subset=['protrend_id_effector', 'protrend_id_regulator'])
+
+        from_identifiers = merged['protrend_id_effector'].tolist()
+        to_identifiers = merged['organism_protrend_id'].tolist()
+        size = len(to_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
 
         self.stack_csv(df)

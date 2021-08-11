@@ -221,7 +221,7 @@ class TFBSToOrganismConnector(DefaultConnector):
         merged = merged.drop_duplicates(subset=['protrend_id_tfbs', 'protrend_id_regulator'])
 
         from_identifiers = merged['protrend_id_tfbs'].tolist()
-        to_identifiers = tfbs['organism_protrend_id'].tolist()
+        to_identifiers = merged['organism_protrend_id'].tolist()
         size = len(to_identifiers)
 
         df = self.make_connection(size=size,
