@@ -1,11 +1,8 @@
-from collections import defaultdict
 from typing import List, Union
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
-from protrend.model.model import Source, Organism
+from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.gene import annotate_genes
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import GeneDTO
@@ -27,33 +24,7 @@ class GeneTransformer(DefaultTransformer):
                'annotation_score',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
                'regulator_protrend_id', 'regulon_id', 'locus_tag_regprecise'}
-
-    def _read_gene(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('gene')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'])
-
-        return df
-
-    def _read_regulator(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('regulator')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=RegulatorTransformer.columns)
-
-        df = df.rename(columns={'protrend_id': 'regulator_protrend_id'})
-
-        df = df[['organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-                 'regulator_protrend_id', 'regulon_id']]
-
-        return df
+    read_columns = {'locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'}
 
     @staticmethod
     def _transform_gene(gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
@@ -119,8 +90,11 @@ class GeneTransformer(DefaultTransformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        gene = self._read_gene()
-        regulator = self._read_regulator()
+        gene = read_from_stack(tl=self, file='gene', json=True, default_columns=self.read_columns)
+
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = regulator[['protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulator_protrend_id', 'regulon_id']]
+        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
 
@@ -132,18 +106,18 @@ class GeneTransformer(DefaultTransformer):
 
         df = pd.merge(genes, gene, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: choose annotation if available
+        old_loci = df['locus_tag_regprecise'].tolist()
 
-        df['locus_tag'] = df['locus_tag_annotation']
-        df['name'] = df['name_annotation']
-        df['function'] = df['function_annotation']
+        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation',
+                                right='locus_tag_regprecise', fill='')
+        df = self.merge_columns(df=df, column='name', left='name_annotation',
+                                right='name_regprecise', fill='')
+        df = self.merge_columns(df=df, column='function', left='function_annotation',
+                                right='function_regprecise', fill='')
 
-        df = df.drop(['input_value',
-                      'name_annotation',
-                      'name_regprecise',
-                      'locus_tag_annotation',
-                      'function_annotation',
-                      'function_regprecise'], axis=1)
+        df['locus_tag_regprecise'] = old_loci
+
+        df = df.drop(['input_value'], axis=1)
 
         if df.empty:
             df = self.make_empty_frame()
@@ -157,33 +131,11 @@ class GeneTransformer(DefaultTransformer):
 class GeneToSourceConnector(DefaultConnector):
     default_settings = GeneToSource
 
-    def _read_gene(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('gene')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=GeneTransformer.columns)
-
-        return df
-
-    def _read_source(self) -> pd.DataFrame:
-        file_path = self._connect_stack.get('source')
-
-        if file_path:
-            df = read_csv(file_path)
-
-        else:
-            df = pd.DataFrame(columns=SourceTransformer.columns)
-
-        return df
-
     def connect(self):
 
-        gene = self._read_gene()
+        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
         gene = gene.explode('regulon')
-        source = self._read_source()
+        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
         from_identifiers = gene['protrend_id'].tolist()
         size = len(from_identifiers)
