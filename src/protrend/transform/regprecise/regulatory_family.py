@@ -5,8 +5,9 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors)
 from protrend.transform.regprecise.publication import PublicationTransformer
+from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource, \
-    RegulatoryFamilyToPublication
+    RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -150,8 +151,7 @@ class RegulatoryFamilyToSourceConnector(DefaultConnector):
 
         dfs = []
         for key, url in tf_chain:
-            key_mask = regulatory_family[key].notnull()
-            key_df = regulatory_family[key_mask]
+            key_df = regulatory_family.dropna(subset=[key])
 
             from_identifiers = key_df['protrend_id'].tolist()
             size = len(from_identifiers)
@@ -162,8 +162,7 @@ class RegulatoryFamilyToSourceConnector(DefaultConnector):
                           external_identifier=key_df[key].tolist(),
                           key=[key] * size)
 
-            df = self.make_connection(size=size,
-                                      from_identifiers=from_identifiers,
+            df = self.make_connection(from_identifiers=from_identifiers,
                                       to_identifiers=to_identifiers,
                                       kwargs=kwargs)
 
@@ -196,10 +195,45 @@ class RegulatoryFamilyToPublicationConnector(DefaultConnector):
 
         from_identifiers = merged['protrend_id_regulatory_family'].tolist()
         to_identifiers = merged['protrend_id_publication'].tolist()
-        size = len(to_identifiers)
 
-        df = self.make_connection(size=size,
-                                  from_identifiers=from_identifiers,
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
+
+
+class RegulatoryFamilyToRegulatorConnector(DefaultConnector):
+    default_settings = RegulatoryFamilyToRegulator
+
+    def connect(self):
+        regulatory_family = read_from_stack(tl=self, file='regulatory_family', json=False,
+                                            default_columns=RegulatoryFamilyTransformer.columns)
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+
+        tfs_chain = [('tffamily_id', 'tf_family'),
+                    ('collection_id', 'transcription_factor'),
+                    ('riboswitch_id', 'rna_family')]
+
+        from_identifiers = []
+        to_identifiers = []
+
+        for family_key, regulator_key in tfs_chain:
+            family_df = regulatory_family.dropna(subset=[family_key])
+
+            regulator_df = regulator.explode(regulator_key)
+            regulator_df = regulator_df.dropna(subset=[regulator_key])
+
+            merged = pd.merge(family_df, regulator_df, left_on=family_key, right_on=regulator_key,
+                              suffixes=('_regulatory_family', '_regulator'))
+
+            merged = merged.dropna(subset=['protrend_id_regulatory_family'])
+            merged = merged.dropna(subset=['protrend_id_regulator'])
+            merged = merged.drop_duplicates(subset=['protrend_id_regulatory_family', 'protrend_id_regulator'])
+
+            from_identifiers.extend(merged['protrend_id_regulatory_family'].tolist())
+            to_identifiers.extend(merged['protrend_id_regulator'].tolist())
+
+        df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
         self.stack_csv(df)
