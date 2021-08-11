@@ -2,13 +2,11 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
 from protrend.io.utils import read_from_stack
-from protrend.model.model import Source
 from protrend.transform.annotation.pathway import annotate_pathways
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import PathwayDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, nan_to_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
@@ -37,18 +35,11 @@ class PathwayTransformer(DefaultTransformer):
         dtos = [PathwayDTO(input_value=name) for name in names]
         annotate_pathways(dtos=dtos, names=names)
 
-        pathways = pd.DataFrame([dto.to_dict() for dto in dtos])
-
         # name: List[str]
         # synonyms: List[str]
         # kegg_pathways: List[str]
 
-        if pathways.empty:
-            pathways = pd.DataFrame(columns=['input_value', 'name'])
-
-        apply_processors(nan_to_str, df=pathways, col='name')
-
-        return pathways
+        return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
 
@@ -64,6 +55,9 @@ class PathwayTransformer(DefaultTransformer):
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
         df = df.drop(['input_value'], axis=1)
+
+        if df.empty:
+            df = self.make_empty_frame()
 
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)

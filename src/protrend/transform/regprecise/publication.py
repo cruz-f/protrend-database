@@ -2,55 +2,19 @@ from typing import List, Set, Union
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines
+from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.publication import annotate_publications
 from protrend.transform.dto import PublicationDTO
-from protrend.transform.processors import apply_processors, nan_to_str
 from protrend.transform.regprecise.settings import PublicationSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.transformer import DefaultTransformer
 
 
-class PublicationTransformer(Transformer):
-
-    def __init__(self, settings: PublicationSettings = None):
-
-        if not settings:
-            settings = PublicationSettings()
-
-        super().__init__(settings)
-
-    def _read_tf_family(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tf_family')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-
-        return df
-
-    def _read_tf(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('tf')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-
-        return df
-
-    def _read_rna(self) -> pd.DataFrame:
-        file_path = self._transform_stack.get('rna')
-
-        if file_path:
-            df = read_json_lines(file_path)
-
-        else:
-            df = pd.DataFrame(columns=['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
-
-        return df
+class PublicationTransformer(DefaultTransformer):
+    default_settings = PublicationSettings
+    columns = {'pmid', 'doi', 'title', 'author', 'year'}
+    tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
+    tf_columns = {'collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
+    rna_columns = {'riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'}
 
     def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
 
@@ -80,24 +44,22 @@ class PublicationTransformer(Transformer):
         dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
         annotate_publications(dtos=dtos, identifiers=identifiers)
 
-        publications = pd.DataFrame([dto.to_dict() for dto in dtos])
-
-        if publications.empty:
-            publications = pd.DataFrame(columns=['input_value', 'pmid'])
-
-        apply_processors(nan_to_str, df=publications, col='pmid')
-
-        return publications
+        # pmid: List[str]
+        # doi: List[str]
+        # title: List[str]
+        # author: List[str]
+        # year: List[str]
+        return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
 
-        tf_family = self._read_tf_family()
+        tf_family = read_from_stack(tl=self, file='tf_family', json=True, default_columns=self.tf_family_columns)
         tf_family = self._transform_tf_family(tf_family)
 
-        tf = self._read_tf()
+        tf = read_from_stack(tl=self, file='tf', json=True, default_columns=self.tf_columns)
         tf = self._transform_tf(tf)
 
-        rna = self._read_rna()
+        rna = read_from_stack(tl=self, file='rna', json=True, default_columns=self.rna_columns)
         rna = self._transform_rna(rna)
 
         df = pd.concat([tf_family, tf, rna], axis=0)
@@ -107,10 +69,10 @@ class PublicationTransformer(Transformer):
 
         df = publications.drop(['input_value'], axis=1)
 
+        if df.empty:
+            df = self.make_empty_frame()
+
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
         return df
-
-    def connect(self):
-        return
