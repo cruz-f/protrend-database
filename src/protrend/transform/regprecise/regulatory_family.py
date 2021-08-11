@@ -4,7 +4,9 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors)
-from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource
+from protrend.transform.regprecise.publication import PublicationTransformer
+from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource, \
+    RegulatoryFamilyToPublication
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -72,6 +74,9 @@ class RegulatoryFamilyTransformer(DefaultTransformer):
                          lstrip,
                          df=df,
                          col='description')
+
+        apply_processors(set, df=df, col='pubmed')
+        apply_processors(set, df=df, col='regulog')
 
         df = df.rename(columns={'url': 'url_rna'})
 
@@ -164,4 +169,37 @@ class RegulatoryFamilyToSourceConnector(DefaultConnector):
 
             dfs.append(df)
 
-        return pd.concat(dfs, axis=0)
+        df = pd.concat(dfs, axis=0)
+
+        self.stack_csv(df)
+
+
+class RegulatoryFamilyToPublicationConnector(DefaultConnector):
+    default_settings = RegulatoryFamilyToPublication
+
+    def connect(self):
+        regulatory_family = read_from_stack(tl=self, file='regulatory_family', json=False,
+                                            default_columns=RegulatoryFamilyTransformer.columns)
+        apply_processors(list, df=regulatory_family, col='pubmed')
+        regulatory_family = regulatory_family.explode('pubmed')
+
+        publication = read_from_stack(tl=self, file='publication', json=False,
+                                      default_columns=PublicationTransformer.columns)
+        publication = publication.dropna(subset=['pmid'])
+        publication = publication.drop_duplicates(subset=['pmid'])
+
+        merged = pd.merge(regulatory_family, publication, left_on='pubmed', right_on='pmid',
+                          suffixes=('_regulatory_family', '_publication'))
+        merged = merged.dropna(subset=['protrend_id_regulatory_family'])
+        merged = merged.dropna(subset=['protrend_id_publication'])
+        merged = merged.drop_duplicates(subset=['protrend_id_regulatory_family', 'protrend_id_publication'])
+
+        from_identifiers = merged['protrend_id_regulatory_family'].tolist()
+        to_identifiers = merged['protrend_id_publication'].tolist()
+        size = len(to_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
