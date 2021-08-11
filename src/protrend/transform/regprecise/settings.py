@@ -147,3 +147,10 @@ class OrganismToSource(RegPreciseConnections):
     default_to_node = Source
     default_connect: Dict[str, str] = {'organism': 'integrated_organism.csv',
                                        'source': 'integrated_source.csv'}
+
+
+class PathwayToSource(RegPreciseConnections):
+    default_from_node = Pathway
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
+                                       'source': 'integrated_source.csv'}

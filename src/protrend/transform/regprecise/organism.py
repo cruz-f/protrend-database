@@ -2,8 +2,6 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.organism import annotate_organisms
 from protrend.transform.connector import DefaultConnector
@@ -16,7 +14,8 @@ from protrend.transform.transformer import DefaultTransformer
 
 class OrganismTransformer(DefaultTransformer):
     default_settings = OrganismSettings
-    columns = {'genome_id', 'name', 'taxonomy', 'url', 'regulon',
+    columns = {'protrend_id',
+               'genome_id', 'name', 'taxonomy', 'url', 'regulon',
                'species', 'strain', 'family', 'phylum',
                'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                'genbank_accession', 'genbank_ftp',
