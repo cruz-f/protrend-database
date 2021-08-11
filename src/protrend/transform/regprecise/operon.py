@@ -5,7 +5,8 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import apply_processors, str_join, operon_name, genes_to_hash, operon_strand, \
     operon_left_position, operon_right_position
 from protrend.transform.regprecise.gene import GeneTransformer
-from protrend.transform.regprecise.settings import OperonSettings, OperonToSource
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.settings import OperonSettings, OperonToSource, OperonToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformer import DefaultTransformer
@@ -280,5 +281,31 @@ class OperonToSourceConnector(DefaultConnector):
                                   from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
+
+        self.stack_csv(df)
+
+
+class OperonToOrganismConnector(DefaultConnector):
+    default_settings = OperonToOrganism
+
+    def connect(self):
+        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        apply_processors(list, df=operon, col='regulon')
+        operon = operon.explode('regulon')
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+
+        merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
+                          suffixes=('_operon', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_operon'])
+        merged = merged.dropna(subset=['organism_protrend_id'])
+        merged = merged.drop_duplicates(subset=['protrend_id_operon', 'organism_protrend_id'])
+
+        from_identifiers = merged['protrend_id_operon'].tolist()
+        to_identifiers = merged['organism_protrend_id'].tolist()
+        size = len(to_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
 
         self.stack_csv(df)
