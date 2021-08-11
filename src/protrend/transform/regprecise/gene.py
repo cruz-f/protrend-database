@@ -23,7 +23,9 @@ class GeneTransformer(DefaultTransformer):
                'sequence', 'strand', 'position_left', 'position_right',
                'annotation_score',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-               'regulator_protrend_id', 'regulon_id', 'locus_tag_regprecise'}
+               'regulator_protrend_id', 'regulon_id', 'locus_tag_regprecise',
+               'regulon', 'operon', 'tfbs'}
+
     read_columns = {'locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'}
 
     @staticmethod

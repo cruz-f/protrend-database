@@ -7,6 +7,7 @@ from protrend.transform.annotation.pathway import annotate_pathways
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
+from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource, PathwayToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
@@ -107,6 +108,40 @@ class PathwayToRegulatorConnector(DefaultConnector):
 
         from_identifiers = merged['protrend_id_pathway'].tolist()
         to_identifiers = merged['protrend_id_regulator'].tolist()
+        size = len(from_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
+
+
+class PathwayToGeneConnector(DefaultConnector):
+    default_settings = PathwayToRegulator
+
+    def connect(self):
+        pathway = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
+
+        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        apply_processors(list, df=gene, col='regulon')
+        gene = gene.explode('regulon')
+
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        apply_processors(list, df=regulator, col='pathway')
+        regulator = regulator.explode('pathway')
+
+        merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
+                          suffixes=('_pathway', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_pathway'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
+
+        merged = pd.merge(merged, gene, left_on='regulon_id', right_on='regulon',
+                          suffixes=('_pathway_regulator', '_gene'))
+
+        from_identifiers = merged['protrend_id_pathway'].tolist()
+        to_identifiers = merged['protrend_id'].tolist()
         size = len(from_identifiers)
 
         df = self.make_connection(size=size,
