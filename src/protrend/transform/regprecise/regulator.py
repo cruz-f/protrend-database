@@ -8,7 +8,7 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.organism import OrganismTransformer
-from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource
+from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource, RegulatorToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -198,5 +198,22 @@ class RegulatorToSourceConnector(DefaultConnector):
                                   from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
+
+        self.stack_csv(df)
+
+
+class RegulatorToOrganismConnector(DefaultConnector):
+    default_settings = RegulatorToOrganism
+
+    def connect(self):
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+
+        from_identifiers = regulator['protrend_id'].tolist()
+        to_identifiers = regulator['organism_protrend_id'].tolist()
+        size = len(to_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
 
         self.stack_csv(df)

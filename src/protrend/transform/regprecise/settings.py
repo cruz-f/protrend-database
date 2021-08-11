@@ -182,3 +182,9 @@ class RegulatoryFamilyToPublication(RegPreciseConnections):
     default_to_node = Publication
     default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
                                        'publication': 'integrated_publication.csv'}
+
+
+class RegulatorToOrganism(RegPreciseConnections):
+    default_from_node = Regulator
+    default_to_node = Organism
+    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv'}
