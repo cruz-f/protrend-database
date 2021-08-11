@@ -120,10 +120,10 @@ class OperonTransformer(DefaultTransformer):
     def _transform_operon_by_tfbs(operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
 
         tfbs_by_operon = tfbs.explode('operon')
-        operon = operon.merge(tfbs_by_operon, how='inner', left_on='operon_id', right_on='operon')
+        operon = operon.merge(tfbs_by_operon, left_on='operon_id', right_on='operon')
 
         agg_funcs = {'url': set,
-                     'regulon': flatten_list,
+                     'regulon': set,
                      'tfbs': flatten_list,
                      'gene': flatten_list,
                      'tfbs_protrend_id': set}
@@ -179,13 +179,16 @@ class OperonTransformer(DefaultTransformer):
 
     def transform(self):
         operon = read_from_stack(tl=self, file='operon', json=True, default_columns=self.read_columns)
-        operon = self.drop_duplicates(df=operon, subset=['operon_id'], perfect_match=True, preserve_nan=True)
         operon = operon.drop(columns=['name'], axis=1)
+        operon = operon.explode('regulon')
+        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'],
+                                      perfect_match=True, preserve_nan=True)
 
         gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
-        gene = gene[['protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise', 'strand', 'position_left',
-                     'position_right']]
+        gene = gene[['protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise',
+                     'strand', 'position_left', 'position_right']]
         gene = gene.dropna(subset=['protrend_id'])
+        gene = gene.dropna(subset=['locus_tag_regprecise'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
         tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
@@ -213,13 +216,13 @@ class OperonTransformer(DefaultTransformer):
 
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
+        df['genes_id'] = df['genes'].map(genes_to_hash)
+
         # ensure uniqueness
         df = self.drop_duplicates(df=df,
-                                  subset=self.node_factors,
-                                  perfect_match=False,
+                                  subset=('genes_id', ),
+                                  perfect_match=True,
                                   preserve_nan=True)
-
-        df['genes_id'] = df['genes'].map(genes_to_hash)
 
         # take a db snapshot for the current node
         snapshot = self.node_view()

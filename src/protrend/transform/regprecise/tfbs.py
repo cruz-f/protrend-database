@@ -10,7 +10,8 @@ from protrend.transform.processors import (apply_processors, remove_ellipsis,
                                            upper_case, tfbs_left_position, operon_left_position, operon_strand,
                                            tfbs_right_position)
 from protrend.transform.regprecise.gene import GeneTransformer
-from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -100,8 +101,9 @@ class TFBSTransformer(DefaultTransformer):
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
 
-        tfbs = tfbs.drop_duplicates(subset=['tfbs_id'])
         tfbs = tfbs.dropna(subset=['sequence'])
+        tfbs = tfbs.explode('regulon')
+        tfbs = tfbs.drop_duplicates(subset=['tfbs_id', 'sequence', 'regulon'])
         tfbs = tfbs.reset_index(drop=True)
 
         apply_processors(remove_ellipsis,
@@ -113,9 +115,7 @@ class TFBSTransformer(DefaultTransformer):
                          col='sequence')
 
         tfbs = self._normalize_sequence(tfbs)
-        tfbs = tfbs.explode('regulon')
-        tfbs = tfbs.drop_duplicates(subset=['position', 'sequence', 'tfbs_id', 'regulon'])
-
+        tfbs = tfbs.drop_duplicates(subset=['tfbs_id', 'sequence', 'regulon'])
         return tfbs
 
     @staticmethod
@@ -203,5 +203,29 @@ class TFBSToSourceConnector(DefaultConnector):
                                   from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
+
+        self.stack_csv(df)
+
+
+class TFBSToOrganismConnector(DefaultConnector):
+    default_settings = TFBSToOrganism
+
+    def connect(self):
+        tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+
+        merged = pd.merge(tfbs, regulator, left_on='regulon', right_on='regulon_id', suffixes=('_tfbs', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_tfbs'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['organism_protrend_id'])
+        merged = merged.drop_duplicates(subset=['protrend_id_tfbs', 'protrend_id_regulator'])
+
+        from_identifiers = merged['protrend_id_tfbs'].tolist()
+        to_identifiers = tfbs['organism_protrend_id'].tolist()
+        size = len(to_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
 
         self.stack_csv(df)

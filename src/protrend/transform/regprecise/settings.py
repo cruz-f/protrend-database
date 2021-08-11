@@ -201,3 +201,9 @@ class GeneToOrganism(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = Organism
     default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv'}
+
+
+class TFBSToOrganism(RegPreciseConnections):
+    default_from_node = TFBS
+    default_to_node = Organism
+    default_connect: Dict[str, str] = {'tfbs': 'integrated_tfbs.csv'}
