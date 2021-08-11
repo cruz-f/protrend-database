@@ -37,8 +37,7 @@ class RegulatorTransformer(DefaultTransformer):
     def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
         # filter tfs only
-        mask = regulon['regulator_locus_tag'].notnull()
-        regulon = regulon[mask]
+        regulon = regulon.dropna(subset=['regulator_locus_tag'])
 
         regulon = self.drop_duplicates(df=regulon,
                                        subset=['regulator_locus_tag'],
