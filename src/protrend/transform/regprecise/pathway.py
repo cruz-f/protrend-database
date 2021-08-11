@@ -7,7 +7,8 @@ from protrend.transform.annotation.pathway import annotate_pathways
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource, PathwayToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -69,22 +70,47 @@ class PathwayToSourceConnector(DefaultConnector):
     default_settings = PathwayToSource
 
     def connect(self):
-        organism = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
+        pathway = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
         source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
 
-        from_identifiers = organism['protrend_id'].tolist()
+        from_identifiers = pathway['protrend_id'].tolist()
         size = len(from_identifiers)
 
         protrend_id = source['protrend_id'].iloc[0]
         to_identifiers = [protrend_id] * size
 
-        kwargs = dict(url=organism['url'].tolist(),
-                      external_identifier=organism['pathway_id'].tolist(),
+        kwargs = dict(url=pathway['url'].tolist(),
+                      external_identifier=pathway['pathway_id'].tolist(),
                       key=['pathway_id'] * size)
 
         df = self.make_connection(size=size,
                                   from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
+
+        self.stack_csv(df)
+
+
+class PathwayToRegulatorConnector(DefaultConnector):
+    default_settings = PathwayToRegulator
+
+    def connect(self):
+        pathway = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = regulator.explode('pathway')
+
+        merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
+                          suffixes=('_pathway', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_pathway'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
+
+        from_identifiers = merged['protrend_id_pathway'].tolist()
+        to_identifiers = merged['protrend_id_regulator'].tolist()
+        size = len(from_identifiers)
+
+        df = self.make_connection(size=size,
+                                  from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
 
         self.stack_csv(df)

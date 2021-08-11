@@ -215,3 +215,10 @@ class EffectorToOrganism(RegPreciseConnections):
     default_to_node = Organism
     default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
                                        'regulator': 'integrated_regulator.csv'}
+
+
+class PathwayToRegulator(RegPreciseConnections):
+    default_from_node = Pathway
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
+                                       'regulator': 'integrated_regulator.csv'}
