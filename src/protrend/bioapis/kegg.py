@@ -14,6 +14,9 @@ from protrend.utils.request import request, read_response
 
 KEGG_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('kegg')
 
+if not os.path.exists(KEGG_PATH):
+    os.makedirs(KEGG_PATH)
+
 
 class KEGGAPI:
     list_api = 'http://rest.kegg.jp/list'
