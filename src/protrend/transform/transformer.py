@@ -50,14 +50,16 @@ class Transformer(metaclass=ABCMeta):
 
         for key, file in self._settings.transform.items():
 
-            file_path = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
+            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
 
-            if os.path.exists(file_path):
+            if os.path.exists(sa_file):
 
-                self._transform_stack[key] = file_path
+                self._transform_stack[key] = sa_file
 
-            else:
-                raise FileNotFoundError(f'Could not found file {file_path} with key {key}')
+            elif os.path.exists(dl_file):
+
+                self._transform_stack[key] = dl_file
 
     # --------------------------------------------------------
     # Static properties
@@ -227,11 +229,18 @@ class Transformer(metaclass=ABCMeta):
     def merge_columns(df: pd.DataFrame, column: str, left: str, right: str, fill: Any = '') -> pd.DataFrame:
 
         df = df.copy()
-        df[left].fillna(fill)
-        df[right].fillna(fill)
+
+        left_mask = df[left].isnull()
+        left_mask_size = left_mask.sum()
+        df.at[left_mask, left] = [fill] * left_mask_size
+
+        right_mask = df[right].isnull()
+        right_mask_size = right_mask.sum()
+        df.at[right_mask, right] = [fill] * right_mask_size
+
         df[column] = df[left] + df[right]
         df[column] = df[column].replace(fill, np.nan)
-        return df.drop(columns=[left, right])
+        return df.drop(columns=[left, right], axis=1)
 
     @staticmethod
     def drop_duplicates(df: pd.DataFrame,

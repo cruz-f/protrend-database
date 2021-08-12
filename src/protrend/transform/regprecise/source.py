@@ -19,11 +19,11 @@ class SourceTransformer(DefaultTransformer):
 
     def transform(self):
 
-        regprecise = dict(name=self.name,
-                          type=self.type,
-                          url=self.url,
-                          doi=self.doi,
-                          authors=self.authors,
-                          description=self.description)
+        regprecise = dict(name=[self.name],
+                          type=[self.type],
+                          url=[self.url],
+                          doi=[self.doi],
+                          authors=[self.authors],
+                          description=[self.description])
 
         return pd.DataFrame(regprecise, index=[0])

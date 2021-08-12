@@ -3,7 +3,7 @@ import pandas as pd
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
-                                           rstrip, lstrip, remove_pubmed, apply_processors)
+                                           rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list)
 from protrend.transform.regprecise.publication import PublicationTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource, \
@@ -88,7 +88,7 @@ class RegulatoryFamilyTransformer(DefaultTransformer):
         return df
 
     def _transform_tfs(self, tf_family: pd.DataFrame, tf: pd.DataFrame) -> pd.DataFrame:
-        df = pd.merge(tf_family, tf, on='name', suffixes=('_tf_family', '_tf'))
+        df = pd.merge(tf_family, tf, how='outer', on='name', suffixes=('_tf_family', '_tf'))
 
         # set mechanism
         size, _ = df.shape
@@ -99,16 +99,18 @@ class RegulatoryFamilyTransformer(DefaultTransformer):
                                 right='description_tf', fill='')
 
         # concat pubmed
-        apply_processors(set, df=df, col='pubmed_tf_family')
-        apply_processors(set, df=df, col='pubmed_tf')
+        apply_processors(to_list, df=df, col='pubmed_tf_family')
+        apply_processors(to_list, df=df, col='pubmed_tf')
         df = self.merge_columns(df=df, column='pubmed', left='pubmed_tf_family',
-                                right='regulog_tf', fill=set())
+                                right='pubmed_tf')
+        apply_processors(to_set, df=df, col='pubmed')
 
         # concat regulog
-        apply_processors(set, df=df, col='regulog_tf_family')
-        apply_processors(set, df=df, col='regulog_tf')
+        apply_processors(to_list, df=df, col='regulog_tf_family')
+        apply_processors(to_list, df=df, col='regulog_tf')
         df = self.merge_columns(df=df, column='regulog', left='regulog_tf_family',
-                                right='regulog_tf', fill=set())
+                                right='regulog_tf')
+        apply_processors(to_list, df=df, col='regulog')
 
         return df
 

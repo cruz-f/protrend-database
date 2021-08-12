@@ -29,7 +29,7 @@ class PubMedPublication(BioAPI):
             year = ''.join(char for char in pub_date if char.isdigit())
 
             if year:
-                return year
+                return year[:4]
 
     def fetch(self):
 

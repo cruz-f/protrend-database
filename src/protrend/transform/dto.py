@@ -50,7 +50,6 @@ class GeneDTO(DTO):
     strand: List[str] = set_list_field(output='take_first', init=False)
     position_left: List[int] = set_list_field(output='take_first', init=False)
     position_right: List[int] = set_list_field(output='take_first', init=False)
-    annotation_score: int = 0
 
 
 @dataclass

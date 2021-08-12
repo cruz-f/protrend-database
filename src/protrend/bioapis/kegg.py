@@ -58,7 +58,11 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
     if db not in KEGGAPI.dbs:
         raise ValueError(f'Invalid KEGG database: {db}')
 
-    db_file = os.path.join(KEGG_PATH, db, f'{db}.txt')
+    db_path = os.path.join(KEGG_PATH, db)
+    if not os.path.exists(db_path):
+        os.makedirs(db_path)
+
+    db_file = os.path.join(db_path, f'{db}.txt')
     url = f'{KEGGAPI.list_api}/{db}'
 
     if cache and os.path.exists(db_file):
@@ -86,6 +90,9 @@ def indexing_kegg_list(db: str, df_kegg_list: pd.DataFrame = None, cache: bool =
     if df_kegg_list is None:
         raise ValueError(f'Invalid input: Index was not found in the default directory {index_dir} '
                          f'and kegg list is empty')
+
+    if not os.path.exists(index_dir):
+        os.makedirs(index_dir)
 
     schema = Schema(identifier=TEXT(stored=True), name=TEXT(stored=True))
 
@@ -172,6 +179,6 @@ def search_kegg_list(index: w_index.FileIndex, query: str, db: str) -> Tuple[Set
                     sub_query_results = searcher.search(query_parser)
 
                     identifiers_results.update(_results_to_set(sub_query_results, 'identifier'))
-                    names_results.update(_results_to_set(query_results, 'name'))
+                    names_results.update(_results_to_set(sub_query_results, 'name'))
 
         return identifiers_results, names_results

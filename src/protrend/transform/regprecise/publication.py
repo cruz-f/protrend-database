@@ -36,11 +36,11 @@ class PublicationTransformer(DefaultTransformer):
 
         df = self.drop_duplicates(df=rna, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        df = df.drop(columns=['riboswitch_id', 'name', 'url', 'description', 'rfam' 'regulog'], axis=1)
+        df = df.drop(columns=['riboswitch_id', 'name', 'url', 'description', 'rfam', 'regulog'], axis=1)
         return df
 
     @staticmethod
-    def _transform_publications(identifiers: Union[Set[str], List[str]]):
+    def _transform_publications(identifiers: List[str]):
 
         dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
         annotate_publications(dtos=dtos, identifiers=identifiers)
@@ -64,11 +64,14 @@ class PublicationTransformer(DefaultTransformer):
         rna = self._transform_rna(rna)
 
         df = pd.concat([tf_family, tf, rna], axis=0)
+        df = df.explode('pubmed')
+        df = df.dropna(subset=['pubmed'])
+        df = df.drop_duplicates(subset=['pubmed'])
 
-        identifiers = {identifier for pubmed_row in df['pubmed'] for identifier in pubmed_row}
-        publications = self._transform_publications(identifiers)
+        pmids = df['pubmed'].tolist()
+        df = self._transform_publications(pmids)
 
-        df = publications.drop(['input_value'], axis=1)
+        df = df.drop(columns=['input_value'], axis=1)
 
         if df.empty:
             df = self.make_empty_frame()

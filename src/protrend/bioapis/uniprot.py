@@ -114,11 +114,14 @@ def query_uniprot(query: Dict[str, str],
 
     slugified_url = slugify_uniprot(url)
 
-    file_path = os.path.join(UNIPROT_RECORDS_PATH, f'{slugified_url}.tsv')
+    file_path = os.path.join(UNIPROT_QUERY_PATH, f'{slugified_url}.tsv')
 
     if os.path.exists(file_path) and cache:
         cached_result = True
-        df = pd.read_csv(file_path, sep='\t')
+        try:
+            df = pd.read_csv(file_path, sep='\t')
+        except pd.errors.EmptyDataError:
+            df = pd.DataFrame()
 
     elif not os.path.exists(file_path) and cache:
         response = request(url)
@@ -143,7 +146,7 @@ def query_uniprot(query: Dict[str, str],
 def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
                             from_: str,
                             to: str,
-                            output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
+                            output: str = 'dataframe') -> Tuple[Union[Dict, pd.DataFrame], bool]:
     if from_ not in UniProtAPI.mapping_terms:
         raise ValueError(f'Invalid from {from_}')
 
@@ -167,6 +170,6 @@ def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
         df = pd.DataFrame(columns=UniProtAPI.df_mapping_columns)
 
     if output == 'dataframe':
-        return df
+        return df, False
 
-    return df.to_dict()
+    return df.to_dict(), False

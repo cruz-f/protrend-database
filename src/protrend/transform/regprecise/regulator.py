@@ -13,6 +13,8 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
 
+# TODO fix the transform. It is droping most regulators.
+#  This can happen because of the several merges with the organisms
 class RegulatorTransformer(DefaultTransformer):
     default_settings = RegulatorSettings
     columns = {'protrend_id',
@@ -26,7 +28,7 @@ class RegulatorTransformer(DefaultTransformer):
                'locus_tag', 'synonyms', 'function', 'description',
                'ncbi_gene', 'ncbi_protein',
                'genbank_accession', 'refseq_accession', 'uniprot_accession',
-               'sequence', 'strand', 'position_left', 'position_right', 'annotation_score', }
+               'sequence', 'strand', 'position_left', 'position_right', }
 
     read_columns = {'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
                     'biological_process', 'regulation_effector', 'regulation_regulog',
@@ -53,11 +55,6 @@ class RegulatorTransformer(DefaultTransformer):
                          lstrip,
                          df=regulon,
                          col='name')
-
-        apply_processors(rstrip,
-                         lstrip,
-                         df=organism,
-                         col='genome_id')
 
         regulon['mechanism'] = ['transcription factor'] * regulon.shape[0]
 
@@ -87,11 +84,6 @@ class RegulatorTransformer(DefaultTransformer):
                          lstrip,
                          df=regulon,
                          col='name')
-
-        apply_processors(rstrip,
-                         lstrip,
-                         df=organism,
-                         col='genome_id')
 
         regulon['mechanism'] = ['small RNA (sRNA)'] * regulon.shape[0]
 
@@ -124,7 +116,6 @@ class RegulatorTransformer(DefaultTransformer):
         # strand: List[str]
         # position_left: List[int]
         # position_right: List[int]
-        # annotation_score: int
 
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
@@ -133,6 +124,9 @@ class RegulatorTransformer(DefaultTransformer):
         organism = read_from_stack(tl=self, file='organism', json=False, default_columns=OrganismTransformer.columns)
         organism = organism[['protrend_id', 'genome_id', 'ncbi_taxonomy']]
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
+        organism['ncbi_taxonomy'] = organism['ncbi_taxonomy'].fillna(0)
+        organism['ncbi_taxonomy'] = organism['ncbi_taxonomy'].astype(int)
+        organism['ncbi_taxonomy'] = organism['ncbi_taxonomy'].replace(0, None)
 
         # ------------------ regulon of type TF --------------------------------
         tf = self._transform_tf(regulon=regulon, organism=organism)

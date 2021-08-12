@@ -46,8 +46,6 @@ class OrganismSettings(RegPreciseSettings):
     default_node: Organism = Organism
     default_node_factors: Tuple[str] = ('ncbi_taxonomy', 'name')
     default_transform: Dict[str, str] = {'genome': 'Genome.json'}
-    default_connect: Dict[str, str] = {'from': 'integrated_organism.csv',
-                                       'to': 'integrated_source.csv'}
     default_order = 100
 
 
@@ -55,8 +53,6 @@ class PathwaySettings(RegPreciseSettings):
     default_node: Pathway = Pathway
     default_node_factors: Tuple[str] = ('name',)
     default_transform: Dict[str, str] = {'pathway': 'Pathway.json'}
-    default_connect: Dict[str, str] = {'from': 'integrated_pathway.csv',
-                                       'to': 'integrated_source.csv'}
     default_order = 100
 
 
@@ -76,15 +72,6 @@ class RegulatorSettings(RegPreciseSettings):
                                         'locus_tag')
     default_transform: Dict[str, str] = {'regulon': 'Regulon.json',
                                          'organism': 'integrated_organism.csv'}
-    default_connect: Dict[str, str] = {'from': 'integrated_regulator.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_organism.csv',
-                                       'to_effector': 'integrated_effector.csv',
-                                       'to_pathway': 'integrated_pathway.csv',
-                                       'to_regulatory_family': 'integrated_regulatory_family.csv',
-                                       'to_operon': 'integrated_operon.csv',
-                                       'to_gene': 'integrated_operon.csv',
-                                       'to_tfbs': 'integrated_operon.csv'}
     default_order = 90
 
 
@@ -94,9 +81,6 @@ class RegulatoryFamilySettings(RegPreciseSettings):
     default_transform: Dict[str, str] = {'tf_family': 'TranscriptionFactorFamily.json',
                                          'tf': 'TranscriptionFactor.json',
                                          'rna': 'RNAFamily.json'}
-    default_connect: Dict[str, str] = {'from': 'integrated_regulatory_family.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_publication': 'integrated_publication.csv'}
     default_order = 100
 
 
@@ -111,9 +95,6 @@ class TFBSSettings(RegPreciseSettings):
     default_node_factors: Tuple[str] = ()
     default_transform: Dict[str, str] = {'tfbs': 'TFBS.json',
                                          'gene': 'integrated_gene.csv'}
-    default_connect: Dict[str, str] = {'from': 'integrated_gene.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_regulator.csv'}
     default_order = 70
 
 

@@ -21,7 +21,6 @@ class GeneTransformer(DefaultTransformer):
                'ncbi_gene', 'ncbi_protein', 'genbank_accession',
                'refseq_accession', 'uniprot_accession',
                'sequence', 'strand', 'position_left', 'position_right',
-               'annotation_score',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
                'regulator_protrend_id', 'regulon_id', 'locus_tag_regprecise',
                'regulon', 'operon', 'tfbs'}
@@ -87,7 +86,6 @@ class GeneTransformer(DefaultTransformer):
         # strand: List[str]
         # position_left: List[int]
         # position_right: List[int]
-        # annotation_score: int
 
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 

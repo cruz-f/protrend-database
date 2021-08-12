@@ -222,18 +222,15 @@ def annotate_genes(dtos: List[GeneDTO],
 
     # from acc to ncbi protein
     accessions = [protein.identifier for protein in uniprot_proteins if protein.identifier]
-    uniprot_ncbi_proteins = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
-    uniprot_ncbi_refseqs = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
-    uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
+    uniprot_ncbi_proteins, _ = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
+    uniprot_ncbi_refseqs, _ = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
+    uniprot_ncbi_genbanks, _ = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):
 
-        uniprot_protein_score, uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
-        ncbi_protein_score, ncbi_protein_id, ncbi_protein_ref, ncbi_protein_gen = _annotate_ncbi_protein(ncbi_protein,
-                                                                                                         gene_dto)
-        ncbi_gene_score, ncbi_gene_id = _annotate_ncbi_gene(ncbi_gene, gene_dto)
-
-        score = uniprot_protein_score + ncbi_protein_score + ncbi_gene_score
+        _, uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
+        _annotate_ncbi_protein(ncbi_protein, gene_dto)
+        _annotate_ncbi_gene(ncbi_gene, gene_dto)
 
         # base annotation, in case none of the annotations work
         _annotate_gene(uniprot_protein, gene_dto)
@@ -245,16 +242,5 @@ def annotate_genes(dtos: List[GeneDTO],
         gene_dto.ncbi_protein.extend(uniprot_ncbi_protein)
         gene_dto.refseq_accession.extend(uniprot_ncbi_refseq)
         gene_dto.genbank_accession.extend(uniprot_ncbi_genbank)
-
-        if ncbi_protein_id in uniprot_ncbi_protein:
-            score += 1
-
-        if ncbi_protein_ref in uniprot_ncbi_refseq:
-            score += 1
-
-        if ncbi_protein_gen in uniprot_ncbi_genbank:
-            score += 1
-
-        gene_dto.annotation_score = score
 
     return dtos

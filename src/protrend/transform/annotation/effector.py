@@ -3,8 +3,7 @@ from typing import List, Type
 import whoosh.index as w_index
 
 from protrend.bioapis.compound import KEGGCompound
-from protrend.bioapis.kegg import indexing_kegg_list, fetch_kegg_list
-from protrend.bioapis.utils import BIO_APIS_DIR
+from protrend.bioapis.kegg import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
 from protrend.transform.dto import EffectorDTO
 from protrend.utils.miscellaneous import args_length
 
@@ -16,7 +15,7 @@ def _fetch_compounds(names: List[str],
 
     for name in names:
         compound = cls(name=name)
-        compound.fetch()
+        compound.fetch(index)
         compounds.append(compound)
 
     return compounds
@@ -70,15 +69,13 @@ def annotate_effectors(dtos: List[EffectorDTO],
 
     except ValueError:
 
-        print(f'Index for kegg database {db} was not found in path {BIO_APIS_DIR}. '
+        print(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
               f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)
         index = indexing_kegg_list(db=db, df_kegg_list=df_kegg_list)
 
-    kegg_compounds = _fetch_compounds(names=names,
-                                      cls=KEGGCompound,
-                                      index=index)
+    kegg_compounds = _fetch_compounds(names=names, cls=KEGGCompound, index=index)
 
     for effector_dto, kegg_compound in zip(dtos, kegg_compounds):
 

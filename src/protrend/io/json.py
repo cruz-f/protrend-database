@@ -27,10 +27,12 @@ def read_json_lines(file_path: str) -> pd.DataFrame:
     lines = []
 
     with open(file_path, 'r') as file:
+
         for line in file:
+            line = line.rstrip()
 
-            line_dict = json.loads(line)
-
-            lines.append(line_dict)
+            if line:
+                line_dict = json.loads(line)
+                lines.append(line_dict)
 
     return pd.DataFrame(lines)

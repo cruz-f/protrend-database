@@ -22,7 +22,7 @@ class KEGGCompound(BioAPI):
         if self.kegg_identifiers:
             return self.kegg_identifiers[0]
 
-        return self.identifier
+        return self._identifier
 
     @property
     def name(self) -> str:

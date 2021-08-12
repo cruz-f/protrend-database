@@ -1,4 +1,3 @@
-import functools
 import re
 from collections import defaultdict
 from typing import Callable, Any, List, Union
@@ -24,27 +23,35 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
     :return: Nothing to return, it just changes the DataFrame object
 
     """
+
+    handle_nan_processors = (nan_to_str, )
+
     for processor in processors:
-        df[col] = df[col].map(processor)
+        if processor in handle_nan_processors:
+            df[col] = df[col].map(processor)
+
+        else:
+            df[col] = df[col].map(processor, na_action='ignore')
 
 
-def handle_nan(fn):
-    """
-    Decorator to handle NaN returns
-    :param fn: Callable
-    :return: the item or the results of the processor
-    """
+def to_set(item: Any) -> set:
+    try:
+        iterator = iter(item)
+    except TypeError:
+        iterator = iter([item])
 
-    @functools.wraps(fn)
-    def wrapper(item):
-        if item:
-            return fn(item)
-        return item
-
-    return wrapper
+    return set(iterator)
 
 
-@handle_nan
+def to_list(item: Any) -> list:
+    try:
+        iterator = iter(item)
+    except TypeError:
+        iterator = iter([item])
+
+    return list(iterator)
+
+
 def remove_ellipsis(item: str) -> str:
     if item.endswith('...'):
         return item[:-3]
@@ -52,12 +59,10 @@ def remove_ellipsis(item: str) -> str:
     return item
 
 
-@handle_nan
 def upper_case(item: str) -> str:
     return item.upper()
 
 
-@handle_nan
 def operon_name(items: list) -> str:
     if items:
 
@@ -84,18 +89,15 @@ def operon_name(items: list) -> str:
     return ''
 
 
-@handle_nan
 def genes_to_hash(items: list) -> str:
     items = sorted(items)
     return '_'.join(items)
 
 
-@handle_nan
 def str_join(items: list) -> str:
     return '_'.join(items)
 
 
-@handle_nan
 def null_to_nan(item: str) -> Union[None, str]:
     if item == 'null':
         return None
@@ -108,47 +110,38 @@ def nan_to_str(item: Any) -> str:
     return ''
 
 
-@handle_nan
 def lstrip(item: str) -> str:
     return item.lstrip()
 
 
-@handle_nan
 def rstrip(item: str) -> str:
     return item.rstrip()
 
 
-@handle_nan
 def remove_white_space(item: str) -> str:
     return re.sub(white_space_pattern, repl='', string=item)
 
 
-@handle_nan
 def remove_multiple_white_space(item: str) -> str:
     return re.sub(multiple_white_space_pattern, repl=' ', string=item)
 
 
-@handle_nan
 def remove_regprecise_more(item: str) -> str:
     return re.sub(more_pattern, repl='', string=item)
 
 
-@handle_nan
 def remove_regprecise_more2(item: str) -> str:
     return re.sub(more2_pattern, repl='', string=item)
 
 
-@handle_nan
 def remove_pubmed(item: str) -> str:
     return re.sub(pubmed_pattern, repl='', string=item)
 
 
-@handle_nan
 def remove_html_tags(item: str) -> str:
     return remove_tags(item)
 
 
-@handle_nan
 def take_first(item: List[str]) -> str:
     if item:
         return item[0]

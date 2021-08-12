@@ -10,17 +10,18 @@ sys.path.insert(0, r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protre
 # from protrend.runners.spider_runner import run_spider
 
 def transform_runner() -> Director:
-    transformers = [OrganismTransformer(),
-                    EffectorTransformer(),
-                    GeneTransformer(),
-                    OperonTransformer(),
-                    OrganismTransformer(),
-                    PathwayTransformer(),
-                    PublicationTransformer(),
-                    RegulatorTransformer(),
-                    RegulatoryFamilyTransformer(),
-                    SourceTransformer(),
-                    TFBSTransformer()]
+    transformers = [
+        # EffectorTransformer(),
+        GeneTransformer(),
+        OperonTransformer(),
+        # OrganismTransformer(),
+        # PathwayTransformer(),
+        # PublicationTransformer(),
+        RegulatorTransformer(),
+        # RegulatoryFamilyTransformer(),
+        # SourceTransformer(),
+        TFBSTransformer(),
+    ]
     director = Director(transformers=transformers)
     return director
 

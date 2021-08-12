@@ -1,4 +1,4 @@
-from typing import Sequence, Set
+from typing import Sequence, List
 
 from protrend.load.loader import Loader
 from protrend.transform.connector import Connector
@@ -34,22 +34,30 @@ class Director:
         :param loaders: loaders for converting data lake files into nodes and relationships
         """
 
-        self._transformers = transformers
-        self._connectors = connectors
-        self._loaders = loaders
+        if not transformers:
+            transformers = []
+
+        if not connectors:
+            connectors = []
+
+        if not loaders:
+            loaders = []
+
+        self._transformers = list(transformers)
+        self._connectors = list(connectors)
+        self._loaders = list(loaders)
 
     @property
-    def transformers(self) -> Set[Transformer]:
-        transformers = set(self._transformers)
-        return set(sorted(transformers, key=sort_by_order, reverse=True))
+    def transformers(self) -> List[Transformer]:
+        return sorted(self._transformers, key=sort_by_order, reverse=True)
 
     @property
-    def connectors(self) -> Set[Connector]:
-        return set(self._connectors)
+    def connectors(self) -> List[Connector]:
+        return self._connectors
 
     @property
-    def loaders(self) -> Set[Loader]:
-        return set(self._loaders)
+    def loaders(self) -> List[Loader]:
+        return self._loaders
 
     def transform(self):
         """

@@ -45,6 +45,7 @@ class EffectorTransformer(DefaultTransformer):
 
         df = pd.merge(effectors, effector, on='input_value', suffixes=('_annotation', '_regprecise'))
 
+        # TODO: merge columns not working. It is duplicating the name
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
         df = df.drop(['input_value'], axis=1)

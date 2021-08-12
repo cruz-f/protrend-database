@@ -34,6 +34,8 @@ class PathwayTransformer(DefaultTransformer):
     @staticmethod
     def _transform_pathways(names: List[str]):
 
+        # TODO: pathways were not annotated
+
         dtos = [PathwayDTO(input_value=name) for name in names]
         annotate_pathways(dtos=dtos, names=names)
 
@@ -54,6 +56,7 @@ class PathwayTransformer(DefaultTransformer):
 
         df = pd.merge(pathways, pathway, on='input_value', suffixes=('_annotation', '_regprecise'))
 
+        # TODO: merge columns not working. It is duplicating the name
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
         df = df.drop(['input_value'], axis=1)
