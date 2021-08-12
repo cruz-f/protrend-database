@@ -115,7 +115,7 @@ class NCBIGene(BioAPI):
             term = self.build_term()
 
             if term:
-                search_record = entrez_search(db='gene', term=term)
+                search_record, _ = entrez_search(db='gene', term=term)
 
                 id_list = search_record.get('IdList', [])
 
@@ -123,4 +123,5 @@ class NCBIGene(BioAPI):
                     identifier = id_list[0]
 
         if identifier:
-            self.record = entrez_summary(db='gene', identifier=identifier)
+            record, _ = entrez_summary(db='gene', identifier=identifier)
+            self.record = record
