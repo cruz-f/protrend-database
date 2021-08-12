@@ -237,3 +237,10 @@ class RegulatoryFamilyToRegulator(RegPreciseConnections):
     default_to_node = Regulator
     default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
                                        'regulator': 'integrated_regulator.csv'}
+
+
+class OperonToRegulator(RegPreciseConnections):
+    default_from_node = Operon
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
+                                       'regulator': 'integrated_regulator.csv'}

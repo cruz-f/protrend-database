@@ -6,7 +6,7 @@ from protrend.transform.processors import apply_processors, str_join, operon_nam
     operon_left_position, operon_right_position
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import OperonSettings, OperonToSource, OperonToOrganism
+from protrend.transform.regprecise.settings import OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformer import DefaultTransformer
@@ -304,6 +304,30 @@ class OperonToOrganismConnector(DefaultConnector):
 
         from_identifiers = merged['protrend_id_operon'].tolist()
         to_identifiers = merged['organism_protrend_id'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
+
+
+class OperonToRegulatorConnector(DefaultConnector):
+    default_settings = OperonToRegulator
+
+    def connect(self):
+        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        apply_processors(list, df=operon, col='regulon')
+        operon = operon.explode('regulon')
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+
+        merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
+                          suffixes=('_operon', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_operon'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.drop_duplicates(subset=['protrend_id_operon', 'protrend_id_regulator'])
+
+        from_identifiers = merged['protrend_id_operon'].tolist()
+        to_identifiers = merged['protrend_id_regulator'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
