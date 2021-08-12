@@ -8,8 +8,11 @@ from whoosh import searching
 from whoosh.fields import Schema, TEXT
 from whoosh.qparser import QueryParser
 
-from protrend.bioapis.utils import BIO_APIS_DIR
-from protrend.utils.api_requests import request, read_response
+from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH
+from protrend.utils.request import request, read_response
+
+
+KEGG_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('kegg')
 
 
 class KEGGAPI:
@@ -52,7 +55,7 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
     if db not in KEGGAPI.dbs:
         raise ValueError(f'Invalid KEGG database: {db}')
 
-    db_file = os.path.join(BIO_APIS_DIR, db, f'{db}.txt')
+    db_file = os.path.join(KEGG_PATH, db, f'{db}.txt')
     url = f'{KEGGAPI.list_api}/{db}'
 
     if cache and os.path.exists(db_file):
@@ -69,7 +72,7 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
 
 
 def indexing_kegg_list(db: str, df_kegg_list: pd.DataFrame = None, cache: bool = True) -> w_index.FileIndex:
-    index_dir = os.path.join(BIO_APIS_DIR, f'{db}_index')
+    index_dir = os.path.join(KEGG_PATH, f'{db}_index')
 
     if cache and os.path.exists(index_dir):
         return w_index.open_dir(index_dir)
@@ -94,7 +97,7 @@ def indexing_kegg_list(db: str, df_kegg_list: pd.DataFrame = None, cache: bool =
     return index
 
 
-def _identifiers_to_set(results: searching.Results) -> set:
+def _identifiers_to_set(results: searching.Results) -> Set[str]:
     results_set = set()
     for hit in results:
 
@@ -109,7 +112,7 @@ def _identifiers_to_set(results: searching.Results) -> set:
     return results_set
 
 
-def _names_to_set(results):
+def _names_to_set(results: searching.Results) -> Set[str]:
 
     results_set = set()
     for hit in results:
@@ -127,7 +130,7 @@ def _names_to_set(results):
     return results_set
 
 
-def _results_to_set(results: searching.Results, field: str) -> set:
+def _results_to_set(results: searching.Results, field: str) -> Set[str]:
 
     if field == 'identifier':
         return _identifiers_to_set(results)

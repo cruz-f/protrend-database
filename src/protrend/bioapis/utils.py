@@ -1,10 +1,6 @@
-import os
 import time
 from functools import wraps
 from typing import Union
-
-
-BIO_APIS_DIR = os.path.dirname(__file__)
 
 
 def sleep(sec: Union[int, float] = 0.25):
