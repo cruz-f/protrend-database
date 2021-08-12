@@ -350,7 +350,7 @@ class UniProtProtein(BioAPI):
                 query = {}
 
             if query:
-                uniprot_query = query_uniprot(query=query)
+                uniprot_query, _ = query_uniprot(query=query)
 
                 # it sets up the uniprot accession
                 self.parse_uniprot_query(uniprot_query)
@@ -358,4 +358,5 @@ class UniProtProtein(BioAPI):
         if not self._identifier:
             return
 
-        self.record = fetch_uniprot_record(self._identifier, 'xml')
+        record, _ = fetch_uniprot_record(self._identifier)
+        self.record = record
