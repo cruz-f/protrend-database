@@ -130,8 +130,8 @@ def entrez_summary(db: str, identifier: str, cache: bool = True) -> Tuple[dict, 
 @sleep()
 def entrez_fetch(db: str,
                  identifier: str,
-                 rettype:str = "gb",
-                 retmode:str = "text",
+                 rettype: str = "gb",
+                 retmode: str = "text",
                  cache: bool = True) -> Tuple[SeqRecord, bool]:
     cached_result = False
     slugified_term = slugify_entrez(db, identifier, rettype, retmode)
