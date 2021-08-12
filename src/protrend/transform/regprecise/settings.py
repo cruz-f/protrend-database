@@ -263,3 +263,9 @@ class OperonToTFBS(RegPreciseConnections):
     default_from_node = Operon
     default_to_node = TFBS
     default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}
+
+
+class GeneToTFBS(RegPreciseConnections):
+    default_from_node = Gene
+    default_to_node = TFBS
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}

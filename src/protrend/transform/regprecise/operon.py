@@ -7,7 +7,7 @@ from protrend.transform.processors import apply_processors, str_join, operon_nam
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator, \
-    OperonToGene, OperonToTFBS
+    OperonToGene, OperonToTFBS, GeneToTFBS
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformer import DefaultTransformer
@@ -368,6 +368,28 @@ class OperonToTFBSConnector(DefaultConnector):
         operon = operon.drop_duplicates(subset=['protrend_id', 'tfbss'])
 
         from_identifiers = operon['protrend_id'].tolist()
+        to_identifiers = operon['tfbss'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
+
+
+class GeneToTFBSConnector(DefaultConnector):
+    default_settings = GeneToTFBS
+
+    def connect(self):
+        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        apply_processors(list, df=operon, col='tfbss')
+        apply_processors(list, df=operon, col='genes')
+        operon = operon.explode('tfbss')
+        operon = operon.explode('genes')
+        operon = operon.dropna(subset=['genes'])
+        operon = operon.dropna(subset=['tfbss'])
+        operon = operon.drop_duplicates(subset=['genes', 'tfbss'])
+
+        from_identifiers = operon['genes'].tolist()
         to_identifiers = operon['tfbss'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
