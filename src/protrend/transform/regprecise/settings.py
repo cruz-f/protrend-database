@@ -251,3 +251,9 @@ class EffectorToRegulator(RegPreciseConnections):
     default_to_node = Regulator
     default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
                                        'regulator': 'integrated_regulator.csv'}
+
+
+class OperonToGene(RegPreciseConnections):
+    default_from_node = Operon
+    default_to_node = Gene
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}
