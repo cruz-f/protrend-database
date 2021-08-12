@@ -7,7 +7,7 @@ from protrend.transform.processors import apply_processors, str_join, operon_nam
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator, \
-    OperonToGene, OperonToTFBS, GeneToTFBS
+    OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformer import DefaultTransformer
@@ -391,6 +391,33 @@ class GeneToTFBSConnector(DefaultConnector):
 
         from_identifiers = operon['genes'].tolist()
         to_identifiers = operon['tfbss'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
+
+
+class GeneToRegulatorConnector(DefaultConnector):
+    default_settings = GeneToRegulator
+
+    def connect(self):
+        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        apply_processors(list, df=operon, col='regulon')
+        operon = operon.explode('regulon')
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+
+        merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
+                          suffixes=('_operon', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_operon'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.drop_duplicates(subset=['protrend_id_operon', 'protrend_id_regulator'])
+        merged = merged.explode('genes')
+        merged = merged.dropna(subset=['genes'])
+        merged = merged.drop_duplicates(subset=['protrend_id_regulator', 'genes'])
+
+        from_identifiers = merged['genes'].tolist()
+        to_identifiers = merged['protrend_id_regulator'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)

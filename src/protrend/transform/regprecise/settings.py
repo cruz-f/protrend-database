@@ -239,17 +239,17 @@ class RegulatoryFamilyToRegulator(RegPreciseConnections):
                                        'regulator': 'integrated_regulator.csv'}
 
 
-class OperonToRegulator(RegPreciseConnections):
-    default_from_node = Operon
-    default_to_node = Regulator
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
-                                       'regulator': 'integrated_regulator.csv'}
-
-
 class EffectorToRegulator(RegPreciseConnections):
     default_from_node = Effector
     default_to_node = Regulator
     default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
+                                       'regulator': 'integrated_regulator.csv'}
+
+
+class OperonToRegulator(RegPreciseConnections):
+    default_from_node = Operon
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
                                        'regulator': 'integrated_regulator.csv'}
 
 
@@ -269,3 +269,10 @@ class GeneToTFBS(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = TFBS
     default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}
+
+
+class GeneToRegulator(RegPreciseConnections):
+    default_from_node = Gene
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
+                                       'regulator': 'integrated_regulator.csv'}
