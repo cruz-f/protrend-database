@@ -431,9 +431,11 @@ class GeneToRegulatorConnector(DefaultConnector):
 
         from_identifiers = merged['genes'].tolist()
         to_identifiers = merged['protrend_id_regulator'].tolist()
+        kwargs = dict(operon=merged['protrend_id_operon'].tolist())
 
         df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
 
         self.stack_csv(df)
 
@@ -461,8 +463,10 @@ class TFBSToRegulatorConnector(DefaultConnector):
 
         from_identifiers = merged['tfbss'].tolist()
         to_identifiers = merged['protrend_id_regulator'].tolist()
+        kwargs = dict(operon=merged['protrend_id_operon'].tolist())
 
         df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
 
         self.stack_csv(df)
