@@ -8,7 +8,8 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import EffectorSettings, EffectorToSource, EffectorToOrganism
+from protrend.transform.regprecise.settings import EffectorSettings, EffectorToSource, EffectorToOrganism, \
+    EffectorToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import DefaultTransformer
 
@@ -92,12 +93,34 @@ class EffectorToOrganismConnector(DefaultConnector):
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
                           suffixes=('_effector', '_regulator'))
         merged = merged.dropna(subset=['protrend_id_effector'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
         merged = merged.dropna(subset=['organism_protrend_id'])
-        merged = merged.drop_duplicates(subset=['protrend_id_effector', 'protrend_id_regulator'])
+        merged = merged.drop_duplicates(subset=['protrend_id_effector', 'organism_protrend_id'])
 
         from_identifiers = merged['protrend_id_effector'].tolist()
         to_identifiers = merged['organism_protrend_id'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_csv(df)
+
+
+class EffectorToRegulatorConnector(DefaultConnector):
+    default_settings = EffectorToRegulator
+
+    def connect(self):
+        effector = read_from_stack(tl=self, file='effector', json=False, default_columns=EffectorTransformer.columns)
+        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = regulator.explode('effector')
+
+        merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
+                          suffixes=('_effector', '_regulator'))
+        merged = merged.dropna(subset=['protrend_id_effector'])
+        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.drop_duplicates(subset=['protrend_id_effector', 'protrend_id_regulator'])
+
+        from_identifiers = merged['protrend_id_effector'].tolist()
+        to_identifiers = merged['protrend_id_regulator'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
