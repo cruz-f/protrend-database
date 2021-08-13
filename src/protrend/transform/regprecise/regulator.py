@@ -10,12 +10,10 @@ from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource, RegulatorToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 
-# TODO fix the transform. It is droping most regulators.
-#  This can happen because of the several merges with the organisms
-class RegulatorTransformer(DefaultTransformer):
+class RegulatorTransformer(Transformer):
     default_settings = RegulatorSettings
     columns = {'protrend_id',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
@@ -39,22 +37,14 @@ class RegulatorTransformer(DefaultTransformer):
     def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
         # filter tfs only
-        regulon = regulon.dropna(subset=['regulator_locus_tag'])
+        regulon = regulon.dropna(subset=['regulator_locus_tag', 'genome'])
 
-        regulon = self.drop_duplicates(df=regulon,
-                                       subset=['regulator_locus_tag'],
-                                       perfect_match=True,
+        regulon = self.drop_duplicates(df=regulon, subset=['regulator_locus_tag'], perfect_match=True,
                                        preserve_nan=False)
 
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulon,
-                         col='regulator_locus_tag')
+        apply_processors(rstrip, lstrip, df=regulon, col='regulator_locus_tag')
 
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulon,
-                         col='name')
+        apply_processors(rstrip, lstrip, df=regulon, col='name')
 
         regulon['mechanism'] = ['transcription factor'] * regulon.shape[0]
 
@@ -66,24 +56,14 @@ class RegulatorTransformer(DefaultTransformer):
 
     def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
-        # filter rna only
-        mask = regulon['rfam'].notnull()
-        regulon = regulon[mask]
+        # filter tfs only
+        regulon = regulon.dropna(subset=['rfam'])
 
-        regulon = self.drop_duplicates(df=regulon,
-                                       subset=['rfam', 'genome'],
-                                       perfect_match=True,
-                                       preserve_nan=False)
+        regulon = self.drop_duplicates(df=regulon, subset=['rfam', 'genome'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulon,
-                         col='rfam')
+        apply_processors(rstrip, lstrip, df=regulon, col='rfam')
 
-        apply_processors(rstrip,
-                         lstrip,
-                         df=regulon,
-                         col='name')
+        apply_processors(rstrip, lstrip, df=regulon, col='name')
 
         regulon['mechanism'] = ['small RNA (sRNA)'] * regulon.shape[0]
 
@@ -121,6 +101,8 @@ class RegulatorTransformer(DefaultTransformer):
 
     def transform(self):
         regulon = read_from_stack(tl=self, file='regulon', json=True, default_columns=self.read_columns)
+
+        # TODO: wrong ncbi taxonomy after the processing
         organism = read_from_stack(tl=self, file='organism', json=False, default_columns=OrganismTransformer.columns)
         organism = organism[['protrend_id', 'genome_id', 'ncbi_taxonomy']]
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
@@ -141,7 +123,7 @@ class RegulatorTransformer(DefaultTransformer):
 
         tf_df = self.merge_columns(df=tf_df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
-        tf_df = tf_df.drop(['input_value'], axis=1)
+        tf_df = tf_df.drop(columns=['input_value'])
 
         # ------------------ regulon of type RNA --------------------------------
         rna = self._transform_rna(regulon=regulon, organism=organism)
@@ -156,17 +138,13 @@ class RegulatorTransformer(DefaultTransformer):
 
         rna_df = self.merge_columns(df=rna_df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
-        rna_df = rna_df.drop(['input_value'], axis=1)
+        rna_df = rna_df.drop(columns=['input_value'])
 
         # --------------------- concat DFs --------------------------------------
 
         df = pd.concat([tf_df, rna_df], axis=0)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 

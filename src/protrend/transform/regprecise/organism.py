@@ -9,10 +9,10 @@ from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 
-class OrganismTransformer(DefaultTransformer):
+class OrganismTransformer(Transformer):
     default_settings = OrganismSettings
     columns = {'protrend_id',
                'genome_id', 'name', 'taxonomy', 'url', 'regulon',
@@ -67,16 +67,12 @@ class OrganismTransformer(DefaultTransformer):
 
         df = pd.merge(organisms, genome, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: not working properly. name is still empty
+        # TODO: not working properly. name is still empty in some rows and double concatenated in others
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
 
         df = df.drop(['input_value'], axis=1)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 

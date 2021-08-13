@@ -13,12 +13,12 @@ from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 
-class TFBSTransformer(DefaultTransformer):
+class TFBSTransformer(Transformer):
     default_settings = TFBSSettings
     columns = {'protrend_id',
                'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene',
@@ -173,11 +173,7 @@ class TFBSTransformer(DefaultTransformer):
 
         df = self._tfbs_coordinates(tfbs, gene)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 

@@ -1,4 +1,4 @@
-from typing import List, Set, Union
+from typing import List
 
 import pandas as pd
 
@@ -6,10 +6,10 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.annotation.publication import annotate_publications
 from protrend.transform.dto import PublicationDTO
 from protrend.transform.regprecise.settings import PublicationSettings
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 
-class PublicationTransformer(DefaultTransformer):
+class PublicationTransformer(Transformer):
     default_settings = PublicationSettings
     columns = {'protrend_id',
                'pmid', 'doi', 'title', 'author', 'year'}
@@ -73,10 +73,6 @@ class PublicationTransformer(DefaultTransformer):
 
         df = df.drop(columns=['input_value'], axis=1)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df

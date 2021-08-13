@@ -9,10 +9,10 @@ from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource, \
     RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 
-class RegulatoryFamilyTransformer(DefaultTransformer):
+class RegulatoryFamilyTransformer(Transformer):
     default_settings = RegulatoryFamilySettings
     columns = {'protrend_id',
                'mechanism'
@@ -128,11 +128,7 @@ class RegulatoryFamilyTransformer(DefaultTransformer):
 
         df = pd.concat([tfs, rna], axis=0)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 

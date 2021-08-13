@@ -10,11 +10,11 @@ from protrend.transform.processors import rstrip, lstrip, apply_processors, take
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import GeneSettings, GeneToSource, GeneToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 from protrend.utils.miscellaneous import take_last, flatten_list
 
 
-class GeneTransformer(DefaultTransformer):
+class GeneTransformer(Transformer):
     default_settings = GeneSettings
     columns = {'protrend_id',
                'locus_tag', 'name', 'synonyms', 'function', 'description',
@@ -30,15 +30,9 @@ class GeneTransformer(DefaultTransformer):
     @staticmethod
     def _transform_gene(gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
 
-        apply_processors(rstrip,
-                         lstrip,
-                         df=gene,
-                         col='locus_tag')
+        apply_processors(rstrip, lstrip, df=gene, col='locus_tag')
 
-        apply_processors(rstrip,
-                         lstrip,
-                         df=gene,
-                         col='name')
+        apply_processors(rstrip, lstrip, df=gene, col='name')
 
         aggregation_functions = {'name': take_last,
                                  'function': take_last,
@@ -53,9 +47,7 @@ class GeneTransformer(DefaultTransformer):
         gene['regulon_id'] = gene['regulon']
 
         # keeping only one, since we only want to get the ncbi taxonomy of each gene.
-        apply_processors(take_first,
-                         df=gene,
-                         col='regulon_id')
+        apply_processors(take_first, df=gene, col='regulon_id')
 
         df = pd.merge(gene, regulator, on='regulon_id')
 
@@ -119,11 +111,7 @@ class GeneTransformer(DefaultTransformer):
 
         df = df.drop(['input_value'], axis=1)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 

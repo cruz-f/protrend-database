@@ -11,10 +11,10 @@ from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import EffectorSettings, EffectorToSource, EffectorToOrganism, \
     EffectorToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 
-class EffectorTransformer(DefaultTransformer):
+class EffectorTransformer(Transformer):
     default_settings = EffectorSettings
     columns = {'protrend_id', 'effector_id', 'name', 'url', 'regulog', 'mechanism', 'synonyms', 'kegg_compounds'}
     read_columns = {'effector_id', 'name', 'url', 'regulog'}
@@ -50,11 +50,7 @@ class EffectorTransformer(DefaultTransformer):
 
         df = df.drop(['input_value'], axis=1)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 

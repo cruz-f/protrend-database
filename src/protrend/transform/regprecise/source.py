@@ -1,10 +1,10 @@
 import pandas as pd
 
 from protrend.transform.regprecise.settings import SourceSettings
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 
 
-class SourceTransformer(DefaultTransformer):
+class SourceTransformer(Transformer):
     name = 'regprecise'
     type = 'database'
     url = 'https://regprecise.lbl.gov/'
@@ -26,4 +26,8 @@ class SourceTransformer(DefaultTransformer):
                           authors=[self.authors],
                           description=[self.description])
 
-        return pd.DataFrame(regprecise, index=[0])
+        df = pd.DataFrame(regprecise, index=[0])
+
+        self._stack_transformed_nodes(df)
+
+        return df

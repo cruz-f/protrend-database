@@ -11,37 +11,91 @@ from protrend.transform.settings import TransformerSettings
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
-class Transformer(metaclass=ABCMeta):
+class AbstractTransformer(metaclass=ABCMeta):
     """
     Transformer interface.
-
     The following methods must be implemented to set up a transformer for each node
-
-    A transformer is responsible for reading, processing, integrating and writing node files.
-
-    A transformer starts with data from the staging area and ends with structured nodes.
     """
 
-    def __init__(self, settings: TransformerSettings):
+    # --------------------------------------------------------
+    # Transformer API
+    # --------------------------------------------------------
+    @abstractmethod
+    def transform(self) -> pd.DataFrame:
 
         """
-        The transform object contains and uses transformation procedures for a given neomodel node entity.
-        This object is responsible for reading several files and digest/process them into node instances.
+        The method responsible for transforming multiple pandas DataFrames into an annotated, cleaned and standardized
+        pandas DataFrame ready to be integrated into structured nodes.
 
-        A given source/database contained in the staging area must be provided
-        together with the files required for the transformation to take place.
+        Interface implementation with unknown signature.
+        Concrete implementations are available at the transformer or transformer's sub-classes.
 
-        A pandas DataFrame is the main engine to read, load, process and transform data contained in these files into
-        structured nodes
+        :return:
+        """
 
+        pass
+
+    @abstractmethod
+    def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        The method responsible for integrating the transformed pandas DataFrame with the current state of the neo4j
+        database using neomodel and Node class extension.
+
+        Interface implementation with unknown signature.
+        Concrete implementations are available at the transformer or transformer's sub-classes.
+
+        :param df: transformed pandas DataFrame
+        :return: it creates a new pandas DataFrame of the integrated data
+        """
+        pass
+
+    def write(self):
+        """
+        The method responsible for writing the transformed, integrated and nodes pandas DataFrame
+        to be loaded and connected in the neo4j database using neomodel and Node class extension.
+
+        Interface implementation with unknown signature.
+        Concrete implementations are available at the transformer or transformer's sub-classes.
+
+        """
+        pass
+
+
+class Transformer(AbstractTransformer):
+    """
+    A transformer is responsible for reading, processing, transforming, integrating and writing node files.
+    A transformer starts with data from the staging area and ends with structured nodes.
+
+    This Transformer object has implemented several utilities for the hard-working de facto transformers to be created
+    for each data source and node
+    """
+
+    default_settings: Type[TransformerSettings] = TransformerSettings
+    columns: Set[str] = set()
+
+    def __init__(self, settings: TransformerSettings = None):
+
+        """
+        The transform object must implement several transformation procedures for a given neomodel Node.
+        Thus, the transform must be able to read staging area files and digest/process/transform/integrate/write
+        them into fully structured Node instances.
+
+        A TransformerSettings object must be provided to a transformer.
+        These settings set up a given data source contained in the staging area for the transformation to take place.
+
+        Pandas is the main engine to read, process, transform and integrate data
+        contained in the staging area files into structured nodes.
+
+        :type settings: TransformerSettings
         :param settings: a TransformerSettings than contains all settings for source,
         version and files to perform the transformation on
         """
+        if not settings:
+            settings = self.default_settings()
 
         self._settings = settings
 
         self._transform_stack = {}
-        self._connect_stack = {}
         self._write_stack = []
 
         self._load_settings()
@@ -90,10 +144,6 @@ class Transformer(metaclass=ABCMeta):
     @property
     def transform_stack(self) -> Dict[str, str]:
         return self._transform_stack
-
-    @property
-    def connect_stack(self) -> Dict[str, str]:
-        return self._connect_stack
 
     @property
     def write_stack(self) -> List[Callable]:
@@ -187,14 +237,13 @@ class Transformer(metaclass=ABCMeta):
         create_identifiers = self.protrend_identifiers_batch(create_size)
         create_nodes[self.node.identifying_property] = create_identifiers
         create_nodes['load'] = ['create'] * create_size
-        update_nodes['what'] = ['nodes'] * update_size
+        update_nodes['what'] = ['nodes'] * create_size
 
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)
-        df_name = f'integrated_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
 
         self._stack_integrated_nodes(df)
+        self._stack_nodes(df)
 
         return df
 
@@ -211,19 +260,32 @@ class Transformer(metaclass=ABCMeta):
     # ----------------------------------------
     # Utilities methods
     # ----------------------------------------
-    def _stack_integrated_nodes(self, df: pd.DataFrame):
+    def empty_frame(self) -> pd.DataFrame:
+        cols = [col for col in self.columns if col != 'protrend_id']
+        return pd.DataFrame(columns=cols)
+
+    def stack_csv(self, name: str, df: pd.DataFrame):
+        df_copy = df.copy(deep=True)
+        fp = os.path.join(self.write_path, f'{name}.csv')
+        csv = partial(df_copy.to_csv, path_or_buf=fp, index=False)
+        self._write_stack.append(csv)
+
+    def _stack_nodes(self, df: pd.DataFrame):
         node_cols = list(self.node.node_keys())
-        cols_to_drop = [col for col in df.columns if col in node_cols]
-        df = df.drop(cols_to_drop, axis=1)
+        cols_to_drop = [col for col in df.columns if col not in node_cols]
+        df = df.drop(columns=cols_to_drop)
         df_name = f'nodes_{self.node.node_name()}'
         self.stack_csv(df_name, df)
 
-    def stack_csv(self, name: str, df: pd.DataFrame):
+    def _stack_integrated_nodes(self, df: pd.DataFrame):
+        df_name = f'integrated_{self.node.node_name()}'
+        self.stack_csv(df_name, df)
 
-        df_copy = df.copy(deep=True)
-        fp = os.path.join(self.write_path, f'{name}.csv')
-        csv = partial(df_copy.to_csv, path_or_buf=fp)
-        self._write_stack.append(csv)
+    def _stack_transformed_nodes(self, df: pd.DataFrame):
+        if df.empty:
+            df = self.empty_frame()
+        df_name = f'transformed_{self.node.node_name()}'
+        self.stack_csv(df_name, df)
 
     @staticmethod
     def merge_columns(df: pd.DataFrame, column: str, left: str, right: str, fill: Any = '') -> pd.DataFrame:
@@ -328,22 +390,3 @@ class Transformer(metaclass=ABCMeta):
     def node_view(self) -> pd.DataFrame:
         df = self.node.node_to_df()
         return df
-
-
-class DefaultTransformer(Transformer):
-    default_settings: Type[TransformerSettings] = TransformerSettings
-    columns: Set[str] = set()
-
-    def __init__(self, settings: TransformerSettings = None):
-        if not settings:
-            settings = self.default_settings()
-
-        super().__init__(settings)
-
-    def make_empty_frame(self) -> pd.DataFrame:
-        cols = [col for col in self.columns if col != 'protrend_id']
-        return pd.DataFrame(columns=cols)
-
-    @abstractmethod
-    def transform(self):
-        pass

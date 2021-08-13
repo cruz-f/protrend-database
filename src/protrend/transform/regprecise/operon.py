@@ -10,12 +10,12 @@ from protrend.transform.regprecise.settings import OperonSettings, OperonToSourc
     OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator, TFBSToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
-from protrend.transform.transformer import DefaultTransformer
+from protrend.transform.transformer import Transformer
 from protrend.utils.graph import build_graph, find_connected_nodes
 from protrend.utils.miscellaneous import flatten_list
 
 
-class OperonTransformer(DefaultTransformer):
+class OperonTransformer(Transformer):
     default_settings = OperonSettings
     columns = {'protrend_id',
                'operon_id', 'name', 'url', 'regulon', 'tfbs',
@@ -51,15 +51,11 @@ class OperonTransformer(DefaultTransformer):
 
         operon = pd.DataFrame({'gene': operons})
 
-        apply_processors(list,
-                         df=operon,
-                         col='gene')
+        apply_processors(list, df=operon, col='gene')
 
         operon['operon_id'] = operon['gene']
 
-        apply_processors(str_join,
-                         df=operon,
-                         col='operon_id')
+        apply_processors(str_join, df=operon, col='operon_id')
 
         return operon
 
@@ -84,9 +80,7 @@ class OperonTransformer(DefaultTransformer):
         operon = operon.groupby(['operon_id_new']).aggregate(agg_funcs)
         operon = operon.reset_index()
 
-        apply_processors(list,
-                         df=operon,
-                         col='gene')
+        apply_processors(list, df=operon, col='gene')
 
         operon_by_gene = operon.explode('gene')
         operon_by_gene = operon_by_gene.merge(gene, left_on='gene', right_on='locus_tag_regprecise')
@@ -107,13 +101,9 @@ class OperonTransformer(DefaultTransformer):
 
         operon['operon_id'] = operon['genes']
 
-        apply_processors(str_join,
-                         df=operon,
-                         col='operon_id')
+        apply_processors(str_join, df=operon, col='operon_id')
 
-        apply_processors(operon_name,
-                         df=operon,
-                         col='name')
+        apply_processors(operon_name, df=operon, col='name')
 
         return operon
 
@@ -207,11 +197,7 @@ class OperonTransformer(DefaultTransformer):
 
         df = self._operon_coordinates(operon=operon, gene=gene)
 
-        if df.empty:
-            df = self.make_empty_frame()
-
-        df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self._stack_transformed_nodes(df)
 
         return df
 
@@ -255,10 +241,9 @@ class OperonTransformer(DefaultTransformer):
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)
         df.drop(columns=['genes_id'], axis=1)
-        df_name = f'integrated_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
 
         self._stack_integrated_nodes(df)
+        self._stack_nodes(df)
 
         return df
 
