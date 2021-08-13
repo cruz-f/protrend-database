@@ -8,7 +8,8 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.transformer import Transformer
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise import RegulatorTransformer, SourceTransformer
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.settings import (EffectorSettings, EffectorToSource, EffectorToOrganism,
                                                     EffectorToRegulator)
 

@@ -9,7 +9,7 @@ from protrend.transform.transformer import Transformer
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
-from protrend.transform.regprecise import SourceTransformer
+from protrend.transform.regprecise.source import SourceTransformer
 
 
 class OrganismTransformer(Transformer):

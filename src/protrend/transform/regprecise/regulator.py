@@ -8,7 +8,8 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.transformer import Transformer
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise import OrganismTransformer, SourceTransformer
+from protrend.transform.regprecise.organism import OrganismTransformer
+from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource, RegulatorToOrganism
 
 

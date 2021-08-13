@@ -5,7 +5,10 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.transformer import Transformer
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
                                            operon_left_position, operon_right_position, flatten_set, to_list)
-from protrend.transform.regprecise import GeneTransformer, RegulatorTransformer, SourceTransformer, TFBSTransformer
+from protrend.transform.regprecise.gene import GeneTransformer
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
                                                     OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator,
                                                     TFBSToRegulator)

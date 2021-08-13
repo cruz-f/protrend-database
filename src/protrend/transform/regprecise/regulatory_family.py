@@ -5,7 +5,9 @@ from protrend.transform.connector import DefaultConnector
 from protrend.transform.transformer import Transformer
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list)
-from protrend.transform.regprecise import PublicationTransformer, RegulatorTransformer, SourceTransformer
+from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise import PublicationTransformer
+from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.settings import (RegulatoryFamilySettings, RegulatoryFamilyToSource,
                                                     RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator)
 

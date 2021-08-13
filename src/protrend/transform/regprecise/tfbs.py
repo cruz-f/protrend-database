@@ -6,14 +6,14 @@ import pandas as pd
 
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.processors import (apply_processors, remove_ellipsis,
-                                           upper_case, tfbs_left_position, operon_left_position, operon_strand,
-                                           tfbs_right_position)
+from protrend.transform.transformer import Transformer
+from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, tfbs_left_position,
+                                           operon_left_position, operon_strand, tfbs_right_position)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
+
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
