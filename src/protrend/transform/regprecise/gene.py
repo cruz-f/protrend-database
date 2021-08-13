@@ -3,15 +3,14 @@ from typing import List, Union
 import pandas as pd
 
 from protrend.io.utils import read_from_stack
-from protrend.transform.annotation.gene import annotate_genes
+from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, take_first
-from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import GeneSettings, GeneToSource, GeneToOrganism
-from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import Transformer
-from protrend.utils.miscellaneous import take_last, flatten_list
+from protrend.transform.dto import GeneDTO
+from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list
+from protrend.transform.regprecise import RegulatorTransformer, SourceTransformer
+from protrend.transform.regprecise.settings import GeneSettings, GeneToSource, GeneToOrganism
+
 
 
 class GeneTransformer(Transformer):
@@ -22,47 +21,36 @@ class GeneTransformer(Transformer):
                'refseq_accession', 'uniprot_accession',
                'sequence', 'strand', 'position_left', 'position_right',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-               'regulator_protrend_id', 'regulon_id', 'locus_tag_regprecise',
+               'regulator_protrend_id', 'regulon_id', 'locus_tag_old',
                'regulon', 'operon', 'tfbs'}
 
     read_columns = {'locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'}
 
-    @staticmethod
-    def _transform_gene(gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
-
+    def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         apply_processors(rstrip, lstrip, df=gene, col='locus_tag')
-
         apply_processors(rstrip, lstrip, df=gene, col='name')
 
-        aggregation_functions = {'name': take_last,
-                                 'function': take_last,
-                                 'url': set,
-                                 'regulon': flatten_list,
-                                 'operon': flatten_list,
-                                 'tfbs': flatten_list}
+        aggregation = {'name': take_last, 'function': take_last, 'url': set}
+        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
 
-        gene = gene.groupby(gene['locus_tag']).aggregate(aggregation_functions)
-        gene = gene.reset_index()
+        apply_processors(to_list, df=gene, col='regulon')
+        gene = gene.explode('regulon')
 
-        gene['regulon_id'] = gene['regulon']
+        gene = pd.merge(gene, regulator, lef_on='regulon', right_on='regulon_id')
 
-        # keeping only one, since we only want to get the ncbi taxonomy of each gene.
-        apply_processors(take_first, df=gene, col='regulon_id')
+        aggregation = {'name': take_last, 'function': take_last,
+                       'organism_protrend_id': take_last, 'genome_id': take_last, 'ncbi_taxonomy': take_last,
+                       'regulator_protrend_id': take_last, 'regulon_id': take_last, }
+        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
 
-        df = pd.merge(gene, regulator, on='regulon_id')
+        gene = self.create_input_value(df=gene, col='locus_tag')
 
-        df['input_value'] = df['locus_tag']
-
-        return df
+        return gene
 
     @staticmethod
     def _annotate_genes(loci: List[Union[None, str]], names: List[str], taxa: List[int]):
-
         dtos = [GeneDTO(input_value=locus) for locus in loci]
         annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
-
-        for dto, name in zip(dtos, names):
-            dto.synonyms.append(name)
 
         # locus_tag: List[str]
         # name: List[str]
@@ -85,31 +73,25 @@ class GeneTransformer(Transformer):
         gene = read_from_stack(tl=self, file='gene', json=True, default_columns=self.read_columns)
 
         regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
-        regulator = regulator[['protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulator_protrend_id', 'regulon_id']]
+        regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy',
+                                        'regulator_protrend_id', 'regulon_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
+        gene['locus_tag_old'] = gene['locus_tag']
 
         loci = gene['input_value'].tolist()
         names = gene['name'].tolist()
         taxa = gene['ncbi_taxonomy'].tolist()
-
         genes = self._annotate_genes(loci, names, taxa)
 
         df = pd.merge(genes, gene, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        old_loci = df['locus_tag_regprecise'].tolist()
+        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
+        df = self.merge_columns(df=df, column='function', left='function_annotation', right='function_regprecise')
 
-        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation',
-                                right='locus_tag_regprecise', fill='')
-        df = self.merge_columns(df=df, column='name', left='name_annotation',
-                                right='name_regprecise', fill='')
-        df = self.merge_columns(df=df, column='function', left='function_annotation',
-                                right='function_regprecise', fill='')
-
-        df['locus_tag_regprecise'] = old_loci
-
-        df = df.drop(['input_value'], axis=1)
+        df = df.drop(columns=['input_value'])
 
         self._stack_transformed_nodes(df)
 
@@ -120,7 +102,6 @@ class GeneToSourceConnector(DefaultConnector):
     default_settings = GeneToSource
 
     def connect(self):
-
         gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
         gene = gene.explode('regulon')
         source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)

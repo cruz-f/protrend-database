@@ -103,19 +103,15 @@ class TFBSTransformer(Transformer):
 
         tfbs = tfbs.dropna(subset=['sequence'])
         tfbs = tfbs.explode('regulon')
-        tfbs = tfbs.drop_duplicates(subset=['tfbs_id', 'sequence', 'regulon'])
+        tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
+                                    perfect_match=True, preserve_nan=False)
         tfbs = tfbs.reset_index(drop=True)
 
-        apply_processors(remove_ellipsis,
-                         df=tfbs,
-                         col='sequence')
-
-        apply_processors(upper_case,
-                         df=tfbs,
-                         col='sequence')
+        apply_processors(remove_ellipsis, upper_case, df=tfbs, col='sequence')
 
         tfbs = self._normalize_sequence(tfbs)
-        tfbs = tfbs.drop_duplicates(subset=['tfbs_id', 'sequence', 'regulon'])
+        tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
+                                    perfect_match=True, preserve_nan=False)
         return tfbs
 
     @staticmethod
@@ -166,10 +162,10 @@ class TFBSTransformer(Transformer):
         tfbs = self._transform_tfbs(tfbs)
 
         gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
-        gene = gene[['strand', 'position_left', 'locus_tag_regprecise']]
-        gene = gene.dropna(subset=['locus_tag_regprecise'])
-        gene = gene.drop_duplicates(subset=['locus_tag_regprecise'])
-        gene = gene.set_index(gene['locus_tag_regprecise'])
+        gene = gene[['strand', 'position_left', 'locus_tag_old']]
+        gene = gene.dropna(subset=['locus_tag_old'])
+        gene = gene.drop_duplicates(subset=['locus_tag_old'])
+        gene = gene.set_index(gene['locus_tag_old'])
 
         df = self._tfbs_coordinates(tfbs, gene)
 

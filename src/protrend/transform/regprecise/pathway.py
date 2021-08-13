@@ -3,15 +3,13 @@ from typing import List
 import pandas as pd
 
 from protrend.io.utils import read_from_stack
-from protrend.transform.annotation.pathway import annotate_pathways
+from protrend.transform.annotation import annotate_pathways
 from protrend.transform.connector import DefaultConnector
+from protrend.transform.transformer import Transformer
 from protrend.transform.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise.gene import GeneTransformer
-from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.regprecise.gene import GeneTransformer, RegulatorTransformer, SourceTransformer
 from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource, PathwayToRegulator
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
 class PathwayTransformer(Transformer):
@@ -27,14 +25,11 @@ class PathwayTransformer(Transformer):
 
         apply_processors(rstrip, lstrip, df=df, col='name')
 
-        df['input_value'] = df['name']
-
+        self.create_input_value(df, 'name')
         return df
 
     @staticmethod
     def _transform_pathways(names: List[str]):
-
-        # TODO: pathways were not annotated
 
         dtos = [PathwayDTO(input_value=name) for name in names]
         annotate_pathways(dtos=dtos, names=names)
@@ -46,20 +41,17 @@ class PathwayTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-
         pathway = read_from_stack(tl=self, file='pathway', json=True, default_columns=self.read_columns)
         pathway = self._transform_pathway(pathway)
 
-        names = list(pathway['input_value'])
-
+        names = pathway['input_value'].tolist()
         pathways = self._transform_pathways(names)
 
         df = pd.merge(pathways, pathway, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: merge columns not working. It is duplicating the name
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
-        df = df.drop(['input_value'], axis=1)
+        df = df.drop(['input_value'])
 
         self._stack_transformed_nodes(df)
 

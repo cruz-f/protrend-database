@@ -3,13 +3,13 @@ from typing import List
 import pandas as pd
 
 from protrend.io.utils import read_from_stack
-from protrend.transform.annotation.organism import annotate_organisms
+from protrend.transform.annotation import annotate_organisms
 from protrend.transform.connector import DefaultConnector
+from protrend.transform.transformer import Transformer
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise import SourceTransformer
 
 
 class OrganismTransformer(Transformer):
@@ -28,7 +28,7 @@ class OrganismTransformer(Transformer):
 
         apply_processors(rstrip, lstrip, df=genome, col='name')
 
-        genome['input_value'] = genome['name']
+        genome = self.create_input_value(genome, col='name')
 
         return genome
 
@@ -58,19 +58,14 @@ class OrganismTransformer(Transformer):
         genome = read_from_stack(tl=self, file='genome', json=True, default_columns=self.read_columns)
         genome = self._transform_genome(genome)
 
-        names = list(genome['input_value'])
-
+        names = genome['input_value'].tolist()
         organisms = self._transform_organisms(names)
-        apply_processors(int,
-                         df=organisms,
-                         col='ncbi_taxonomy')
 
         df = pd.merge(organisms, genome, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: not working properly. name is still empty in some rows and double concatenated in others
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
-        df = df.drop(['input_value'], axis=1)
+        df = df.drop(['input_value'])
 
         self._stack_transformed_nodes(df)
 

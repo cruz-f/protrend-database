@@ -11,15 +11,15 @@ from protrend.runners import run_spider
 
 def transform_runner() -> Director:
     transformers = [
-        # EffectorTransformer(),
+        EffectorTransformer(),
         GeneTransformer(),
         OperonTransformer(),
-        # OrganismTransformer(),
-        # PathwayTransformer(),
-        # PublicationTransformer(),
+        OrganismTransformer(),
+        PathwayTransformer(),
+        PublicationTransformer(),
         RegulatorTransformer(),
-        # RegulatoryFamilyTransformer(),
-        # SourceTransformer(),
+        RegulatoryFamilyTransformer(),
+        SourceTransformer(),
         TFBSTransformer(),
     ]
     director = Director(transformers=transformers)

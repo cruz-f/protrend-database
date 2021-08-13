@@ -34,7 +34,22 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
             df[col] = df[col].map(processor, na_action='ignore')
 
 
+def flatten_set(args):
+    return {i for arg in args for i in arg}
+
+
+def flatten_list(args):
+    return [i for arg in args for i in arg]
+
+
+def take_last(args):
+    return args.iloc[-1]
+
+
 def to_set(item: Any) -> set:
+    if isinstance(item, str):
+        return {item}
+
     try:
         iterator = iter(item)
     except TypeError:
@@ -44,6 +59,9 @@ def to_set(item: Any) -> set:
 
 
 def to_list(item: Any) -> list:
+    if isinstance(item, str):
+        return [item]
+
     try:
         iterator = iter(item)
     except TypeError:

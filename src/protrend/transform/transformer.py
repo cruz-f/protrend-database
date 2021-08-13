@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
+from protrend.transform.processors import take_last
 from protrend.transform.settings import TransformerSettings
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
@@ -226,8 +227,8 @@ class Transformer(AbstractTransformer):
         update_size, _ = update_nodes.shape
         ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=self.node_factors)
         update_nodes[self.node.identifying_property] = snapshot.loc[ids_mask, self.node.identifying_property]
-        update_nodes['load'] = ['update'] * update_size
-        update_nodes['what'] = ['nodes'] * update_size
+        update_nodes.loc[:, 'load'] = ['update'] * update_size
+        update_nodes.loc[:, 'what'] = ['nodes'] * update_size
 
         # nodes to be created
         create_nodes = df[~nodes_mask]
@@ -236,8 +237,8 @@ class Transformer(AbstractTransformer):
         create_size, _ = create_nodes.shape
         create_identifiers = self.protrend_identifiers_batch(create_size)
         create_nodes[self.node.identifying_property] = create_identifiers
-        create_nodes['load'] = ['create'] * create_size
-        update_nodes['what'] = ['nodes'] * create_size
+        create_nodes.loc[:, 'load'] = ['create'] * create_size
+        update_nodes.loc[:, 'what'] = ['nodes'] * create_size
 
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)
@@ -288,21 +289,39 @@ class Transformer(AbstractTransformer):
         self.stack_csv(df_name, df)
 
     @staticmethod
-    def merge_columns(df: pd.DataFrame, column: str, left: str, right: str, fill: Any = '') -> pd.DataFrame:
+    def create_input_value(df: pd.DataFrame, col: str) -> pd.DataFrame:
+        df['input_value'] = df[col]
+        return df
 
-        df = df.copy()
+    @staticmethod
+    def select_columns(df: pd.DataFrame, *columns: str) -> pd.DataFrame:
+        df = df[columns]
+        return df
 
-        left_mask = df[left].isnull()
-        left_mask_size = left_mask.sum()
-        df.at[left_mask, left] = [fill] * left_mask_size
+    @staticmethod
+    def merge_columns(df: pd.DataFrame, column: str, left: str, right: str) -> pd.DataFrame:
+        df[column] = df[left].fillna(df[right])
+        df = df.drop(columns=[left, right])
+        return df
 
-        right_mask = df[right].isnull()
-        right_mask_size = right_mask.sum()
-        df.at[right_mask, right] = [fill] * right_mask_size
-
+    @staticmethod
+    def concat_columns(df: pd.DataFrame, column: str, left: str, right: str) -> pd.DataFrame:
         df[column] = df[left] + df[right]
-        df[column] = df[column].replace(fill, np.nan)
-        return df.drop(columns=[left, right], axis=1)
+        df = df.drop(columns=[left, right])
+        return df
+
+    @staticmethod
+    def group_by(df: pd.DataFrame,
+                 column: str,
+                 aggregation: Dict[str, Callable],
+                 default: Callable = take_last) -> pd.DataFrame:
+
+        agg = {col: default for col in df.columns if col != column}
+        agg.update(aggregation)
+
+        df = df.groupby(df[column]).aggregate(agg)
+        df = df.reset_index()
+        return df
 
     @staticmethod
     def drop_duplicates(df: pd.DataFrame,

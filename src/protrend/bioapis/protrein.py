@@ -104,8 +104,17 @@ class NCBIProtein(BioAPI):
 
         synonyms = []
 
+        if self._locus_tag:
+            synonyms.append(self._locus_tag)
+
+        if self._name:
+            synonyms.append(self._name)
+
         if self.locus_tag:
             synonyms.append(self.locus_tag)
+
+        if self.name:
+            synonyms.append(self.name)
 
         if self.seq_record:
             for feature in self.seq_record.features:
@@ -117,9 +126,6 @@ class NCBIProtein(BioAPI):
                         synonyms.append(old_locus_tag[0])
 
                         break
-
-        if self.name:
-            synonyms.append(self.name)
 
         return synonyms
 
@@ -260,6 +266,12 @@ class UniProtProtein(BioAPI):
     def synonyms(self) -> List[str]:
 
         synonyms = []
+
+        if self._locus_tag:
+            synonyms.append(self._locus_tag)
+
+        if self._name:
+            synonyms.append(self._name)
 
         if self.locus_tag:
             synonyms.append(self.locus_tag)

@@ -2,14 +2,12 @@ import pandas as pd
 
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
+from protrend.transform.transformer import Transformer
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list)
-from protrend.transform.regprecise.publication import PublicationTransformer
-from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import RegulatoryFamilySettings, RegulatoryFamilyToSource, \
-    RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise import PublicationTransformer, RegulatorTransformer, SourceTransformer
+from protrend.transform.regprecise.settings import (RegulatoryFamilySettings, RegulatoryFamilyToSource,
+                                                    RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator)
 
 
 class RegulatoryFamilyTransformer(Transformer):
@@ -26,91 +24,55 @@ class RegulatoryFamilyTransformer(Transformer):
     def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(remove_white_space,
-                         df=df,
-                         col='name')
-
-        apply_processors(remove_regprecise_more,
-                         remove_pubmed,
-                         remove_multiple_white_space,
-                         rstrip,
-                         lstrip,
-                         df=df,
-                         col='description')
-
+        apply_processors(remove_white_space, df=df, col='name')
+        apply_processors(remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip, lstrip,
+                         df=df, col='description')
         return df
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(remove_white_space,
-                         df=df,
-                         col='name')
-
-        apply_processors(remove_regprecise_more,
-                         remove_pubmed,
-                         remove_multiple_white_space,
-                         rstrip,
-                         lstrip,
-                         df=df,
-                         col='description')
-
+        apply_processors(remove_white_space, df=df, col='name')
+        apply_processors(remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip, lstrip,
+                         df=df, col='description')
         return df
 
     def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=rna, subset=['rfam'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(remove_white_space,
-                         df=df,
-                         col='rfam')
-
-        apply_processors(remove_white_space,
-                         df=df,
-                         col='name')
-
-        apply_processors(remove_regprecise_more,
-                         remove_pubmed,
-                         remove_multiple_white_space,
-                         rstrip,
-                         lstrip,
-                         df=df,
-                         col='description')
-
-        apply_processors(set, df=df, col='pubmed')
-        apply_processors(set, df=df, col='regulog')
+        apply_processors(remove_white_space, df=df, col='rfam')
+        apply_processors(remove_white_space, df=df, col='name')
+        apply_processors(remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip, lstrip,
+                         df=df, col='description')
+        apply_processors(to_set, df=df, col='pubmed')
+        apply_processors(to_set, df=df, col='regulog')
 
         df = df.rename(columns={'url': 'url_rna'})
 
         # set mechanism
-        size, _ = df.shape
-        df['mechanism'] = ['small RNA (sRNA)'] * size
-
+        df['mechanism'] = 'small RNA (sRNA)'
         return df
 
     def _transform_tfs(self, tf_family: pd.DataFrame, tf: pd.DataFrame) -> pd.DataFrame:
         df = pd.merge(tf_family, tf, how='outer', on='name', suffixes=('_tf_family', '_tf'))
 
         # set mechanism
-        size, _ = df.shape
-        df['mechanism'] = ['transcription factor'] * size
+        df['mechanism'] = 'transcription factor'
 
         # concat description
-        df = self.merge_columns(df=df, column='description', left='description_tf_family',
-                                right='description_tf', fill='')
+        df = self.concat_columns(df=df, column='description', left='description_tf_family', right='description_tf')
 
         # concat pubmed
         apply_processors(to_list, df=df, col='pubmed_tf_family')
         apply_processors(to_list, df=df, col='pubmed_tf')
-        df = self.merge_columns(df=df, column='pubmed', left='pubmed_tf_family',
-                                right='pubmed_tf')
+        df = self.concat_columns(df=df, column='pubmed', left='pubmed_tf_family', right='pubmed_tf')
         apply_processors(to_set, df=df, col='pubmed')
 
         # concat regulog
         apply_processors(to_list, df=df, col='regulog_tf_family')
         apply_processors(to_list, df=df, col='regulog_tf')
-        df = self.merge_columns(df=df, column='regulog', left='regulog_tf_family',
-                                right='regulog_tf')
-        apply_processors(to_list, df=df, col='regulog')
+        df = self.concat_columns(df=df, column='regulog', left='regulog_tf_family', right='regulog_tf')
+        apply_processors(to_set, df=df, col='regulog')
 
         return df
 
@@ -118,6 +80,7 @@ class RegulatoryFamilyTransformer(Transformer):
         # -------------------- TFs -------------------
         tf_family = read_from_stack(tl=self, file='tf_family', json=True, default_columns=self.tf_family_columns)
         tf_family = self._transform_tf_family(tf_family)
+
         tf = read_from_stack(tl=self, file='tf', json=True, default_columns=self.tf_columns)
         tf = self._transform_tf(tf)
         tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
@@ -126,10 +89,9 @@ class RegulatoryFamilyTransformer(Transformer):
         rna = read_from_stack(tl=self, file='rna', json=True, default_columns=self.rna_columns)
         rna = self._transform_rna(rna)
 
-        df = pd.concat([tfs, rna], axis=0)
+        df = pd.concat([tfs, rna])
 
         self._stack_transformed_nodes(df)
-
         return df
 
 
@@ -209,8 +171,8 @@ class RegulatoryFamilyToRegulatorConnector(DefaultConnector):
         regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
 
         tfs_chain = [('tffamily_id', 'tf_family'),
-                    ('collection_id', 'transcription_factor'),
-                    ('riboswitch_id', 'rna_family')]
+                     ('collection_id', 'transcription_factor'),
+                     ('riboswitch_id', 'rna_family')]
 
         from_identifiers = []
         to_identifiers = []

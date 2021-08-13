@@ -3,15 +3,14 @@ from typing import List
 import pandas as pd
 
 from protrend.io.utils import read_from_stack
-from protrend.transform.annotation.effector import annotate_effectors
+from protrend.transform.annotation import annotate_effectors
 from protrend.transform.connector import DefaultConnector
+from protrend.transform.transformer import Transformer
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors
-from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import EffectorSettings, EffectorToSource, EffectorToOrganism, \
-    EffectorToRegulator
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise import RegulatorTransformer, SourceTransformer
+from protrend.transform.regprecise.settings import (EffectorSettings, EffectorToSource, EffectorToOrganism,
+                                                    EffectorToRegulator)
 
 
 class EffectorTransformer(Transformer):
@@ -20,13 +19,14 @@ class EffectorTransformer(Transformer):
     read_columns = {'effector_id', 'name', 'url', 'regulog'}
 
     def _transform_effector(self, effector: pd.DataFrame):
-        df = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
+        effector = effector.dropna(subset=['name'])
+        effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(rstrip, lstrip, df=df, col='name')
+        apply_processors(rstrip, lstrip, df=effector, col='name')
 
-        df['input_value'] = df['name']
+        effector = self.create_input_value(effector, 'name')
 
-        return df
+        return effector
 
     @staticmethod
     def _transform_effectors(names: List[str]):
@@ -39,16 +39,14 @@ class EffectorTransformer(Transformer):
         effector = read_from_stack(tl=self, file='effector', json=True, default_columns=self.read_columns)
         effector = self._transform_effector(effector)
 
-        names = list(effector['input_value'])
-
+        names = effector['input_value'].tolist()
         effectors = self._transform_effectors(names)
 
         df = pd.merge(effectors, effector, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        # TODO: merge columns not working. It is duplicating the name
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise', fill='')
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
-        df = df.drop(['input_value'], axis=1)
+        df = df.drop(columns=['input_value'])
 
         self._stack_transformed_nodes(df)
 

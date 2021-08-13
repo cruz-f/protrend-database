@@ -4,7 +4,7 @@ from protrend.bioapis.entrez import entrez_summary, entrez_search
 
 class NCBITaxonomyOrganism(BioAPI):
 
-    def __init__(self, identifier: int = 0, name: str = ''):
+    def __init__(self, identifier: str = 0, name: str = ''):
 
         super().__init__(identifier)
 
@@ -12,12 +12,12 @@ class NCBITaxonomyOrganism(BioAPI):
         self._assembly_record = {}
 
     @property
-    def identifier(self) -> int:
-        return self.record.get('Id', self._identifier)
+    def identifier(self) -> str:
+        return str(self.record.get('Id', self._identifier))
 
     @property
-    def taxonomy(self) -> int:
-        return self.identifier
+    def taxonomy(self) -> str:
+        return str(self.identifier)
 
     @property
     def name(self) -> str:

@@ -47,7 +47,18 @@ class NCBIGene(BioAPI):
 
     @property
     def synonyms(self) -> List[str]:
-        return self.record.get('OtherAliases', '').split(', ')
+        synonyms = self.record.get('OtherAliases', '').split(', ')
+
+        if self._locus_tag:
+            synonyms.append(self._locus_tag)
+
+        if self._name:
+            synonyms.append(self._name)
+
+        if self.name:
+            synonyms.append(self.name)
+
+        return synonyms
 
     @property
     def refseq_accession(self) -> str:

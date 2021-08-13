@@ -35,11 +35,3 @@ def scale_arg(arg, size):
         raise ValueError(f'Invalid input size of {len(arg)}')
 
     return arg
-
-
-def flatten_list(args):
-    return {i for arg in args for i in arg}
-
-
-def take_last(args):
-    return args.iloc[-1]

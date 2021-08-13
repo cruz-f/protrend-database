@@ -2,17 +2,14 @@ import pandas as pd
 
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.processors import apply_processors, str_join, operon_name, genes_to_hash, operon_strand, \
-    operon_left_position, operon_right_position
-from protrend.transform.regprecise.gene import GeneTransformer
-from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator, \
-    OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator, TFBSToRegulator
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformer import Transformer
-from protrend.utils.graph import build_graph, find_connected_nodes
-from protrend.utils.miscellaneous import flatten_list
+from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
+                                           operon_left_position, operon_right_position, flatten_set, to_list)
+from protrend.transform.regprecise import GeneTransformer, RegulatorTransformer, SourceTransformer, TFBSTransformer
+from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
+                                                    OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator,
+                                                    TFBSToRegulator)
+from protrend.utils import build_graph, find_connected_nodes
 
 
 class OperonTransformer(Transformer):
@@ -20,107 +17,72 @@ class OperonTransformer(Transformer):
     columns = {'protrend_id',
                'operon_id', 'name', 'url', 'regulon', 'tfbs',
                'tfbss',
-               'operon_id_old', 'operon_id_new', 'locus_tag', 'locus_tag_regprecise',
+               'operon_id_old', 'operon_id_new', 'locus_tag', 'locus_tag_old',
                'genes',
                'first_gene_position_left',
                'last_gene_position_right', }
     read_columns = {'operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'}
 
-    @staticmethod
-    def _operon_by_gene(operon: pd.DataFrame) -> pd.DataFrame:
-
+    def _operon_by_gene(self, operon: pd.DataFrame) -> pd.DataFrame:
         # group duplicates
-        operon_by_gene = operon.explode('gene')
+        operon = operon.explode('gene')
 
-        agg_funcs = {'operon_id': set,
-                     'url': flatten_list,
-                     'regulon': flatten_list,
-                     'tfbs': flatten_list,
-                     'tfbss': flatten_list}
+        aggregation = {'operon_id': set}
+        operon = self.group_by(df=operon, column='gene', aggregation=aggregation, default=flatten_set)
 
-        operon_by_gene = operon_by_gene.groupby(['gene']).aggregate(agg_funcs)
-        operon_by_gene = operon_by_gene.reset_index()
-
-        return operon_by_gene
+        return operon
 
     @staticmethod
     def _normalize_operon(genes) -> pd.DataFrame:
 
         graph = build_graph(genes)
         operons = find_connected_nodes(graph)
-
         operon = pd.DataFrame({'gene': operons})
 
-        apply_processors(list, df=operon, col='gene')
-
         operon['operon_id'] = operon['gene']
-
         apply_processors(str_join, df=operon, col='operon_id')
 
+        apply_processors(to_list, df=operon, col='gene')
+        operon = operon.explode('gene')
         return operon
 
     def _transform_operon_by_gene(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-
         genes = operon['gene'].tolist()
         normalized_operon = self._normalize_operon(genes)
-        normalized_operon_by_gene = normalized_operon.explode('gene')
 
         operon_by_gene = self._operon_by_gene(operon)
 
-        operon = pd.merge(normalized_operon_by_gene, operon_by_gene, on='gene', suffixes=("_new", "_old"))
+        operon = pd.merge(normalized_operon, operon_by_gene, on='gene', suffixes=("_new", "_old"))
 
         # group by the new operons
-        agg_funcs = {'operon_id_old': flatten_list,
-                     'url': flatten_list,
-                     'regulon': flatten_list,
-                     'tfbs': flatten_list,
-                     'tfbss': flatten_list,
-                     'gene': set}
-
-        operon = operon.groupby(['operon_id_new']).aggregate(agg_funcs)
-        operon = operon.reset_index()
+        aggregation = {'gene': set}
+        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
 
         apply_processors(list, df=operon, col='gene')
+        operon = operon.explode('gene')
 
-        operon_by_gene = operon.explode('gene')
-        operon_by_gene = operon_by_gene.merge(gene, left_on='gene', right_on='locus_tag_regprecise')
+        operon = pd.merge(operon, gene, left_on='gene', right_on='locus_tag_old')
 
-        agg_funcs = {'operon_id_old': flatten_list,
-                     'url': flatten_list,
-                     'regulon': flatten_list,
-                     'tfbs': flatten_list,
-                     'tfbss': flatten_list,
-                     'name': set,
-                     'gene_protrend_id': set,
-                     'locus_tag': set,
-                     'locus_tag_regprecise': set}
+        # group by the new genes
+        aggregation = {'name': set, 'gene_protrend_id': set, 'locus_tag': set, 'locus_tag_old': set}
+        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
 
-        operon = operon_by_gene.groupby(['operon_id_new']).aggregate(agg_funcs)
-        operon = operon.reset_index()
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
         operon['operon_id'] = operon['genes']
 
         apply_processors(str_join, df=operon, col='operon_id')
-
         apply_processors(operon_name, df=operon, col='name')
 
         return operon
 
-    @staticmethod
-    def _transform_operon_by_tfbs(operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
+    def _transform_operon_by_tfbs(self, operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
 
         tfbs_by_operon = tfbs.explode('operon')
-        operon = operon.merge(tfbs_by_operon, left_on='operon_id', right_on='operon')
+        operon = pd.merge(operon, tfbs_by_operon, left_on='operon_id', right_on='operon')
 
-        agg_funcs = {'url': set,
-                     'regulon': set,
-                     'tfbs': flatten_list,
-                     'gene': flatten_list,
-                     'tfbs_protrend_id': set}
-
-        operon = operon.groupby(['operon_id']).aggregate(agg_funcs)
-        operon = operon.reset_index()
+        aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set}
+        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set)
 
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
 
@@ -170,20 +132,19 @@ class OperonTransformer(Transformer):
 
     def transform(self):
         operon = read_from_stack(tl=self, file='operon', json=True, default_columns=self.read_columns)
-        operon = operon.drop(columns=['name'], axis=1)
+        operon = operon.drop(columns=['name'])
         operon = operon.explode('regulon')
-        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'],
-                                      perfect_match=True, preserve_nan=True)
+        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
 
         gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
-        gene = gene[['protrend_id', 'locus_tag', 'name', 'locus_tag_regprecise',
-                     'strand', 'position_left', 'position_right']]
+        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand',
+                                   'position_left', 'position_right')
         gene = gene.dropna(subset=['protrend_id'])
-        gene = gene.dropna(subset=['locus_tag_regprecise'])
+        gene = gene.dropna(subset=['locus_tag_old'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
         tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
-        tfbs = tfbs[['protrend_id', 'operon']]
+        tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
         tfbs = tfbs.dropna(subset=['protrend_id'])
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
@@ -206,10 +167,7 @@ class OperonTransformer(Transformer):
         df['genes_id'] = df['genes'].map(genes_to_hash)
 
         # ensure uniqueness
-        df = self.drop_duplicates(df=df,
-                                  subset=('genes_id',),
-                                  perfect_match=True,
-                                  preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=('genes_id',), perfect_match=True, preserve_nan=True)
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
@@ -240,7 +198,7 @@ class OperonTransformer(Transformer):
 
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)
-        df.drop(columns=['genes_id'], axis=1)
+        df.drop(columns=['genes_id'])
 
         self._stack_integrated_nodes(df)
         self._stack_nodes(df)
