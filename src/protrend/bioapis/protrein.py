@@ -169,7 +169,7 @@ class NCBIProtein(BioAPI):
             term = self.build_term()
 
             if term:
-                search_record, _ = entrez_search(db='protein', term=term)
+                search_record = entrez_search(db='protein', term=term)
 
                 id_list = search_record.get('IdList', [])
 
@@ -177,10 +177,10 @@ class NCBIProtein(BioAPI):
                     identifier = id_list[0]
 
         if identifier:
-            record, _ = entrez_summary(db='protein', identifier=identifier)
+            record = entrez_summary(db='protein', identifier=identifier)
             self.record = record
 
-            record, _ = entrez_fetch(db='protein', identifier=identifier)
+            record = entrez_fetch(db='protein', identifier=identifier)
             self.seq_record = record
 
 
@@ -365,7 +365,7 @@ class UniProtProtein(BioAPI):
                 query = {}
 
             if query:
-                uniprot_query, _ = query_uniprot(query=query)
+                uniprot_query = query_uniprot(query=query)
 
                 # it sets up the uniprot accession
                 self.parse_uniprot_query(uniprot_query)
@@ -373,7 +373,7 @@ class UniProtProtein(BioAPI):
         if not self._identifier:
             return
 
-        record, _ = fetch_uniprot_record(self._identifier)
+        record = fetch_uniprot_record(self._identifier)
         if record.id == '<unknown id>':
             record = {}
         self.record = record

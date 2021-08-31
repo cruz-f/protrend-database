@@ -61,6 +61,8 @@ class RegulatoryFamilyTransformer(Transformer):
         # set mechanism
         df['mechanism'] = 'transcription factor'
 
+        # TODO: the following columns are being wrongly merged/concatenated
+
         # concat description
         df = self.concat_columns(df=df, column='description', left='description_tf_family', right='description_tf')
 

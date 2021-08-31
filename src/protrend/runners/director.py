@@ -71,7 +71,7 @@ class Director:
         for transformer in self.transformers:
             df = transformer.transform()
             transformer.integrate(df)
-            # transformer.write()
+            transformer.write()
 
     def connect(self):
         """

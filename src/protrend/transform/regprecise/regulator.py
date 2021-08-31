@@ -102,6 +102,8 @@ class RegulatorTransformer(Transformer):
         organism = self.select_columns(organism, 'protrend_id', 'genome_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
 
+        # TODO taxa is being inferred as floats, but it should be int or str to work
+
         # ------------------ regulon of type TF --------------------------------
         tf = self._transform_tf(regulon=regulon, organism=organism)
 

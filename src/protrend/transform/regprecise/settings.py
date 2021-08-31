@@ -39,7 +39,7 @@ class OperonSettings(RegPreciseSettings):
                                        'to_organism': 'integrated_regulator.csv',
                                        'to_gene': 'integrated_operon.csv',
                                        'to_tfbs': 'integrated_operon.csv', }
-    default_order = 70
+    default_order = 60
 
 
 class OrganismSettings(RegPreciseSettings):

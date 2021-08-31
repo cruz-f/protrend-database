@@ -1,25 +1,56 @@
 import io
 import os
+import time
 from typing import Dict, Tuple, Union, List
 
 import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqIO import SeqRecord
+from diskcache import Cache
 
-from protrend.bioapis.utils import sleep, slugify
 from protrend.utils.request import request, read_response
-from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH
+from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH, REQUEST_SLEEP
 
 UNIPROT_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('uniprot')
-UNIPROT_RECORDS_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('uniprot', 'records')
-UNIPROT_QUERY_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('uniprot', 'query')
 
-if not os.path.exists(UNIPROT_RECORDS_PATH):
-    os.makedirs(UNIPROT_RECORDS_PATH)
 
-if not os.path.exists(UNIPROT_QUERY_PATH):
-    os.makedirs(UNIPROT_QUERY_PATH)
+def _init_uniprot_record() -> Cache:
+    directory = UNIPROT_PATH.joinpath('record')
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    cache = Cache(directory=directory)
+
+    return cache
+
+
+def _init_uniprot_query() -> Cache:
+    directory = UNIPROT_PATH.joinpath('query')
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    cache = Cache(directory=directory)
+
+    return cache
+
+
+def _init_uniprot_mapping() -> Cache:
+    directory = UNIPROT_PATH.joinpath('mapping')
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    cache = Cache(directory=directory)
+
+    return cache
+
+
+record_cache = _init_uniprot_record()
+query_cache = _init_uniprot_query()
+mapping_cache = _init_uniprot_mapping()
 
 
 class UniProtAPI:
@@ -37,49 +68,30 @@ class UniProtAPI:
     df_mapping_columns = ('From', 'To')
 
 
-def slugify_uniprot(url: str) -> str:
-    columns_str = ','.join(UniProtAPI.query_columns)
-    url = slugify(url).replace('httpswwwuniprotorguniprotquery', '')
-    url = url.replace(f'&format={UniProtAPI.query_format}&columns={columns_str}', '')
-    return url
+@record_cache.memoize()
+def fetch_uniprot_record(uniprot_accession: str) -> SeqRecord:
 
-
-@sleep(0.5)
-def fetch_uniprot_record(uniprot_accession: str, cache: bool = True) -> Tuple[SeqRecord, bool]:
-    cached_result = False
     url = f'{UniProtAPI.record}/{uniprot_accession}.{UniProtAPI.record_format}'
-    file_path = os.path.join(UNIPROT_RECORDS_PATH, f'{uniprot_accession}.xml')
-
-    if os.path.exists(file_path) and cache:
-        handle = open(file_path, 'r')
-        cached_result = True
-
-    elif not os.path.exists(file_path) and cache:
-        response = request(url)
-
-        with open(file_path, 'w') as file:
-            file.write(response.text)
-
-        handle = open(file_path, 'r')
-
-    else:
-        response = request(url)
-        handle = io.StringIO(response.text)
+    response = request(url)
+    handle = io.StringIO(response.text)
 
     try:
-        return SeqIO.read(handle, 'uniprot-xml'), cached_result
+        record = SeqIO.read(handle, 'uniprot-xml')
 
     except:
-        return SeqRecord(Seq("")), cached_result
+        record = SeqRecord(Seq(""))
+
+    time.sleep(REQUEST_SLEEP)
+
+    return record
 
 
-@sleep(0.5)
+@query_cache.memoize()
 def query_uniprot(query: Dict[str, str],
                   limit: int = 5,
                   sort: bool = True,
                   cache: bool = True,
-                  output: str = 'dataframe') -> Tuple[Union[Dict, pd.DataFrame], bool]:
-    cached_result = False
+                  output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
     query_str = ''
 
     for key, val in query.items():
@@ -91,13 +103,12 @@ def query_uniprot(query: Dict[str, str],
             query_str += f'{val}+AND+'
 
     if not query_str:
-        cached_result = True
         df = pd.DataFrame(columns=UniProtAPI.df_query_columns)
 
         if output == 'dataframe':
-            return df, cached_result
+            return df
 
-        return df.to_dict(), cached_result
+        return df.to_dict()
 
     # remove +AND+
     query_str = query_str[:-5]
@@ -112,41 +123,25 @@ def query_uniprot(query: Dict[str, str],
         url = f'{UniProtAPI.record}' \
               f'/?query={query_str}&format={UniProtAPI.query_format}&columns={columns_str}&limit={limit}'
 
-    slugified_url = slugify_uniprot(url)
-
-    file_path = os.path.join(UNIPROT_QUERY_PATH, f'{slugified_url}.tsv')
-
-    if os.path.exists(file_path) and cache:
-        cached_result = True
-        try:
-            df = pd.read_csv(file_path, sep='\t')
-        except pd.errors.EmptyDataError:
-            df = pd.DataFrame()
-
-    elif not os.path.exists(file_path) and cache:
-        response = request(url)
-        df = read_response(response, sep='\t')
-
-        df.to_csv(file_path, sep='\t', index=False)
-
-    else:
-        response = request(url)
-        df = read_response(response, sep='\t')
+    response = request(url)
+    df = read_response(response, sep='\t')
 
     if df.empty:
         df = pd.DataFrame(columns=UniProtAPI.df_query_columns)
 
+    time.sleep(REQUEST_SLEEP)
+
     if output == 'dataframe':
-        return df, cached_result
+        return df
 
-    return df.to_dict(), cached_result
+    return df.to_dict()
 
 
-@sleep(0.5)
+@mapping_cache.memoize()
 def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
                             from_: str,
                             to: str,
-                            output: str = 'dataframe') -> Tuple[Union[Dict, pd.DataFrame], bool]:
+                            output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
     if from_ not in UniProtAPI.mapping_terms:
         raise ValueError(f'Invalid from {from_}')
 
@@ -161,15 +156,15 @@ def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
               'query': query}
 
     url = f'{UniProtAPI.mapping}/'
-
     response = request(url, params=params)
-
     df = read_response(response, sep='\t')
 
     if df.empty:
         df = pd.DataFrame(columns=UniProtAPI.df_mapping_columns)
 
-    if output == 'dataframe':
-        return df, False
+    time.sleep(REQUEST_SLEEP)
 
-    return df.to_dict(), False
+    if output == 'dataframe':
+        return df
+
+    return df.to_dict()

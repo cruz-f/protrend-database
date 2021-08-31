@@ -222,9 +222,9 @@ def annotate_genes(dtos: List[GeneDTO],
 
     # from acc to ncbi protein
     accessions = [protein.identifier for protein in uniprot_proteins if protein.identifier]
-    uniprot_ncbi_proteins, _ = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
-    uniprot_ncbi_refseqs, _ = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
-    uniprot_ncbi_genbanks, _ = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
+    uniprot_ncbi_proteins = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
+    uniprot_ncbi_refseqs = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
+    uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):
 

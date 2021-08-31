@@ -90,10 +90,10 @@ def operon_name(items: list) -> str:
 
             name = ''.join(letter for letter in item if letter.islower())
 
-            if name:
-                defaultdict[name] += 1
+            if len(name) > 2:
+                names[name] += 1
 
-        name = items[0]
+        name = ''
         best_score = 0
 
         for key, val in names.items():
@@ -167,9 +167,17 @@ def take_first(item: List[str]) -> str:
     return ''
 
 
+def null_to_none(item: Any) -> Union[Any, None]:
+
+    if pd.isnull(item):
+        return None
+
+    return item
+
+
 def operon_strand(previous_strand: str = None,
                   current_strand: str = None,
-                  default_strand: str = 'NA') -> str:
+                  default_strand: str = None) -> Union[None, str]:
     strand = None
 
     if previous_strand is None:
@@ -190,11 +198,14 @@ def operon_strand(previous_strand: str = None,
     return strand
 
 
-def operon_left_position(strand: str,
+def operon_left_position(strand: Union[None, str],
                          previous_left: int = None,
                          current_left: int = None,
-                         default_left: Union[str, int] = 'NA') -> Union[str, int]:
+                         default_left: Union[None, int] = None) -> Union[None, int]:
     left = default_left
+
+    if strand is None:
+        strand = 'forward'
 
     if previous_left is None:
         previous_left = 0
@@ -202,7 +213,7 @@ def operon_left_position(strand: str,
     if current_left is None:
         current_left = 0
 
-    if strand in ('forward', 'NA'):
+    if strand == 'forward':
 
         if current_left < previous_left:
             left = current_left
@@ -230,8 +241,11 @@ def operon_left_position(strand: str,
 def operon_right_position(strand: str,
                           previous_right: int = None,
                           current_right: int = None,
-                          default_right: Union[str, int] = 'NA') -> Union[str, int]:
+                          default_right: Union[None, int] = None) -> Union[None, int]:
     right = default_right
+
+    if strand is None:
+        strand = 'forward'
 
     if previous_right is None:
         previous_right = 0
@@ -239,7 +253,7 @@ def operon_right_position(strand: str,
     if current_right is None:
         current_right = 0
 
-    if strand in ('forward', 'NA'):
+    if strand == 'forward':
 
         if current_right > previous_right:
             right = current_right
@@ -265,13 +279,17 @@ def operon_right_position(strand: str,
 
 
 def tfbs_left_position(strand: str,
-                       gene_position: Union[str, int, None],
+                       gene_position: Union[int, None],
                        gene_relative_position: int,
-                       default: Union[str, int] = 'NA'):
-    if gene_position == 'NA' or gene_position is None:
+                       default: Union[None, int] = None) -> Union[None, int]:
+
+    if strand is None:
+        strand = 'forward'
+
+    if gene_position is None:
         return default
 
-    if strand in ('forward', 'NA'):
+    if strand == 'forward':
         return gene_position + gene_relative_position
 
     elif strand == 'reverse':
@@ -281,15 +299,18 @@ def tfbs_left_position(strand: str,
 
 
 def tfbs_right_position(strand: str,
-                        gene_position: Union[str, int],
+                        gene_position: Union[int, None],
                         gene_relative_position: int,
                         tfbs_length: int,
-                        default: Union[str, int] = 'NA'):
+                        default: Union[None, int] = None) -> Union[None, int]:
 
-    if gene_position == 'NA' or gene_position is None:
+    if strand is None:
+        strand = 'forward'
+
+    if gene_position is None:
         return default
 
-    if strand in ('forward', 'NA'):
+    if strand == 'forward':
         return gene_position + (gene_relative_position + tfbs_length)
 
     elif strand == 'reverse':

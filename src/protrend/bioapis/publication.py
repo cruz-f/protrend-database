@@ -34,5 +34,5 @@ class PubMedPublication(BioAPI):
     def fetch(self):
 
         if self.pmid:
-            record, _ = entrez_summary(db='pubmed', identifier=self.pmid)
+            record = entrez_summary(db='pubmed', identifier=self.pmid)
             self.record = record

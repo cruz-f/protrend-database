@@ -1,9 +1,8 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set, Any
+from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set
 
-import numpy as np
 import pandas as pd
 
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
@@ -112,7 +111,7 @@ class Transformer(AbstractTransformer):
 
                 self._transform_stack[key] = sa_file
 
-            elif os.path.exists(dl_file):
+            else:
 
                 self._transform_stack[key] = dl_file
 
@@ -189,6 +188,33 @@ class Transformer(AbstractTransformer):
 
         pass
 
+    def _update_nodes(self, df: pd.DataFrame, mask: pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
+
+        # nodes to be updated
+        nodes = df[mask]
+
+        # find/set protrend identifiers for update nodes
+        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=self.node_factors)
+        nodes['protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
+        nodes['load'] = 'update'
+        nodes['what'] = 'nodes'
+
+        return nodes
+
+    def _create_nodes(self, df: pd.DataFrame, mask: pd.Series) -> pd.DataFrame:
+
+        # nodes to be created
+        nodes = df[~mask]
+
+        # create/set new protrend identifiers
+        create_size, _ = nodes.shape
+        create_identifiers = self.protrend_identifiers_batch(create_size)
+        nodes['protrend_id'] = create_identifiers
+        nodes['load'] = 'create'
+        nodes['what'] = 'nodes'
+
+        return nodes
+
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
         """
@@ -209,39 +235,23 @@ class Transformer(AbstractTransformer):
         :return: it creates a new pandas DataFrame of the integrated data
         """
         # ensure uniqueness
-        df = self.drop_duplicates(df=df,
-                                  subset=self.node_factors,
-                                  perfect_match=False,
-                                  preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
+        df = df.reset_index()
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
 
         # find matching nodes according to several node factors/properties
-        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=self.node_factors)
+        mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=self.node_factors)
 
         # nodes to be updated
-        update_nodes = df[nodes_mask]
-
-        # find/set protrend identifiers for update nodes
-        update_size, _ = update_nodes.shape
-        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=self.node_factors)
-        update_nodes[self.node.identifying_property] = snapshot.loc[ids_mask, self.node.identifying_property]
-        update_nodes.loc[:, 'load'] = ['update'] * update_size
-        update_nodes.loc[:, 'what'] = ['nodes'] * update_size
+        update_nodes = self._update_nodes(df=df, mask=mask, snapshot=snapshot)
 
         # nodes to be created
-        create_nodes = df[~nodes_mask]
-
-        # create/set new protrend identifiers
-        create_size, _ = create_nodes.shape
-        create_identifiers = self.protrend_identifiers_batch(create_size)
-        create_nodes[self.node.identifying_property] = create_identifiers
-        create_nodes.loc[:, 'load'] = ['create'] * create_size
-        update_nodes.loc[:, 'what'] = ['nodes'] * create_size
+        create_nodes = self._create_nodes(df=df, mask=mask)
 
         # concat both dataframes
-        df = pd.concat([create_nodes, update_nodes], axis=0)
+        df = pd.concat([create_nodes, update_nodes])
 
         self._stack_integrated_nodes(df)
         self._stack_nodes(df)
@@ -295,7 +305,7 @@ class Transformer(AbstractTransformer):
 
     @staticmethod
     def select_columns(df: pd.DataFrame, *columns: str) -> pd.DataFrame:
-        df = df[columns]
+        df = df[list(columns)]
         return df
 
     @staticmethod
@@ -325,7 +335,7 @@ class Transformer(AbstractTransformer):
 
     @staticmethod
     def drop_duplicates(df: pd.DataFrame,
-                        subset: Sequence[str],
+                        subset: List[str],
                         perfect_match: bool = False,
                         preserve_nan: bool = True) -> pd.DataFrame:
 

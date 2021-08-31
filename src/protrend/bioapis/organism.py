@@ -84,20 +84,20 @@ class NCBITaxonomyOrganism(BioAPI):
     def get_taxonomy_record(self):
 
         if self._identifier:
-            record, _ = entrez_summary(db='taxonomy', identifier=self._identifier)
+            record = entrez_summary(db='taxonomy', identifier=self._identifier)
             self.record = record
 
         else:
 
             term = f'{self._name}[Scientific Name]'
 
-            search_record, _ = entrez_search(db='taxonomy', term=term)
+            search_record = entrez_search(db='taxonomy', term=term)
 
             id_list = search_record.get('IdList', [])
 
             if id_list:
                 identifier = id_list[0]
-                record, _ = entrez_summary(db='taxonomy', identifier=identifier)
+                record = entrez_summary(db='taxonomy', identifier=identifier)
                 self.record = record
 
     def fetch(self):
@@ -106,7 +106,7 @@ class NCBITaxonomyOrganism(BioAPI):
 
         assembly_term = f'txid{self.taxonomy}[Organism:noexp] AND "reference genome"[refseq category]'
 
-        assembly_search_record, _ = entrez_search(db='assembly', term=assembly_term)
+        assembly_search_record = entrez_search(db='assembly', term=assembly_term)
 
         id_list = assembly_search_record.get('IdList', [])
 
@@ -116,11 +116,11 @@ class NCBITaxonomyOrganism(BioAPI):
 
             assembly_term = f'txid{self.taxonomy}[Organism:noexp]'
 
-            assembly_search_record, _ = entrez_search(db='assembly', term=assembly_term)
+            assembly_search_record = entrez_search(db='assembly', term=assembly_term)
 
             id_list = assembly_search_record.get('IdList', [])
 
         if id_list:
             identifier = id_list[0]
-            record, _ = entrez_summary(db='assembly', identifier=identifier)
+            record = entrez_summary(db='assembly', identifier=identifier)
             self.assembly_record = record

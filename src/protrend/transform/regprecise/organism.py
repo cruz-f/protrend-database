@@ -65,7 +65,7 @@ class OrganismTransformer(Transformer):
 
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
-        df = df.drop(['input_value'])
+        df = df.drop(columns=['input_value'])
 
         self._stack_transformed_nodes(df)
 

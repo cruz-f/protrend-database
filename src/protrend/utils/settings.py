@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+REQUEST_SLEEP: float = 0.25
 REQUEST_TIMEOUT: int = 30
 REQUEST_RETRIES: int = 3
 

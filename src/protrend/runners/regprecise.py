@@ -11,15 +11,15 @@ from protrend.runners import run_spider
 
 def transform_runner() -> Director:
     transformers = [
-        EffectorTransformer(),
-        GeneTransformer(),
+        # EffectorTransformer(),
+        # GeneTransformer(),
         OperonTransformer(),
-        OrganismTransformer(),
-        PathwayTransformer(),
-        PublicationTransformer(),
-        RegulatorTransformer(),
-        RegulatoryFamilyTransformer(),
-        SourceTransformer(),
+        # OrganismTransformer(),
+        # PathwayTransformer(),
+        # PublicationTransformer(),
+        # RegulatorTransformer(),
+        # RegulatoryFamilyTransformer(),
+        # SourceTransformer(),
         TFBSTransformer(),
     ]
     director = Director(transformers=transformers)
@@ -34,3 +34,15 @@ if __name__ == "__main__":
 
     transform_director = transform_runner()
     transform_director.transform()
+
+    # TODO: using df with set or lists to export to csv is not compatible
+    #  df = pd.read_csv('file.csv', sep='|')
+    #  df['Tags'] = df['Tags'].apply(lambda x: json.loads(x))
+
+    # TODO: ncbi taxonomy should be handled as int not float
+
+    # TODO: uniprot and entrez queries using float nan
+
+    # TODO: operon had no hits with tfbs
+
+    # TODO: missing debugging connector

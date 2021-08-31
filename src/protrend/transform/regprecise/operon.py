@@ -2,16 +2,17 @@ import pandas as pd
 
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.transformer import Transformer
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
-                                           operon_left_position, operon_right_position, flatten_set, to_list)
+                                           operon_left_position, operon_right_position, flatten_set, to_list,
+                                           null_to_none)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
                                                     OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator,
                                                     TFBSToRegulator)
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.regprecise.tfbs import TFBSTransformer
+from protrend.transform.transformer import Transformer
 from protrend.utils import build_graph, find_connected_nodes
 
 
@@ -22,6 +23,7 @@ class OperonTransformer(Transformer):
                'tfbss',
                'operon_id_old', 'operon_id_new', 'locus_tag', 'locus_tag_old',
                'genes',
+               'strand',
                'first_gene_position_left',
                'last_gene_position_right', }
     read_columns = {'operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'}
@@ -67,27 +69,30 @@ class OperonTransformer(Transformer):
         operon = pd.merge(operon, gene, left_on='gene', right_on='locus_tag_old')
 
         # group by the new genes
-        aggregation = {'name': set, 'gene_protrend_id': set, 'locus_tag': set, 'locus_tag_old': set}
+        aggregation = {'gene': set,
+                       'gene_protrend_id': set, 'locus_tag': set, 'name': set, 'locus_tag_old': set,
+                       'strand': set, 'position_left': set, 'position_right': set}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
 
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
         operon['operon_id'] = operon['genes']
 
-        apply_processors(str_join, df=operon, col='operon_id')
-        apply_processors(operon_name, df=operon, col='name')
+        apply_processors(to_list, str_join, df=operon, col='operon_id')
+        apply_processors(to_list, operon_name, df=operon, col='name')
 
         return operon
 
     def _transform_operon_by_tfbs(self, operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
 
         tfbs_by_operon = tfbs.explode('operon')
-        operon = pd.merge(operon, tfbs_by_operon, left_on='operon_id', right_on='operon')
+        operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='operon_id', right_on='operon')
 
-        aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set}
+        aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set, 'operon': set}
         operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set)
 
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
+        operon = operon.drop(columns=['operon'])
 
         return operon
 
@@ -105,7 +110,7 @@ class OperonTransformer(Transformer):
             op_strand = None
 
             for op_gene in genes:
-                op_gene_strand = gene.loc[op_gene, 'strand']
+                op_gene_strand = null_to_none(gene.loc[op_gene, 'strand'])
                 op_strand = operon_strand(previous_strand=op_strand,
                                           current_strand=op_gene_strand)
 
@@ -113,8 +118,8 @@ class OperonTransformer(Transformer):
             operon_right = None
 
             for op_gene in genes:
-                op_gene_left = gene.loc[op_gene, 'position_left']
-                op_gene_right = gene.loc[op_gene, 'position_right']
+                op_gene_left = null_to_none(gene.loc[op_gene, 'position_left'])
+                op_gene_right = null_to_none(gene.loc[op_gene, 'position_right'])
 
                 operon_left = operon_left_position(strand=op_strand,
                                                    previous_left=operon_left,
@@ -124,10 +129,11 @@ class OperonTransformer(Transformer):
                                                      previous_right=operon_right,
                                                      current_right=op_gene_right)
 
-            strands.append(operon_strand)
-            positions_left.append(positions_left)
-            positions_right.append(positions_right)
+            strands.append(op_strand)
+            positions_left.append(operon_left)
+            positions_right.append(operon_right)
 
+        operon['strand'] = strands
         operon['first_gene_position_left'] = positions_left
         operon['last_gene_position_right'] = positions_right
 
@@ -157,6 +163,7 @@ class OperonTransformer(Transformer):
         # first_gene_position_left
         # last_gene_position_right
         operon = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
+        apply_processors(to_list, df=operon, col='gene')
         operon = self._transform_operon_by_gene(operon=operon, gene=gene)
 
         df = self._operon_coordinates(operon=operon, gene=gene)
@@ -165,39 +172,40 @@ class OperonTransformer(Transformer):
 
         return df
 
+    def _update_nodes(self, df:pd.DataFrame, mask:pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
+
+        # nodes to be updated
+        update_nodes = df[mask]
+
+        # find/set protrend identifiers for update nodes
+        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=('genes_id',))
+        update_nodes['protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
+        update_nodes['load'] = 'update'
+        update_nodes['what'] = 'nodes'
+
+        return update_nodes
+
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
-        df['genes_id'] = df['genes'].map(genes_to_hash)
+        df['genes_id'] = df['genes']
+        apply_processors(genes_to_hash, df=df, col='genes_id')
 
         # ensure uniqueness
-        df = self.drop_duplicates(df=df, subset=('genes_id',), perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['genes_id'], perfect_match=True, preserve_nan=True)
+        df.reset_index()
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
         snapshot['genes_id'] = snapshot['genes'].map(genes_to_hash)
 
         # find matching nodes according to several node factors/properties
-        nodes_mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id',))
+        mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id',))
 
         # nodes to be updated
-        update_nodes = df[nodes_mask]
-
-        # find/set protrend identifiers for update nodes
-        update_size, _ = update_nodes.shape
-        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=('genes_id',))
-        update_nodes[self.node.identifying_property] = snapshot.loc[ids_mask, self.node.identifying_property]
-        update_nodes['load'] = ['update'] * update_size
-        update_nodes['what'] = ['nodes'] * update_size
+        update_nodes = self._update_nodes(df=df, mask=mask, snapshot=snapshot)
 
         # nodes to be created
-        create_nodes = df[~nodes_mask]
-
-        # create/set new protrend identifiers
-        create_size, _ = create_nodes.shape
-        create_identifiers = self.protrend_identifiers_batch(create_size)
-        create_nodes[self.node.identifying_property] = create_identifiers
-        create_nodes['load'] = ['create'] * create_size
-        update_nodes['what'] = ['nodes'] * update_size
+        create_nodes = self._create_nodes(df=df, mask=mask)
 
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)

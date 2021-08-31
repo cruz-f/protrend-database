@@ -36,15 +36,14 @@ class GeneTransformer(Transformer):
         apply_processors(to_list, df=gene, col='regulon')
         gene = gene.explode('regulon')
 
-        gene = pd.merge(gene, regulator, lef_on='regulon', right_on='regulon_id')
+        gene = pd.merge(gene, regulator, how='left', left_on='regulon', right_on='regulon_id')
 
         aggregation = {'name': take_last, 'function': take_last,
                        'organism_protrend_id': take_last, 'genome_id': take_last, 'ncbi_taxonomy': take_last,
-                       'regulator_protrend_id': take_last, 'regulon_id': take_last, }
+                       'regulator_protrend_id': take_last, 'regulon_id': take_last, 'regulon': set}
         gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
 
         gene = self.create_input_value(df=gene, col='locus_tag')
-
         return gene
 
     @staticmethod
@@ -73,8 +72,8 @@ class GeneTransformer(Transformer):
         gene = read_from_stack(tl=self, file='gene', json=True, default_columns=self.read_columns)
 
         regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
-        regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy',
-                                        'regulator_protrend_id', 'regulon_id')
+        regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulon_id',
+                                        'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
