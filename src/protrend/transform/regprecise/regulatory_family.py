@@ -1,5 +1,6 @@
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.transformer import Transformer
@@ -82,15 +83,18 @@ class RegulatoryFamilyTransformer(Transformer):
 
     def transform(self):
         # -------------------- TFs -------------------
-        tf_family = read_from_stack(tl=self, file='tf_family', json=True, default_columns=self.tf_family_columns)
+        tf_family = read_from_stack(stack=self._transform_stack, file='tf_family', 
+                                    default_columns=self.tf_family_columns, reader=read_json_lines)
         tf_family = self._transform_tf_family(tf_family)
 
-        tf = read_from_stack(tl=self, file='tf', json=True, default_columns=self.tf_columns)
+        tf = read_from_stack(stack=self._transform_stack, file='tf', 
+                             default_columns=self.tf_columns, reader=read_json_lines)
         tf = self._transform_tf(tf)
         tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
 
         # -------------------- RNAs -------------------
-        rna = read_from_stack(tl=self, file='rna', json=True, default_columns=self.rna_columns)
+        rna = read_from_stack(stack=self._transform_stack, file='rna', 
+                              default_columns=self.rna_columns, reader=read_json_lines)
         rna = self._transform_rna(rna)
 
         df = pd.concat([tfs, rna])
@@ -103,9 +107,11 @@ class RegulatoryFamilyToSourceConnector(DefaultConnector):
     default_settings = RegulatoryFamilyToSource
 
     def connect(self):
-        regulatory_family = read_from_stack(tl=self, file='regulatory_family', json=False,
-                                            default_columns=RegulatoryFamilyTransformer.columns)
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
+                                            default_columns=RegulatoryFamilyTransformer.columns,
+                                            reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         protrend_id = source['protrend_id'].iloc[0]
 
@@ -141,13 +147,13 @@ class RegulatoryFamilyToPublicationConnector(DefaultConnector):
     default_settings = RegulatoryFamilyToPublication
 
     def connect(self):
-        regulatory_family = read_from_stack(tl=self, file='regulatory_family', json=False,
-                                            default_columns=RegulatoryFamilyTransformer.columns)
+        regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
+                                            default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
         apply_processors(list, df=regulatory_family, col='pubmed')
         regulatory_family = regulatory_family.explode('pubmed')
 
-        publication = read_from_stack(tl=self, file='publication', json=False,
-                                      default_columns=PublicationTransformer.columns)
+        publication = read_from_stack(stack=self._connect_stack, file='publication',
+                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = publication.dropna(subset=['pmid'])
         publication = publication.drop_duplicates(subset=['pmid'])
 
@@ -170,9 +176,10 @@ class RegulatoryFamilyToRegulatorConnector(DefaultConnector):
     default_settings = RegulatoryFamilyToRegulator
 
     def connect(self):
-        regulatory_family = read_from_stack(tl=self, file='regulatory_family', json=False,
-                                            default_columns=RegulatoryFamilyTransformer.columns)
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
+                                            default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         tfs_chain = [('tffamily_id', 'tf_family'),
                      ('collection_id', 'transcription_factor'),

@@ -4,6 +4,7 @@ from typing import List, Union
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, tfbs_left_position,
@@ -161,13 +162,15 @@ class TFBSTransformer(Transformer):
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(tl=self, file='tfbs', json=True, default_columns=self.read_columns)
+        tfbs = read_from_stack(stack=self._transform_stack, file='tfbs',
+                               default_columns=self.read_columns, reader=read_json_lines)
         tfbs = self._transform_tfbs(tfbs)
 
-        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = read_from_stack(stack=self._transform_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'strand', 'position_left', 'locus_tag_old')
         gene = gene.dropna(subset=['locus_tag_old'])
-        gene = gene.drop_duplicates(subset=['locus_tag_old'])
+        gene = self.drop_duplicates(df=gene, subset=['locus_tag_old'], perfect_match=False, preserve_nan=False)
 
         df = self._tfbs_coordinates(tfbs, gene)
 
@@ -180,8 +183,10 @@ class TFBSToSourceConnector(DefaultConnector):
     default_settings = TFBSToSource
 
     def connect(self):
-        tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
+                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = tfbs['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -204,8 +209,10 @@ class TFBSToOrganismConnector(DefaultConnector):
     default_settings = TFBSToOrganism
 
     def connect(self):
-        tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
+                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(tfbs, regulator, left_on='regulon', right_on='regulon_id', suffixes=('_tfbs', '_regulator'))
         merged = merged.dropna(subset=['protrend_id_tfbs'])

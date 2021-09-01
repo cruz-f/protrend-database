@@ -2,6 +2,7 @@ from typing import List
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_pathways
 from protrend.transform.connector import DefaultConnector
@@ -22,7 +23,6 @@ class PathwayTransformer(Transformer):
     read_columns = {'pathway_id', 'name', 'url', 'regulog'}
 
     def _transform_pathway(self, pathway: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=pathway, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=df, col='name')
@@ -32,7 +32,6 @@ class PathwayTransformer(Transformer):
 
     @staticmethod
     def _transform_pathways(names: List[str]):
-
         dtos = [PathwayDTO(input_value=name) for name in names]
         annotate_pathways(dtos=dtos, names=names)
 
@@ -43,7 +42,8 @@ class PathwayTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        pathway = read_from_stack(tl=self, file='pathway', json=True, default_columns=self.read_columns)
+        pathway = read_from_stack(stack=self._transform_stack, file='pathway',
+                                  default_columns=self.read_columns, reader=read_json_lines)
         pathway = self._transform_pathway(pathway)
 
         names = pathway['input_value'].tolist()
@@ -64,8 +64,10 @@ class PathwayToSourceConnector(DefaultConnector):
     default_settings = PathwayToSource
 
     def connect(self):
-        pathway = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        pathway = read_from_stack(stack=self._connect_stack, file='pathway',
+                                  default_columns=PathwayTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = pathway['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -88,8 +90,10 @@ class PathwayToRegulatorConnector(DefaultConnector):
     default_settings = PathwayToRegulator
 
     def connect(self):
-        pathway = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        pathway = read_from_stack(stack=self._connect_stack, file='pathway',
+                                  default_columns=PathwayTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator.explode('pathway')
 
         merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
@@ -111,13 +115,16 @@ class PathwayToGeneConnector(DefaultConnector):
     default_settings = PathwayToRegulator
 
     def connect(self):
-        pathway = read_from_stack(tl=self, file='pathway', json=False, default_columns=PathwayTransformer.columns)
+        pathway = read_from_stack(stack=self._connect_stack, file='pathway',
+                                  default_columns=PathwayTransformer.columns, reader=read_json_frame)
 
-        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = read_from_stack(stack=self._connect_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
         apply_processors(list, df=gene, col='regulon')
         gene = gene.explode('regulon')
 
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         apply_processors(list, df=regulator, col='pathway')
         regulator = regulator.explode('pathway')
 

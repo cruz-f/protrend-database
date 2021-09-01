@@ -5,6 +5,7 @@ from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set
 
 import pandas as pd
 
+from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.transform.processors import take_last
 from protrend.transform.settings import TransformerSettings
@@ -236,7 +237,6 @@ class Transformer(AbstractTransformer):
         """
         # ensure uniqueness
         df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
-        df = df.reset_index()
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
@@ -263,40 +263,40 @@ class Transformer(AbstractTransformer):
         if not os.path.exists(self.write_path):
             os.makedirs(self.write_path)
 
-        for csv in self._write_stack:
-            csv()
+        for json_partial in self._write_stack:
+            json_partial()
 
         self._write_stack = []
 
     # ----------------------------------------
-    # Utilities methods
+    # Utilities
     # ----------------------------------------
     def empty_frame(self) -> pd.DataFrame:
         cols = [col for col in self.columns if col != 'protrend_id']
         return pd.DataFrame(columns=cols)
 
-    def stack_csv(self, name: str, df: pd.DataFrame):
-        df_copy = df.copy(deep=True)
-        fp = os.path.join(self.write_path, f'{name}.csv')
-        csv = partial(df_copy.to_csv, path_or_buf=fp, index=False)
-        self._write_stack.append(csv)
+    def stack_json(self, name: str, df: pd.DataFrame):
+        df = df.copy(deep=True)
+        fp = os.path.join(self.write_path, f'{name}.json')
+        json_partial = partial(write_json_frame, file_path=fp, df=df)
+        self._write_stack.append(json_partial)
 
     def _stack_nodes(self, df: pd.DataFrame):
         node_cols = list(self.node.node_keys())
         cols_to_drop = [col for col in df.columns if col not in node_cols]
         df = df.drop(columns=cols_to_drop)
         df_name = f'nodes_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self.stack_json(df_name, df)
 
     def _stack_integrated_nodes(self, df: pd.DataFrame):
         df_name = f'integrated_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self.stack_json(df_name, df)
 
     def _stack_transformed_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
         df_name = f'transformed_{self.node.node_name()}'
-        self.stack_csv(df_name, df)
+        self.stack_json(df_name, df)
 
     @staticmethod
     def create_input_value(df: pd.DataFrame, col: str) -> pd.DataFrame:
@@ -356,6 +356,8 @@ class Transformer(AbstractTransformer):
 
             for col in subset:
                 df = df.drop_duplicates(subset=[col])
+
+        df = df.reset_index()
 
         return df
 

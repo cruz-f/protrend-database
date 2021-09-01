@@ -22,10 +22,10 @@ class GeneSettings(RegPreciseSettings):
                                         'genbank_accession', 'refseq_accession',
                                         'locus_tag')
     default_transform: Dict[str, str] = {'gene': 'Gene.json',
-                                         'regulator': 'integrated_regulator.csv'}
-    default_connect: Dict[str, str] = {'from': 'integrated_gene.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_gene.csv'}
+                                         'regulator': 'integrated_regulator.json'}
+    default_connect: Dict[str, str] = {'from': 'integrated_gene.json',
+                                       'to_source': 'integrated_source.json',
+                                       'to_organism': 'integrated_gene.json'}
     default_order = 80
 
 
@@ -33,12 +33,12 @@ class OperonSettings(RegPreciseSettings):
     default_node: Operon = Operon
     default_node_factors: Tuple[str] = ()
     default_transform: Dict[str, str] = {'operon': 'Operon.json',
-                                         'gene': 'integrated_gene.csv'}
-    default_connect: Dict[str, str] = {'from': 'integrated_operon.csv',
-                                       'to_source': 'integrated_source.csv',
-                                       'to_organism': 'integrated_regulator.csv',
-                                       'to_gene': 'integrated_operon.csv',
-                                       'to_tfbs': 'integrated_operon.csv', }
+                                         'gene': 'integrated_gene.json'}
+    default_connect: Dict[str, str] = {'from': 'integrated_operon.json',
+                                       'to_source': 'integrated_source.json',
+                                       'to_organism': 'integrated_regulator.json',
+                                       'to_gene': 'integrated_operon.json',
+                                       'to_tfbs': 'integrated_operon.json', }
     default_order = 60
 
 
@@ -71,7 +71,7 @@ class RegulatorSettings(RegPreciseSettings):
                                         'genbank_accession', 'refseq_accession',
                                         'locus_tag')
     default_transform: Dict[str, str] = {'regulon': 'Regulon.json',
-                                         'organism': 'integrated_organism.csv'}
+                                         'organism': 'integrated_organism.json'}
     default_order = 90
 
 
@@ -94,7 +94,7 @@ class TFBSSettings(RegPreciseSettings):
     default_node: TFBS = TFBS
     default_node_factors: Tuple[str] = ()
     default_transform: Dict[str, str] = {'tfbs': 'TFBS.json',
-                                         'gene': 'integrated_gene.csv'}
+                                         'gene': 'integrated_gene.json'}
     default_order = 70
 
 
@@ -105,162 +105,162 @@ class RegPreciseConnections(ConnectorSettings):
 class EffectorToSource(RegPreciseConnections):
     default_from_node = Effector
     default_to_node = Source
-    default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'effector': 'integrated_effector.json',
+                                       'source': 'integrated_source.json'}
 
 
 class GeneToSource(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = Source
-    default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'gene': 'integrated_gene.json',
+                                       'source': 'integrated_source.json'}
 
 
 class OperonToSource(RegPreciseConnections):
     default_from_node = Operon
     default_to_node = Source
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json',
+                                       'source': 'integrated_source.json'}
 
 
 class OrganismToSource(RegPreciseConnections):
     default_from_node = Organism
     default_to_node = Source
-    default_connect: Dict[str, str] = {'organism': 'integrated_organism.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'organism': 'integrated_organism.json',
+                                       'source': 'integrated_source.json'}
 
 
 class PathwayToSource(RegPreciseConnections):
     default_from_node = Pathway
     default_to_node = Source
-    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.json',
+                                       'source': 'integrated_source.json'}
 
 
 class RegulatorToSource(RegPreciseConnections):
     default_from_node = Regulator
     default_to_node = Source
-    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.json',
+                                       'source': 'integrated_source.json'}
 
 
 class RegulatoryFamilyToSource(RegPreciseConnections):
     default_from_node = RegulatoryFamily
     default_to_node = Source
-    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.json',
+                                       'source': 'integrated_source.json'}
 
 
 class TFBSToSource(RegPreciseConnections):
     default_from_node = TFBS
     default_to_node = Source
-    default_connect: Dict[str, str] = {'tfbs': 'integrated_tfbs.csv',
-                                       'source': 'integrated_source.csv'}
+    default_connect: Dict[str, str] = {'tfbs': 'integrated_tfbs.json',
+                                       'source': 'integrated_source.json'}
 
 
 class RegulatoryFamilyToPublication(RegPreciseConnections):
     default_from_node = RegulatoryFamily
     default_to_node = Publication
-    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
-                                       'publication': 'integrated_publication.csv'}
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.json',
+                                       'publication': 'integrated_publication.json'}
 
 
 class RegulatorToOrganism(RegPreciseConnections):
     default_from_node = Regulator
     default_to_node = Organism
-    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.json'}
 
 
 class OperonToOrganism(RegPreciseConnections):
     default_from_node = Operon
     default_to_node = Organism
-    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.csv',
-                                       'operon': 'integrated_operon.csv'}
+    default_connect: Dict[str, str] = {'regulator': 'integrated_regulator.json',
+                                       'operon': 'integrated_operon.json'}
 
 
 class GeneToOrganism(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = Organism
-    default_connect: Dict[str, str] = {'gene': 'integrated_gene.csv'}
+    default_connect: Dict[str, str] = {'gene': 'integrated_gene.json'}
 
 
 class TFBSToOrganism(RegPreciseConnections):
     default_from_node = TFBS
     default_to_node = Organism
-    default_connect: Dict[str, str] = {'tfbs': 'integrated_tfbs.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'tfbs': 'integrated_tfbs.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class EffectorToOrganism(RegPreciseConnections):
     default_from_node = Effector
     default_to_node = Organism
-    default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'effector': 'integrated_effector.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class PathwayToRegulator(RegPreciseConnections):
     default_from_node = Pathway
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class PathwayToGene(RegPreciseConnections):
     default_from_node = Pathway
     default_to_node = Gene
-    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.csv',
-                                       'regulator': 'integrated_regulator.csv',
-                                       'gene': 'integrated_gene.csv'}
+    default_connect: Dict[str, str] = {'pathway': 'integrated_pathway.json',
+                                       'regulator': 'integrated_regulator.json',
+                                       'gene': 'integrated_gene.json'}
 
 
 class RegulatoryFamilyToRegulator(RegPreciseConnections):
     default_from_node = RegulatoryFamily
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class EffectorToRegulator(RegPreciseConnections):
     default_from_node = Effector
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'effector': 'integrated_effector.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'effector': 'integrated_effector.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class OperonToRegulator(RegPreciseConnections):
     default_from_node = Operon
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class OperonToGene(RegPreciseConnections):
     default_from_node = Operon
     default_to_node = Gene
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json'}
 
 
 class OperonToTFBS(RegPreciseConnections):
     default_from_node = Operon
     default_to_node = TFBS
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json'}
 
 
 class GeneToTFBS(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = TFBS
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json'}
 
 
 class GeneToRegulator(RegPreciseConnections):
     default_from_node = Gene
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json',
+                                       'regulator': 'integrated_regulator.json'}
 
 
 class TFBSToRegulator(RegPreciseConnections):
     default_from_node = TFBS
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'operon': 'integrated_operon.csv',
-                                       'regulator': 'integrated_regulator.csv'}
+    default_connect: Dict[str, str] = {'operon': 'integrated_operon.json',
+                                       'regulator': 'integrated_regulator.json'}

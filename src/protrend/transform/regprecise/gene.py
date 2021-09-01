@@ -2,6 +2,7 @@ from typing import List, Union
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import DefaultConnector
@@ -69,9 +70,11 @@ class GeneTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        gene = read_from_stack(tl=self, file='gene', json=True, default_columns=self.read_columns)
+        gene = read_from_stack(stack=self._transform_stack, file='gene',
+                               default_columns=self.read_columns, reader=read_json_lines)
 
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._transform_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulon_id',
                                         'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
@@ -101,9 +104,11 @@ class GeneToSourceConnector(DefaultConnector):
     default_settings = GeneToSource
 
     def connect(self):
-        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = read_from_stack(stack=self._connect_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = gene.explode('regulon')
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = gene['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -126,7 +131,8 @@ class GeneToOrganismConnector(DefaultConnector):
     default_settings = GeneToOrganism
 
     def connect(self):
-        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = read_from_stack(stack=self._connect_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
 
         from_identifiers = gene['protrend_id'].tolist()
         to_identifiers = gene['organism_protrend_id'].tolist()

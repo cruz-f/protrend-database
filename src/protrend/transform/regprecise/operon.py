@@ -1,5 +1,6 @@
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
@@ -140,19 +141,22 @@ class OperonTransformer(Transformer):
         return operon
 
     def transform(self):
-        operon = read_from_stack(tl=self, file='operon', json=True, default_columns=self.read_columns)
+        operon = read_from_stack(stack=self._transform_stack, file='operon', 
+                                 default_columns=self.read_columns, reader=read_json_lines)
         operon = operon.drop(columns=['name'])
         operon = operon.explode('regulon')
         operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
 
-        gene = read_from_stack(tl=self, file='gene', json=False, default_columns=GeneTransformer.columns)
+        gene = read_from_stack(stack=self._transform_stack, file='gene', 
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand',
                                    'position_left', 'position_right')
         gene = gene.dropna(subset=['protrend_id'])
         gene = gene.dropna(subset=['locus_tag_old'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
-        tfbs = read_from_stack(tl=self, file='tfbs', json=False, default_columns=TFBSTransformer.columns)
+        tfbs = read_from_stack(stack=self._transform_stack, file='tfbs', 
+                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
         tfbs = tfbs.dropna(subset=['protrend_id'])
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
@@ -192,7 +196,6 @@ class OperonTransformer(Transformer):
 
         # ensure uniqueness
         df = self.drop_duplicates(df=df, subset=['genes_id'], perfect_match=True, preserve_nan=True)
-        df.reset_index()
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
@@ -221,9 +224,11 @@ class OperonToSourceConnector(DefaultConnector):
     default_settings = OperonToSource
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
         operon = operon.explode('regulon')
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = operon['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -246,10 +251,12 @@ class OperonToOrganismConnector(DefaultConnector):
     default_settings = OperonToOrganism
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
         apply_processors(list, df=operon, col='regulon')
         operon = operon.explode('regulon')
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -270,12 +277,14 @@ class OperonToRegulatorConnector(DefaultConnector):
     default_settings = OperonToRegulator
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
 
         apply_processors(list, df=operon, col='regulon')
         operon = operon.explode('regulon')
 
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -297,7 +306,8 @@ class OperonToGeneConnector(DefaultConnector):
     default_settings = OperonToGene
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
 
         apply_processors(list, df=operon, col='genes')
         operon = operon.explode('genes')
@@ -319,7 +329,8 @@ class OperonToTFBSConnector(DefaultConnector):
     default_settings = OperonToTFBS
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
 
         apply_processors(list, df=operon, col='tfbss')
         operon = operon.explode('tfbss')
@@ -341,7 +352,8 @@ class GeneToTFBSConnector(DefaultConnector):
     default_settings = GeneToTFBS
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
 
         apply_processors(list, df=operon, col='tfbss')
         apply_processors(list, df=operon, col='genes')
@@ -366,12 +378,14 @@ class GeneToRegulatorConnector(DefaultConnector):
     default_settings = GeneToRegulator
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
         apply_processors(list, df=operon, col='regulon')
         apply_processors(list, df=operon, col='genes')
         operon = operon.explode('regulon')
 
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -398,12 +412,14 @@ class TFBSToRegulatorConnector(DefaultConnector):
     default_settings = TFBSToRegulator
 
     def connect(self):
-        operon = read_from_stack(tl=self, file='operon', json=False, default_columns=OperonTransformer.columns)
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
         apply_processors(list, df=operon, col='regulon')
         apply_processors(list, df=operon, col='tfbss')
         operon = operon.explode('regulon')
 
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))

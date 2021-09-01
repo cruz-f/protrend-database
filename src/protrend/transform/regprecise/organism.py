@@ -2,6 +2,7 @@ from typing import List
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_organisms
 from protrend.transform.connector import DefaultConnector
@@ -55,7 +56,8 @@ class OrganismTransformer(Transformer):
 
     def transform(self):
 
-        genome = read_from_stack(tl=self, file='genome', json=True, default_columns=self.read_columns)
+        genome = read_from_stack(stack=self._transform_stack, file='genome',
+                                 default_columns=self.read_columns, reader=read_json_lines)
         genome = self._transform_genome(genome)
 
         names = genome['input_value'].tolist()
@@ -76,8 +78,10 @@ class OrganismToSourceConnector(DefaultConnector):
     default_settings = OrganismToSource
 
     def connect(self):
-        organism = read_from_stack(tl=self, file='organism', json=False, default_columns=OrganismTransformer.columns)
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = organism['protrend_id'].tolist()
         size = len(from_identifiers)

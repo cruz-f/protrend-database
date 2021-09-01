@@ -2,6 +2,7 @@ from typing import List
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_effectors
 from protrend.transform.connector import DefaultConnector
@@ -37,7 +38,8 @@ class EffectorTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        effector = read_from_stack(tl=self, file='effector', json=True, default_columns=self.read_columns)
+        effector = read_from_stack(stack=self._transform_stack, file='effector', default_columns=self.read_columns,
+                                   reader=read_json_lines)
         effector = self._transform_effector(effector)
 
         names = effector['input_value'].tolist()
@@ -58,8 +60,10 @@ class EffectorToSourceConnector(DefaultConnector):
     default_settings = EffectorToSource
 
     def connect(self):
-        effector = read_from_stack(tl=self, file='effector', json=False, default_columns=EffectorTransformer.columns)
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        effector = read_from_stack(stack=self._connect_stack, file='effector',
+                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, file='source', default_columns=SourceTransformer.columns,
+                                 reader=read_json_frame)
 
         from_identifiers = effector['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -82,8 +86,10 @@ class EffectorToOrganismConnector(DefaultConnector):
     default_settings = EffectorToOrganism
 
     def connect(self):
-        effector = read_from_stack(tl=self, file='effector', json=False, default_columns=EffectorTransformer.columns)
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        effector = read_from_stack(stack=self._connect_stack, file='effector',
+                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator.explode('effector')
 
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
@@ -105,8 +111,10 @@ class EffectorToRegulatorConnector(DefaultConnector):
     default_settings = EffectorToRegulator
 
     def connect(self):
-        effector = read_from_stack(tl=self, file='effector', json=False, default_columns=EffectorTransformer.columns)
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        effector = read_from_stack(stack=self._connect_stack, file='effector',
+                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator.explode('effector')
 
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',

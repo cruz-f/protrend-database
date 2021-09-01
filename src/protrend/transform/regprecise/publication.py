@@ -2,6 +2,7 @@ from typing import List
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines
 from protrend.io.utils import read_from_stack
 from protrend.transform.transformer import Transformer
 from protrend.transform.annotation import annotate_publications
@@ -54,19 +55,22 @@ class PublicationTransformer(Transformer):
 
     def transform(self):
 
-        tf_family = read_from_stack(tl=self, file='tf_family', json=True, default_columns=self.tf_family_columns)
+        tf_family = read_from_stack(stack=self._transform_stack, file='tf_family',
+                                    default_columns=self.tf_family_columns, reader=read_json_lines)
         tf_family = self._transform_tf_family(tf_family)
 
-        tf = read_from_stack(tl=self, file='tf', json=True, default_columns=self.tf_columns)
+        tf = read_from_stack(stack=self._transform_stack, file='tf',
+                             default_columns=self.tf_columns, reader=read_json_lines)
         tf = self._transform_tf(tf)
 
-        rna = read_from_stack(tl=self, file='rna', json=True, default_columns=self.rna_columns)
+        rna = read_from_stack(stack=self._transform_stack, file='rna',
+                              default_columns=self.rna_columns, reader=read_json_lines)
         rna = self._transform_rna(rna)
 
         df = pd.concat([tf_family, tf, rna], axis=0)
         df = df.explode('pubmed')
         df = df.dropna(subset=['pubmed'])
-        df = df.drop_duplicates(subset=['pubmed'])
+        df = self.drop_duplicates(df=df, subset=['pubmed'], perfect_match=False, preserve_nan=False)
 
         pmids = df['pubmed'].tolist()
         df = self._transform_publications(pmids)

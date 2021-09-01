@@ -1,37 +1,19 @@
-from typing import Set, Union, TYPE_CHECKING
+from typing import Set, Dict, Callable
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
-from protrend.io.json import read_json_lines
 
-
-if TYPE_CHECKING:
-    from protrend.transform.connector import Connector
-    from protrend.transform.transformer import Transformer
-
-
-def read_from_stack(tl: Union['Transformer', 'Connector'],
+def read_from_stack(stack: Dict[str, str],
                     file: str,
-                    json: bool,
-                    default_columns: Set[str]) -> pd.DataFrame:
+                    default_columns: Set[str],
+                    reader: Callable,
+                    **kwargs) -> pd.DataFrame:
 
-    file_path = None
+    if file in stack:
 
-    if hasattr(tl, 'transform_stack'):
+        file_path = stack[file]
 
-        file_path = tl.transform_stack.get(file)
-
-    elif hasattr(tl, 'connect_stack'):
-
-        file_path = tl.connect_stack.get(file)
-
-    if file_path:
-        if json:
-            df = read_json_lines(file_path)
-
-        else:
-            df = read_csv(file_path)
+        df = reader(file_path, **kwargs)
 
     else:
         default_columns = list(default_columns)

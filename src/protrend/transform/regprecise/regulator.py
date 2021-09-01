@@ -2,6 +2,7 @@ from typing import List, Union
 
 import pandas as pd
 
+from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import DefaultConnector
@@ -96,13 +97,13 @@ class RegulatorTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        regulon = read_from_stack(tl=self, file='regulon', json=True, default_columns=self.read_columns)
+        regulon = read_from_stack(stack=self._transform_stack, file='regulon',
+                                  default_columns=self.read_columns, reader=read_json_lines)
 
-        organism = read_from_stack(tl=self, file='organism', json=False, default_columns=OrganismTransformer.columns)
+        organism = read_from_stack(stack=self._transform_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'genome_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
-
-        # TODO taxa is being inferred as floats, but it should be int or str to work
 
         # ------------------ regulon of type TF --------------------------------
         tf = self._transform_tf(regulon=regulon, organism=organism)
@@ -147,8 +148,10 @@ class RegulatorToSourceConnector(DefaultConnector):
     default_settings = RegulatorToSource
 
     def connect(self):
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
-        source = read_from_stack(tl=self, file='source', json=False, default_columns=SourceTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, file='source',
+                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -171,7 +174,8 @@ class RegulatorToOrganismConnector(DefaultConnector):
     default_settings = RegulatorToOrganism
 
     def connect(self):
-        regulator = read_from_stack(tl=self, file='regulator', json=False, default_columns=RegulatorTransformer.columns)
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
         to_identifiers = regulator['organism_protrend_id'].tolist()
