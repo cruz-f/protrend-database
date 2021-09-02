@@ -25,17 +25,27 @@ class NCBIProtein(BioAPI):
         if is_null(refseq_accession):
             refseq_accession = ''
 
+        refseq_accession = str(refseq_accession)
+
         if is_null(genbank_accession):
             genbank_accession = ''
+
+        genbank_accession = str(genbank_accession)
 
         if is_null(taxonomy):
             taxonomy = ''
 
+        taxonomy = str(taxonomy)
+
         if is_null(locus_tag):
             locus_tag = ''
 
+        locus_tag = str(locus_tag)
+
         if is_null(name):
             name = ''
+
+        name = str(name)
 
         self._refseq_accession = refseq_accession
         self._genbank_accession = genbank_accession
@@ -213,11 +223,17 @@ class UniProtProtein(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
+        taxonomy = str(taxonomy)
+
         if is_null(locus_tag):
             locus_tag = ''
 
+        locus_tag = str(locus_tag)
+
         if is_null(name):
             name = ''
+
+        name = str(name)
 
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag

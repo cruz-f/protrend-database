@@ -12,6 +12,8 @@ class NCBITaxonomyOrganism(BioAPI):
         if is_null(name):
             name = ''
 
+        name = str(name)
+
         self._name = name
         self._assembly_record = {}
 

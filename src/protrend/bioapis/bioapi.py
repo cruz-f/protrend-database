@@ -8,6 +8,8 @@ class BioAPI:
         if is_null(identifier):
             identifier = ''
 
+        identifier = str(identifier)
+
         self._identifier = identifier
         self._record = {}
 

@@ -18,11 +18,17 @@ class NCBIGene(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
+        taxonomy = str(taxonomy)
+
         if is_null(locus_tag):
             locus_tag = ''
 
+        locus_tag = str(locus_tag)
+
         if is_null(name):
             name = ''
+
+        name = str(name)
 
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag

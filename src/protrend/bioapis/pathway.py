@@ -17,6 +17,8 @@ class KEGGPathway(BioAPI):
         if is_null(name):
             name = ''
 
+        name = str(name)
+
         self._name = name
         self._kegg_identifiers = []
         self._kegg_names = []
