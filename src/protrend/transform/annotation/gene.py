@@ -10,7 +10,7 @@ from protrend.utils.miscellaneous import args_length, scale_arg
 
 
 def _find_in_mapping(acc: str, mapping: pd.DataFrame):
-    acc_mask = mapping.loc[:, 'From'] == acc
+    acc_mask = mapping['From'] == acc
     acc_series: pd.Series = mapping.loc[acc_mask, 'To']
 
     return list(acc_series)
@@ -18,7 +18,7 @@ def _find_in_mapping(acc: str, mapping: pd.DataFrame):
 
 def _fetch_genes(identifiers: List[str],
                  cls: Union[Type[NCBIGene], Type[NCBIProtein], Type[UniProtProtein]],
-                 taxa: List[int],
+                 taxa: List[str],
                  loci: List[str],
                  names: List[str],
                  is_refseq: bool = False,
@@ -61,9 +61,9 @@ def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
         gene_dto.description.append(uniprot_protein.description)
         gene_dto.sequence.append(uniprot_protein.sequence)
 
-        return 1, uniprot_protein.identifier
+        return uniprot_protein.identifier
 
-    return 0, ''
+    return ''
 
 
 def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
@@ -114,7 +114,7 @@ def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
 def annotate_genes(dtos: List[GeneDTO],
                    loci: List[str] = None,
                    names: List[str] = None,
-                   taxa: List[int] = None,
+                   taxa: List[str] = None,
                    uniprot_proteins: List[str] = None,
                    ncbi_proteins: List[str] = None,
                    ncbi_genbanks: List[str] = None,
@@ -147,7 +147,7 @@ def annotate_genes(dtos: List[GeneDTO],
     :type dtos: List[GeneDTO]
     :type loci: List[str]
     :type names: List[str]
-    :type taxa: List[int]
+    :type taxa: List[str]
     :type uniprot_proteins: List[str]
     :type ncbi_proteins: List[str]
     :type ncbi_genbanks: List[str]
@@ -228,7 +228,7 @@ def annotate_genes(dtos: List[GeneDTO],
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):
 
-        _, uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
+        uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
         _annotate_ncbi_protein(ncbi_protein, gene_dto)
         _annotate_ncbi_gene(ncbi_gene, gene_dto)
 
