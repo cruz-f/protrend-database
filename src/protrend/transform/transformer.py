@@ -277,6 +277,7 @@ class Transformer(AbstractTransformer):
 
     def stack_json(self, name: str, df: pd.DataFrame):
         df = df.copy(deep=True)
+        df = df.reset_index(drop=True)
         fp = os.path.join(self.write_path, f'{name}.json')
         json_partial = partial(write_json_frame, file_path=fp, df=df)
         self._write_stack.append(json_partial)
@@ -357,7 +358,7 @@ class Transformer(AbstractTransformer):
             for col in subset:
                 df = df.drop_duplicates(subset=[col])
 
-        df = df.reset_index()
+        df = df.reset_index(drop=True)
 
         return df
 
