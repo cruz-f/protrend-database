@@ -8,7 +8,8 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, tfbs_left_position,
-                                           operon_left_position, operon_strand, tfbs_right_position, null_to_none)
+                                           operon_left_position, operon_strand, tfbs_right_position, null_to_none,
+                                           to_int)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
@@ -101,6 +102,9 @@ class TFBSTransformer(Transformer):
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
 
+        apply_processors(to_int, df=tfbs, col='position')
+        apply_processors(to_int, df=tfbs, col='regulon')
+
         tfbs = tfbs.dropna(subset=['sequence'])
         tfbs = tfbs.explode('regulon')
         tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
@@ -118,6 +122,8 @@ class TFBSTransformer(Transformer):
     def _tfbs_coordinates(tfbs: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
 
         gene = gene.set_index(gene['locus_tag_old'])
+        apply_processors(null_to_none, df=gene, col='strand')
+        apply_processors(null_to_none, df=gene, col='position_left')
 
         strands = []
         positions_left = []
@@ -129,7 +135,7 @@ class TFBSTransformer(Transformer):
 
             for ge in genes:
                 if ge in gene.index:
-                    ge_strand = null_to_none(gene.loc[ge, 'strand'])
+                    ge_strand = gene.loc[ge, 'strand']
                     op_strand = operon_strand(previous_strand=op_strand,
                                               current_strand=ge_strand)
 
@@ -137,7 +143,7 @@ class TFBSTransformer(Transformer):
 
             for ge in genes:
                 if ge in gene.index:
-                    ge_left = null_to_none(gene.loc[ge, 'position_left'])
+                    ge_left = gene.loc[ge, 'position_left']
                     operon_left = operon_left_position(strand=op_strand,
                                                        previous_left=operon_left,
                                                        current_left=ge_left)
@@ -171,6 +177,8 @@ class TFBSTransformer(Transformer):
         gene = self.select_columns(gene, 'strand', 'position_left', 'locus_tag_old')
         gene = gene.dropna(subset=['locus_tag_old'])
         gene = self.drop_duplicates(df=gene, subset=['locus_tag_old'], perfect_match=False, preserve_nan=False)
+
+        apply_processors(to_int, df=gene, col='position_left')
 
         df = self._tfbs_coordinates(tfbs, gene)
 

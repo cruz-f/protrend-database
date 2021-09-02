@@ -4,6 +4,7 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines
 from protrend.io.utils import read_from_stack
+from protrend.transform.processors import apply_processors, to_str
 from protrend.transform.transformer import Transformer
 from protrend.transform.annotation import annotate_publications
 from protrend.transform.dto import PublicationDTO
@@ -76,6 +77,8 @@ class PublicationTransformer(Transformer):
         df = self._transform_publications(pmids)
 
         df = df.drop(columns=['input_value'])
+
+        apply_processors(to_str, df=df, col='pmid')
 
         self._stack_transformed_nodes(df)
 

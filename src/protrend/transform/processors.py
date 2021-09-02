@@ -36,6 +36,32 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
             df[col] = df[col].map(processor, na_action='ignore')
 
 
+def to_str(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+
+    if is_null(item):
+        return item
+
+    try:
+        return str(item)
+    except (ValueError, TypeError):
+        return item
+
+
+def to_int(item: Any) -> int:
+    if isinstance(item, int):
+        return item
+
+    if is_null(item):
+        return item
+
+    try:
+        return int(item)
+    except (ValueError, TypeError):
+        return item
+
+
 def to_set(item: Any) -> set:
     if isinstance(item, str):
         return {item}
