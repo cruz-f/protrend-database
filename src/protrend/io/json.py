@@ -56,4 +56,5 @@ def read_json_frame(file_path: str, **kwargs) -> pd.DataFrame:
 
 
 def write_json_frame(file_path: str, df: pd.DataFrame, **kwargs) -> Optional[str]:
-    return df.to_json(file_path, **kwargs)
+    df.to_json(file_path, **kwargs)
+    return
