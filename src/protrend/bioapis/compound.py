@@ -5,6 +5,7 @@ import whoosh.index as w_index
 
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.kegg import search_kegg_list, KEGG_PATH
+from protrend.utils.miscellaneous import is_null
 
 
 class KEGGCompound(BioAPI):
@@ -12,6 +13,9 @@ class KEGGCompound(BioAPI):
     def __init__(self, identifier: str = '', name: str = ''):
 
         super().__init__(identifier)
+
+        if is_null(name):
+            name = ''
 
         self._name = name
         self._kegg_identifiers = []
@@ -48,10 +52,11 @@ class KEGGCompound(BioAPI):
         if index is None:
             raise RuntimeError('Could not found a valid index for KEGG Compound')
 
-        identifiers, names = search_kegg_list(index=index, query=self.name, db='compound')
+        if self.name:
+            identifiers, names = search_kegg_list(index=index, query=self.name, db='compound')
 
-        if identifiers:
-            self._kegg_identifiers.extend(list(identifiers))
+            if identifiers:
+                self._kegg_identifiers.extend(list(identifiers))
 
-        if names:
-            self._kegg_names.extend(list(names))
+            if names:
+                self._kegg_names.extend(list(names))

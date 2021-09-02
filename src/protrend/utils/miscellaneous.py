@@ -1,4 +1,10 @@
 import re
+from types import GeneratorType
+
+from typing import Any
+
+import numpy as np
+import pandas as pd
 
 # CamelCase to snake_case
 camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
@@ -35,3 +41,37 @@ def scale_arg(arg, size):
         raise ValueError(f'Invalid input size of {len(arg)}')
 
     return arg
+
+
+def is_null(obj: Any) -> bool:
+
+    # booleans
+    if isinstance(obj, bool):
+        return not obj
+
+    # integers, floats, etc
+    if isinstance(obj, (int, float)):
+        return pd.isnull(obj)
+
+    # numpy arrays
+    if isinstance(obj, np.ndarray):
+        return not obj.any()
+
+    # pandas series and frames
+    if isinstance(obj, (pd.DataFrame, pd.Series)):
+        return obj.empty
+
+    # python built-ins
+    if isinstance(obj, (range, list, tuple, set, dict, frozenset, str)):
+
+        return len(obj) == 0
+
+    # python generator built-ins
+    if isinstance(obj, GeneratorType):
+        return False
+
+    # pandas check for nan or null
+    if pd.isnull(obj):
+        return True
+
+    return False

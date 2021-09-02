@@ -1,12 +1,16 @@
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search
+from protrend.utils.miscellaneous import is_null
 
 
 class NCBITaxonomyOrganism(BioAPI):
 
-    def __init__(self, identifier: str = 0, name: str = ''):
+    def __init__(self, identifier: str = '', name: str = ''):
 
         super().__init__(identifier)
+
+        if is_null(name):
+            name = ''
 
         self._name = name
         self._assembly_record = {}
@@ -89,38 +93,40 @@ class NCBITaxonomyOrganism(BioAPI):
 
         else:
 
-            term = f'{self._name}[Scientific Name]'
+            if self._name:
+                term = f'{self._name}[Scientific Name]'
 
-            search_record = entrez_search(db='taxonomy', term=term)
+                search_record = entrez_search(db='taxonomy', term=term)
 
-            id_list = search_record.get('IdList', [])
+                id_list = search_record.get('IdList', [])
 
-            if id_list:
-                identifier = id_list[0]
-                record = entrez_summary(db='taxonomy', identifier=identifier)
-                self.record = record
+                if id_list:
+                    identifier = id_list[0]
+                    record = entrez_summary(db='taxonomy', identifier=identifier)
+                    self.record = record
 
     def fetch(self):
 
         self.get_taxonomy_record()
 
-        assembly_term = f'txid{self.taxonomy}[Organism:noexp] AND "reference genome"[refseq category]'
-
-        assembly_search_record = entrez_search(db='assembly', term=assembly_term)
-
-        id_list = assembly_search_record.get('IdList', [])
-
-        # broad search. However, it can retrieve multiple assemblies for the same organism. In this case, the first one
-        # is selected.
-        if not id_list:
-
-            assembly_term = f'txid{self.taxonomy}[Organism:noexp]'
+        if self.taxonomy:
+            assembly_term = f'txid{self.taxonomy}[Organism:noexp] AND "reference genome"[refseq category]'
 
             assembly_search_record = entrez_search(db='assembly', term=assembly_term)
 
             id_list = assembly_search_record.get('IdList', [])
 
-        if id_list:
-            identifier = id_list[0]
-            record = entrez_summary(db='assembly', identifier=identifier)
-            self.assembly_record = record
+            # broad search. However, it can retrieve multiple assemblies for the same organism.
+            # In this case, the first one is selected.
+            if not id_list:
+
+                assembly_term = f'txid{self.taxonomy}[Organism:noexp]'
+
+                assembly_search_record = entrez_search(db='assembly', term=assembly_term)
+
+                id_list = assembly_search_record.get('IdList', [])
+
+            if id_list:
+                identifier = id_list[0]
+                record = entrez_summary(db='assembly', identifier=identifier)
+                self.assembly_record = record

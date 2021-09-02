@@ -2,17 +2,27 @@ from typing import List
 
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search
+from protrend.utils.miscellaneous import is_null
 
 
 class NCBIGene(BioAPI):
 
     def __init__(self,
                  identifier: str = '',
-                 taxonomy: int = 0,
+                 taxonomy: str = '',
                  locus_tag: str = '',
                  name: str = ''):
 
         super().__init__(identifier)
+
+        if is_null(taxonomy):
+            taxonomy = ''
+
+        if is_null(locus_tag):
+            locus_tag = ''
+
+        if is_null(name):
+            name = ''
 
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag
@@ -26,8 +36,8 @@ class NCBIGene(BioAPI):
         return self._identifier
 
     @property
-    def taxonomy(self) -> int:
-        return self.record.get('Organism', {}).get('TaxID', self._taxonomy)
+    def taxonomy(self) -> str:
+        return str(self.record.get('Organism', {}).get('TaxID', self._taxonomy))
 
     @property
     def locus_tag(self) -> str:

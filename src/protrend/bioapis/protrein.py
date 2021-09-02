@@ -7,6 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search, entrez_fetch
 from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
+from protrend.utils.miscellaneous import is_null
 
 
 class NCBIProtein(BioAPI):
@@ -15,11 +16,26 @@ class NCBIProtein(BioAPI):
                  identifier: str = '',
                  refseq_accession: str = '',
                  genbank_accession: str = '',
-                 taxonomy: int = 0,
+                 taxonomy: str = '',
                  locus_tag: str = '',
                  name: str = ''):
 
         super().__init__(identifier)
+
+        if is_null(refseq_accession):
+            refseq_accession = ''
+
+        if is_null(genbank_accession):
+            genbank_accession = ''
+
+        if is_null(taxonomy):
+            taxonomy = ''
+
+        if is_null(locus_tag):
+            locus_tag = ''
+
+        if is_null(name):
+            name = ''
 
         self._refseq_accession = refseq_accession
         self._genbank_accession = genbank_accession
@@ -69,8 +85,8 @@ class NCBIProtein(BioAPI):
         return ''
 
     @property
-    def taxonomy(self) -> int:
-        return self.record.get('TaxId', self._taxonomy)
+    def taxonomy(self) -> str:
+        return str(self.record.get('TaxId', self._taxonomy))
 
     @property
     def locus_tag(self) -> str:
@@ -188,11 +204,20 @@ class UniProtProtein(BioAPI):
 
     def __init__(self,
                  identifier: str = '',
-                 taxonomy: int = 0,
+                 taxonomy: str = '',
                  locus_tag: str = '',
                  name: str = ''):
 
         super().__init__(identifier)
+
+        if is_null(taxonomy):
+            taxonomy = ''
+
+        if is_null(locus_tag):
+            locus_tag = ''
+
+        if is_null(name):
+            name = ''
 
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag
@@ -203,7 +228,7 @@ class UniProtProtein(BioAPI):
         return getattr(self.record, 'id', self._identifier)
 
     @property
-    def taxonomy(self) -> int:
+    def taxonomy(self) -> str:
         dbxrefs = getattr(self.record, 'dbxrefs', None)
 
         if dbxrefs:
@@ -294,13 +319,13 @@ class UniProtProtein(BioAPI):
     def parse_uniprot_query(self, query: pd.DataFrame):
 
         if self._taxonomy:
-            tax_mask = query.loc[:, 'Organism ID'] == self._taxonomy
+            tax_mask = query['Organism ID'] == float(self._taxonomy)
 
             query = query[tax_mask]
 
         if self._locus_tag:
 
-            loci = query.loc[:, 'Gene names']
+            loci = query['Gene names']
             loci_mask = []
 
             for value in loci:

@@ -1,8 +1,11 @@
+from protrend.utils.miscellaneous import is_null
+
+
 class BioAPI:
 
     def __init__(self, identifier: str):
 
-        if not identifier:
+        if is_null(identifier):
             identifier = ''
 
         self._identifier = identifier
