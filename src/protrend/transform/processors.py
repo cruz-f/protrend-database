@@ -1,9 +1,11 @@
 import re
 from collections import defaultdict
-from typing import Callable, Any, List, Union
+from typing import Callable, Any, List, Union, Sequence
 
 import pandas as pd
 from w3lib.html import remove_tags
+
+from protrend.utils.miscellaneous import is_null
 
 more_pattern = re.compile(r'\s\smore\s\s\s')
 more2_pattern = re.compile(r'\s\smore\s')
@@ -24,7 +26,7 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
 
     """
 
-    handle_nan_processors = (nan_to_str, )
+    handle_nan_processors = (null_to_str, null_to_none)
 
     for processor in processors:
         if processor in handle_nan_processors:
@@ -32,18 +34,6 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
 
         else:
             df[col] = df[col].map(processor, na_action='ignore')
-
-
-def flatten_set(args):
-    return {i for arg in args for i in arg}
-
-
-def flatten_list(args):
-    return [i for arg in args for i in arg]
-
-
-def take_last(args):
-    return args.iloc[-1]
 
 
 def to_set(item: Any) -> set:
@@ -70,10 +60,57 @@ def to_list(item: Any) -> list:
     return list(iterator)
 
 
-def remove_ellipsis(item: str) -> str:
-    if item.endswith('...'):
-        return item[:-3]
+def flatten_set(items):
+    return {i for arg in items for i in arg}
 
+
+def flatten_list(items):
+    return [i for arg in items for i in arg]
+
+
+def take_last(items: Sequence[Any]) -> Any:
+
+    if isinstance(items, pd.Series):
+        try:
+            return items.iloc[-1]
+
+        except IndexError:
+            return None
+
+    try:
+        return items[-1]
+
+    except IndexError:
+        return None
+
+
+def take_first(items: Sequence[Any]) -> Any:
+
+    if isinstance(items, pd.Series):
+        try:
+            return items.iloc[0]
+
+        except IndexError:
+            return None
+
+    try:
+        return items[0]
+
+    except IndexError:
+        return None
+
+
+def null_to_none(item: Any) -> Union[Any, None]:
+
+    if is_null(item):
+        return None
+
+    return item
+
+
+def null_to_str(item: Any) -> str:
+    if is_null(item):
+        return ''
     return item
 
 
@@ -81,7 +118,7 @@ def upper_case(item: str) -> str:
     return item.upper()
 
 
-def operon_name(items: list) -> str:
+def operon_name(items: List[str]) -> str:
     if items:
 
         names = defaultdict(int)
@@ -107,25 +144,13 @@ def operon_name(items: list) -> str:
     return ''
 
 
-def genes_to_hash(items: list) -> str:
+def genes_to_hash(items: List[str]) -> str:
     items = sorted(items)
     return '_'.join(items)
 
 
-def str_join(items: list) -> str:
+def str_join(items: List[str]) -> str:
     return '_'.join(items)
-
-
-def null_to_nan(item: str) -> Union[None, str]:
-    if item == 'null':
-        return None
-    return item
-
-
-def nan_to_str(item: Any) -> str:
-    if item:
-        return item
-    return ''
 
 
 def lstrip(item: str) -> str:
@@ -134,6 +159,13 @@ def lstrip(item: str) -> str:
 
 def rstrip(item: str) -> str:
     return item.rstrip()
+
+
+def remove_ellipsis(item: str) -> str:
+    if item.endswith('...'):
+        return item[:-3]
+
+    return item
 
 
 def remove_white_space(item: str) -> str:
@@ -158,21 +190,6 @@ def remove_pubmed(item: str) -> str:
 
 def remove_html_tags(item: str) -> str:
     return remove_tags(item)
-
-
-def take_first(item: List[str]) -> str:
-    if item:
-        return item[0]
-
-    return ''
-
-
-def null_to_none(item: Any) -> Union[Any, None]:
-
-    if pd.isnull(item):
-        return None
-
-    return item
 
 
 def operon_strand(previous_strand: str = None,
