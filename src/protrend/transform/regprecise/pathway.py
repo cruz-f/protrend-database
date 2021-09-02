@@ -6,13 +6,13 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_pathways
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.transformer import Transformer
 from protrend.transform.dto import PathwayDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource, PathwayToRegulator
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import Transformer
 
 
 class PathwayTransformer(Transformer):
@@ -26,8 +26,8 @@ class PathwayTransformer(Transformer):
         df = self.drop_duplicates(df=pathway, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=df, col='name')
-        apply_processors(to_str, df=df, col='pathway_id')
-        apply_processors(to_str, df=df, col='regulog')
+        apply_processors(to_int_str, df=df, col='pathway_id')
+        apply_processors(to_int_str, df=df, col='regulog')
 
         self.create_input_value(df, 'name')
         return df

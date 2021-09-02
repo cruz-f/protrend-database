@@ -26,7 +26,7 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
 
     """
 
-    handle_nan_processors = (null_to_str, null_to_none)
+    handle_nan_processors = (null_to_str, null_to_none, to_list_nan)
 
     for processor in processors:
         if processor in handle_nan_processors:
@@ -42,6 +42,21 @@ def to_str(item: Any) -> str:
 
     if is_null(item):
         return item
+
+    try:
+        return str(item)
+    except (ValueError, TypeError):
+        return item
+
+
+def to_int_str(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+
+    if is_null(item):
+        return item
+
+    item = to_int(item)
 
     try:
         return str(item)
@@ -77,6 +92,21 @@ def to_set(item: Any) -> set:
 def to_list(item: Any) -> list:
     if isinstance(item, str):
         return [item]
+
+    try:
+        iterator = iter(item)
+    except TypeError:
+        iterator = iter([item])
+
+    return list(iterator)
+
+
+def to_list_nan(item: Any) -> list:
+    if isinstance(item, str):
+        return [item]
+
+    if is_null(item):
+        return []
 
     try:
         iterator = iter(item)
@@ -142,6 +172,10 @@ def null_to_str(item: Any) -> str:
 
 def upper_case(item: str) -> str:
     return item.upper()
+
+
+def lower_case(item: str) -> str:
+    return item.lower()
 
 
 def operon_name(items: List[str]) -> str:

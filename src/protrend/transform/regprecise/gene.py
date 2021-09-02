@@ -6,13 +6,12 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.transformer import Transformer
 from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list, to_int, \
-    to_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list, to_int_str
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.settings import GeneSettings, GeneToSource, GeneToOrganism
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import Transformer
 
 
 class GeneTransformer(Transformer):
@@ -31,7 +30,7 @@ class GeneTransformer(Transformer):
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         apply_processors(rstrip, lstrip, df=gene, col='locus_tag')
         apply_processors(rstrip, lstrip, df=gene, col='name')
-        apply_processors(to_str, df=gene, col='regulon')
+        apply_processors(to_int_str, df=gene, col='regulon')
 
         aggregation = {'name': take_last, 'function': take_last, 'url': set}
         gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
@@ -80,9 +79,9 @@ class GeneTransformer(Transformer):
         regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulon_id',
                                         'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
-        apply_processors(to_str, df=regulator, col='genome_id')
-        apply_processors(to_str, df=regulator, col='ncbi_taxonomy')
-        apply_processors(to_str, df=regulator, col='regulon_id')
+        apply_processors(to_int_str, df=regulator, col='genome_id')
+        apply_processors(to_int_str, df=regulator, col='ncbi_taxonomy')
+        apply_processors(to_int_str, df=regulator, col='regulon_id')
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
         gene['locus_tag_old'] = gene['locus_tag']
@@ -100,12 +99,10 @@ class GeneTransformer(Transformer):
 
         df = df.drop(columns=['input_value'])
 
-        apply_processors(to_int, df=df, col='position_left')
-        apply_processors(to_int, df=df, col='position_right')
-        apply_processors(to_str, df=df, col='genome_id')
-        apply_processors(to_str, df=df, col='ncbi_taxonomy')
-        apply_processors(to_str, df=df, col='regulon_id')
-        apply_processors(to_str, df=df, col='regulon')
+        apply_processors(to_int_str, df=df, col='genome_id')
+        apply_processors(to_int_str, df=df, col='ncbi_taxonomy')
+        apply_processors(to_int_str, df=df, col='regulon_id')
+        apply_processors(to_int_str, df=df, col='regulon')
 
         self._stack_transformed_nodes(df)
 

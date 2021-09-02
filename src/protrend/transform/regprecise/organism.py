@@ -7,7 +7,7 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_organisms
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import OrganismDTO
-from protrend.transform.processors import apply_processors, to_str, rstrip, lstrip
+from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str
 from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import Transformer
@@ -24,13 +24,12 @@ class OrganismTransformer(Transformer):
     read_columns = {'genome_id', 'name', 'taxonomy', 'url', 'regulon'}
 
     def _transform_genome(self, genome: pd.DataFrame) -> pd.DataFrame:
-
         genome = self.drop_duplicates(df=genome, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=genome, col='name')
-        apply_processors(to_str, df=genome, col='genome_id')
-        apply_processors(to_str, df=genome, col='taxonomy')
-        apply_processors(to_str, df=genome, col='regulon')
+        apply_processors(to_int_str, df=genome, col='genome_id')
+        apply_processors(to_int_str, df=genome, col='taxonomy')
+        apply_processors(to_int_str, df=genome, col='regulon')
 
         genome = self.create_input_value(genome, col='name')
 
@@ -38,7 +37,6 @@ class OrganismTransformer(Transformer):
 
     @staticmethod
     def _transform_organisms(names: List[str]):
-
         dtos = [OrganismDTO(input_value=name) for name in names]
         annotate_organisms(dtos=dtos, names=names)
 
@@ -58,7 +56,6 @@ class OrganismTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-
         genome = read_from_stack(stack=self._transform_stack, file='genome',
                                  default_columns=self.read_columns, reader=read_json_lines)
         genome = self._transform_genome(genome)
@@ -72,8 +69,8 @@ class OrganismTransformer(Transformer):
 
         df = df.drop(columns=['input_value'])
 
-        apply_processors(to_str, df=df, col='ncbi_taxonomy')
-        apply_processors(to_str, df=df, col='ncbi_assembly')
+        apply_processors(to_int_str, df=df, col='ncbi_taxonomy')
+        apply_processors(to_int_str, df=df, col='ncbi_assembly')
 
         self._stack_transformed_nodes(df)
 

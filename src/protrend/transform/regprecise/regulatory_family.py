@@ -3,14 +3,15 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.transformer import Transformer
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
-                                           rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list, to_str)
-from protrend.transform.regprecise.regulator import RegulatorTransformer
+                                           rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list_nan,
+                                           to_int_str)
 from protrend.transform.regprecise import PublicationTransformer
-from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (RegulatoryFamilySettings, RegulatoryFamilyToSource,
                                                     RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator)
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import Transformer
 
 
 class RegulatoryFamilyTransformer(Transformer):
@@ -62,20 +63,18 @@ class RegulatoryFamilyTransformer(Transformer):
         # set mechanism
         df['mechanism'] = 'transcription factor'
 
-        # TODO: the following columns are being wrongly merged/concatenated
-
         # concat description
         df = self.concat_columns(df=df, column='description', left='description_tf_family', right='description_tf')
 
         # concat pubmed
-        apply_processors(to_list, df=df, col='pubmed_tf_family')
-        apply_processors(to_list, df=df, col='pubmed_tf')
+        apply_processors(to_list_nan, df=df, col='pubmed_tf_family')
+        apply_processors(to_list_nan, df=df, col='pubmed_tf')
         df = self.concat_columns(df=df, column='pubmed', left='pubmed_tf_family', right='pubmed_tf')
         apply_processors(to_set, df=df, col='pubmed')
 
         # concat regulog
-        apply_processors(to_list, df=df, col='regulog_tf_family')
-        apply_processors(to_list, df=df, col='regulog_tf')
+        apply_processors(to_list_nan, df=df, col='regulog_tf_family')
+        apply_processors(to_list_nan, df=df, col='regulog_tf')
         df = self.concat_columns(df=df, column='regulog', left='regulog_tf_family', right='regulog_tf')
         apply_processors(to_set, df=df, col='regulog')
 
@@ -99,12 +98,12 @@ class RegulatoryFamilyTransformer(Transformer):
 
         df = pd.concat([tfs, rna])
 
-        apply_processors(to_str, df=df, col='tffamily_id')
-        apply_processors(to_str, df=df, col='riboswitch_id')
-        apply_processors(to_str, df=df, col='collection_id')
-        apply_processors(to_str, df=df, col='pubmed')
-        apply_processors(to_str, df=df, col='rfam')
-        apply_processors(to_str, df=df, col='regulog')
+        apply_processors(to_int_str, df=df, col='tffamily_id')
+        apply_processors(to_int_str, df=df, col='riboswitch_id')
+        apply_processors(to_int_str, df=df, col='collection_id')
+        apply_processors(to_int_str, df=df, col='pubmed')
+        apply_processors(to_int_str, df=df, col='rfam')
+        apply_processors(to_int_str, df=df, col='regulog')
 
         self._stack_transformed_nodes(df)
         return df

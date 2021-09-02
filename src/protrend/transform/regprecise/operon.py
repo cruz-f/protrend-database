@@ -5,7 +5,7 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
                                            operon_left_position, operon_right_position, flatten_set, to_list,
-                                           null_to_none, to_int, to_str)
+                                           null_to_none, to_int_str)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
@@ -143,28 +143,25 @@ class OperonTransformer(Transformer):
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self._transform_stack, file='operon', 
+        operon = read_from_stack(stack=self._transform_stack, file='operon',
                                  default_columns=self.read_columns, reader=read_json_lines)
 
         operon = operon.drop(columns=['name'])
-        apply_processors(to_str, df=operon, col='regulon')
+        apply_processors(to_int_str, df=operon, col='regulon')
 
         operon = operon.explode('regulon')
         operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
 
-        gene = read_from_stack(stack=self._transform_stack, file='gene', 
+        gene = read_from_stack(stack=self._transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand',
                                    'position_left', 'position_right')
-
-        apply_processors(to_int, df=gene, col='position_left')
-        apply_processors(to_int, df=gene, col='position_right')
 
         gene = gene.dropna(subset=['protrend_id'])
         gene = gene.dropna(subset=['locus_tag_old'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
-        tfbs = read_from_stack(stack=self._transform_stack, file='tfbs', 
+        tfbs = read_from_stack(stack=self._transform_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
 
@@ -180,15 +177,13 @@ class OperonTransformer(Transformer):
         df = self._transform_operon_by_gene(operon=df, gene=gene)
         df = self._operon_coordinates(operon=df, gene=gene)
 
-        apply_processors(to_str, df=df, col='regulon')
-        apply_processors(to_int, df=df, col='first_gene_position_left')
-        apply_processors(to_int, df=df, col='last_gene_position_right')
+        apply_processors(to_int_str, df=df, col='regulon')
 
         self._stack_transformed_nodes(df)
 
         return df
 
-    def _update_nodes(self, df:pd.DataFrame, mask:pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
+    def _update_nodes(self, df: pd.DataFrame, mask: pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
 
         # nodes to be updated
         update_nodes = df[mask]

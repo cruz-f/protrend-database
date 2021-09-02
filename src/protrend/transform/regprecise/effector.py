@@ -7,7 +7,7 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_effectors
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.dto import EffectorDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (EffectorSettings, EffectorToSource, EffectorToOrganism,
                                                     EffectorToRegulator)
@@ -25,8 +25,8 @@ class EffectorTransformer(Transformer):
         effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
 
         apply_processors(rstrip, lstrip, df=effector, col='name')
-        apply_processors(to_str, df=effector, col='effector_id')
-        apply_processors(to_str, df=effector, col='regulog')
+        apply_processors(to_int_str, df=effector, col='effector_id')
+        apply_processors(to_int_str, df=effector, col='regulog')
 
         effector = self.create_input_value(effector, 'name')
 

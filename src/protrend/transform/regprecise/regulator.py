@@ -6,12 +6,12 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import DefaultConnector
-from protrend.transform.transformer import Transformer
 from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_str, to_int
+from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
 from protrend.transform.regprecise.organism import OrganismTransformer
-from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource, RegulatorToOrganism
+from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformer import Transformer
 
 
 class RegulatorTransformer(Transformer):
@@ -100,15 +100,15 @@ class RegulatorTransformer(Transformer):
         regulon = read_from_stack(stack=self._transform_stack, file='regulon',
                                   default_columns=self.read_columns, reader=read_json_lines)
 
-        apply_processors(to_str, df=regulon, col='regulon_id')
-        apply_processors(to_str, df=regulon, col='genome')
+        apply_processors(to_int_str, df=regulon, col='regulon_id')
+        apply_processors(to_int_str, df=regulon, col='genome')
 
         organism = read_from_stack(stack=self._transform_stack, file='organism',
                                    default_columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'genome_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
-        apply_processors(to_str, df=organism, col='genome_id')
-        apply_processors(to_str, df=organism, col='ncbi_taxonomy')
+        apply_processors(to_int_str, df=organism, col='genome_id')
+        apply_processors(to_int_str, df=organism, col='ncbi_taxonomy')
 
         # ------------------ regulon of type TF --------------------------------
         tf = self._transform_tf(regulon=regulon, organism=organism)
@@ -145,12 +145,10 @@ class RegulatorTransformer(Transformer):
         # --------------------- concat DFs --------------------------------------
         df = pd.concat([tf, rna], axis=0)
 
-        apply_processors(to_str, df=regulon, col='genome_id')
-        apply_processors(to_str, df=regulon, col='ncbi_taxonomy')
-        apply_processors(to_str, df=regulon, col='genome')
-        apply_processors(to_str, df=regulon, col='regulog')
-        apply_processors(to_int, df=regulon, col='position_left')
-        apply_processors(to_int, df=regulon, col='position_right')
+        apply_processors(to_int_str, df=df, col='genome_id')
+        apply_processors(to_int_str, df=df, col='ncbi_taxonomy')
+        apply_processors(to_int_str, df=df, col='genome')
+        apply_processors(to_int_str, df=df, col='regulog')
 
         self._stack_transformed_nodes(df)
         return df

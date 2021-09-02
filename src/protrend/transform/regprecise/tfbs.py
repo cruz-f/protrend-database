@@ -102,9 +102,6 @@ class TFBSTransformer(Transformer):
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
 
-        apply_processors(to_int, df=tfbs, col='position')
-        apply_processors(to_int, df=tfbs, col='regulon')
-
         tfbs = tfbs.dropna(subset=['sequence'])
         tfbs = tfbs.explode('regulon')
         tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
@@ -177,8 +174,6 @@ class TFBSTransformer(Transformer):
         gene = self.select_columns(gene, 'strand', 'position_left', 'locus_tag_old')
         gene = gene.dropna(subset=['locus_tag_old'])
         gene = self.drop_duplicates(df=gene, subset=['locus_tag_old'], perfect_match=False, preserve_nan=False)
-
-        apply_processors(to_int, df=gene, col='position_left')
 
         df = self._tfbs_coordinates(tfbs, gene)
 

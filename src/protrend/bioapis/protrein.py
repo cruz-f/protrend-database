@@ -7,6 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search, entrez_fetch
 from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
+from protrend.transform.processors import to_int_str, to_str, apply_processors, lower_case
 from protrend.utils.miscellaneous import is_null
 
 
@@ -332,86 +333,74 @@ class UniProtProtein(BioAPI):
     def sequence(self) -> str:
         return str(getattr(self.record, 'seq', ''))
 
-    def parse_uniprot_query(self, query: pd.DataFrame):
+    def _filter_by_taxonomy(self, query: pd.DataFrame) -> pd.DataFrame:
 
         if self._taxonomy:
-            tax_mask = query['Organism ID'] == float(self._taxonomy)
+            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False)
 
-            query = query[tax_mask]
+            if tax_mask.any():
+                query = query[tax_mask]
+
+        return query
+
+    def parse_uniprot_query(self, query: pd.DataFrame):
+
+        apply_processors(to_int_str, df=query, col='Organism ID')
+        apply_processors(to_str, df=query, col='Gene names')
+        apply_processors(lower_case, df=query, col='Gene names')
+        apply_processors(to_str, df=query, col='Gene names  (primary )')
+        apply_processors(lower_case, df=query, col='Gene names  (primary )')
+
+        query = self._filter_by_taxonomy(query=query)
 
         if self._locus_tag:
 
-            loci = query['Gene names']
-            loci_mask = []
-
-            for value in loci:
-
-                mask_value = False
-
-                values = value.split()
-
-                for text in values:
-                    text = ''.join(letter for letter in text if letter.isalnum())
-
-                    if self._locus_tag.lower() in text.lower() or text.lower() in self._locus_tag.lower():
-                        mask_value = True
-                        break
-
-                loci_mask.append(mask_value)
-
+            loci_mask = query['Gene names'].str.contains(self._locus_tag.lower())
             accessions = query.loc[loci_mask, 'Entry']
 
             if accessions.size == 1:
-                self._identifier = accessions[0]
-
-            return
+                return accessions[0]
 
         if self._name:
 
-            loci = query.loc[:, 'Gene names  (primary )']
-            loci_mask = []
-
-            for value in loci:
-
-                if self._name.lower() in value.lower() or value.lower() in self._name.lower():
-                    loci_mask.append(True)
-
-                else:
-                    loci_mask.append(False)
-
+            loci_mask = query['Gene names  (primary )'].str.contains(self._name.lower())
             accessions = query.loc[loci_mask, 'Entry']
 
             if accessions.size == 1:
-                self._identifier = accessions[0]
+                return accessions[0]
 
-            return
+        return ''
+
+    def build_query(self) -> dict:
+
+        if self._locus_tag and self._taxonomy:
+
+            return {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
+
+        elif self._locus_tag and not self._taxonomy:
+
+            return {'gene': self._locus_tag}
+
+        elif self._name and self._taxonomy:
+
+            return {'gene': self._name, 'taxonomy': self._taxonomy}
+
+        return {}
 
     def fetch(self):
 
-        if not self._identifier:
+        if self._identifier:
+            identifier = self._identifier
 
-            if self._locus_tag and self._taxonomy:
+        else:
 
-                query = {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
+            query = self.build_query()
+            uniprot_query = query_uniprot(query=query)
 
-            elif self._locus_tag and not self._taxonomy:
+            identifier = self.parse_uniprot_query(uniprot_query)
+            self._identifier = identifier
 
-                query = {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
-
-            elif self._name and self._taxonomy:
-
-                query = {'gene': self._name, 'taxonomy': self._taxonomy}
-
-            else:
-                query = {}
-
-            if query:
-                uniprot_query = query_uniprot(query=query)
-
-                # it sets up the uniprot accession
-                self.parse_uniprot_query(uniprot_query)
-
-        if not self._identifier:
+        if not identifier:
             return
 
         record = fetch_uniprot_record(self._identifier)
