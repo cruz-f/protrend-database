@@ -35,6 +35,32 @@ if __name__ == "__main__":
     transform_director = transform_runner()
     transform_director.transform()
 
-    # TODO: operon had no hits with tfbs
+    # TODO: Regulator:
+    #  - wrong name in some regulators
+    #  - parse uniprot query misses some valid uniprot entries - CORRECTED
+    #  - strand is missing
+    #  - synonyms are not unique - CORRECTED
+    #  - some regulators are not being integrated and being dropped
 
-    # TODO: missing debugging connector
+    # TODO: Gene:
+    #  - wrong name in some genes
+    #  - parse uniprot query misses some valid uniprot entries - CORRECTED
+    #  - strand is missing
+    #  - synonyms are not unique - CORRECTED
+    #  - missing most UniProt accessions in gene annotation
+    #  - regulon column is wrongly parsed
+    #  - missing all information regarding organism and ncbi taxonomy
+    #  - some genes are not being integrated and being dropped
+
+    # TODO: Operon:
+    #  - Missing all hits with tfbs (might not be a problem due to sampling)
+    #  - All genes were found (might not be a problem due to sampling)
+    #  - regulon column is wrongly parsed as set of list of str
+    #  - first position left is wrongly inferred
+    #  - genes_id column should be dropped
+    #  - strand is missing
+
+    # TODO: RegulatoryFamily:
+    #  - Description is missing in some rows
+
+    # TODO: Connectors

@@ -48,23 +48,23 @@ class SetList(UserList):
     def __delitem__(self, i):
         del self.data[i]
 
-    def __add__(self, other):
+    def __add__(self, other: Sequence):
 
-        other = self.__class__(other)
+        new_instance = self.copy()
+        new_instance.extend(other)
 
-        return self.__class__(self.data + other)
+        return new_instance
 
-    def __radd__(self, other):
+    def __radd__(self, other: Sequence):
 
-        other = self.__class__(other)
+        new_instance = self.copy()
+        new_instance.extend(other)
 
-        return self.__class__(self.data + other)
+        return new_instance
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Sequence):
 
-        other = self.__class__(other)
-
-        self.data += other
+        self._add_elements(other)
 
         return self
 
@@ -75,14 +75,12 @@ class SetList(UserList):
         if item not in self.data:
             self.data.insert(i, item)
 
-    def copy(self):
+    def copy(self) -> 'SetList':
         return self.__class__(self)
 
-    def extend(self, other):
+    def extend(self, other: Sequence):
 
-        other = self.__class__(other)
-
-        self.data.extend(other)
+        self._add_elements(other)
 
     def take_all(self):
         return self.data
@@ -97,7 +95,6 @@ class SetList(UserList):
 
 
 def set_list_field(output: str = None, init: bool = False):
+    set_list = partial(SetList, output=output)
 
-    unique_list = partial(SetList, output=output)
-
-    return field(default_factory=unique_list, init=init)
+    return field(default_factory=set_list, init=init)

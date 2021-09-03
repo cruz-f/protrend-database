@@ -71,7 +71,7 @@ class RegulatorTransformer(Transformer):
         return df
 
     @staticmethod
-    def _annotate_genes(loci: List[Union[None, str]], names: List[str], taxa: List[int]):
+    def _annotate_genes(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
 
         dtos = [GeneDTO(input_value=locus) for locus in loci]
         annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
