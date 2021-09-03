@@ -36,14 +36,14 @@ if __name__ == "__main__":
     transform_director.transform()
 
     # TODO: Regulator:
-    #  - wrong name in some regulators
+    #  - wrong name in some regulators - CORRECTED
     #  - parse uniprot query misses some valid uniprot entries - CORRECTED
     #  - strand is missing - CORRECTED
     #  - synonyms are not unique - CORRECTED
     #  - some regulators are not being integrated and being dropped
 
     # TODO: Gene:
-    #  - wrong name in some genes
+    #  - wrong name in some genes - CORRECTED
     #  - parse uniprot query misses some valid uniprot entries - CORRECTED
     #  - strand is missing - CORRECTED
     #  - synonyms are not unique - CORRECTED

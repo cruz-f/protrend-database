@@ -71,7 +71,6 @@ def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
 
         gene_dto.ncbi_protein.append(ncbi_protein.identifier)
         gene_dto.locus_tag.append(ncbi_protein.locus_tag)
-        gene_dto.name.append(ncbi_protein.name)
         gene_dto.synonyms.extend(ncbi_protein.synonyms)
         gene_dto.sequence.append(ncbi_protein.sequence)
 
@@ -85,7 +84,14 @@ def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
     if ncbi_gene.identifier:
         gene_dto.ncbi_gene.append(ncbi_gene.identifier)
         gene_dto.locus_tag.append(ncbi_gene.locus_tag)
-        gene_dto.name.append(ncbi_gene.name)
+
+        # noinspection PyUnresolvedReferences
+        if ncbi_gene.name != ncbi_gene.locus_tag and gene_dto.name.take_first() == gene_dto.locus_tag.take_first():
+            gene_dto.name.insert(0, ncbi_gene.name)
+
+        else:
+            gene_dto.name.append(ncbi_gene.name)
+
         gene_dto.synonyms.extend(ncbi_gene.synonyms)
         gene_dto.function.append(ncbi_gene.function)
         gene_dto.position_left.append(ncbi_gene.position_left)

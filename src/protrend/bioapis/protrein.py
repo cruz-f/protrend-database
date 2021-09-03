@@ -114,10 +114,6 @@ class NCBIProtein(BioAPI):
         return self._locus_tag
 
     @property
-    def name(self) -> str:
-        return self.record.get('Caption', self._name)
-
-    @property
     def seq_record(self) -> SeqRecord:
         return self._seq_record
 
@@ -139,9 +135,6 @@ class NCBIProtein(BioAPI):
 
         if self.locus_tag:
             synonyms.append(self.locus_tag)
-
-        if self.name:
-            synonyms.append(self.name)
 
         if self.seq_record:
             for feature in self.seq_record.features:
@@ -270,10 +263,11 @@ class UniProtProtein(BioAPI):
 
     @property
     def name(self) -> str:
-        annotations = getattr(self.record, 'annotations', {})
 
-        if annotations:
-            return annotations.get('gene_name_primary', self._name)
+        if hasattr(self.record, 'annotations'):
+
+            if 'gene_name_primary' in self.record.annotations:
+                return self.record.annotations['gene_name_primary']
 
         if self.locus_tag:
             return self.locus_tag
