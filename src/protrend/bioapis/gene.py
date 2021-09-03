@@ -112,6 +112,18 @@ class NCBIGene(BioAPI):
             if right is not None:
                 return int(right)
 
+    @property
+    def strand(self) -> str:
+        if self.position_left is None:
+            return 'unknown'
+
+        if self.position_right is None:
+            return 'unknown'
+
+        if self.position_left < self.position_right:
+            return 'forward'
+        return 'reverse'
+
     def build_term(self) -> str:
 
         if self._locus_tag and self._taxonomy:

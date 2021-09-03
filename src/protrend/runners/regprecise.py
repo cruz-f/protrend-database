@@ -38,14 +38,14 @@ if __name__ == "__main__":
     # TODO: Regulator:
     #  - wrong name in some regulators
     #  - parse uniprot query misses some valid uniprot entries - CORRECTED
-    #  - strand is missing
+    #  - strand is missing - CORRECTED
     #  - synonyms are not unique - CORRECTED
     #  - some regulators are not being integrated and being dropped
 
     # TODO: Gene:
     #  - wrong name in some genes
     #  - parse uniprot query misses some valid uniprot entries - CORRECTED
-    #  - strand is missing
+    #  - strand is missing - CORRECTED
     #  - synonyms are not unique - CORRECTED
     #  - missing most UniProt accessions in gene annotation
     #  - regulon column is wrongly parsed

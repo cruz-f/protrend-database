@@ -75,19 +75,10 @@ def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
         gene_dto.synonyms.extend(ncbi_protein.synonyms)
         gene_dto.sequence.append(ncbi_protein.sequence)
 
-        refseq = ''
-        genbank = ''
-
         if ncbi_protein.is_refseq():
             gene_dto.refseq_accession.append(ncbi_protein.refseq_accession)
-            refseq = ncbi_protein.refseq_accession
         else:
             gene_dto.genbank_accession.append(ncbi_protein.genbank_accession)
-            genbank = ncbi_protein.genbank_accession
-
-        return 1, ncbi_protein.identifier, refseq, genbank
-
-    return 0, '', '', ''
 
 
 def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
@@ -99,10 +90,11 @@ def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
         gene_dto.function.append(ncbi_gene.function)
         gene_dto.position_left.append(ncbi_gene.position_left)
         gene_dto.position_right.append(ncbi_gene.position_right)
+        gene_dto.strand.append(ncbi_gene.strand)
 
-        return 1, ncbi_gene.identifier
+        return ncbi_gene.identifier
 
-    return 0, ''
+    return ''
 
 
 def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
