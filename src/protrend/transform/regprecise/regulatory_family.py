@@ -5,7 +5,7 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list_nan,
-                                           to_int_str)
+                                           to_int_str, to_nan)
 from protrend.transform.regprecise import PublicationTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (RegulatoryFamilySettings, RegulatoryFamilyToSource,
@@ -64,6 +64,10 @@ class RegulatoryFamilyTransformer(Transformer):
         df['mechanism'] = 'transcription factor'
 
         # concat description
+        apply_processors(to_nan, df=df, col='description_tf_family')
+        apply_processors(to_nan, df=df, col='description_tf')
+        df['description_tf_family'] = df['description_tf_family'].fillna(value='')
+        df['description_tf'] = df['description_tf'].fillna(value='')
         df = self.concat_columns(df=df, column='description', left='description_tf_family', right='description_tf')
 
         # concat pubmed
@@ -101,9 +105,6 @@ class RegulatoryFamilyTransformer(Transformer):
         apply_processors(to_int_str, df=df, col='tffamily_id')
         apply_processors(to_int_str, df=df, col='riboswitch_id')
         apply_processors(to_int_str, df=df, col='collection_id')
-        apply_processors(to_int_str, df=df, col='pubmed')
-        apply_processors(to_int_str, df=df, col='rfam')
-        apply_processors(to_int_str, df=df, col='regulog')
 
         self._stack_transformed_nodes(df)
         return df
