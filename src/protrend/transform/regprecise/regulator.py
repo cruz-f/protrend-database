@@ -48,7 +48,7 @@ class RegulatorTransformer(Transformer):
 
         regulon['mechanism'] = 'transcription factor'
 
-        df = pd.merge(regulon, organism, left_on='genome', right_on='genome_id')
+        df = pd.merge(regulon, organism, how='left', left_on='genome', right_on='genome_id')
 
         self.create_input_value(df=df, col='regulator_locus_tag')
         return df
@@ -56,7 +56,7 @@ class RegulatorTransformer(Transformer):
     def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
 
         # filter tfs only
-        regulon = regulon.dropna(subset=['rfam'])
+        regulon = regulon.dropna(subset=['rfam', 'genome'])
 
         regulon = self.drop_duplicates(df=regulon, subset=['rfam', 'genome'], perfect_match=True, preserve_nan=False)
 
@@ -65,13 +65,12 @@ class RegulatorTransformer(Transformer):
 
         regulon['mechanism'] = 'small RNA (sRNA)'
 
-        df = pd.merge(regulon, organism, left_on='genome', right_on='genome_id')
+        df = pd.merge(regulon, organism, how='left', left_on='genome', right_on='genome_id')
 
-        self.create_input_value(df=df, col='name')
         return df
 
     @staticmethod
-    def _annotate_genes(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
+    def _annotate_tfs(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
 
         dtos = [GeneDTO(input_value=locus) for locus in loci]
         annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
@@ -96,6 +95,30 @@ class RegulatorTransformer(Transformer):
 
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
+    @staticmethod
+    def _annotate_rnas(names: List[str]):
+
+        dtos = [GeneDTO(input_value=name) for name in names]
+
+        # locus_tag: List[str]
+        # name: List[str]
+        # synonyms: List[str]
+        # function: List[str]
+        # description: List[str]
+        # ncbi_gene: List[str]
+        # ncbi_protein: List[str]
+        # genbank_accession: List[str]
+        # refseq_accession: List[str]
+        # uniprot_accession: List[str]
+        # sequence: List[str]
+        # strand: List[str]
+        # position_left: List[int]
+        # position_right: List[int]
+
+        df = pd.DataFrame([dto.to_dict() for dto in dtos])
+        df = df.drop(columns=['name', 'locus_tag', 'input_value'])
+        return df
+
     def transform(self):
         regulon = read_from_stack(stack=self._transform_stack, file='regulon',
                                   default_columns=self.read_columns, reader=read_json_lines)
@@ -117,7 +140,7 @@ class RegulatorTransformer(Transformer):
         names = tf['name'].tolist()
         taxa = tf['ncbi_taxonomy'].tolist()
 
-        tfs = self._annotate_genes(loci, names, taxa)
+        tfs = self._annotate_tfs(loci, names, taxa)
 
         tf = pd.merge(tfs, tf, on='input_value', suffixes=('_annotation', '_regprecise'))
 
@@ -130,17 +153,10 @@ class RegulatorTransformer(Transformer):
         # ------------------ regulon of type RNA --------------------------------
         rna = self._transform_rna(regulon=regulon, organism=organism)
 
-        loci = [None] * rna.shape[0]
         names = rna['name'].tolist()
-        taxa = rna['ncbi_taxonomy'].tolist()
+        rnas = self._annotate_rnas(names)
 
-        rnas = self._annotate_genes(loci, names, taxa)
-
-        rna = pd.merge(rnas, rna, on='input_value', suffixes=('_annotation', '_regprecise'))
-
-        rna = self.merge_columns(df=rna, column='name', left='name_annotation', right='name_regprecise')
-
-        rna = rna.drop(columns=['input_value'])
+        rna = pd.concat([rna, rnas], axis=1)
 
         # --------------------- concat DFs --------------------------------------
         df = pd.concat([tf, rna], axis=0)

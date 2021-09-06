@@ -170,6 +170,10 @@ def null_to_str(item: Any) -> str:
     return item
 
 
+def split_str(item: str) -> List[str]:
+    return item.split(sep=' ')
+
+
 def upper_case(item: str) -> str:
     return item.upper()
 

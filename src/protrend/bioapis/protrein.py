@@ -7,7 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search, entrez_fetch
 from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
-from protrend.transform.processors import to_int_str, to_str, apply_processors, lower_case
+from protrend.transform.processors import to_int_str, to_str, apply_processors, lower_case, split_str
 from protrend.utils.miscellaneous import is_null
 
 
@@ -337,31 +337,52 @@ class UniProtProtein(BioAPI):
 
         return query
 
+    def _filter_by_locus_tag(self, query: pd.DataFrame) -> pd.DataFrame:
+
+        def loci_filter(row):
+
+            if is_null(row):
+                return False
+
+            return self._locus_tag.lower() in row
+
+        if self._locus_tag:
+            loci_mask = query['Gene names'].map(loci_filter)
+
+            if loci_mask.any():
+                query = query[loci_mask]
+
+        return query
+
+    def _filter_by_name(self, query: pd.DataFrame) -> pd.DataFrame:
+
+        def name_filter(row):
+
+            if is_null(row):
+                return False
+
+            return self._name.lower() in row
+
+        if self._name:
+            name_mask = query['Gene names  (primary )'].map(name_filter)
+
+            if name_mask.any():
+                query = query[name_mask]
+
+        return query
+
     def parse_uniprot_query(self, query: pd.DataFrame):
 
         apply_processors(to_int_str, df=query, col='Organism ID')
-        apply_processors(to_str, df=query, col='Gene names')
-        apply_processors(lower_case, df=query, col='Gene names')
-        apply_processors(to_str, df=query, col='Gene names  (primary )')
-        apply_processors(lower_case, df=query, col='Gene names  (primary )')
+        apply_processors(to_str, lower_case, split_str, df=query, col='Gene names')
+        apply_processors(to_str, lower_case, split_str, df=query, col='Gene names  (primary )')
 
         query = self._filter_by_taxonomy(query=query)
+        query = self._filter_by_locus_tag(query=query)
+        query = self._filter_by_name(query=query)
 
-        if self._locus_tag:
-
-            loci_mask = query['Gene names'].str.contains(self._locus_tag.lower())
-            accessions = query.loc[loci_mask, 'Entry']
-
-            if accessions.size == 1:
-                return accessions[0]
-
-        if self._name:
-
-            loci_mask = query['Gene names  (primary )'].str.contains(self._name.lower())
-            accessions = query.loc[loci_mask, 'Entry']
-
-            if accessions.size == 1:
-                return accessions[0]
+        if query['Entry'].size == 1:
+            return query['Entry'].iloc[0]
 
         return ''
 
@@ -390,11 +411,12 @@ class UniProtProtein(BioAPI):
 
             query = self.build_query()
             uniprot_query = query_uniprot(query=query)
-
             identifier = self.parse_uniprot_query(uniprot_query)
+
+        if identifier:
             self._identifier = identifier
 
-        if not identifier:
+        else:
             return
 
         record = fetch_uniprot_record(self._identifier)

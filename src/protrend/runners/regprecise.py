@@ -11,16 +11,16 @@ from protrend.runners import run_spider
 
 def transform_runner() -> Director:
     transformers = [
-        EffectorTransformer(),
-        GeneTransformer(),
-        OperonTransformer(),
-        OrganismTransformer(),
-        PathwayTransformer(),
-        PublicationTransformer(),
+        # EffectorTransformer(),
+        # GeneTransformer(),
+        # OperonTransformer(),
+        # OrganismTransformer(),
+        # PathwayTransformer(),
+        # PublicationTransformer(),
         RegulatorTransformer(),
-        RegulatoryFamilyTransformer(),
-        SourceTransformer(),
-        TFBSTransformer(),
+        # RegulatoryFamilyTransformer(),
+        # SourceTransformer(),
+        # TFBSTransformer(),
     ]
     director = Director(transformers=transformers)
     return director
@@ -40,7 +40,8 @@ if __name__ == "__main__":
     #  - parse uniprot query misses some valid uniprot entries - CORRECTED
     #  - strand is missing - CORRECTED
     #  - synonyms are not unique - CORRECTED
-    #  - some regulators are not being integrated and being dropped
+    #  - some regulators are not being integrated and being dropped - CORRECTED
+    #  - missing ncbi gene
 
     # TODO: Gene:
     #  - wrong name in some genes - CORRECTED
