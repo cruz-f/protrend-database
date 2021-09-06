@@ -36,10 +36,7 @@ class NCBIGene(BioAPI):
 
     @property
     def identifier(self) -> str:
-        if hasattr(self.record, 'attributes'):
-            return self.record.attributes.get('uid', self._identifier)
-
-        return self._identifier
+        return self.record.get('attributes', {}).get('uid', self._identifier)
 
     @property
     def taxonomy(self) -> str:

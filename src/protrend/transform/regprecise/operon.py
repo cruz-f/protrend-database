@@ -5,7 +5,7 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
                                            operon_left_position, operon_right_position, flatten_set, to_list,
-                                           null_to_none, to_int_str)
+                                           null_to_none, to_nan)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
@@ -147,7 +147,6 @@ class OperonTransformer(Transformer):
                                  default_columns=self.read_columns, reader=read_json_lines)
 
         operon = operon.drop(columns=['name'])
-        apply_processors(to_int_str, df=operon, col='regulon')
 
         operon = operon.explode('regulon')
         operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
@@ -177,8 +176,6 @@ class OperonTransformer(Transformer):
         df = self._transform_operon_by_gene(operon=df, gene=gene)
         df = self._operon_coordinates(operon=df, gene=gene)
 
-        apply_processors(to_int_str, df=df, col='regulon')
-
         self._stack_transformed_nodes(df)
 
         return df
@@ -199,7 +196,7 @@ class OperonTransformer(Transformer):
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
         df['genes_id'] = df['genes']
-        apply_processors(genes_to_hash, df=df, col='genes_id')
+        apply_processors(genes_to_hash, to_nan, df=df, col='genes_id')
 
         # ensure uniqueness
         df = self.drop_duplicates(df=df, subset=['genes_id'], perfect_match=True, preserve_nan=True)
@@ -219,7 +216,7 @@ class OperonTransformer(Transformer):
 
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes], axis=0)
-        df.drop(columns=['genes_id'])
+        df = df.drop(columns=['genes_id'])
 
         self._stack_integrated_nodes(df)
         self._stack_nodes(df)

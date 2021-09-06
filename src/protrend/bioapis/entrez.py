@@ -93,6 +93,9 @@ def entrez_summary(db: str, identifier: str) -> dict:
     else:
         record = {}
 
+    if hasattr(record, 'attributes'):
+        record['attributes'] = record.attributes
+
     time.sleep(REQUEST_SLEEP)
 
     return record

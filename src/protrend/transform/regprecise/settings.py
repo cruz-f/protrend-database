@@ -33,7 +33,8 @@ class OperonSettings(RegPreciseSettings):
     default_node: Operon = Operon
     default_node_factors: Tuple[str] = ()
     default_transform: Dict[str, str] = {'operon': 'Operon.json',
-                                         'gene': 'integrated_gene.json'}
+                                         'gene': 'integrated_gene.json',
+                                         'tfbs': 'integrated_tfbs.json'}
     default_connect: Dict[str, str] = {'from': 'integrated_operon.json',
                                        'to_source': 'integrated_source.json',
                                        'to_organism': 'integrated_regulator.json',

@@ -55,6 +55,7 @@ def to_nan(item: Any) -> Union[None, Any]:
 
     return item
 
+
 def to_int_str(item: Any) -> str:
     if isinstance(item, str):
         return item
