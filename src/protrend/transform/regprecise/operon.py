@@ -1,3 +1,6 @@
+from statistics import mode
+
+import numpy as np
 import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
@@ -15,6 +18,7 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformer import Transformer
 from protrend.utils import build_graph, find_connected_nodes
+from protrend.utils.miscellaneous import is_null
 
 
 class OperonTransformer(Transformer):
@@ -97,48 +101,50 @@ class OperonTransformer(Transformer):
         return operon
 
     @staticmethod
-    def _operon_coordinates(operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+    def _operon_coordinates(operon: pd.DataFrame) -> pd.DataFrame:
 
-        gene = gene.set_index(gene['gene_protrend_id'])
-        apply_processors(null_to_none, df=gene, col='strand')
-        apply_processors(null_to_none, df=gene, col='position_left')
-        apply_processors(null_to_none, df=gene, col='position_right')
+        def strand_mode(item):
+            m = mode(item)
 
-        strands = []
-        positions_left = []
-        positions_right = []
+            if is_null(m):
+                return None
 
-        for genes in operon['genes']:
+            return m
 
-            op_strand = None
+        def position_left(item):
+            if is_null(item):
+                return None
 
-            for op_gene in genes:
-                op_gene_strand = gene.loc[op_gene, 'strand']
-                op_strand = operon_strand(previous_strand=op_strand,
-                                          current_strand=op_gene_strand)
+            item = to_list(item)
 
-            operon_left = None
-            operon_right = None
+            x = np.array(item, dtype=np.float64)
+            return np.nanmin(x)
 
-            for op_gene in genes:
-                op_gene_left = gene.loc[op_gene, 'position_left']
-                op_gene_right = gene.loc[op_gene, 'position_right']
+        def position_right(item):
+            if is_null(item):
+                return None
 
-                operon_left = operon_left_position(strand=op_strand,
-                                                   previous_left=operon_left,
-                                                   current_left=op_gene_left)
+            item = to_list(item)
 
-                operon_right = operon_right_position(strand=op_strand,
-                                                     previous_right=operon_right,
-                                                     current_right=op_gene_right)
+            x = np.array(item, dtype=np.float64)
+            return np.nanmax(x)
 
-            strands.append(op_strand)
-            positions_left.append(operon_left)
-            positions_right.append(operon_right)
+        operon['strand'] = operon['strand'].map(strand_mode, na_action='ignore')
+        forward = operon['strand'] == 'forward'
+        reverse = operon['strand'] == 'reverse'
 
-        operon['strand'] = strands
-        operon['first_gene_position_left'] = positions_left
-        operon['last_gene_position_right'] = positions_right
+        operon['first_gene_position_left'] = None
+        operon['last_gene_position_right'] = None
+
+        operon.loc[forward, 'first_gene_position_left'] = operon.loc[forward, 'position_left'].map(position_left,
+                                                                                                   na_action='ignore')
+        operon.loc[forward, 'last_gene_position_right'] = operon.loc[forward, 'position_right'].map(position_right,
+                                                                                                    na_action='ignore')
+
+        operon.loc[reverse, 'first_gene_position_left'] = operon.loc[reverse, 'position_left'].map(position_right,
+                                                                                                   na_action='ignore')
+        operon.loc[reverse, 'last_gene_position_right'] = operon.loc[reverse, 'position_right'].map(position_left,
+                                                                                                    na_action='ignore')
 
         return operon
 
@@ -174,7 +180,7 @@ class OperonTransformer(Transformer):
         # last_gene_position_right
         df = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
         df = self._transform_operon_by_gene(operon=df, gene=gene)
-        df = self._operon_coordinates(operon=df, gene=gene)
+        df = self._operon_coordinates(operon=df)
 
         self._stack_transformed_nodes(df)
 

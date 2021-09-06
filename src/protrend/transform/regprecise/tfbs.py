@@ -8,8 +8,7 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import DefaultConnector
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, tfbs_left_position,
-                                           operon_left_position, operon_strand, tfbs_right_position, null_to_none,
-                                           to_int)
+                                           operon_left_position, operon_strand, tfbs_right_position, null_to_none)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism

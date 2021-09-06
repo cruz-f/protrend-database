@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 from typing import Callable, Any, List, Union, Sequence
 
+import numpy as np
 import pandas as pd
 from w3lib.html import remove_tags
 
@@ -295,13 +296,13 @@ def operon_left_position(strand: Union[None, str],
     if strand is None:
         strand = 'forward'
 
-    if previous_left is None:
-        previous_left = 0
-
-    if current_left is None:
-        current_left = 0
-
     if strand == 'forward':
+
+        if previous_left is None:
+            previous_left = np.inf
+
+        if current_left is None:
+            current_left = np.inf
 
         if current_left < previous_left:
             left = current_left
@@ -309,10 +310,16 @@ def operon_left_position(strand: Union[None, str],
         elif previous_left < current_left:
             left = previous_left
 
-        elif previous_left == current_left and current_left != 0:
-            left = previous_left
+        elif previous_left == current_left and current_left != np.inf:
+            left = current_left
 
     elif strand == 'reverse':
+
+        if previous_left is None:
+            previous_left = -np.inf
+
+        if current_left is None:
+            current_left = -np.inf
 
         if current_left > previous_left:
             left = current_left
@@ -321,7 +328,7 @@ def operon_left_position(strand: Union[None, str],
             left = previous_left
 
         elif previous_left == current_left and current_left != 0:
-            left = previous_left
+            left = current_left
 
     return left
 
@@ -335,13 +342,13 @@ def operon_right_position(strand: str,
     if strand is None:
         strand = 'forward'
 
-    if previous_right is None:
-        previous_right = 0
-
-    if current_right is None:
-        current_right = 0
-
     if strand == 'forward':
+
+        if previous_right is None:
+            previous_right = np.inf
+
+        if current_right is None:
+            current_right = np.inf
 
         if current_right > previous_right:
             right = current_right
@@ -350,9 +357,15 @@ def operon_right_position(strand: str,
             right = previous_right
 
         elif previous_right == current_right and current_right != 0:
-            right = previous_right
+            right = current_right
 
     elif strand == 'reverse':
+
+        if previous_right is None:
+            previous_right = -np.inf
+
+        if current_right is None:
+            current_right = -np.inf
 
         if current_right < previous_right:
             right = current_right
