@@ -30,13 +30,13 @@ class GeneTransformer(Transformer):
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         apply_processors(rstrip, lstrip, df=gene, col='locus_tag')
         apply_processors(rstrip, lstrip, df=gene, col='name')
-        apply_processors(to_int_str, df=gene, col='regulon')
 
         aggregation = {'name': take_last, 'function': take_last, 'url': set}
         gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
 
         apply_processors(to_list, df=gene, col='regulon')
         gene = gene.explode('regulon')
+        apply_processors(to_int_str, df=gene, col='regulon')
 
         gene = pd.merge(gene, regulator, how='left', left_on='regulon', right_on='regulon_id')
 
@@ -44,6 +44,8 @@ class GeneTransformer(Transformer):
                        'organism_protrend_id': take_last, 'genome_id': take_last, 'ncbi_taxonomy': take_last,
                        'regulator_protrend_id': take_last, 'regulon_id': take_last, 'regulon': set}
         gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
+
+        gene['locus_tag_old'] = gene['locus_tag']
 
         gene = self.create_input_value(df=gene, col='locus_tag')
         return gene
@@ -84,7 +86,6 @@ class GeneTransformer(Transformer):
         apply_processors(to_int_str, df=regulator, col='regulon_id')
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
-        gene['locus_tag_old'] = gene['locus_tag']
 
         loci = gene['input_value'].tolist()
         names = gene['name'].tolist()
@@ -102,7 +103,6 @@ class GeneTransformer(Transformer):
         apply_processors(to_int_str, df=df, col='genome_id')
         apply_processors(to_int_str, df=df, col='ncbi_taxonomy')
         apply_processors(to_int_str, df=df, col='regulon_id')
-        apply_processors(to_int_str, df=df, col='regulon')
 
         self._stack_transformed_nodes(df)
 

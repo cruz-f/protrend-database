@@ -1,13 +1,13 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Type, Callable, Dict, Sequence, Set
+from typing import Tuple, Union, List, Type, Callable, Dict, Set
 
 import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.transform.processors import take_last
+from protrend.transform.processors import take_last, apply_processors, to_nan
 from protrend.transform.settings import TransformerSettings
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
@@ -236,6 +236,7 @@ class Transformer(AbstractTransformer):
         :return: it creates a new pandas DataFrame of the integrated data
         """
         # ensure uniqueness
+        self.standardize_nulls(df=df)
         df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
 
         # take a db snapshot for the current node
@@ -298,6 +299,11 @@ class Transformer(AbstractTransformer):
             df = self.empty_frame()
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
+
+    def standardize_nulls(self, df: pd.DataFrame):
+
+        for col in self.node_factors:
+            apply_processors(to_nan, df=df, col=col)
 
     @staticmethod
     def create_input_value(df: pd.DataFrame, col: str) -> pd.DataFrame:

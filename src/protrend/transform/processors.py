@@ -26,7 +26,7 @@ def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
 
     """
 
-    handle_nan_processors = (null_to_str, null_to_none, to_list_nan)
+    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan)
 
     for processor in processors:
         if processor in handle_nan_processors:
@@ -48,6 +48,12 @@ def to_str(item: Any) -> str:
     except (ValueError, TypeError):
         return item
 
+
+def to_nan(item: Any) -> Union[None, Any]:
+    if is_null(item):
+        return None
+
+    return item
 
 def to_int_str(item: Any) -> str:
     if isinstance(item, str):

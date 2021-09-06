@@ -17,7 +17,7 @@ def transform_runner() -> Director:
         # OrganismTransformer(),
         # PathwayTransformer(),
         # PublicationTransformer(),
-        RegulatorTransformer(),
+        # RegulatorTransformer(),
         # RegulatoryFamilyTransformer(),
         # SourceTransformer(),
         # TFBSTransformer(),
@@ -48,10 +48,11 @@ if __name__ == "__main__":
     #  - parse uniprot query misses some valid uniprot entries - CORRECTED
     #  - strand is missing - CORRECTED
     #  - synonyms are not unique - CORRECTED
-    #  - missing most UniProt accessions in gene annotation
-    #  - regulon column is wrongly parsed
-    #  - missing all information regarding organism and ncbi taxonomy
-    #  - some genes are not being integrated and being dropped
+    #  - missing most UniProt accessions in gene annotation - CORRECTED
+    #  - regulon column is wrongly parsed - CORRECTED
+    #  - missing all information regarding organism and ncbi taxonomy - CORRECTED
+    #  - some genes are not being integrated and being dropped - CORRECTED
+    #  - missing ncbi gene
 
     # TODO: Operon:
     #  - Missing all hits with tfbs (might not be a problem due to sampling)
@@ -62,6 +63,6 @@ if __name__ == "__main__":
     #  - strand is missing
 
     # TODO: RegulatoryFamily:
-    #  - Description is missing in some rows
+    #  - Description is missing in some rows - CORRECTED
 
     # TODO: Connectors
