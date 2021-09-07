@@ -236,7 +236,7 @@ class Transformer(AbstractTransformer):
         :return: it creates a new pandas DataFrame of the integrated data
         """
         # ensure uniqueness
-        self.standardize_nulls(df=df)
+        df = self.standardize_nulls(df=df)
         df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
 
         # take a db snapshot for the current node
@@ -300,10 +300,12 @@ class Transformer(AbstractTransformer):
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
-    def standardize_nulls(self, df: pd.DataFrame):
+    def standardize_nulls(self, df: pd.DataFrame) -> pd.DataFrame:
 
-        for col in self.node_factors:
-            apply_processors(to_nan, df=df, col=col)
+        processors = {col: to_nan for col in self.node_factors}
+
+        df = apply_processors(df, **processors)
+        return df
 
     @staticmethod
     def create_input_value(df: pd.DataFrame, col: str) -> pd.DataFrame:

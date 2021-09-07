@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_organisms
-from protrend.transform.connector import DefaultConnector
+from protrend.transform.connector import Connector
 from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str
 from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
@@ -26,10 +26,8 @@ class OrganismTransformer(Transformer):
     def _transform_genome(self, genome: pd.DataFrame) -> pd.DataFrame:
         genome = self.drop_duplicates(df=genome, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(rstrip, lstrip, df=genome, col='name')
-        apply_processors(to_int_str, df=genome, col='genome_id')
-        apply_processors(to_int_str, df=genome, col='taxonomy')
-        apply_processors(to_int_str, df=genome, col='regulon')
+        genome = apply_processors(genome, name=[rstrip, lstrip], genome_id=to_int_str, taxonomy=to_int_str,
+                                  regulon=to_int_str)
 
         genome = self.create_input_value(genome, col='name')
 
@@ -69,15 +67,14 @@ class OrganismTransformer(Transformer):
 
         df = df.drop(columns=['input_value'])
 
-        apply_processors(to_int_str, df=df, col='ncbi_taxonomy')
-        apply_processors(to_int_str, df=df, col='ncbi_assembly')
+        df = apply_processors(df, ncbi_taxonomy=to_int_str, ncbi_assembly=to_int_str)
 
         self._stack_transformed_nodes(df)
 
         return df
 
 
-class OrganismToSourceConnector(DefaultConnector):
+class OrganismToSourceConnector(Connector):
     default_settings = OrganismToSource
 
     def connect(self):

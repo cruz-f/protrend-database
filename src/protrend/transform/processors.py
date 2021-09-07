@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Callable, Any, List, Union, Sequence
+from typing import Callable, Any, List, Union, Sequence, Dict
 
 import numpy as np
 import pandas as pd
@@ -15,26 +15,39 @@ multiple_white_space_pattern = re.compile(r' +')
 pubmed_pattern = re.compile(r'\[[0-9]*]|\[[0-9]*,|\s[0-9]*,|\s[0-9]*]')
 
 
-def apply_processors(*processors: Callable, df: pd.DataFrame, col: str) -> None:
+def apply_processors(df: pd.DataFrame, **processors: Dict[str, Union[Callable, List[Callable]]]) -> pd.DataFrame:
     """
     Helping function to apply processors over a pandas DataFrame column
 
-    :param processors: multiple processors to be applied over a DataFrame column
+    :param processors: multiple processors to be applied over DataFrame columns
     :param df: DataFrame that will be changed by multiple processors applied over a single column
-    :param col: DataFrame column
 
-    :return: Nothing to return, it just changes the DataFrame object
+    :return: it returns a new DataFrame object
 
     """
 
     handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan)
 
-    for processor in processors:
-        if processor in handle_nan_processors:
-            df[col] = df[col].map(processor)
+    new_columns = {}
 
-        else:
-            df[col] = df[col].map(processor, na_action='ignore')
+    for column, processor in processors.items():
+
+        processor = to_list(processor)
+        ds = df[column].copy()
+
+        for fn in processor:
+
+            if fn in handle_nan_processors:
+                ds = ds.map(fn)
+
+            else:
+                ds = ds.map(fn, na_action='ignore')
+
+        new_columns[column] = ds
+
+    df = df.assign(**new_columns)
+
+    return df
 
 
 def to_str(item: Any) -> str:
@@ -133,7 +146,6 @@ def flatten_list(items):
 
 
 def take_last(items: Sequence[Any]) -> Any:
-
     if isinstance(items, pd.Series):
         try:
             return items.iloc[-1]
@@ -149,7 +161,6 @@ def take_last(items: Sequence[Any]) -> Any:
 
 
 def take_first(items: Sequence[Any]) -> Any:
-
     if isinstance(items, pd.Series):
         try:
             return items.iloc[0]
@@ -165,7 +176,6 @@ def take_first(items: Sequence[Any]) -> Any:
 
 
 def null_to_none(item: Any) -> Union[Any, None]:
-
     if is_null(item):
         return None
 
@@ -383,7 +393,6 @@ def tfbs_left_position(strand: str,
                        gene_position: Union[int, None],
                        gene_relative_position: int,
                        default: Union[None, int] = None) -> Union[None, int]:
-
     if strand is None:
         strand = 'forward'
 
@@ -404,7 +413,6 @@ def tfbs_right_position(strand: str,
                         gene_relative_position: int,
                         tfbs_length: int,
                         default: Union[None, int] = None) -> Union[None, int]:
-
     if strand is None:
         strand = 'forward'
 

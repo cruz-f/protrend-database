@@ -48,8 +48,8 @@ class GeneDTO(DTO):
     uniprot_accession: List[str] = set_list_field(output='take_first', init=False)
     sequence: List[str] = set_list_field(output='take_first', init=False)
     strand: List[str] = set_list_field(output='take_first', init=False)
-    position_left: List[int] = set_list_field(output='take_first', init=False)
-    position_right: List[int] = set_list_field(output='take_first', init=False)
+    start: List[int] = set_list_field(output='take_first', init=False)
+    stop: List[int] = set_list_field(output='take_first', init=False)
 
 
 @dataclass

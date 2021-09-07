@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_effectors
-from protrend.transform.connector import DefaultConnector
+from protrend.transform.connector import Connector
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
 from protrend.transform.regprecise.regulator import RegulatorTransformer
@@ -24,9 +24,7 @@ class EffectorTransformer(Transformer):
         effector = effector.dropna(subset=['name'])
         effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(rstrip, lstrip, df=effector, col='name')
-        apply_processors(to_int_str, df=effector, col='effector_id')
-        apply_processors(to_int_str, df=effector, col='regulog')
+        effector = apply_processors(effector,  effector_id=to_int_str, name=[rstrip, lstrip], regulog=to_int_str)
 
         effector = self.create_input_value(effector, 'name')
 
@@ -58,7 +56,7 @@ class EffectorTransformer(Transformer):
         return df
 
 
-class EffectorToSourceConnector(DefaultConnector):
+class EffectorToSourceConnector(Connector):
     default_settings = EffectorToSource
 
     def connect(self):
@@ -84,7 +82,7 @@ class EffectorToSourceConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class EffectorToOrganismConnector(DefaultConnector):
+class EffectorToOrganismConnector(Connector):
     default_settings = EffectorToOrganism
 
     def connect(self):
@@ -109,7 +107,7 @@ class EffectorToOrganismConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class EffectorToRegulatorConnector(DefaultConnector):
+class EffectorToRegulatorConnector(Connector):
     default_settings = EffectorToRegulator
 
     def connect(self):

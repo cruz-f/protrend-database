@@ -94,8 +94,8 @@ def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
 
         gene_dto.synonyms.extend(ncbi_gene.synonyms)
         gene_dto.function.append(ncbi_gene.function)
-        gene_dto.position_left.append(ncbi_gene.position_left)
-        gene_dto.position_right.append(ncbi_gene.position_right)
+        gene_dto.start.append(ncbi_gene.start)
+        gene_dto.stop.append(ncbi_gene.stop)
         gene_dto.strand.append(ncbi_gene.strand)
 
         return ncbi_gene.identifier

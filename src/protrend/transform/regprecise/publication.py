@@ -78,7 +78,7 @@ class PublicationTransformer(Transformer):
 
         df = df.drop(columns=['input_value'])
 
-        apply_processors(to_int_str, df=df, col='pmid')
+        df = apply_processors(df, pmid=to_int_str)
 
         self._stack_transformed_nodes(df)
 

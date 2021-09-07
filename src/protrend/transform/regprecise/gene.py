@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_genes
-from protrend.transform.connector import DefaultConnector
+from protrend.transform.connector import Connector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list, to_int_str
 from protrend.transform.regprecise.regulator import RegulatorTransformer
@@ -20,7 +20,7 @@ class GeneTransformer(Transformer):
                'locus_tag', 'name', 'synonyms', 'function', 'description',
                'ncbi_gene', 'ncbi_protein', 'genbank_accession',
                'refseq_accession', 'uniprot_accession',
-               'sequence', 'strand', 'position_left', 'position_right',
+               'sequence', 'strand', 'start', 'stop',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
                'regulator_protrend_id', 'regulon_id', 'locus_tag_old',
                'regulon', 'operon', 'tfbs'}
@@ -28,15 +28,14 @@ class GeneTransformer(Transformer):
     read_columns = {'locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'}
 
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
-        apply_processors(rstrip, lstrip, df=gene, col='locus_tag')
-        apply_processors(rstrip, lstrip, df=gene, col='name')
+        gene = apply_processors(gene, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
 
         aggregation = {'name': take_last, 'function': take_last, 'url': set}
         gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
 
-        apply_processors(to_list, df=gene, col='regulon')
+        gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
-        apply_processors(to_int_str, df=gene, col='regulon')
+        gene = apply_processors(gene, regulon=to_int_str)
 
         gene = pd.merge(gene, regulator, how='left', left_on='regulon', right_on='regulon_id')
 
@@ -67,8 +66,8 @@ class GeneTransformer(Transformer):
         # uniprot_accession: List[str]
         # sequence: List[str]
         # strand: List[str]
-        # position_left: List[int]
-        # position_right: List[int]
+        # start: List[int]
+        # stop: List[int]
 
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
@@ -81,9 +80,7 @@ class GeneTransformer(Transformer):
         regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulon_id',
                                         'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
-        apply_processors(to_int_str, df=regulator, col='genome_id')
-        apply_processors(to_int_str, df=regulator, col='ncbi_taxonomy')
-        apply_processors(to_int_str, df=regulator, col='regulon_id')
+        regulator = apply_processors(regulator, genome_id=to_int_str, ncbi_taxonomy=to_int_str, regulon_id=to_int_str)
 
         gene = self._transform_gene(gene=gene, regulator=regulator)
 
@@ -100,16 +97,14 @@ class GeneTransformer(Transformer):
 
         df = df.drop(columns=['input_value'])
 
-        apply_processors(to_int_str, df=df, col='genome_id')
-        apply_processors(to_int_str, df=df, col='ncbi_taxonomy')
-        apply_processors(to_int_str, df=df, col='regulon_id')
+        df = apply_processors(df, genome_id=to_int_str, ncbi_taxonomy=to_int_str, regulon_id=to_int_str)
 
         self._stack_transformed_nodes(df)
 
         return df
 
 
-class GeneToSourceConnector(DefaultConnector):
+class GeneToSourceConnector(Connector):
     default_settings = GeneToSource
 
     def connect(self):
@@ -136,7 +131,7 @@ class GeneToSourceConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class GeneToOrganismConnector(DefaultConnector):
+class GeneToOrganismConnector(Connector):
     default_settings = GeneToOrganism
 
     def connect(self):

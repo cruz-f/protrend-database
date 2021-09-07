@@ -373,9 +373,10 @@ class UniProtProtein(BioAPI):
 
     def parse_uniprot_query(self, query: pd.DataFrame):
 
-        apply_processors(to_int_str, df=query, col='Organism ID')
-        apply_processors(to_str, lower_case, split_str, df=query, col='Gene names')
-        apply_processors(to_str, lower_case, split_str, df=query, col='Gene names  (primary )')
+        processors = {'Organism ID': to_int_str,
+                      'Gene names': [to_str, lower_case, split_str],
+                      'Gene names  (primary )': [to_str, lower_case, split_str]}
+        query = apply_processors(query, **processors)
 
         query = self._filter_by_taxonomy(query=query)
         query = self._filter_by_locus_tag(query=query)

@@ -5,9 +5,9 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_pathways
-from protrend.transform.connector import DefaultConnector
+from protrend.transform.connector import Connector
 from protrend.transform.dto import PathwayDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource, PathwayToRegulator
@@ -25,9 +25,7 @@ class PathwayTransformer(Transformer):
     def _transform_pathway(self, pathway: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=pathway, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(rstrip, lstrip, df=df, col='name')
-        apply_processors(to_int_str, df=df, col='pathway_id')
-        apply_processors(to_int_str, df=df, col='regulog')
+        df = apply_processors(df, name=[rstrip, lstrip], pathway_id=to_int_str, regulog=to_int_str)
 
         self.create_input_value(df, 'name')
         return df
@@ -62,7 +60,7 @@ class PathwayTransformer(Transformer):
         return df
 
 
-class PathwayToSourceConnector(DefaultConnector):
+class PathwayToSourceConnector(Connector):
     default_settings = PathwayToSource
 
     def connect(self):
@@ -88,7 +86,7 @@ class PathwayToSourceConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class PathwayToRegulatorConnector(DefaultConnector):
+class PathwayToRegulatorConnector(Connector):
     default_settings = PathwayToRegulator
 
     def connect(self):
@@ -113,7 +111,7 @@ class PathwayToRegulatorConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class PathwayToGeneConnector(DefaultConnector):
+class PathwayToGeneConnector(Connector):
     default_settings = PathwayToRegulator
 
     def connect(self):
@@ -122,12 +120,13 @@ class PathwayToGeneConnector(DefaultConnector):
 
         gene = read_from_stack(stack=self._connect_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
-        apply_processors(list, df=gene, col='regulon')
+
+        gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        apply_processors(list, df=regulator, col='pathway')
+        regulator = apply_processors(regulator, pathway=to_list)
         regulator = regulator.explode('pathway')
 
         merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',

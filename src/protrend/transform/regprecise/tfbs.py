@@ -1,19 +1,22 @@
 import re
 from collections import defaultdict
+from statistics import mode
 from typing import List, Union
 
+import numpy as np
 import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.transform.connector import DefaultConnector
-from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, tfbs_left_position,
-                                           operon_left_position, operon_strand, tfbs_right_position, null_to_none)
+from protrend.transform.connector import Connector
+from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set,
+                                           take_last)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.transformer import Transformer
+from protrend.utils.miscellaneous import is_null
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
@@ -22,7 +25,7 @@ class TFBSTransformer(Transformer):
     default_settings = TFBSSettings
     columns = {'protrend_id',
                'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene',
-               'tfbs_id_old', 'position_left', 'position_right'}
+               'tfbs_id_old', 'start', 'stop', 'length', 'gene_strand', 'gene_start', 'gene_old_locus_tag'}
     read_columns = {'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene'}
 
     @staticmethod
@@ -81,6 +84,9 @@ class TFBSTransformer(Transformer):
             regulon = row['regulon']
             operon = row['operon']
             gene = row['gene']
+            strand = row['gene_strand']
+            start = row['gene_start']
+            old_locus = row['gene_old_locus_tag']
 
             new_seqs = self._reduce_sequence(position=position, sequence=sequence)
 
@@ -96,92 +102,113 @@ class TFBSTransformer(Transformer):
                 res['regulon'].append(regulon)
                 res['operon'].append(operon)
                 res['gene'].append(gene)
+                res['gene_strand'].append(strand)
+                res['gene_start'].append(start)
+                res['gene_old_locus_tag'].append(old_locus)
 
         return pd.DataFrame(res)
 
-    def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+    def _transform_tfbs(self, tfbs: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
 
+        # filter by sequence
         tfbs = tfbs.dropna(subset=['sequence'])
-        tfbs = tfbs.explode('regulon')
+
+        # filter by gene
+        tfbs = apply_processors(tfbs, gene=to_list)
+        tfbs = tfbs.explode(column='gene')
+
+        tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='gene_old_locus_tag')
+
+        aggr = {'gene': set, 'gene_strand': set, 'gene_start': set, 'gene_old_locus_tag': set,
+                'regulon': flatten_set, 'operon': flatten_set}
+        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
+
+        # filter by regulon, sequence and position
+        tfbs = apply_processors(tfbs, regulon=to_list)
+        tfbs = tfbs.explode(column='regulon')
         tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
                                     perfect_match=True, preserve_nan=False)
         tfbs = tfbs.reset_index(drop=True)
 
-        apply_processors(remove_ellipsis, upper_case, df=tfbs, col='sequence')
+        tfbs = apply_processors(tfbs, sequence=[remove_ellipsis, upper_case])
 
         tfbs = self._normalize_sequence(tfbs)
+
         tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
                                     perfect_match=True, preserve_nan=False)
         return tfbs
 
     @staticmethod
-    def _tfbs_coordinates(tfbs: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+    def _tfbs_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
 
-        gene = gene.set_index(gene['locus_tag_old'])
-        apply_processors(null_to_none, df=gene, col='strand')
-        apply_processors(null_to_none, df=gene, col='position_left')
+        def strand_mode(item):
+            m = mode(item)
 
-        strands = []
-        positions_left = []
-        positions_right = []
+            if is_null(m):
+                return None
 
-        for position, seq, genes in zip(tfbs['position'], tfbs['sequence'], tfbs['gene']):
+            return m
 
-            op_strand = None
+        def start_forward(item):
+            if is_null(item):
+                return None
 
-            for ge in genes:
-                if ge in gene.index:
-                    ge_strand = gene.loc[ge, 'strand']
-                    op_strand = operon_strand(previous_strand=op_strand,
-                                              current_strand=ge_strand)
+            item = to_list(item)
 
-            operon_left = None
+            x = np.array(item, dtype=np.float64)
+            return np.nanmin(x)
 
-            for ge in genes:
-                if ge in gene.index:
-                    ge_left = gene.loc[ge, 'position_left']
-                    operon_left = operon_left_position(strand=op_strand,
-                                                       previous_left=operon_left,
-                                                       current_left=ge_left)
+        def start_reverse(item):
+            if is_null(item):
+                return None
 
-            tfbs_left = tfbs_left_position(strand=op_strand,
-                                           gene_position=operon_left,
-                                           gene_relative_position=position)
+            item = to_list(item)
 
-            tfbs_right = tfbs_right_position(strand=op_strand,
-                                             gene_position=operon_left,
-                                             gene_relative_position=position,
-                                             tfbs_length=len(seq))
+            x = np.array(item, dtype=np.float64)
+            return np.nanmax(x)
 
-            strands.append(op_strand)
-            positions_left.append(tfbs_left)
-            positions_right.append(tfbs_right)
+        tfbs['length'] = tfbs['sequence'].str.len()
 
-        tfbs['strand'] = strands
-        tfbs['position_left'] = positions_left
-        tfbs['position_right'] = positions_right
+        tfbs['strand'] = tfbs['gene_strand'].map(strand_mode, na_action='ignore')
+        forward = tfbs['strand'] == 'forward'
+        reverse = tfbs['strand'] == 'reverse'
+
+        tfbs['start'] = None
+        tfbs['stop'] = None
+
+        tfbs.loc[forward, 'start'] = tfbs.loc[forward, 'gene_start'].map(start_forward, na_action='ignore')
+        tfbs.loc[forward, 'start'] = tfbs.loc[forward, 'start'] + tfbs.loc[forward, 'position']
+
+        tfbs.loc[reverse, 'start'] = tfbs.loc[reverse, 'gene_start'].map(start_reverse, na_action='ignore')
+        tfbs.loc[reverse, 'start'] = tfbs.loc[reverse, 'start'] - tfbs.loc[reverse, 'position']
+
+        tfbs.loc[forward, 'stop'] = tfbs.loc[forward, 'start'] + tfbs.loc[forward, 'length']
+        tfbs.loc[reverse, 'stop'] = tfbs.loc[reverse, 'start'] + tfbs.loc[reverse, 'length']
 
         return tfbs
 
     def transform(self):
         tfbs = read_from_stack(stack=self._transform_stack, file='tfbs',
                                default_columns=self.read_columns, reader=read_json_lines)
-        tfbs = self._transform_tfbs(tfbs)
 
         gene = read_from_stack(stack=self._transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = self.select_columns(gene, 'strand', 'position_left', 'locus_tag_old')
-        gene = gene.dropna(subset=['locus_tag_old'])
-        gene = self.drop_duplicates(df=gene, subset=['locus_tag_old'], perfect_match=False, preserve_nan=False)
+        gene = self.select_columns(gene, 'strand', 'start', 'locus_tag_old')
+        gene = gene.rename(columns={'strand': 'gene_strand', 'start': 'gene_start',
+                                    'locus_tag_old': 'gene_old_locus_tag'})
+        gene = gene.dropna(subset=['gene_old_locus_tag'])
+        gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag'], perfect_match=False, preserve_nan=False)
 
-        df = self._tfbs_coordinates(tfbs, gene)
+        df = self._transform_tfbs(tfbs=tfbs, gene=gene)
+
+        df = self._tfbs_coordinates(df)
 
         self._stack_transformed_nodes(df)
 
         return df
 
 
-class TFBSToSourceConnector(DefaultConnector):
+class TFBSToSourceConnector(Connector):
     default_settings = TFBSToSource
 
     def connect(self):
@@ -207,7 +234,7 @@ class TFBSToSourceConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class TFBSToOrganismConnector(DefaultConnector):
+class TFBSToOrganismConnector(Connector):
     default_settings = TFBSToOrganism
 
     def connect(self):

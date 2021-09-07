@@ -5,10 +5,9 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.transform.connector import DefaultConnector
-from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, operon_strand,
-                                           operon_left_position, operon_right_position, flatten_set, to_list,
-                                           null_to_none, to_nan)
+from protrend.transform.connector import Connector
+from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set, to_list,
+                                           to_nan)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
@@ -27,7 +26,7 @@ class OperonTransformer(Transformer):
                'operon_id', 'name', 'url', 'regulon', 'tfbs',
                'tfbss', 'genes',
                'operon_id_old', 'operon_id_new', 'locus_tag', 'locus_tag_old',
-               'strand', 'first_gene_position_left', 'last_gene_position_right', }
+               'strand', 'start', 'stop', }
     read_columns = {'operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'}
 
     def _operon_by_gene(self, operon: pd.DataFrame) -> pd.DataFrame:
@@ -47,9 +46,7 @@ class OperonTransformer(Transformer):
         operon = pd.DataFrame({'gene': operons})
 
         operon['operon_id'] = operon['gene']
-        apply_processors(str_join, df=operon, col='operon_id')
-
-        apply_processors(to_list, df=operon, col='gene')
+        operon = apply_processors(operon, operon_id=str_join, gene=to_list)
         operon = operon.explode('gene')
         return operon
 
@@ -65,7 +62,7 @@ class OperonTransformer(Transformer):
         aggregation = {'gene': set}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
 
-        apply_processors(to_list, df=operon, col='gene')
+        operon = apply_processors(operon, gene=to_list)
         operon = operon.explode('gene')
 
         operon = pd.merge(operon, gene, left_on='gene', right_on='locus_tag_old')
@@ -73,15 +70,14 @@ class OperonTransformer(Transformer):
         # group by the new genes
         aggregation = {'gene': set,
                        'gene_protrend_id': set, 'locus_tag': set, 'name': set, 'locus_tag_old': set,
-                       'strand': set, 'position_left': set, 'position_right': set}
+                       'strand': set, 'start': set, 'stop': set}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
 
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
         operon['operon_id'] = operon['genes']
 
-        apply_processors(to_list, str_join, df=operon, col='operon_id')
-        apply_processors(to_list, operon_name, df=operon, col='name')
+        operon = apply_processors(operon, operon_id=[to_list, str_join], name=[to_list, operon_name])
 
         return operon
 
@@ -96,7 +92,7 @@ class OperonTransformer(Transformer):
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
         operon = operon.drop(columns=['operon'])
 
-        apply_processors(to_list, df=operon, col='gene')
+        operon = apply_processors(operon, gene=to_list)
 
         return operon
 
@@ -111,7 +107,7 @@ class OperonTransformer(Transformer):
 
             return m
 
-        def position_left(item):
+        def start(item):
             if is_null(item):
                 return None
 
@@ -120,7 +116,7 @@ class OperonTransformer(Transformer):
             x = np.array(item, dtype=np.float64)
             return np.nanmin(x)
 
-        def position_right(item):
+        def stop(item):
             if is_null(item):
                 return None
 
@@ -133,18 +129,14 @@ class OperonTransformer(Transformer):
         forward = operon['strand'] == 'forward'
         reverse = operon['strand'] == 'reverse'
 
-        operon['first_gene_position_left'] = None
-        operon['last_gene_position_right'] = None
+        operon['start'] = None
+        operon['stop'] = None
 
-        operon.loc[forward, 'first_gene_position_left'] = operon.loc[forward, 'position_left'].map(position_left,
-                                                                                                   na_action='ignore')
-        operon.loc[forward, 'last_gene_position_right'] = operon.loc[forward, 'position_right'].map(position_right,
-                                                                                                    na_action='ignore')
+        operon.loc[forward, 'start'] = operon.loc[forward, 'start'].map(start, na_action='ignore')
+        operon.loc[forward, 'stop'] = operon.loc[forward, 'stop'].map(stop, na_action='ignore')
 
-        operon.loc[reverse, 'first_gene_position_left'] = operon.loc[reverse, 'position_left'].map(position_right,
-                                                                                                   na_action='ignore')
-        operon.loc[reverse, 'last_gene_position_right'] = operon.loc[reverse, 'position_right'].map(position_left,
-                                                                                                    na_action='ignore')
+        operon.loc[reverse, 'start'] = operon.loc[reverse, 'start'].map(stop, na_action='ignore')
+        operon.loc[reverse, 'stop'] = operon.loc[reverse, 'stop'].map(start, na_action='ignore')
 
         return operon
 
@@ -159,8 +151,7 @@ class OperonTransformer(Transformer):
 
         gene = read_from_stack(stack=self._transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand',
-                                   'position_left', 'position_right')
+        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand', 'start', 'stop')
 
         gene = gene.dropna(subset=['protrend_id'])
         gene = gene.dropna(subset=['locus_tag_old'])
@@ -176,8 +167,8 @@ class OperonTransformer(Transformer):
         # genes
         # tfbss
         # strand
-        # first_gene_position_left
-        # last_gene_position_right
+        # start
+        # stop
         df = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
         df = self._transform_operon_by_gene(operon=df, gene=gene)
         df = self._operon_coordinates(operon=df)
@@ -202,7 +193,7 @@ class OperonTransformer(Transformer):
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
         df['genes_id'] = df['genes']
-        apply_processors(genes_to_hash, to_nan, df=df, col='genes_id')
+        df = apply_processors(df, genes_id=[genes_to_hash, to_nan])
 
         # ensure uniqueness
         df = self.drop_duplicates(df=df, subset=['genes_id'], perfect_match=True, preserve_nan=True)
@@ -230,7 +221,7 @@ class OperonTransformer(Transformer):
         return df
 
 
-class OperonToSourceConnector(DefaultConnector):
+class OperonToSourceConnector(Connector):
     default_settings = OperonToSource
 
     def connect(self):
@@ -257,13 +248,13 @@ class OperonToSourceConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class OperonToOrganismConnector(DefaultConnector):
+class OperonToOrganismConnector(Connector):
     default_settings = OperonToOrganism
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
-        apply_processors(list, df=operon, col='regulon')
+        operon = apply_processors(operon, regulon=to_list)
         operon = operon.explode('regulon')
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
@@ -283,14 +274,14 @@ class OperonToOrganismConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class OperonToRegulatorConnector(DefaultConnector):
+class OperonToRegulatorConnector(Connector):
     default_settings = OperonToRegulator
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
 
-        apply_processors(list, df=operon, col='regulon')
+        operon = apply_processors(operon, regulon=to_list)
         operon = operon.explode('regulon')
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
@@ -312,14 +303,14 @@ class OperonToRegulatorConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class OperonToGeneConnector(DefaultConnector):
+class OperonToGeneConnector(Connector):
     default_settings = OperonToGene
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
 
-        apply_processors(list, df=operon, col='genes')
+        operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
 
         operon = operon.dropna(subset=['protrend_id'])
@@ -335,14 +326,14 @@ class OperonToGeneConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class OperonToTFBSConnector(DefaultConnector):
+class OperonToTFBSConnector(Connector):
     default_settings = OperonToTFBS
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
 
-        apply_processors(list, df=operon, col='tfbss')
+        operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
 
         operon = operon.dropna(subset=['protrend_id'])
@@ -358,16 +349,14 @@ class OperonToTFBSConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class GeneToTFBSConnector(DefaultConnector):
+class GeneToTFBSConnector(Connector):
     default_settings = GeneToTFBS
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
 
-        apply_processors(list, df=operon, col='tfbss')
-        apply_processors(list, df=operon, col='genes')
-
+        operon = apply_processors(operon, genes=to_list, tfbss=to_list)
         operon = operon.explode('tfbss')
         operon = operon.explode('genes')
 
@@ -384,14 +373,13 @@ class GeneToTFBSConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class GeneToRegulatorConnector(DefaultConnector):
+class GeneToRegulatorConnector(Connector):
     default_settings = GeneToRegulator
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
-        apply_processors(list, df=operon, col='regulon')
-        apply_processors(list, df=operon, col='genes')
+        operon = apply_processors(operon, genes=to_list, regulon=to_list)
         operon = operon.explode('regulon')
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
@@ -418,14 +406,13 @@ class GeneToRegulatorConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class TFBSToRegulatorConnector(DefaultConnector):
+class TFBSToRegulatorConnector(Connector):
     default_settings = TFBSToRegulator
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
-        apply_processors(list, df=operon, col='regulon')
-        apply_processors(list, df=operon, col='tfbss')
+        operon = apply_processors(operon, tfbss=to_list, regulon=to_list)
         operon = operon.explode('regulon')
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',

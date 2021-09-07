@@ -2,10 +2,10 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.transform.connector import DefaultConnector
+from protrend.transform.connector import Connector
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list_nan,
-                                           to_int_str, to_nan)
+                                           to_int_str, to_nan, to_list)
 from protrend.transform.regprecise import PublicationTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (RegulatoryFamilySettings, RegulatoryFamilyToSource,
@@ -28,28 +28,29 @@ class RegulatoryFamilyTransformer(Transformer):
     def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(remove_white_space, df=df, col='name')
-        apply_processors(remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip, lstrip,
-                         df=df, col='description')
+        df = apply_processors(df, name=remove_white_space,
+                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
+                                           lstrip])
+
         return df
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(remove_white_space, df=df, col='name')
-        apply_processors(remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip, lstrip,
-                         df=df, col='description')
+        df = apply_processors(df, name=remove_white_space,
+                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
+                                           lstrip])
+
         return df
 
     def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=rna, subset=['rfam'], perfect_match=True, preserve_nan=False)
 
-        apply_processors(remove_white_space, df=df, col='rfam')
-        apply_processors(remove_white_space, df=df, col='name')
-        apply_processors(remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip, lstrip,
-                         df=df, col='description')
-        apply_processors(to_set, df=df, col='pubmed')
-        apply_processors(to_set, df=df, col='regulog')
+        df = apply_processors(df, name=remove_white_space, rfam=remove_white_space,
+                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
+                                           lstrip],
+                              pubmed=to_set,
+                              regulog=to_set)
 
         df = df.rename(columns={'url': 'url_rna'})
 
@@ -64,23 +65,20 @@ class RegulatoryFamilyTransformer(Transformer):
         df['mechanism'] = 'transcription factor'
 
         # concat description
-        apply_processors(to_nan, df=df, col='description_tf_family')
-        apply_processors(to_nan, df=df, col='description_tf')
+        df = apply_processors(df, description_tf_family=to_nan, description_tf=to_nan)
         df['description_tf_family'] = df['description_tf_family'].fillna(value='')
         df['description_tf'] = df['description_tf'].fillna(value='')
         df = self.concat_columns(df=df, column='description', left='description_tf_family', right='description_tf')
 
         # concat pubmed
-        apply_processors(to_list_nan, df=df, col='pubmed_tf_family')
-        apply_processors(to_list_nan, df=df, col='pubmed_tf')
+        df = apply_processors(df, pubmed_tf_family=to_list_nan, pubmed_tf=to_list_nan)
         df = self.concat_columns(df=df, column='pubmed', left='pubmed_tf_family', right='pubmed_tf')
-        apply_processors(to_set, df=df, col='pubmed')
+        df = apply_processors(df, pubmed=to_set)
 
         # concat regulog
-        apply_processors(to_list_nan, df=df, col='regulog_tf_family')
-        apply_processors(to_list_nan, df=df, col='regulog_tf')
+        df = apply_processors(df, regulog_tf_family=to_list_nan, regulog_tf=to_list_nan)
         df = self.concat_columns(df=df, column='regulog', left='regulog_tf_family', right='regulog_tf')
-        apply_processors(to_set, df=df, col='regulog')
+        df = apply_processors(df, regulog=to_set)
 
         return df
 
@@ -102,15 +100,13 @@ class RegulatoryFamilyTransformer(Transformer):
 
         df = pd.concat([tfs, rna])
 
-        apply_processors(to_int_str, df=df, col='tffamily_id')
-        apply_processors(to_int_str, df=df, col='riboswitch_id')
-        apply_processors(to_int_str, df=df, col='collection_id')
+        df = apply_processors(df, tffamily_id=to_int_str, riboswitch_id=to_int_str, collection_id=to_int_str)
 
         self._stack_transformed_nodes(df)
         return df
 
 
-class RegulatoryFamilyToSourceConnector(DefaultConnector):
+class RegulatoryFamilyToSourceConnector(Connector):
     default_settings = RegulatoryFamilyToSource
 
     def connect(self):
@@ -150,13 +146,13 @@ class RegulatoryFamilyToSourceConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class RegulatoryFamilyToPublicationConnector(DefaultConnector):
+class RegulatoryFamilyToPublicationConnector(Connector):
     default_settings = RegulatoryFamilyToPublication
 
     def connect(self):
         regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
                                             default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        apply_processors(list, df=regulatory_family, col='pubmed')
+        regulatory_family = apply_processors(regulatory_family, pubmed=to_list)
         regulatory_family = regulatory_family.explode('pubmed')
 
         publication = read_from_stack(stack=self._connect_stack, file='publication',
@@ -179,7 +175,7 @@ class RegulatoryFamilyToPublicationConnector(DefaultConnector):
         self.stack_csv(df)
 
 
-class RegulatoryFamilyToRegulatorConnector(DefaultConnector):
+class RegulatoryFamilyToRegulatorConnector(Connector):
     default_settings = RegulatoryFamilyToRegulator
 
     def connect(self):

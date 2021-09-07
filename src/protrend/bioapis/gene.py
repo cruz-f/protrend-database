@@ -86,7 +86,7 @@ class NCBIGene(BioAPI):
         return ''
 
     @property
-    def position_left(self) -> int:
+    def start(self) -> int:
         genomic_infos = self.record.get('GenomicInfo')
 
         if genomic_infos:
@@ -98,7 +98,7 @@ class NCBIGene(BioAPI):
                 return int(left)
 
     @property
-    def position_right(self) -> int:
+    def stop(self) -> int:
         genomic_infos = self.record.get('GenomicInfo')
 
         if genomic_infos:
@@ -111,13 +111,13 @@ class NCBIGene(BioAPI):
 
     @property
     def strand(self) -> str:
-        if self.position_left is None:
+        if self.start is None:
             return 'unknown'
 
-        if self.position_right is None:
+        if self.stop is None:
             return 'unknown'
 
-        if self.position_left < self.position_right:
+        if self.start < self.stop:
             return 'forward'
         return 'reverse'
 
