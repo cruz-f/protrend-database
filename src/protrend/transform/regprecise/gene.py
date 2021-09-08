@@ -69,7 +69,10 @@ class GeneTransformer(Transformer):
         # start: List[int]
         # stop: List[int]
 
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        genes = pd.DataFrame([dto.to_dict() for dto in dtos])
+        strand_mask = (genes['strand'] != 'reverse') & (genes['strand'] != 'forward')
+        genes.loc[strand_mask, 'strand'] = None
+        return genes
 
     def transform(self):
         gene = read_from_stack(stack=self._transform_stack, file='gene',

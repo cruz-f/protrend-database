@@ -40,3 +40,8 @@ if __name__ == "__main__":
     from protrend.io.json import read_json_frame
     dfs = {fp: read_json_frame(os.path.join(directory, fp)) for fp in os.listdir(directory)}
 
+    # TODO: Regulon
+    # TODO: Regulatory Interaction
+    # TODO: Connectors
+
+

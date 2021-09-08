@@ -185,6 +185,9 @@ class TFBSTransformer(Transformer):
         tfbs.loc[forward, 'stop'] = tfbs.loc[forward, 'start'] + tfbs.loc[forward, 'length']
         tfbs.loc[reverse, 'stop'] = tfbs.loc[reverse, 'start'] + tfbs.loc[reverse, 'length']
 
+        strand_mask = (tfbs['strand'] != 'reverse') & (tfbs['strand'] != 'forward')
+        tfbs.loc[strand_mask, 'strand'] = None
+
         return tfbs
 
     def transform(self):

@@ -91,7 +91,10 @@ class RegulatorTransformer(Transformer):
         # start: List[int]
         # stop: List[int]
 
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        regulators = pd.DataFrame([dto.to_dict() for dto in dtos])
+        strand_mask = (regulators['strand'] != 'reverse') & (regulators['strand'] != 'forward')
+        regulators.loc[strand_mask, 'strand'] = None
+        return regulators
 
     @staticmethod
     def _annotate_rnas(names: List[str]):

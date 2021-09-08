@@ -140,6 +140,9 @@ class OperonTransformer(Transformer):
         operon.loc[reverse, 'start'] = operon.loc[reverse, 'gene_start'].map(stop, na_action='ignore')
         operon.loc[reverse, 'stop'] = operon.loc[reverse, 'gene_stop'].map(start, na_action='ignore')
 
+        strand_mask = (operon['strand'] != 'reverse') & (operon['strand'] != 'forward')
+        operon.loc[strand_mask, 'strand'] = None
+
         return operon
 
     def transform(self):
