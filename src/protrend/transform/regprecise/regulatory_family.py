@@ -143,7 +143,7 @@ class RegulatoryFamilyToSourceConnector(Connector):
 
         df = pd.concat(dfs, axis=0)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class RegulatoryFamilyToPublicationConnector(Connector):
@@ -172,7 +172,7 @@ class RegulatoryFamilyToPublicationConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class RegulatoryFamilyToRegulatorConnector(Connector):
@@ -210,4 +210,4 @@ class RegulatoryFamilyToRegulatorConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)

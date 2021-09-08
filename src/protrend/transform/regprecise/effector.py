@@ -7,7 +7,7 @@ from protrend.io.utils import read_from_stack
 from protrend.transform.annotation import annotate_effectors
 from protrend.transform.connector import Connector
 from protrend.transform.dto import EffectorDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (EffectorSettings, EffectorToSource, EffectorToOrganism,
                                                     EffectorToRegulator)
@@ -79,7 +79,7 @@ class EffectorToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class EffectorToOrganismConnector(Connector):
@@ -88,9 +88,12 @@ class EffectorToOrganismConnector(Connector):
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',
                                    default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        effector = apply_processors(effector, effector_id=to_int_str)
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, effector=to_list)
         regulator = regulator.explode('effector')
+        regulator = apply_processors(regulator, effector=to_int_str)
 
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
                           suffixes=('_effector', '_regulator'))
@@ -104,7 +107,7 @@ class EffectorToOrganismConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class EffectorToRegulatorConnector(Connector):
@@ -113,9 +116,12 @@ class EffectorToRegulatorConnector(Connector):
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',
                                    default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        effector = apply_processors(effector, effector_id=to_int_str)
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, effector=to_list)
         regulator = regulator.explode('effector')
+        regulator = apply_processors(regulator, effector=to_int_str)
 
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
                           suffixes=('_effector', '_regulator'))
@@ -129,4 +135,4 @@ class EffectorToRegulatorConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)

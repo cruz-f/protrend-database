@@ -190,7 +190,7 @@ class RegulatorToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class RegulatorToOrganismConnector(Connector):
@@ -206,4 +206,4 @@ class RegulatorToOrganismConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)

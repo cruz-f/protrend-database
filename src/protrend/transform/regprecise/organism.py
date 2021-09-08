@@ -95,4 +95,4 @@ class OrganismToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)

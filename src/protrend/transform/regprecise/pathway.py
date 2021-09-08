@@ -83,7 +83,7 @@ class PathwayToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class PathwayToRegulatorConnector(Connector):
@@ -92,9 +92,13 @@ class PathwayToRegulatorConnector(Connector):
     def connect(self):
         pathway = read_from_stack(stack=self._connect_stack, file='pathway',
                                   default_columns=PathwayTransformer.columns, reader=read_json_frame)
+        pathway = apply_processors(pathway, pathway_id=to_int_str)
+
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, pathway=to_list)
         regulator = regulator.explode('pathway')
+        regulator = apply_processors(regulator, pathway=to_int_str)
 
         merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
                           suffixes=('_pathway', '_regulator'))
@@ -108,7 +112,7 @@ class PathwayToRegulatorConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class PathwayToGeneConnector(Connector):
@@ -117,17 +121,20 @@ class PathwayToGeneConnector(Connector):
     def connect(self):
         pathway = read_from_stack(stack=self._connect_stack, file='pathway',
                                   default_columns=PathwayTransformer.columns, reader=read_json_frame)
+        pathway = apply_processors(pathway, pathway_id=to_int_str)
 
         gene = read_from_stack(stack=self._connect_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
 
         gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
+        gene = apply_processors(gene, regulon=to_int_str)
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, pathway=to_list)
         regulator = regulator.explode('pathway')
+        regulator = apply_processors(regulator, pathway=to_int_str)
 
         merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
                           suffixes=('_pathway', '_regulator'))
@@ -144,4 +151,4 @@ class PathwayToGeneConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)

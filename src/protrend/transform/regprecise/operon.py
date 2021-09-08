@@ -7,7 +7,7 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set, to_list,
-                                           to_nan)
+                                           to_nan, to_int_str)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
@@ -238,6 +238,7 @@ class OperonToSourceConnector(Connector):
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = apply_processors(operon, regulon=to_list)
         operon = operon.explode('regulon')
         source = read_from_stack(stack=self._connect_stack, file='source',
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
@@ -256,7 +257,7 @@ class OperonToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class OperonToOrganismConnector(Connector):
@@ -282,7 +283,7 @@ class OperonToOrganismConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class OperonToRegulatorConnector(Connector):
@@ -311,7 +312,7 @@ class OperonToRegulatorConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class OperonToGeneConnector(Connector):
@@ -334,7 +335,7 @@ class OperonToGeneConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class OperonToTFBSConnector(Connector):
@@ -357,7 +358,7 @@ class OperonToTFBSConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class GeneToTFBSConnector(Connector):
@@ -381,7 +382,7 @@ class GeneToTFBSConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class GeneToRegulatorConnector(Connector):
@@ -392,9 +393,11 @@ class GeneToRegulatorConnector(Connector):
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, genes=to_list, regulon=to_list)
         operon = operon.explode('regulon')
+        operon = apply_processors(operon, regulon=to_int_str)
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -414,7 +417,7 @@ class GeneToRegulatorConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class TFBSToRegulatorConnector(Connector):
@@ -425,9 +428,11 @@ class TFBSToRegulatorConnector(Connector):
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, tfbss=to_list, regulon=to_list)
         operon = operon.explode('regulon')
+        operon = apply_processors(operon, regulon=to_int_str)
 
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -447,4 +452,4 @@ class TFBSToRegulatorConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)

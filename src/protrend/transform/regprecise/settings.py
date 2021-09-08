@@ -157,7 +157,7 @@ class RegulatorToSource(RegPreciseConnections):
 class RegulatoryFamilyToSource(RegPreciseConnections):
     default_from_node = RegulatoryFamily
     default_to_node = Source
-    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.json',
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatoryfamily.json',
                                        'source': 'integrated_source.json'}
 
 
@@ -168,10 +168,17 @@ class TFBSToSource(RegPreciseConnections):
                                        'source': 'integrated_source.json'}
 
 
+class RegulatoryInteractionToSource(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Source
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
+                                       'source': 'integrated_source.json'}
+
+
 class RegulatoryFamilyToPublication(RegPreciseConnections):
     default_from_node = RegulatoryFamily
     default_to_node = Publication
-    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.json',
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatoryfamily.json',
                                        'publication': 'integrated_publication.json'}
 
 
@@ -226,7 +233,7 @@ class PathwayToGene(RegPreciseConnections):
 class RegulatoryFamilyToRegulator(RegPreciseConnections):
     default_from_node = RegulatoryFamily
     default_to_node = Regulator
-    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatory_family.json',
+    default_connect: Dict[str, str] = {'regulatory_family': 'integrated_regulatoryfamily.json',
                                        'regulator': 'integrated_regulator.json'}
 
 
@@ -274,3 +281,39 @@ class TFBSToRegulator(RegPreciseConnections):
     default_to_node = Regulator
     default_connect: Dict[str, str] = {'operon': 'integrated_operon.json',
                                        'regulator': 'integrated_regulator.json'}
+
+
+class RegulatoryInteractionToOrganism(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Organism
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+
+class RegulatoryInteractionToEffector(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Effector
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+
+class RegulatoryInteractionToRegulator(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Regulator
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+
+class RegulatoryInteractionToOperon(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Operon
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+
+class RegulatoryInteractionToGene(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Gene
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+
+class RegulatoryInteractionToTFBS(RegPreciseConnections):
+    default_from_node = RegulatoryInteraction
+    default_to_node = TFBS
+    default_connect: Dict[str, str] = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}

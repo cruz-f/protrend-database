@@ -113,6 +113,7 @@ class GeneToSourceConnector(Connector):
     def connect(self):
         gene = read_from_stack(stack=self._connect_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
         source = read_from_stack(stack=self._connect_stack, file='source',
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
@@ -131,7 +132,7 @@ class GeneToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class GeneToOrganismConnector(Connector):
@@ -147,4 +148,4 @@ class GeneToOrganismConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)

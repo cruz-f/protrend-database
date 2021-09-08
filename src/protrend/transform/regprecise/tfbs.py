@@ -10,7 +10,7 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set,
-                                           take_last)
+                                           take_last, to_int_str)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
@@ -234,7 +234,7 @@ class TFBSToSourceConnector(Connector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
-        self.stack_csv(df)
+        self.stack_json(df)
 
 
 class TFBSToOrganismConnector(Connector):
@@ -243,8 +243,10 @@ class TFBSToOrganismConnector(Connector):
     def connect(self):
         tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = apply_processors(tfbs, regulon=to_int_str)
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(tfbs, regulator, left_on='regulon', right_on='regulon_id', suffixes=('_tfbs', '_regulator'))
         merged = merged.dropna(subset=['protrend_id_tfbs'])
@@ -258,4 +260,4 @@ class TFBSToOrganismConnector(Connector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
-        self.stack_csv(df)
+        self.stack_json(df)
