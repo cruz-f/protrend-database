@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Callable, Any, List, Union, Sequence, Dict
+from typing import Callable, Any, List, Union, Sequence, Dict, Set
 
 import numpy as np
 import pandas as pd
@@ -274,155 +274,19 @@ def remove_html_tags(item: str) -> str:
     return remove_tags(item)
 
 
-def operon_strand(previous_strand: str = None,
-                  current_strand: str = None,
-                  default_strand: str = None) -> Union[None, str]:
-    strand = None
+def regulatory_effect(items: Set[str]) -> Union[None, str]:
+    new_items = {item.replace(' ', '') for item in items if not is_null(item)}
 
-    if previous_strand is None:
-        previous_strand = ''
+    if len(new_items) == 0:
+        return
 
-    if current_strand is None:
-        current_strand = ''
+    if len(new_items) > 1:
+        return 'dual'
 
-    if current_strand in ('forward', 'reverse'):
-        strand = current_strand
+    if 'repressor' in new_items:
+        return 'repression'
 
-    elif previous_strand in ('forward', 'reverse'):
-        strand = previous_strand
+    if 'activator' in new_items:
+        return 'activation'
 
-    if strand is None:
-        strand = default_strand
-
-    return strand
-
-
-def operon_left_position(strand: Union[None, str],
-                         previous_left: int = None,
-                         current_left: int = None,
-                         default_left: Union[None, int] = None) -> Union[None, int]:
-    left = default_left
-
-    if strand is None:
-        strand = 'forward'
-
-    if strand == 'forward':
-
-        if previous_left is None:
-            previous_left = np.inf
-
-        if current_left is None:
-            current_left = np.inf
-
-        if current_left < previous_left:
-            left = current_left
-
-        elif previous_left < current_left:
-            left = previous_left
-
-        elif previous_left == current_left and current_left != np.inf:
-            left = current_left
-
-    elif strand == 'reverse':
-
-        if previous_left is None:
-            previous_left = -np.inf
-
-        if current_left is None:
-            current_left = -np.inf
-
-        if current_left > previous_left:
-            left = current_left
-
-        elif previous_left > current_left:
-            left = previous_left
-
-        elif previous_left == current_left and current_left != 0:
-            left = current_left
-
-    return left
-
-
-def operon_right_position(strand: str,
-                          previous_right: int = None,
-                          current_right: int = None,
-                          default_right: Union[None, int] = None) -> Union[None, int]:
-    right = default_right
-
-    if strand is None:
-        strand = 'forward'
-
-    if strand == 'forward':
-
-        if previous_right is None:
-            previous_right = np.inf
-
-        if current_right is None:
-            current_right = np.inf
-
-        if current_right > previous_right:
-            right = current_right
-
-        elif previous_right > current_right:
-            right = previous_right
-
-        elif previous_right == current_right and current_right != 0:
-            right = current_right
-
-    elif strand == 'reverse':
-
-        if previous_right is None:
-            previous_right = -np.inf
-
-        if current_right is None:
-            current_right = -np.inf
-
-        if current_right < previous_right:
-            right = current_right
-
-        elif previous_right < current_right:
-            right = previous_right
-
-        elif previous_right == current_right and current_right != 0:
-            right = previous_right
-
-    return right
-
-
-def tfbs_left_position(strand: str,
-                       gene_position: Union[int, None],
-                       gene_relative_position: int,
-                       default: Union[None, int] = None) -> Union[None, int]:
-    if strand is None:
-        strand = 'forward'
-
-    if gene_position is None:
-        return default
-
-    if strand == 'forward':
-        return gene_position + gene_relative_position
-
-    elif strand == 'reverse':
-        return gene_position - gene_relative_position
-
-    return default
-
-
-def tfbs_right_position(strand: str,
-                        gene_position: Union[int, None],
-                        gene_relative_position: int,
-                        tfbs_length: int,
-                        default: Union[None, int] = None) -> Union[None, int]:
-    if strand is None:
-        strand = 'forward'
-
-    if gene_position is None:
-        return default
-
-    if strand == 'forward':
-        return gene_position + (gene_relative_position + tfbs_length)
-
-    elif strand == 'reverse':
-        return gene_position - (gene_relative_position + tfbs_length)
-
-    return default
+    return 'dual'

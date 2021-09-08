@@ -2,6 +2,7 @@ import sys
 
 from protrend.runners import Director
 from protrend.transform.regprecise import *
+from protrend.transform.regprecise.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils import NeoDatabase, ROOT_PATH
 
 src_path = ROOT_PATH.parent
@@ -11,16 +12,17 @@ from protrend.runners import run_spider
 
 def transform_runner() -> Director:
     transformers = [
-        # EffectorTransformer(),
-        # GeneTransformer(),
+        EffectorTransformer(),
+        GeneTransformer(),
         OperonTransformer(),
-        # OrganismTransformer(),
-        # PathwayTransformer(),
-        # PublicationTransformer(),
-        # RegulatorTransformer(),
-        # RegulatoryFamilyTransformer(),
-        # SourceTransformer(),
-        # TFBSTransformer(),
+        OrganismTransformer(),
+        PathwayTransformer(),
+        PublicationTransformer(),
+        RegulatorTransformer(),
+        RegulatoryFamilyTransformer(),
+        RegulatoryInteractionTransformer(),
+        SourceTransformer(),
+        TFBSTransformer(),
     ]
     director = Director(transformers=transformers)
     return director
@@ -40,8 +42,6 @@ if __name__ == "__main__":
     from protrend.io.json import read_json_frame
     dfs = {fp: read_json_frame(os.path.join(directory, fp)) for fp in os.listdir(directory)}
 
-    # TODO: Regulon
-    # TODO: Regulatory Interaction
     # TODO: Connectors
 
 

@@ -1,10 +1,13 @@
 from typing import Dict, Tuple
 
 from protrend.model.model import Organism, Pathway, RegulatoryFamily, Effector, Source, Publication, Regulator, Gene, \
-    Operon, TFBS
+    Operon, TFBS, RegulatoryInteraction
 from protrend.transform.settings import TransformerSettings, ConnectorSettings
 
 
+# ----------------------------------------------------------------------
+# Nodes
+# ----------------------------------------------------------------------
 class RegPreciseSettings(TransformerSettings):
     default_source: str = 'regprecise'
 
@@ -23,9 +26,6 @@ class GeneSettings(RegPreciseSettings):
                                         'locus_tag')
     default_transform: Dict[str, str] = {'gene': 'Gene.json',
                                          'regulator': 'integrated_regulator.json'}
-    default_connect: Dict[str, str] = {'from': 'integrated_gene.json',
-                                       'to_source': 'integrated_source.json',
-                                       'to_organism': 'integrated_gene.json'}
     default_order = 80
 
 
@@ -35,11 +35,6 @@ class OperonSettings(RegPreciseSettings):
     default_transform: Dict[str, str] = {'operon': 'Operon.json',
                                          'gene': 'integrated_gene.json',
                                          'tfbs': 'integrated_tfbs.json'}
-    default_connect: Dict[str, str] = {'from': 'integrated_operon.json',
-                                       'to_source': 'integrated_source.json',
-                                       'to_organism': 'integrated_regulator.json',
-                                       'to_gene': 'integrated_operon.json',
-                                       'to_tfbs': 'integrated_operon.json', }
     default_order = 60
 
 
@@ -85,6 +80,17 @@ class RegulatoryFamilySettings(RegPreciseSettings):
     default_order = 100
 
 
+class RegulatoryInteractionSettings(RegPreciseSettings):
+    default_node: RegulatoryFamily = RegulatoryInteraction
+    default_node_factors: Tuple[str] = ()
+    default_transform: Dict[str, str] = {'effector': 'integrated_effector.json',
+                                         'regulator': 'integrated_regulator.json',
+                                         'operon': 'integrated_operon.json',
+                                         'gene': 'integrated_gene.json',
+                                         'tfbs': 'integrated_tfbs.json'}
+    default_order = 50
+
+
 class SourceSettings(RegPreciseSettings):
     default_node: Source = Source
     default_node_factors: Tuple[str] = ('name',)
@@ -99,6 +105,9 @@ class TFBSSettings(RegPreciseSettings):
     default_order = 70
 
 
+# ----------------------------------------------------------------------
+# Connections
+# ----------------------------------------------------------------------
 class RegPreciseConnections(ConnectorSettings):
     default_source: str = 'regprecise'
 
