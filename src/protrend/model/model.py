@@ -97,8 +97,6 @@ class Organism(Node):
     name = StringProperty(required=True)
     species = StringProperty()
     strain = StringProperty()
-    family = StringProperty()
-    phylum = StringProperty()
     ncbi_taxonomy = StringProperty()
     refseq_accession = StringProperty()
     refseq_ftp = StringProperty()

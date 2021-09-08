@@ -25,8 +25,9 @@ class OperonTransformer(Transformer):
     columns = {'protrend_id',
                'operon_id', 'name', 'url', 'regulon', 'tfbs',
                'tfbss', 'genes',
-               'operon_id_old', 'operon_id_new', 'locus_tag', 'locus_tag_old',
-               'strand', 'start', 'stop', }
+               'operon_id_old', 'operon_id_new', 'gene_locus_tag', 'gene_old_locus_tag', 'gene_name',
+               'gene_strand', 'gene_start', 'gene_stop',
+               'strand', 'start', 'stop'}
     read_columns = {'operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'}
 
     def _operon_by_gene(self, operon: pd.DataFrame) -> pd.DataFrame:
@@ -65,17 +66,18 @@ class OperonTransformer(Transformer):
         operon = apply_processors(operon, gene=to_list)
         operon = operon.explode('gene')
 
-        operon = pd.merge(operon, gene, left_on='gene', right_on='locus_tag_old')
+        operon = pd.merge(operon, gene, left_on='gene', right_on='gene_old_locus_tag')
 
         # group by the new genes
         aggregation = {'gene': set,
-                       'gene_protrend_id': set, 'locus_tag': set, 'name': set, 'locus_tag_old': set,
-                       'strand': set, 'start': set, 'stop': set}
+                       'gene_protrend_id': set, 'gene_locus_tag': set, 'gene_name': set, 'gene_old_locus_tag': set,
+                       'gene_strand': set, 'gene_start': set, 'gene_stop': set}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
 
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
         operon['operon_id'] = operon['genes']
+        operon['name'] = operon['gene_name']
 
         operon = apply_processors(operon, operon_id=[to_list, str_join], name=[to_list, operon_name])
 
@@ -83,14 +85,14 @@ class OperonTransformer(Transformer):
 
     def _transform_operon_by_tfbs(self, operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
 
-        tfbs_by_operon = tfbs.explode('operon')
-        operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='operon_id', right_on='operon')
+        tfbs_by_operon = tfbs.explode('tfbs_operon')
+        operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='operon_id', right_on='tfbs_operon')
 
-        aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set, 'operon': set}
+        aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set, 'tfbs_operon': set}
         operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set)
 
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
-        operon = operon.drop(columns=['operon'])
+        operon = operon.drop(columns=['tfbs_operon'])
 
         operon = apply_processors(operon, gene=to_list)
 
@@ -125,18 +127,18 @@ class OperonTransformer(Transformer):
             x = np.array(item, dtype=np.float64)
             return np.nanmax(x)
 
-        operon['strand'] = operon['strand'].map(strand_mode, na_action='ignore')
+        operon['strand'] = operon['gene_strand'].map(strand_mode, na_action='ignore')
         forward = operon['strand'] == 'forward'
         reverse = operon['strand'] == 'reverse'
 
         operon['start'] = None
         operon['stop'] = None
 
-        operon.loc[forward, 'start'] = operon.loc[forward, 'start'].map(start, na_action='ignore')
-        operon.loc[forward, 'stop'] = operon.loc[forward, 'stop'].map(stop, na_action='ignore')
+        operon.loc[forward, 'start'] = operon.loc[forward, 'gene_start'].map(start, na_action='ignore')
+        operon.loc[forward, 'stop'] = operon.loc[forward, 'gene_stop'].map(stop, na_action='ignore')
 
-        operon.loc[reverse, 'start'] = operon.loc[reverse, 'start'].map(stop, na_action='ignore')
-        operon.loc[reverse, 'stop'] = operon.loc[reverse, 'stop'].map(start, na_action='ignore')
+        operon.loc[reverse, 'start'] = operon.loc[reverse, 'gene_start'].map(stop, na_action='ignore')
+        operon.loc[reverse, 'stop'] = operon.loc[reverse, 'gene_stop'].map(start, na_action='ignore')
 
         return operon
 
@@ -155,14 +157,20 @@ class OperonTransformer(Transformer):
 
         gene = gene.dropna(subset=['protrend_id'])
         gene = gene.dropna(subset=['locus_tag_old'])
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
+        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
+                                    'locus_tag': 'gene_locus_tag',
+                                    'name': 'gene_name',
+                                    'locus_tag_old': 'gene_old_locus_tag',
+                                    'strand': 'gene_strand',
+                                    'start': 'gene_start',
+                                    'stop': 'gene_stop'})
 
         tfbs = read_from_stack(stack=self._transform_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
 
         tfbs = tfbs.dropna(subset=['protrend_id'])
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
+        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id', 'operon': 'tfbs_operon'})
 
         # genes
         # tfbss

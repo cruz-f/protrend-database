@@ -17,7 +17,7 @@ class OrganismTransformer(Transformer):
     default_settings = OrganismSettings
     columns = {'protrend_id',
                'genome_id', 'name', 'taxonomy', 'url', 'regulon',
-               'species', 'strain', 'family', 'phylum',
+               'species', 'strain',
                'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                'genbank_accession', 'genbank_ftp',
                'ncbi_assembly', 'assembly_accession'}
@@ -41,8 +41,6 @@ class OrganismTransformer(Transformer):
         # name: List[str]
         # species: List[str]
         # strain: List[str]
-        # family: List[str]
-        # phylum: List[str]
         # ncbi_taxonomy: List[int]
         # refseq_accession: List[str]
         # refseq_ftp: List[str]

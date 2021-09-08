@@ -65,8 +65,6 @@ class OrganismDTO(DTO):
     name: List[str] = set_list_field(output='take_first', init=False)
     species: List[str] = set_list_field(output='take_first', init=False)
     strain: List[str] = set_list_field(output='take_first', init=False)
-    family: List[str] = set_list_field(output='take_first', init=False)
-    phylum: List[str] = set_list_field(output='take_first', init=False)
     ncbi_taxonomy: List[str] = set_list_field(output='take_first', init=False)
     refseq_accession: List[str] = set_list_field(output='take_first', init=False)
     refseq_ftp: List[str] = set_list_field(output='take_first', init=False)

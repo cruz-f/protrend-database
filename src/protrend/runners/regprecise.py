@@ -11,16 +11,16 @@ from protrend.runners import run_spider
 
 def transform_runner() -> Director:
     transformers = [
-        EffectorTransformer(),
-        GeneTransformer(),
+        # EffectorTransformer(),
+        # GeneTransformer(),
         OperonTransformer(),
-        OrganismTransformer(),
-        PathwayTransformer(),
-        PublicationTransformer(),
-        RegulatorTransformer(),
-        RegulatoryFamilyTransformer(),
-        SourceTransformer(),
-        TFBSTransformer(),
+        # OrganismTransformer(),
+        # PathwayTransformer(),
+        # PublicationTransformer(),
+        # RegulatorTransformer(),
+        # RegulatoryFamilyTransformer(),
+        # SourceTransformer(),
+        # TFBSTransformer(),
     ]
     director = Director(transformers=transformers)
     return director
@@ -38,5 +38,5 @@ if __name__ == "__main__":
     import os
 
     from protrend.io.json import read_json_frame
-    dfs = {fp:read_json_frame(os.path.join(directory, fp)) for fp in os.listdir(directory)}
+    dfs = {fp: read_json_frame(os.path.join(directory, fp)) for fp in os.listdir(directory)}
 
