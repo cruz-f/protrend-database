@@ -175,8 +175,8 @@ class Regulator(Node):
     uniprot_accession = StringProperty()
     sequence = StringProperty()
     strand = StringProperty()
-    position_left = IntegerProperty()
-    position_right = IntegerProperty()
+    start = IntegerProperty()
+    stop = IntegerProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -202,8 +202,8 @@ class Operon(Node):
     genes = ArrayProperty(StringProperty(), required=True)
     tfbss = ArrayProperty(StringProperty())
     strand = StringProperty()
-    first_gene_position_left = IntegerProperty()
-    first_gene_position_right = IntegerProperty()
+    start = IntegerProperty()
+    stop = IntegerProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -225,7 +225,7 @@ class Promoter(Node):
     name = StringProperty(required=True)
     sequence = StringProperty()
     strand = StringProperty()
-    position_left = IntegerProperty()
+    start = IntegerProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -252,8 +252,8 @@ class Gene(Node):
     uniprot_accession = StringProperty()
     sequence = StringProperty()
     strand = StringProperty()
-    position_left = IntegerProperty()
-    position_right = IntegerProperty()
+    start = IntegerProperty()
+    stop = IntegerProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -275,8 +275,10 @@ class TFBS(Node):
     # properties
     sequence = StringProperty(required=True)
     strand = StringProperty()
-    position_left = IntegerProperty()
-    position_right = IntegerProperty()
+    start = IntegerProperty()
+    stop = IntegerProperty()
+    length = IntegerProperty()
+
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
