@@ -1,23 +1,26 @@
 import os
-from typing import List
+from typing import List, Type
 
 import pandas as pd
 
-from protrend.io.csv import read_csv
+from protrend.io.json import read_json_frame
 from protrend.load.settings import LoaderSettings
-from protrend.model.node import Node
+from protrend.model.node import get_node_by_name
 from protrend.utils.settings import DATA_LAKE_PATH
 
 
 class Loader:
+    default_settings: Type[LoaderSettings] = LoaderSettings
 
-    def __init__(self, settings: LoaderSettings):
+    def __init__(self, settings: LoaderSettings = None):
 
         """
 
         :param settings: a TransformerSettings than contains all settings for source,
         version and files to perform the transformation on
         """
+        if not settings:
+            settings = self.default_settings()
 
         self._settings = settings
         self._files = []
@@ -59,41 +62,35 @@ class Loader:
         return self._files
 
     @property
-    def node(self) -> Node:
-        return self.settings.node
-
-    @property
     def read_path(self) -> str:
         return os.path.join(DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Transformer API
     # --------------------------------------------------------
-    def read(self, **kwargs):
+    def load(self):
 
         """
-        The method responsible for reading files into pandas DataFrames.
-        The pandas DataFrames are yield as result.
+        The method responsible for reading files into pandas DataFrames
+        and creating or updating nodes and relationships in the database
 
-        :param kwargs: kwargs for the pandas read_csv API
-        :return: generator of pandas DataFrame
+        :return:
         """
 
         for file_path in self._files:
-            yield read_csv(file_path, **kwargs)
+            df = read_json_frame(file_path)
 
-    def load(self, df: pd.DataFrame):
+            # update nodes
+            self._nodes_to_update(df=df)
 
-        # update nodes
-        self._nodes_to_update(df=df)
+            # create nodes
+            self._nodes_to_create(df=df)
 
-        # create nodes
-        self._nodes_to_create(df=df)
+            # create nodes
+            self._relationships_to_create(df=df)
 
-        # create nodes
-        self._relationships_to_create(df=df)
-
-    def _nodes_to_update(self, df: pd.DataFrame):
+    @staticmethod
+    def _nodes_to_update(df: pd.DataFrame):
 
         mask = (df['load'] == 'update') & (df['what'] == 'nodes')
         df = df.loc[mask, :]
@@ -101,9 +98,13 @@ class Loader:
         if df.empty:
             return
 
-        self.node.node_from_df(nodes=df, save=True)
+        node_name = df['node'].iloc[0]
+        node = get_node_by_name(node_name)
 
-    def _nodes_to_create(self, df: pd.DataFrame):
+        node.node_update_from_df(nodes=df, save=True)
+
+    @staticmethod
+    def _nodes_to_create(df: pd.DataFrame):
 
         mask = (df['load'] == 'create') & (df['what'] == 'nodes')
         df = df.loc[mask, :]
@@ -111,9 +112,13 @@ class Loader:
         if df.empty:
             return
 
-        self.node.node_update_from_df(nodes=df, save=True)
+        node_name = df['node'].iloc[0]
+        node = get_node_by_name(node_name)
 
-    def _relationships_to_create(self, df: pd.DataFrame):
+        node.node_from_df(nodes=df, save=True)
+
+    @staticmethod
+    def _relationships_to_create(df: pd.DataFrame):
 
         mask = (df['load'] == 'create') & (df['what'] == 'relationships')
         df = df.loc[mask, :]
@@ -121,4 +126,8 @@ class Loader:
         if df.empty:
             return
 
-        self.node.node_update_from_df(nodes=df, save=True)
+        from_node_name = df['from_node'].iloc[0]
+        from_node = get_node_by_name(from_node_name)
+
+        to_node_name = df['to_node'].iloc[0]
+        to_node = get_node_by_name(to_node_name)

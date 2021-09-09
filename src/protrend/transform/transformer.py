@@ -9,6 +9,7 @@ from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.transform.processors import take_last, apply_processors, to_nan
 from protrend.transform.settings import TransformerSettings
+from protrend.utils.miscellaneous import is_null
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
@@ -194,11 +195,17 @@ class Transformer(AbstractTransformer):
         # nodes to be updated
         nodes = df[mask]
 
+        if nodes.empty:
+            nodes['protrend_id'] = None
+            nodes['load'] = None
+            nodes['what'] = None
+            return nodes
+
         # find/set protrend identifiers for update nodes
         ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=self.node_factors)
-        nodes['protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
-        nodes['load'] = 'update'
-        nodes['what'] = 'nodes'
+        nodes.loc[:, 'protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
+        nodes.loc[:, 'load'] = 'update'
+        nodes.loc[:, 'what'] = 'nodes'
 
         return nodes
 
@@ -206,13 +213,18 @@ class Transformer(AbstractTransformer):
 
         # nodes to be created
         nodes = df[~mask]
+        if nodes.empty:
+            nodes['protrend_id'] = None
+            nodes['load'] = None
+            nodes['what'] = None
+            return nodes
 
         # create/set new protrend identifiers
         create_size, _ = nodes.shape
         create_identifiers = self.protrend_identifiers_batch(create_size)
-        nodes['protrend_id'] = create_identifiers
-        nodes['load'] = 'create'
-        nodes['what'] = 'nodes'
+        nodes.loc[:, 'protrend_id'] = create_identifiers
+        nodes.loc[:, 'load'] = 'create'
+        nodes.loc[:, 'what'] = 'nodes'
 
         return nodes
 
@@ -284,13 +296,28 @@ class Transformer(AbstractTransformer):
         self._write_stack.append(json_partial)
 
     def _stack_nodes(self, df: pd.DataFrame):
-        node_cols = list(self.node.node_keys())
+        if df.empty:
+            df = self.empty_frame()
+            df.loc[:, 'load'] = None
+            df.loc[:, 'what'] = None
+
+        df.loc[:, 'node'] = self.node.node_name()
+
+        node_cols = list(self.node.node_keys()) + ['load', 'what', 'node']
         cols_to_drop = [col for col in df.columns if col not in node_cols]
         df = df.drop(columns=cols_to_drop)
+
         df_name = f'nodes_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
     def _stack_integrated_nodes(self, df: pd.DataFrame):
+        if df.empty:
+            df = self.empty_frame()
+            df.loc[:, 'load'] = None
+            df.loc[:, 'what'] = None
+
+        df.loc[:, 'node'] = self.node.node_name()
+
         df_name = f'integrated_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
@@ -382,7 +409,9 @@ class Transformer(AbstractTransformer):
 
             if factor in nodes.columns and factor in snapshot.columns:
                 snapshot_values = snapshot[factor]
-                factor_mask = nodes[factor].isin(snapshot_values)
+                is_in_mask = nodes[factor].isin(snapshot_values)
+                is_not_null_mask = ~ nodes[factor].map(is_null)
+                factor_mask = (is_in_mask & is_not_null_mask)
                 factors_masks.append(factor_mask)
 
         if factors_masks:
@@ -403,7 +432,9 @@ class Transformer(AbstractTransformer):
 
             if factor in nodes.columns and factor in snapshot.columns:
                 node_values = nodes[factor]
-                factor_mask = snapshot[factor].isin(node_values)
+                is_in_mask = snapshot[factor].isin(node_values)
+                is_not_null_mask = ~ snapshot[factor].map(is_null)
+                factor_mask = (is_in_mask & is_not_null_mask)
                 factors_masks.append(factor_mask)
 
         if factors_masks:
@@ -422,7 +453,7 @@ class Transformer(AbstractTransformer):
             integer = protrend_id_decoder(last_node.protrend_id)
 
         return [protrend_id_encoder(self.node.header, self.node.entity, i)
-                for i in range(integer + 1, size + 1)]
+                for i in range(integer + 1, integer + size + 1)]
 
     def last_node(self) -> Union['Node', None]:
         return self.node.last_node()

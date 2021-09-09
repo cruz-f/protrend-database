@@ -78,10 +78,7 @@ class NCBITaxonomyOrganism(BioAPI):
 
     @property
     def assembly(self) -> str:
-        if hasattr(self.assembly_record, 'attributes'):
-            return self.assembly_record.attributes.get('uid', '')
-
-        return ''
+        return self.assembly_record.get('attributes', {}).get('uid', '')
 
     @property
     def assembly_name(self) -> str:

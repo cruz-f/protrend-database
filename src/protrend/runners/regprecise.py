@@ -5,6 +5,8 @@ from typing import Tuple, Dict
 import pandas as pd
 
 from protrend.io.json import read_json_frame
+from protrend.load import RegPreciseLoader
+from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.regprecise import *
 from protrend.transform.regprecise.regulatory_interaction import RegulatoryInteractionTransformer
@@ -19,7 +21,20 @@ def extract_runner(spider: str = 'regprecise', staging_area: Path = STAGING_AREA
     return run_spider(spider=spider, staging_area=staging_area, version=version)
 
 
-def transform_runner(transform: bool = True, connect: bool = True) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+def transform_runner(transform: bool = True,
+                     connect: bool = True,
+                     install_labels: bool = False,
+                     clear_constraints: bool = False,
+                     clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+    neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
+    neo_db.connect()
+
+    if install_labels:
+        neo_db.auto_install_labels()
+
+    if clear_constraints or clear_indexes:
+        neo_db.clear_db(clear_constraints=clear_constraints, clear_indexes=clear_indexes)
+
     transformers = [
         EffectorTransformer(),
         GeneTransformer(),
@@ -67,6 +82,28 @@ def transform_runner(transform: bool = True, connect: bool = True) -> Tuple[Dire
     return director, data_lake
 
 
+def load_runner(install_labels: bool = False,
+                clear_constraints: bool = False,
+                clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+    neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
+    neo_db.connect()
+
+    if install_labels:
+        neo_db.auto_install_labels()
+
+    if clear_constraints or clear_indexes:
+        neo_db.clear_db(clear_constraints=clear_constraints, clear_indexes=clear_indexes)
+
+    loaders = [RegPreciseLoader()]
+    director = Director(loaders=loaders)
+    director.load()
+
+    database = {node_name: node.node_to_df()
+                for node_name, node in Node.node_register.items()}
+
+    return director, database
+
+
 if __name__ == "__main__":
     # ----------------------------------------------------
     # EXTRACT
@@ -76,7 +113,9 @@ if __name__ == "__main__":
     # ----------------------------------------------------
     # TRANSFORM
     # ----------------------------------------------------
-    neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
-    neo_db.connect()
+    reg_transformer, reg_data_lake = transform_runner()
 
-    director, data_lake = transform_runner()
+    # ----------------------------------------------------
+    # LOAD
+    # ----------------------------------------------------
+    reg_loader, reg_database = load_runner()

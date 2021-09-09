@@ -1,6 +1,6 @@
 from typing import Sequence, List
 
-from protrend.load.loader import Loader
+from protrend.load import Loader
 from protrend.transform.connector import Connector
 from protrend.transform.transformer import Transformer
 
@@ -95,6 +95,4 @@ class Director:
         """
 
         for loader in self.loaders:
-
-            for df in loader.read():
-                loader.load(df)
+            loader.load()

@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\src')
 
 
-from protrend.runners.spider_runner import run_spider
+from protrend.runners import run_spider
 
 
 if __name__ == "__main__":

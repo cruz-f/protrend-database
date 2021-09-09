@@ -1,19 +1,14 @@
 from typing import List
 
-from protrend.model.model import Organism
-from protrend.model.node import Node
-
 
 class LoaderSettings:
     default_source: str = ''
     default_version: str = '0.0.0'
     default_files: List[str] = []
-    default_node: Node = Node
 
     def __init__(self,
                  source: str = None,
                  version: str = None,
-                 node: Node = None,
                  files: List[str] = None):
 
         if not files:
@@ -21,7 +16,6 @@ class LoaderSettings:
 
         self._source = source
         self._version = version
-        self._node = node
         self._files = files
 
     @property
@@ -38,8 +32,3 @@ class LoaderSettings:
     def files(self) -> List[str]:
         if not self._files:
             return self.default_files
-
-    @property
-    def node(self) -> Node:
-        if not self._node:
-            return self.default_node

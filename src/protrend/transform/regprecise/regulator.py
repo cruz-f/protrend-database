@@ -157,6 +157,7 @@ class RegulatorTransformer(Transformer):
         rnas = self._annotate_rnas(names)
 
         rna = pd.concat([rna, rnas], axis=1)
+        rna['locus_tag'] = rna['organism_protrend_id'] + '_' + rna['rfam']
 
         # --------------------- concat DFs --------------------------------------
         df = pd.concat([tf, rna], axis=0)

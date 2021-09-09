@@ -10,7 +10,7 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set,
-                                           take_last, to_int_str)
+                                           take_last, to_int_str, genes_to_hash, to_str)
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
@@ -25,7 +25,8 @@ class TFBSTransformer(Transformer):
     default_settings = TFBSSettings
     columns = {'protrend_id',
                'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene',
-               'tfbs_id_old', 'start', 'stop', 'length', 'gene_strand', 'gene_start', 'gene_old_locus_tag'}
+               'tfbs_id_old', 'start', 'stop', 'length', 'gene_strand', 'gene_start', 'gene_old_locus_tag',
+               'site_hash', 'gene_protrend_id'}
     read_columns = {'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene'}
 
     @staticmethod
@@ -84,6 +85,7 @@ class TFBSTransformer(Transformer):
             regulon = row['regulon']
             operon = row['operon']
             gene = row['gene']
+            gene_id = row['gene_protrend_id']
             strand = row['gene_strand']
             start = row['gene_start']
             old_locus = row['gene_old_locus_tag']
@@ -102,6 +104,7 @@ class TFBSTransformer(Transformer):
                 res['regulon'].append(regulon)
                 res['operon'].append(operon)
                 res['gene'].append(gene)
+                res['gene_protrend_id'].append(gene_id)
                 res['gene_strand'].append(strand)
                 res['gene_start'].append(start)
                 res['gene_old_locus_tag'].append(old_locus)
@@ -119,7 +122,7 @@ class TFBSTransformer(Transformer):
 
         tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='gene_old_locus_tag')
 
-        aggr = {'gene': set, 'gene_strand': set, 'gene_start': set, 'gene_old_locus_tag': set,
+        aggr = {'gene': set, 'gene_protrend_id': set, 'gene_strand': set, 'gene_start': set, 'gene_old_locus_tag': set,
                 'regulon': flatten_set, 'operon': flatten_set}
         tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
 
@@ -136,6 +139,7 @@ class TFBSTransformer(Transformer):
 
         tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
                                     perfect_match=True, preserve_nan=False)
+
         return tfbs
 
     @staticmethod
@@ -196,15 +200,27 @@ class TFBSTransformer(Transformer):
 
         gene = read_from_stack(stack=self._transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = self.select_columns(gene, 'strand', 'start', 'locus_tag_old')
+        gene = self.select_columns(gene, 'protrend_id', 'strand', 'start', 'locus_tag_old')
         gene = gene.rename(columns={'strand': 'gene_strand', 'start': 'gene_start',
-                                    'locus_tag_old': 'gene_old_locus_tag'})
+                                    'locus_tag_old': 'gene_old_locus_tag', 'protrend_id': 'gene_protrend_id'})
         gene = gene.dropna(subset=['gene_old_locus_tag'])
-        gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag'], perfect_match=False, preserve_nan=False)
+        gene = gene.dropna(subset=['gene_protrend_id'])
+        gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag', 'gene_protrend_id'],
+                                    perfect_match=False, preserve_nan=False)
 
         df = self._transform_tfbs(tfbs=tfbs, gene=gene)
 
         df = self._tfbs_coordinates(df)
+
+        # filter by site hash: length + strand + start + genes
+        str_sequence = df['sequence'].map(to_str, na_action='ignore').fillna('')
+        str_len = df['length'].map(to_str, na_action='ignore').fillna('')
+        str_strand = df['strand'].map(to_str, na_action='ignore').fillna('')
+        str_start = df['start'].map(to_str, na_action='ignore').fillna('')
+        str_genes = df['gene_protrend_id'].map(genes_to_hash, na_action='ignore').fillna('')
+        df['site_hash'] = str_sequence + str_len + str_strand + str_start + str_genes
+
+        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=False, preserve_nan=True)
 
         self._stack_transformed_nodes(df)
 

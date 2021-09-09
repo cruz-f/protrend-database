@@ -1,2 +1,2 @@
 from .director import Director
-from .spider_runner import run_spider
+from .spider import run_spider

@@ -99,7 +99,7 @@ class SourceSettings(RegPreciseSettings):
 
 class TFBSSettings(RegPreciseSettings):
     default_node: TFBS = TFBS
-    default_node_factors: Tuple[str] = ()
+    default_node_factors: Tuple[str] = ('site_hash', )
     default_transform: Dict[str, str] = {'tfbs': 'TFBS.json',
                                          'gene': 'integrated_gene.json'}
     default_order = 70

@@ -191,15 +191,21 @@ class OperonTransformer(Transformer):
     def _update_nodes(self, df: pd.DataFrame, mask: pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
 
         # nodes to be updated
-        update_nodes = df[mask]
+        nodes = df[mask]
+
+        if nodes.empty:
+            nodes['protrend_id'] = None
+            nodes['load'] = None
+            nodes['what'] = None
+            return nodes
 
         # find/set protrend identifiers for update nodes
-        ids_mask = self.find_snapshot(nodes=update_nodes, snapshot=snapshot, node_factors=('genes_id',))
-        update_nodes['protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
-        update_nodes['load'] = 'update'
-        update_nodes['what'] = 'nodes'
+        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=('genes_id',))
+        nodes.loc[:, 'protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
+        nodes.loc[:, 'load'] = 'update'
+        nodes.loc[:, 'what'] = 'nodes'
 
-        return update_nodes
+        return nodes
 
     def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
 
@@ -211,7 +217,8 @@ class OperonTransformer(Transformer):
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
-        snapshot['genes_id'] = snapshot['genes'].map(genes_to_hash)
+        snapshot['genes_id'] = snapshot['genes']
+        snapshot = apply_processors(snapshot, genes_id=[genes_to_hash, to_nan])
 
         # find matching nodes according to several node factors/properties
         mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id',))

@@ -1,12 +1,12 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Type
 
 import pandas as pd
 import pytz
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty)
 
-from protrend.utils.miscellaneous import convert_to_snake_case
+from protrend.utils.miscellaneous import convert_to_snake_case, is_null
 
 
 class Node(StructuredNode):
@@ -20,6 +20,11 @@ class Node(StructuredNode):
     identifying_property = 'protrend_id'
     header = 'PRT'
     entity = 'PRT'
+
+    node_register = {}
+
+    def __init_subclass__(cls, **kwargs):
+        cls.node_register[cls.node_name()] = cls
 
     # -------------------------------------
     # Class attributes
@@ -150,7 +155,7 @@ class Node(StructuredNode):
         for _, node in nodes.iterrows():
 
             node_kwargs = {key: val for key, val in node.items()
-                           if key in node_keys and val is not None}
+                           if key in node_keys and not is_null(val)}
 
             if node_kwargs:
 
@@ -182,7 +187,7 @@ class Node(StructuredNode):
 
                 for key, val in node.items():
 
-                    if key in node_keys and val is not None:
+                    if key in node_keys and not is_null(val):
                         setattr(structured_node, key, val)
 
                 if save:
@@ -246,3 +251,7 @@ def protrend_id_decoder(protrend_id: str):
     prt, entity, integer = protrend_id.split('.')
 
     return int(integer)
+
+
+def get_node_by_name(name: str, default = None) -> Union[Type[Node], None]:
+    return Node.node_register.get(name, default)

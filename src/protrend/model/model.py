@@ -97,12 +97,12 @@ class Organism(Node):
     name = StringProperty(required=True)
     species = StringProperty()
     strain = StringProperty()
-    ncbi_taxonomy = StringProperty()
+    ncbi_taxonomy = IntegerProperty()
     refseq_accession = StringProperty()
     refseq_ftp = StringProperty()
     genbank_accession = StringProperty()
     genbank_ftp = StringProperty()
-    ncbi_assembly = StringProperty()
+    ncbi_assembly = IntegerProperty()
     assembly_accession = StringProperty()
 
     # relationships
@@ -168,8 +168,8 @@ class Regulator(Node):
     mechanism = StringProperty(required=True)
     function = StringProperty()
     description = StringProperty()
-    ncbi_gene = StringProperty()
-    ncbi_protein = StringProperty()
+    ncbi_gene = IntegerProperty()
+    ncbi_protein = IntegerProperty()
     genbank_accession = StringProperty()
     refseq_accession = StringProperty()
     uniprot_accession = StringProperty()
@@ -197,7 +197,7 @@ class Operon(Node):
     entity = 'OPN'
 
     # properties
-    name = StringProperty(required=True)
+    name = StringProperty()
     promoters = ArrayProperty(StringProperty())
     genes = ArrayProperty(StringProperty(), required=True)
     tfbss = ArrayProperty(StringProperty())
@@ -245,8 +245,8 @@ class Gene(Node):
     synonyms = ArrayProperty(StringProperty())
     function = StringProperty()
     description = StringProperty()
-    ncbi_gene = StringProperty()
-    ncbi_protein = StringProperty()
+    ncbi_gene = IntegerProperty()
+    ncbi_protein = IntegerProperty()
     genbank_accession = StringProperty()
     refseq_accession = StringProperty()
     uniprot_accession = StringProperty()
@@ -278,6 +278,7 @@ class TFBS(Node):
     start = IntegerProperty()
     stop = IntegerProperty()
     length = IntegerProperty()
+    site_hash = StringProperty()
 
 
     # relationships
@@ -337,7 +338,7 @@ class RegulatoryInteraction(Node):
     genes = ArrayProperty(StringProperty(), required=True)
     tfbss = ArrayProperty(StringProperty())
     effectors = ArrayProperty(StringProperty())
-    regulatory_effect = StringProperty(required=True)
+    regulatory_effect = StringProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)

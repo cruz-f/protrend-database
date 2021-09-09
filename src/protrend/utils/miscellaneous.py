@@ -1,7 +1,7 @@
 import re
 from types import GeneratorType
 
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,6 @@ def scale_arg(arg, size):
 
 
 def is_null(obj: Any) -> bool:
-
     # booleans
     if isinstance(obj, bool):
         return not obj
@@ -63,7 +62,6 @@ def is_null(obj: Any) -> bool:
 
     # python built-ins
     if isinstance(obj, (range, list, tuple, set, dict, frozenset, str)):
-
         return len(obj) == 0
 
     # python generator built-ins
