@@ -54,7 +54,7 @@ class Connector(AbstractConnector):
     """
     default_settings: Type[ConnectorSettings] = ConnectorSettings
 
-    def __init__(self, settings: ConnectorSettings):
+    def __init__(self, settings: ConnectorSettings = None):
         """
         The connector object uses results obtained during the transformation procedures
         for a given neomodel node entity.

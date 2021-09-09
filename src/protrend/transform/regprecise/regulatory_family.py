@@ -152,13 +152,15 @@ class RegulatoryFamilyToPublicationConnector(Connector):
     def connect(self):
         regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
                                             default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        regulatory_family = apply_processors(regulatory_family, pubmed=to_list)
+        regulatory_family = apply_processors(regulatory_family, pubmed=[to_list])
         regulatory_family = regulatory_family.explode('pubmed')
+        regulatory_family = apply_processors(regulatory_family, pubmed=to_int_str)
 
         publication = read_from_stack(stack=self._connect_stack, file='publication',
                                       default_columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = publication.dropna(subset=['pmid'])
         publication = publication.drop_duplicates(subset=['pmid'])
+        publication = apply_processors(publication, pmid=to_int_str)
 
         merged = pd.merge(regulatory_family, publication, left_on='pubmed', right_on='pmid',
                           suffixes=('_regulatory_family', '_publication'))

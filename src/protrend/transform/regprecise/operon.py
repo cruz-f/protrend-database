@@ -378,9 +378,11 @@ class GeneToTFBSConnector(Connector):
 
         from_identifiers = operon['genes'].tolist()
         to_identifiers = operon['tfbss'].tolist()
+        kwargs = dict(operon=operon['protrend_id'].tolist())
 
         df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
 
         self.stack_json(df)
 
