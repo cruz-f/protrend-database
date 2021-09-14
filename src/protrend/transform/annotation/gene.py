@@ -5,6 +5,7 @@ import pandas as pd
 from protrend.bioapis.gene import NCBIGene
 from protrend.bioapis.protrein import UniProtProtein, NCBIProtein
 from protrend.bioapis.uniprot import map_uniprot_identifiers
+from protrend.log.logger import Logger
 from protrend.transform.dto import GeneDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
 
@@ -183,6 +184,7 @@ def annotate_genes(dtos: List[GeneDTO],
     ncbi_refseqs = scale_arg(ncbi_refseqs, size)
     ncbi_genes = scale_arg(ncbi_genes, size)
 
+    Logger.log.info(f'Starting fetch {len(uniprot_proteins)} genes to {UniProtProtein.__name__}')
     uniprot_proteins = _fetch_genes(identifiers=uniprot_proteins,
                                     cls=UniProtProtein,
                                     taxa=taxa,
@@ -190,6 +192,7 @@ def annotate_genes(dtos: List[GeneDTO],
                                     names=names)
 
     if ncbi_genbanks[0]:
+        Logger.log.info(f'Starting fetch {len(uniprot_proteins)} genes to {NCBIProtein.__name__} using GenBank')
         ncbi_proteins = _fetch_genes(identifiers=ncbi_genbanks,
                                      cls=NCBIProtein,
                                      taxa=taxa,
@@ -198,6 +201,7 @@ def annotate_genes(dtos: List[GeneDTO],
                                      is_genbank=True)
 
     elif ncbi_refseqs[0]:
+        Logger.log.info(f'Starting fetch {len(uniprot_proteins)} genes to {NCBIProtein.__name__} using RefSeq')
         ncbi_proteins = _fetch_genes(identifiers=ncbi_refseqs,
                                      cls=NCBIProtein,
                                      taxa=taxa,
@@ -206,25 +210,39 @@ def annotate_genes(dtos: List[GeneDTO],
                                      is_refseq=True)
 
     else:
+        Logger.log.info(f'Starting fetch {len(uniprot_proteins)} genes to {NCBIProtein.__name__}')
         ncbi_proteins = _fetch_genes(identifiers=ncbi_proteins,
                                      cls=NCBIProtein,
                                      taxa=taxa,
                                      loci=loci,
                                      names=names)
 
+    Logger.log.info(f'Starting fetch {len(uniprot_proteins)} genes to {NCBIGene.__name__}')
     ncbi_genes = _fetch_genes(identifiers=ncbi_genes,
                               cls=NCBIGene,
                               taxa=taxa,
                               loci=loci,
                               names=names)
 
+    Logger.log.info(f'Finishing fetch genes')
+
     # from acc to ncbi protein
     accessions = [protein.identifier for protein in uniprot_proteins if protein.identifier]
+
+    Logger.log.info(f'Starting map genes with '
+                    f'{len(accessions)} uniprot accessions to ncbi proteins (P_GI)')
     uniprot_ncbi_proteins = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
+
+    Logger.log.info(f'Starting map genes with '
+                    f'{len(accessions)} uniprot accessions to ncbi refseqs (P_REFSEQ_AC)')
     uniprot_ncbi_refseqs = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
+
+    Logger.log.info(f'Starting map genes with '
+                    f'{len(accessions)} uniprot accessions to ncbi refseqs (EMBL)')
     uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):
+        Logger.log.info(f'Starting annotate gene: {uniprot_protein.name}')
 
         uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
         _annotate_ncbi_protein(ncbi_protein, gene_dto)

@@ -6,6 +6,7 @@ import pandas as pd
 
 from protrend.io.json import read_json_frame
 from protrend.load import RegPreciseLoader
+from protrend.log.logger import Logger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.regprecise import *
@@ -26,6 +27,11 @@ def transform_runner(transform: bool = True,
                      install_labels: bool = False,
                      clear_constraints: bool = False,
                      clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+
+    Logger.log.info(f'Starting transform runner with transform: {transform}, connect: {connect}, '
+                    f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
+                    f'clear indexes: {clear_indexes}')
+
     neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
     neo_db.connect()
 
@@ -79,12 +85,22 @@ def transform_runner(transform: bool = True,
     data_lake = {fp.stem: read_json_frame(fp)
                  for fp in data_lake_files}
 
+    data_lake_info = [f'{key}: {df.shape}' for key, df in data_lake.items()]
+    data_lake_info = ' '.join(data_lake_info)
+    Logger.log.info(f'Transform stats: {data_lake_info}')
+    Logger.log.info(f'Finished transform runner')
+
     return director, data_lake
 
 
 def load_runner(install_labels: bool = False,
                 clear_constraints: bool = False,
                 clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+
+    Logger.log.info(f'Starting loader runner with transform: '
+                    f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
+                    f'clear indexes: {clear_indexes}')
+
     neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
     neo_db.connect()
 
@@ -101,6 +117,11 @@ def load_runner(install_labels: bool = False,
     database = {node_name: node.node_to_df()
                 for node_name, node in Node.node_register.items()}
 
+    database_info = [f'{key}: {df.shape}' for key, df in database.items()]
+    database_info = ' '.join(database_info)
+    Logger.log.info(f'Database stats: {database_info}')
+    Logger.log.info(f'Finished loader runner')
+
     return director, database
 
 
@@ -113,7 +134,7 @@ if __name__ == "__main__":
     # ----------------------------------------------------
     # TRANSFORM
     # ----------------------------------------------------
-    reg_transformer, reg_data_lake = transform_runner()
+    reg_transformer, reg_data_lake = transform_runner(install_labels=True, clear_indexes=True, clear_constraints=True)
 
     # ----------------------------------------------------
     # LOAD

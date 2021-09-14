@@ -4,6 +4,7 @@ import whoosh.index as w_index
 
 from protrend.bioapis.pathway import KEGGPathway
 from protrend.bioapis.kegg import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
+from protrend.log.logger import Logger
 from protrend.transform.dto import PathwayDTO
 from protrend.utils.miscellaneous import args_length
 
@@ -68,17 +69,18 @@ def annotate_pathways(dtos: List[PathwayDTO],
 
     except ValueError:
 
-        print(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
-              f'Downloading kegg list and indexing ...')
+        Logger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
+                         f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)
         index = indexing_kegg_list(db=db, df_kegg_list=df_kegg_list)
 
-    kegg_pathways = _fetch_pathways(names=names,
-                                    cls=KEGGPathway,
-                                    index=index)
+    Logger.log.info(f'Starting fetch {len(names)} pathways to cls {KEGGPathway.__name__}')
+    kegg_pathways = _fetch_pathways(names=names, cls=KEGGPathway, index=index)
+    Logger.log.info(f'Finishing fetch pathways')
 
     for pathway_dto, kegg_pathway in zip(dtos, kegg_pathways):
+        Logger.log.info(f'Starting annotate pathway: {kegg_pathway.name}')
         _annotate_pathway(kegg_pathway, pathway_dto)
 
     return dtos

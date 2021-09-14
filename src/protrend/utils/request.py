@@ -49,8 +49,6 @@ def _request(url: str,
 
     if response is None:
 
-        print(f'Failed connect to {url} with {params}')
-
         response = requests.Response()
         response.status_code = 404
 
@@ -66,8 +64,6 @@ def request(url: str,
     if retries > 0:
 
         for i in range(retries):
-
-            print(f'Attempt request {i} to {url} for params {params if params else {}}')
 
             response = _request(url=url,
                                 method=method,
@@ -87,8 +83,6 @@ def request(url: str,
 
     else:
 
-        print(f'Request to {url} for params {params if params else {}}')
-
         return _request(url=url,
                         method=method,
                         params=params,
@@ -104,8 +98,3 @@ def read_response(response: requests.Response, **kwargs) -> pd.DataFrame:
         return pd.read_csv(buffer, **kwargs)
 
     return pd.DataFrame()
-
-
-def write_response(response: requests.Response, io):
-    with open(io, 'w', encoding='utf-8') as file:
-        file.write(response.content)
