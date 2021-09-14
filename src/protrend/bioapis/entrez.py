@@ -1,5 +1,4 @@
 import os
-import time
 from typing import Union
 
 from Bio import Entrez, SeqIO
@@ -8,7 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from diskcache import Cache, JSONDisk
 
 from protrend.bioapis.settings import ENTREZ_E_MAIL, ENTREZ_API_KEY, ENTREZ_TOOL
-from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH, REQUEST_SLEEP
+from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH
 
 Entrez.email = ENTREZ_E_MAIL
 Entrez.api_key = ENTREZ_API_KEY
@@ -74,7 +73,6 @@ def entrez_record(callback, **kwargs) -> Union[SeqRecord, dict]:
 def entrez_search(db: str, term: str, retmax: int = 5000) -> dict:
     record = entrez_record(Entrez.esearch, db=db, term=term, retmax=retmax)
 
-    time.sleep(REQUEST_SLEEP)
     return record
 
 
@@ -83,7 +81,10 @@ def entrez_summary(db: str, identifier: str) -> dict:
     records = entrez_record(Entrez.esummary, db=db, id=identifier)
 
     if isinstance(records, list):
-        record = records[0]
+        if records:
+            record = records[0]
+        else:
+            record = {}
 
     elif isinstance(records, dict):
         d_sum_set = records.get('DocumentSummarySet', {})
@@ -95,8 +96,6 @@ def entrez_summary(db: str, identifier: str) -> dict:
 
     if hasattr(record, 'attributes'):
         record['attributes'] = record.attributes
-
-    time.sleep(REQUEST_SLEEP)
 
     return record
 
@@ -119,7 +118,5 @@ def entrez_fetch(db: str,
 
     except:
         record = SeqRecord(Seq(""))
-
-    time.sleep(REQUEST_SLEEP)
 
     return record

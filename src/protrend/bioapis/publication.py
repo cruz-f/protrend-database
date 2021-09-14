@@ -31,7 +31,7 @@ class PubMedPublication(BioAPI):
             if year:
                 return year[:4]
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
 
         if self.pmid:
             record = entrez_summary(db='pubmed', identifier=self.pmid)

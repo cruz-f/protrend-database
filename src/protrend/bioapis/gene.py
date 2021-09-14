@@ -140,7 +140,7 @@ class NCBIGene(BioAPI):
 
         return term
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
 
         if self._identifier:
             identifier = self._identifier

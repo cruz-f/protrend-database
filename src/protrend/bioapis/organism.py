@@ -104,7 +104,7 @@ class NCBITaxonomyOrganism(BioAPI):
                     record = entrez_summary(db='taxonomy', identifier=identifier)
                     self.record = record
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
 
         self.get_taxonomy_record()
 
