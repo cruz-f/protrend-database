@@ -9,14 +9,11 @@ def read_from_stack(stack: Dict[str, str],
                     reader: Callable,
                     **kwargs) -> pd.DataFrame:
 
-    if file in stack:
-
+    try:
         file_path = stack[file]
+        return reader(file_path, **kwargs)
 
-        df = reader(file_path, **kwargs)
+    except (OSError, KeyError):
 
-    else:
         default_columns = list(default_columns)
-        df = pd.DataFrame(columns=default_columns)
-
-    return df
+        return pd.DataFrame(columns=default_columns)
