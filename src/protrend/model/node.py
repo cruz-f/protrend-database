@@ -1,11 +1,13 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict, Any, Union, Type
+from typing import List, Dict, Any, Union, Type, Tuple
 
 import pandas as pd
 import pytz
-from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty)
+from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager)
+from neomodel.relationship import RelationshipMeta, StructuredRel
 
+from protrend.log.logger import Logger
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
 
 
@@ -21,7 +23,7 @@ class Node(StructuredNode):
     header = 'PRT'
     entity = 'PRT'
 
-    node_register = {}
+    node_register: Dict[str, Type['Node']] = {}
 
     def __init_subclass__(cls, **kwargs):
         cls.node_register[cls.node_name()] = cls
@@ -38,7 +40,7 @@ class Node(StructuredNode):
         return dict(cls.__all_properties__)
 
     @classmethod
-    def node_relationships(cls) -> dict:
+    def node_relationships(cls) -> Dict[str, RelationshipManager]:
         return dict(cls.__all_relationships__)
 
     @classmethod
@@ -120,7 +122,7 @@ class Node(StructuredNode):
         return structured_nodes
 
     @classmethod
-    def node_to_dict(cls, to: str = 'dict') -> dict:
+    def node_to_dict(cls, to: str = 'dict') -> Union[Dict[str, Any], Dict[str, 'Node']]:
 
         if to == 'dict':
             res = defaultdict(list)
@@ -235,23 +237,58 @@ class Node(StructuredNode):
 
 
 def _sort_nodes(node: Node):
-
     return protrend_id_decoder(node.protrend_id)
 
 
-def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]):
-
+def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]) -> str:
     integer = int(integer)
 
     return f'{header}.{entity}.{integer:07}'
 
 
-def protrend_id_decoder(protrend_id: str):
-
+def protrend_id_decoder(protrend_id: str) -> int:
     prt, entity, integer = protrend_id.split('.')
 
     return int(integer)
 
 
-def get_node_by_name(name: str, default = None) -> Union[Type[Node], None]:
+def get_node_by_name(name: str, default=None) -> Union[Type[Node], None]:
     return Node.node_register.get(name, default)
+
+
+def _find_to_node(relationship: RelationshipManager) -> Type[Node]:
+    return relationship.definition['node_class']
+
+
+def get_nodes_relationships(from_node: Type[Node], to_node: Type[Node], default=None) -> Tuple[List[str], List[str]]:
+    from_node_rels = from_node.node_relationships()
+    from_node_matches = []
+    for attr, relationship in from_node_rels.items():
+
+        this_to_node = _find_to_node(relationship)
+        if this_to_node.node_name() == to_node.node_name():
+            from_node_matches.append(attr)
+
+    to_node_rels = to_node.node_relationships()
+    to_node_matches = []
+    for attr, relationship in to_node_rels.items():
+
+        this_from_node = _find_to_node(relationship)
+        if this_from_node.node_name() == from_node.node_name():
+            to_node_matches.append(attr)
+
+    return from_node_matches, to_node_matches
+
+
+def connect_nodes(from_node: Node, to_node: Node, relationship: str, kwargs: dict) -> bool:
+    relationship: RelationshipManager = getattr(from_node, relationship, None)
+    relationship_model: StructuredRel = relationship.definition['model']
+
+    if kwargs:
+        kwargs = {key: val for key, val in kwargs.items()
+                  if hasattr(relationship_model, key)}
+
+    else:
+        kwargs = {}
+
+    return relationship.connect(to_node, kwargs)

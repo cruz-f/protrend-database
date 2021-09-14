@@ -280,7 +280,6 @@ class TFBS(Node):
     length = IntegerProperty()
     site_hash = StringProperty()
 
-
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
