@@ -4,7 +4,7 @@ import whoosh.index as w_index
 
 from protrend.bioapis.compound import KEGGCompound
 from protrend.bioapis.kegg import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.transform.dto import EffectorDTO
 from protrend.utils.miscellaneous import args_length
 
@@ -69,18 +69,18 @@ def annotate_effectors(dtos: List[EffectorDTO],
 
     except ValueError:
 
-        Logger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
+        ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
                          f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)
         index = indexing_kegg_list(db=db, df_kegg_list=df_kegg_list)
 
-    Logger.log.info(f'Starting fetch {len(names)} compounds to cls {KEGGCompound.__name__}')
+    ProtrendLogger.log.info(f'Starting fetch {len(names)} compounds to cls {KEGGCompound.__name__}')
     kegg_compounds = _fetch_compounds(names=names, cls=KEGGCompound, index=index)
-    Logger.log.info(f'Finishing fetch compounds')
+    ProtrendLogger.log.info(f'Finishing fetch compounds')
 
     for effector_dto, kegg_compound in zip(dtos, kegg_compounds):
-        Logger.log.info(f'Starting annotate compound: {kegg_compound.name}')
+        ProtrendLogger.log.info(f'Starting annotate compound: {kegg_compound.name}')
         _annotate_compound(kegg_compound, effector_dto)
 
     return dtos

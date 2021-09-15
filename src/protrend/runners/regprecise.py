@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Dict
 
@@ -6,7 +7,7 @@ import pandas as pd
 
 from protrend.io.json import read_json_frame
 from protrend.load import RegPreciseLoader
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.regprecise import *
@@ -27,10 +28,9 @@ def transform_runner(transform: bool = True,
                      install_labels: bool = False,
                      clear_constraints: bool = False,
                      clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
-
-    Logger.log.info(f'Starting transform runner with transform: {transform}, connect: {connect}, '
-                    f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
-                    f'clear indexes: {clear_indexes}')
+    ProtrendLogger.log.info(f'Starting transform runner with transform: {transform}, connect: {connect}, '
+                            f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
+                            f'clear indexes: {clear_indexes}')
 
     neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
     neo_db.connect()
@@ -87,8 +87,8 @@ def transform_runner(transform: bool = True,
 
     data_lake_info = [f'{key}: {df.shape}' for key, df in data_lake.items()]
     data_lake_info = ' '.join(data_lake_info)
-    Logger.log.info(f'Transform stats: {data_lake_info}')
-    Logger.log.info(f'Finished transform runner')
+    ProtrendLogger.log.info(f'Transform stats: {data_lake_info}')
+    ProtrendLogger.log.info(f'Finished transform runner')
 
     return director, data_lake
 
@@ -96,10 +96,9 @@ def transform_runner(transform: bool = True,
 def load_runner(install_labels: bool = False,
                 clear_constraints: bool = False,
                 clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
-
-    Logger.log.info(f'Starting loader runner with transform: '
-                    f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
-                    f'clear indexes: {clear_indexes}')
+    ProtrendLogger.log.info(f'Starting loader runner with transform: '
+                            f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
+                            f'clear indexes: {clear_indexes}')
 
     neo_db = NeoDatabase(user_name='neo4j', password='protrend', ip='localhost', port='7687')
     neo_db.connect()
@@ -119,8 +118,8 @@ def load_runner(install_labels: bool = False,
 
     database_info = [f'{key}: {df.shape}' for key, df in database.items()]
     database_info = ' '.join(database_info)
-    Logger.log.info(f'Database stats: {database_info}')
-    Logger.log.info(f'Finished loader runner')
+    ProtrendLogger.log.info(f'Database stats: {database_info}')
+    ProtrendLogger.log.info(f'Finished loader runner')
 
     return director, database
 
@@ -130,6 +129,15 @@ if __name__ == "__main__":
     # EXTRACT
     # ----------------------------------------------------
     # extract_runner()
+
+    # ----------------------------------------------------
+    # LOGGER
+    # ----------------------------------------------------
+    CURRENT_TIME = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    LOG_PATH = ROOT_PATH.joinpath('log', f'regprecise_transform_{CURRENT_TIME}.log')
+    LOG_FILE = LOG_PATH.as_posix()
+    ProtrendLogger.log_file = LOG_FILE
+    ProtrendLogger.start_logger()
 
     # ----------------------------------------------------
     # TRANSFORM

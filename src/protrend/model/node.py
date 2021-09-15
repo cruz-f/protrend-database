@@ -7,7 +7,7 @@ import pytz
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager)
 from neomodel.relationship import RelationshipMeta, StructuredRel
 
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
 
 

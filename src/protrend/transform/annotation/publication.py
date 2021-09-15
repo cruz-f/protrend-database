@@ -1,7 +1,7 @@
 from typing import List, Type
 
 from protrend.bioapis.publication import PubMedPublication
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.transform.dto import PublicationDTO
 from protrend.utils.miscellaneous import args_length
 
@@ -56,13 +56,13 @@ def annotate_publications(dtos: List[PublicationDTO],
     if size != dtos_size:
         raise ValueError(f'Invalid inputs for dto list size of {dtos_size} and args size of {size}')
 
-    Logger.log.info(f'Starting fetch {len(identifiers)} publications to cls {PubMedPublication.__name__}')
+    ProtrendLogger.log.info(f'Starting fetch {len(identifiers)} publications to cls {PubMedPublication.__name__}')
     pubmed_publications = _fetch_publications(identifiers=identifiers,
                                               cls=PubMedPublication)
-    Logger.log.info(f'Finishing fetch publications')
+    ProtrendLogger.log.info(f'Finishing fetch publications')
 
     for publication_dto, pubmed_publication in zip(dtos, pubmed_publications):
-        Logger.log.info(f'Starting annotate publication: {pubmed_publication.pmid}')
+        ProtrendLogger.log.info(f'Starting annotate publication: {pubmed_publication.pmid}')
         _annotate_publication(pubmed_publication, publication_dto)
 
     return dtos

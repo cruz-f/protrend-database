@@ -1,7 +1,7 @@
 from typing import Sequence, List
 
 from protrend.load import Loader
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.transform.connector import Connector
 from protrend.transform.transformer import Transformer
 
@@ -70,22 +70,22 @@ class Director:
         """
 
         transformers_info = ' '.join([transformer.node.node_name() for transformer in self.transformers])
-        Logger.log.info(f'Director call for transform in the following transformers: {transformers_info}')
+        ProtrendLogger.log.info(f'Director call for transform in the following transformers: {transformers_info}')
 
         for transformer in self.transformers:
 
             try:
 
-                Logger.log.info(f'Starting transformer: {transformer.settings}')
+                ProtrendLogger.log.info(f'Starting transformer: {transformer.settings}')
 
                 df = transformer.transform()
                 transformer.integrate(df)
                 transformer.write()
 
-                Logger.log.info(f'Finishing transformer: {transformer.node.node_name()} with stats: {df.shape}')
+                ProtrendLogger.log.info(f'Finishing transformer: {transformer.node.node_name()} with stats: {df.shape}')
 
             except:
-                Logger.log.exception(f'Exception occurred in transformer {transformer.settings}')
+                ProtrendLogger.log.exception(f'Exception occurred in transformer {transformer.settings}')
 
     def connect(self):
         """
@@ -97,22 +97,22 @@ class Director:
 
         connectors_info = ' '.join([f'{connector.from_node.node_name()}_{connector.to_node.node_name()}\n'
                                     for connector in self.connectors])
-        Logger.log.info(f'Director call for connect in the following connectors: \n {connectors_info}')
+        ProtrendLogger.log.info(f'Director call for connect in the following connectors: \n {connectors_info}')
 
         for connector in self.connectors:
 
             try:
 
-                Logger.log.info(f'Starting connector: {connector.settings}')
+                ProtrendLogger.log.info(f'Starting connector: {connector.settings}')
 
                 connector.connect()
                 connector.write()
 
-                Logger.log.info(f'Finishing connector: '
+                ProtrendLogger.log.info(f'Finishing connector: '
                                 f'{connector.from_node.node_name()}_{connector.to_node.node_name()}')
 
             except:
-                Logger.log.exception(f'Exception occurred in connector {connector.settings}')
+                ProtrendLogger.log.exception(f'Exception occurred in connector {connector.settings}')
 
     def load(self):
         """
@@ -124,17 +124,17 @@ class Director:
         """
 
         loaders = ' '.join([f'{loader.__class__.__name__}' for loader in self.loaders])
-        Logger.log.info(f'Director call for load in the following loaders: {loaders}')
+        ProtrendLogger.log.info(f'Director call for load in the following loaders: {loaders}')
 
         for loader in self.loaders:
             try:
-                Logger.log.info(f'Starting loader: {loader.__class__.__name__} with the following files:')
+                ProtrendLogger.log.info(f'Starting loader: {loader.__class__.__name__} with the following files:')
                 for file_path in loader.files:
-                    Logger.log.info(f'{file_path}')
+                    ProtrendLogger.log.info(f'{file_path}')
 
                 loader.load()
 
-                Logger.log.info(f'Finishing loader: {loader.__class__.__name__}')
+                ProtrendLogger.log.info(f'Finishing loader: {loader.__class__.__name__}')
 
             except:
-                Logger.log.exception(f'Exception occurred in loader {loader.__class__.__name__}')
+                ProtrendLogger.log.exception(f'Exception occurred in loader {loader.__class__.__name__}')

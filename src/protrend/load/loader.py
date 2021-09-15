@@ -6,7 +6,7 @@ from neomodel import RelationshipManager
 
 from protrend.io.json import read_json_frame
 from protrend.load.settings import LoaderSettings
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
 from protrend.utils.settings import DATA_LAKE_PATH
 
@@ -155,7 +155,7 @@ class Loader:
                                   kwargs=relationship)
 
                 except:
-                    Logger.log.exception(f'Could not connect {from_node_instance.identifier} to '
+                    ProtrendLogger.log.exception(f'Could not connect {from_node_instance.identifier} to '
                                          f'{to_node_instance.identifier} using {relationship} relation')
 
             # reverse connection
@@ -166,5 +166,5 @@ class Loader:
                                   kwargs=relationship)
 
                 except:
-                    Logger.log.exception(f'Could not connect {to_node_instance.identifier} to '
+                    ProtrendLogger.log.exception(f'Could not connect {to_node_instance.identifier} to '
                                          f'{from_node_instance.identifier} using {relationship} relation')

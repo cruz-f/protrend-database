@@ -1,7 +1,7 @@
 from typing import List, Type
 
 from protrend.bioapis.organism import NCBITaxonomyOrganism
-from protrend.log.logger import Logger
+from protrend.log.logger import ProtrendLogger
 from protrend.transform.dto import OrganismDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
 
@@ -68,15 +68,15 @@ def annotate_organisms(dtos: List[OrganismDTO],
     identifiers = scale_arg(identifiers, size)
     names = scale_arg(names, size)
 
-    Logger.log.info(f'Starting fetch {len(names)} organisms to cls {NCBITaxonomyOrganism.__name__}')
+    ProtrendLogger.log.info(f'Starting fetch {len(names)} organisms to cls {NCBITaxonomyOrganism.__name__}')
     ncbi_taxonomys = _fetch_organisms(identifiers=identifiers,
                                       names=names,
                                       cls=NCBITaxonomyOrganism)
-    Logger.log.info(f'Finishing fetch organisms')
+    ProtrendLogger.log.info(f'Finishing fetch organisms')
 
     for organism_dto, ncbi_taxonomy in zip(dtos, ncbi_taxonomys):
 
-        Logger.log.info(f'Starting annotate organism: {ncbi_taxonomy.name}')
+        ProtrendLogger.log.info(f'Starting annotate organism: {ncbi_taxonomy.name}')
         _annotate_organism(ncbi_taxonomy, organism_dto)
 
     return dtos
