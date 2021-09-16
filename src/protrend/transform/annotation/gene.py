@@ -2,11 +2,8 @@ from typing import List, Union, Type
 
 import pandas as pd
 
-from protrend.bioapis.gene import NCBIGene
-from protrend.bioapis.protrein import UniProtProtein, NCBIProtein
-from protrend.bioapis.uniprot import map_uniprot_identifiers
-from protrend.log.logger import ProtrendLogger
-from protrend.transform.dto import GeneDTO
+from protrend.bioapis import NCBIGene, UniProtProtein, NCBIProtein, map_uniprot_identifiers
+from protrend.transform import GeneDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
 
 
@@ -29,9 +26,12 @@ def _fetch_genes(identifiers: List[str],
     if identifiers[0] is None:
 
         for taxonomy, locus_tag, name in zip(taxa, loci, names):
+            ProtrendLogger.log.info(f'Starting fetch gene: {locus_tag}')
+
             gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
             gene.fetch()
             genes.append(gene)
+            ProtrendLogger.log.info(f'Ending fetch gene: {locus_tag}')
 
     else:
 
@@ -230,15 +230,15 @@ def annotate_genes(dtos: List[GeneDTO],
     accessions = [protein.identifier for protein in uniprot_proteins if protein.identifier]
 
     ProtrendLogger.log.info(f'Starting map genes with '
-                    f'{len(accessions)} uniprot accessions to ncbi proteins (P_GI)')
+                            f'{len(accessions)} uniprot accessions to ncbi proteins (P_GI)')
     uniprot_ncbi_proteins = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
 
     ProtrendLogger.log.info(f'Starting map genes with '
-                    f'{len(accessions)} uniprot accessions to ncbi refseqs (P_REFSEQ_AC)')
+                            f'{len(accessions)} uniprot accessions to ncbi refseqs (P_REFSEQ_AC)')
     uniprot_ncbi_refseqs = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
 
     ProtrendLogger.log.info(f'Starting map genes with '
-                    f'{len(accessions)} uniprot accessions to ncbi refseqs (EMBL)')
+                            f'{len(accessions)} uniprot accessions to ncbi refseqs (EMBL)')
     uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):

@@ -1,8 +1,8 @@
 from typing import List, Type
 
-from protrend.bioapis.publication import PubMedPublication
-from protrend.log.logger import ProtrendLogger
-from protrend.transform.dto import PublicationDTO
+from protrend.bioapis import PubMedPublication
+from protrend.log import ProtrendLogger
+from protrend.transform import PublicationDTO
 from protrend.utils.miscellaneous import args_length
 
 

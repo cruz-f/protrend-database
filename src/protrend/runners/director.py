@@ -1,7 +1,7 @@
 from typing import Sequence, List
 
 from protrend.load import Loader
-from protrend.log.logger import ProtrendLogger
+from protrend.log import ProtrendLogger
 from protrend.transform.connector import Connector
 from protrend.transform.transformer import Transformer
 
@@ -76,7 +76,7 @@ class Director:
 
             try:
 
-                ProtrendLogger.log.info(f'Starting transformer: {transformer.settings}')
+                ProtrendLogger.log.info(f'Starting transformer: {transformer}')
 
                 df = transformer.transform()
                 transformer.integrate(df)
@@ -85,7 +85,7 @@ class Director:
                 ProtrendLogger.log.info(f'Finishing transformer: {transformer.node.node_name()} with stats: {df.shape}')
 
             except:
-                ProtrendLogger.log.exception(f'Exception occurred in transformer {transformer.settings}')
+                ProtrendLogger.log.exception(f'Exception occurred in transformer {transformer}')
 
     def connect(self):
         """
@@ -103,16 +103,16 @@ class Director:
 
             try:
 
-                ProtrendLogger.log.info(f'Starting connector: {connector.settings}')
+                ProtrendLogger.log.info(f'Starting connector: {connector}')
 
                 connector.connect()
                 connector.write()
 
                 ProtrendLogger.log.info(f'Finishing connector: '
-                                f'{connector.from_node.node_name()}_{connector.to_node.node_name()}')
+                                        f'{connector.from_node.node_name()}_{connector.to_node.node_name()}')
 
             except:
-                ProtrendLogger.log.exception(f'Exception occurred in connector {connector.settings}')
+                ProtrendLogger.log.exception(f'Exception occurred in connector {connector}')
 
     def load(self):
         """

@@ -5,9 +5,8 @@ from typing import List, Dict, Any, Union, Type, Tuple
 import pandas as pd
 import pytz
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager)
-from neomodel.relationship import RelationshipMeta, StructuredRel
+from neomodel.relationship import StructuredRel
 
-from protrend.log.logger import ProtrendLogger
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
 
 

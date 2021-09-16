@@ -1,8 +1,8 @@
 from typing import List, Type
 
-from protrend.bioapis.organism import NCBITaxonomyOrganism
-from protrend.log.logger import ProtrendLogger
-from protrend.transform.dto import OrganismDTO
+from protrend.bioapis import NCBITaxonomyOrganism
+from protrend.log import ProtrendLogger
+from protrend.transform import OrganismDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
 
 

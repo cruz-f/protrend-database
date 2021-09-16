@@ -2,10 +2,10 @@ from typing import List, Type
 
 import whoosh.index as w_index
 
-from protrend.bioapis.compound import KEGGCompound
-from protrend.bioapis.kegg import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
-from protrend.log.logger import ProtrendLogger
-from protrend.transform.dto import EffectorDTO
+from protrend.bioapis import KEGGCompound
+from protrend.bioapis import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
+from protrend.log import ProtrendLogger
+from protrend.transform import EffectorDTO
 from protrend.utils.miscellaneous import args_length
 
 

@@ -1,5 +1,4 @@
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Dict
 
@@ -7,12 +6,13 @@ import pandas as pd
 
 from protrend.io.json import read_json_frame
 from protrend.load import RegPreciseLoader
-from protrend.log.logger import ProtrendLogger
+from protrend.log import ProtrendLogger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.regprecise import *
 from protrend.transform.regprecise.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils import NeoDatabase, ROOT_PATH, DATA_LAKE_PATH, STAGING_AREA_PATH
+from protrend.utils.miscellaneous import log_file_from_name
 
 src_path = ROOT_PATH.parent
 sys.path.insert(0, str(src_path))
@@ -133,10 +133,8 @@ if __name__ == "__main__":
     # ----------------------------------------------------
     # LOGGER
     # ----------------------------------------------------
-    CURRENT_TIME = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    LOG_PATH = ROOT_PATH.joinpath('log', f'regprecise_transform_{CURRENT_TIME}.log')
-    LOG_FILE = LOG_PATH.as_posix()
-    ProtrendLogger.log_file = LOG_FILE
+    log_file = log_file_from_name('regprecise_transform')
+    ProtrendLogger.log_file = log_file
     ProtrendLogger.start_logger()
 
     # ----------------------------------------------------

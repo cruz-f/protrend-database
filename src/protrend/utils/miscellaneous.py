@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from types import GeneratorType
 
 from typing import Any, Union
@@ -7,6 +8,8 @@ import numpy as np
 import pandas as pd
 
 # CamelCase to snake_case
+from protrend.utils import ROOT_PATH
+
 camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
 
@@ -73,3 +76,9 @@ def is_null(obj: Any) -> bool:
         return True
 
     return False
+
+
+def log_file_from_name(name: str) -> str:
+    now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    log_path = ROOT_PATH.joinpath('log', f'{name}_{now}.log')
+    return log_path.as_posix()

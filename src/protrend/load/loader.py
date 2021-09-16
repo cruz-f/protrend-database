@@ -2,11 +2,10 @@ import os
 from typing import List, Type
 
 import pandas as pd
-from neomodel import RelationshipManager
 
 from protrend.io.json import read_json_frame
 from protrend.load.settings import LoaderSettings
-from protrend.log.logger import ProtrendLogger
+from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
 from protrend.utils.settings import DATA_LAKE_PATH
 
