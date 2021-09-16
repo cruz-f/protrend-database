@@ -4,19 +4,23 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import Effector
 from protrend.transform.annotation import annotate_effectors
 from protrend.transform.connector import Connector
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (EffectorSettings, EffectorToSource, EffectorToOrganism,
+from protrend.transform.regprecise.settings import (EffectorToSource, EffectorToOrganism,
                                                     EffectorToRegulator)
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
-class EffectorTransformer(Transformer):
-    default_settings = EffectorSettings
+class EffectorTransformer(RegPreciseTransformer):
+    default_node = Effector
+    default_node_factors = ('name', )
+    default_transform_stack = {'effector': 'Effector.json'}
+    default_order = 100
     columns = {'protrend_id', 'effector_id', 'name', 'url', 'regulog', 'mechanism', 'synonyms', 'kegg_compounds'}
     read_columns = {'effector_id', 'name', 'url', 'regulog'}
 
@@ -38,7 +42,7 @@ class EffectorTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        effector = read_from_stack(stack=self._transform_stack, file='effector', default_columns=self.read_columns,
+        effector = read_from_stack(stack=self.transform_stack, file='effector', default_columns=self.read_columns,
                                    reader=read_json_lines)
         effector = self._transform_effector(effector)
 

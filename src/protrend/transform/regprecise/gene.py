@@ -4,18 +4,24 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import Gene
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import Connector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list, to_int_str
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import GeneSettings, GeneToSource, GeneToOrganism
+from protrend.transform.regprecise.settings import GeneToSource, GeneToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
-class GeneTransformer(Transformer):
-    default_settings = GeneSettings
+class GeneTransformer(RegPreciseTransformer):
+    default_node = Gene
+    default_node_factors = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
+                            'genbank_accession', 'refseq_accession',
+                            'locus_tag')
+    default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
+    default_order = 80
     columns = {'protrend_id',
                'locus_tag', 'name', 'synonyms', 'function', 'description',
                'ncbi_gene', 'ncbi_protein', 'genbank_accession',
@@ -24,7 +30,6 @@ class GeneTransformer(Transformer):
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
                'regulator_protrend_id', 'regulon_id', 'locus_tag_old',
                'regulon', 'operon', 'tfbs'}
-
     read_columns = {'locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'}
 
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
@@ -75,10 +80,10 @@ class GeneTransformer(Transformer):
         return genes
 
     def transform(self):
-        gene = read_from_stack(stack=self._transform_stack, file='gene',
+        gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=self.read_columns, reader=read_json_lines)
 
-        regulator = read_from_stack(stack=self._transform_stack, file='regulator',
+        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulon_id',
                                         'organism_protrend_id')

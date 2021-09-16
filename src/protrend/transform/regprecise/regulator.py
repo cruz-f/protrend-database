@@ -4,18 +4,25 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import Regulator
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.connector import Connector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
-from protrend.transform.regprecise.settings import RegulatorSettings, RegulatorToSource, RegulatorToOrganism
+from protrend.transform.regprecise.settings import RegulatorToSource, RegulatorToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
-class RegulatorTransformer(Transformer):
-    default_settings = RegulatorSettings
+class RegulatorTransformer(RegPreciseTransformer):
+    default_node = Regulator
+    default_node_factors = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
+                            'genbank_accession', 'refseq_accession',
+                            'locus_tag')
+    default_transform_stack = {'regulon': 'Regulon.json',
+                               'organism': 'integrated_organism.json'}
+    default_order = 90
     columns = {'protrend_id',
                'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
                'mechanism',
@@ -121,12 +128,12 @@ class RegulatorTransformer(Transformer):
         return df
 
     def transform(self):
-        regulon = read_from_stack(stack=self._transform_stack, file='regulon',
+        regulon = read_from_stack(stack=self.transform_stack, file='regulon',
                                   default_columns=self.read_columns, reader=read_json_lines)
 
         regulon = apply_processors(regulon, regulon_id=to_int_str, genome=to_int_str)
 
-        organism = read_from_stack(stack=self._transform_stack, file='organism',
+        organism = read_from_stack(stack=self.transform_stack, file='organism',
                                    default_columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'genome_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})

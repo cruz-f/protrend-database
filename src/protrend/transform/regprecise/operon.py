@@ -5,23 +5,27 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import Operon
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set, to_list,
                                            to_nan, to_int_str)
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (OperonSettings, OperonToSource, OperonToOrganism, OperonToRegulator,
+from protrend.transform.regprecise.settings import (OperonToSource, OperonToOrganism, OperonToRegulator,
                                                     OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator,
                                                     TFBSToRegulator)
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
-from protrend.transform.transformer import Transformer
 from protrend.utils import build_graph, find_connected_nodes
 from protrend.utils.miscellaneous import is_null
 
 
-class OperonTransformer(Transformer):
-    default_settings = OperonSettings
+class OperonTransformer(RegPreciseTransformer):
+    default_node = Operon
+    default_node_factors = ()
+    default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
+    default_order = 60
     columns = {'protrend_id',
                'operon_id', 'name', 'url', 'regulon', 'tfbs',
                'tfbss', 'genes',
@@ -146,7 +150,7 @@ class OperonTransformer(Transformer):
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self._transform_stack, file='operon',
+        operon = read_from_stack(stack=self.transform_stack, file='operon',
                                  default_columns=self.read_columns, reader=read_json_lines)
 
         operon = operon.drop(columns=['name'])
@@ -154,7 +158,7 @@ class OperonTransformer(Transformer):
         operon = operon.explode('regulon')
         operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
 
-        gene = read_from_stack(stack=self._transform_stack, file='gene',
+        gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand', 'start', 'stop')
 
@@ -168,7 +172,7 @@ class OperonTransformer(Transformer):
                                     'start': 'gene_start',
                                     'stop': 'gene_stop'})
 
-        tfbs = read_from_stack(stack=self._transform_stack, file='tfbs',
+        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
 

@@ -2,19 +2,22 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model.model import Organism
+from protrend.transform import Connector
+from protrend.transform import OrganismDTO
 from protrend.transform.annotation import annotate_organisms
-from protrend.transform.connector import Connector
-from protrend.transform.dto import OrganismDTO
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str
-from protrend.transform.regprecise.settings import OrganismSettings, OrganismToSource
+from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.settings import OrganismToSource
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
-class OrganismTransformer(Transformer):
-    default_settings = OrganismSettings
+class OrganismTransformer(RegPreciseTransformer):
+    default_node = Organism
+    default_node_factors = ('ncbi_taxonomy', 'name')
+    default_transform_stack = {'genome': 'Genome.json'}
+    default_order = 100
     columns = {'protrend_id',
                'genome_id', 'name', 'taxonomy', 'url', 'regulon',
                'species', 'strain',
@@ -52,7 +55,7 @@ class OrganismTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        genome = read_from_stack(stack=self._transform_stack, file='genome',
+        genome = read_from_stack(stack=self.transform_stack, file='genome',
                                  default_columns=self.read_columns, reader=read_json_lines)
         genome = self._transform_genome(genome)
 

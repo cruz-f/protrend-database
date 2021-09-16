@@ -4,15 +4,19 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines
 from protrend.io.utils import read_from_stack
+from protrend.model.model import Publication
 from protrend.transform.annotation import annotate_publications
 from protrend.transform.dto import PublicationDTO
 from protrend.transform.processors import apply_processors, to_int_str
-from protrend.transform.regprecise.settings import PublicationSettings
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.base import RegPreciseTransformer
 
 
-class PublicationTransformer(Transformer):
-    default_settings = PublicationSettings
+class PublicationTransformer(RegPreciseTransformer):
+    default_node = Publication
+    default_node_factors = ('pmid', )
+    default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
+                               'tf': 'TranscriptionFactor.json', 'rna': 'RNAFamily.json'}
+    default_order = 100
     columns = {'protrend_id',
                'pmid', 'doi', 'title', 'author', 'year'}
     tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
@@ -56,15 +60,15 @@ class PublicationTransformer(Transformer):
 
     def transform(self):
 
-        tf_family = read_from_stack(stack=self._transform_stack, file='tf_family',
+        tf_family = read_from_stack(stack=self.transform_stack, file='tf_family',
                                     default_columns=self.tf_family_columns, reader=read_json_lines)
         tf_family = self._transform_tf_family(tf_family)
 
-        tf = read_from_stack(stack=self._transform_stack, file='tf',
+        tf = read_from_stack(stack=self.transform_stack, file='tf',
                              default_columns=self.tf_columns, reader=read_json_lines)
         tf = self._transform_tf(tf)
 
-        rna = read_from_stack(stack=self._transform_stack, file='rna',
+        rna = read_from_stack(stack=self.transform_stack, file='rna',
                               default_columns=self.rna_columns, reader=read_json_lines)
         rna = self._transform_rna(rna)
 

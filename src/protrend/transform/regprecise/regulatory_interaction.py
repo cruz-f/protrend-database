@@ -2,34 +2,42 @@ import pandas as pd
 
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import RegulatoryInteraction
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (apply_processors, to_list, to_int_str, to_set, flatten_set,
                                            regulatory_effect, take_last)
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.effector import EffectorTransformer
 from protrend.transform.regprecise.operon import OperonTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.regprecise.settings import (RegulatoryInteractionSettings, RegulatoryInteractionToSource,
+from protrend.transform.regprecise.settings import (RegulatoryInteractionToSource,
                                                     RegulatoryInteractionToOrganism, RegulatoryInteractionToEffector,
                                                     RegulatoryInteractionToRegulator, RegulatoryInteractionToOperon,
                                                     RegulatoryInteractionToGene, RegulatoryInteractionToTFBS)
-from protrend.transform.transformer import Transformer
+from protrend.transform.regprecise.source import SourceTransformer
 
 
-class RegulatoryInteractionTransformer(Transformer):
-    default_settings = RegulatoryInteractionSettings
+class RegulatoryInteractionTransformer(RegPreciseTransformer):
+    default_node = RegulatoryInteraction
+    default_node_factors = ()
+    default_transform_stack = {'effector': 'integrated_effector.json',
+                               'regulator': 'integrated_regulator.json',
+                               'operon': 'integrated_operon.json',
+                               'gene': 'integrated_gene.json',
+                               'tfbs': 'integrated_tfbs.json'}
+    default_order = 50
     columns = {'protrend_id',
                'effectors', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect'}
 
     def transform(self) -> pd.DataFrame:
         # merge effector and regulator
-        effector = read_from_stack(stack=self._transform_stack, file='effector',
+        effector = read_from_stack(stack=self.transform_stack, file='effector',
                                    default_columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = self.select_columns(effector, 'protrend_id', 'effector_id')
         effector = effector.rename(columns={'protrend_id': 'effectors'})
         effector = apply_processors(effector, effector_id=to_int_str)
 
-        regulator = read_from_stack(stack=self._transform_stack, file='regulator',
+        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'effector', 'operon', 'regulation_mode',
                                         'organism_protrend_id', 'url', 'regulon_id')
@@ -47,7 +55,7 @@ class RegulatoryInteractionTransformer(Transformer):
         df = self.group_by(df=df, column='regulator', aggregation=aggregation, default=to_set)
         df = df.drop(columns=['effector_id', 'regulator_effector'])
 
-        operon = read_from_stack(stack=self._transform_stack, file='operon',
+        operon = read_from_stack(stack=self.transform_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
         operon = self.select_columns(operon, 'protrend_id', 'operon_id_old', 'genes', 'tfbss')
         operon = operon.rename(columns={'protrend_id': 'operon'})

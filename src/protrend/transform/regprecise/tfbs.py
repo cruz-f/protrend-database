@@ -8,21 +8,25 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import TFBS
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set,
                                            take_last, to_int_str, genes_to_hash, to_str)
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import TFBSSettings, TFBSToSource, TFBSToOrganism
+from protrend.transform.regprecise.settings import TFBSToSource, TFBSToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 from protrend.utils.miscellaneous import is_null
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 
-class TFBSTransformer(Transformer):
-    default_settings = TFBSSettings
+class TFBSTransformer(RegPreciseTransformer):
+    default_node = TFBS
+    default_node_factors = ('site_hash',)
+    default_transform_stack = {'tfbs': 'TFBS.json', 'gene': 'integrated_gene.json'}
+    default_order = 70
     columns = {'protrend_id',
                'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene',
                'tfbs_id_old', 'start', 'stop', 'length', 'gene_strand', 'gene_start', 'gene_old_locus_tag',
@@ -195,10 +199,10 @@ class TFBSTransformer(Transformer):
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self._transform_stack, file='tfbs',
+        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
                                default_columns=self.read_columns, reader=read_json_lines)
 
-        gene = read_from_stack(stack=self._transform_stack, file='gene',
+        gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'strand', 'start', 'locus_tag_old')
         gene = gene.rename(columns={'strand': 'gene_strand', 'start': 'gene_start',

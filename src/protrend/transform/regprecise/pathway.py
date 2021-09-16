@@ -4,19 +4,23 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import Pathway
 from protrend.transform.annotation import annotate_pathways
 from protrend.transform.connector import Connector
 from protrend.transform.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import PathwaySettings, PathwayToSource, PathwayToRegulator
+from protrend.transform.regprecise.settings import PathwayToSource, PathwayToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
-class PathwayTransformer(Transformer):
-    default_settings = PathwaySettings
+class PathwayTransformer(RegPreciseTransformer):
+    default_node = Pathway
+    default_node_factors = ('name', )
+    default_transform_stack = {'pathway': 'Pathway.json'}
+    default_order = 100
     columns = {'protrend_id',
                'pathway_id', 'name', 'url', 'regulog',
                'synonyms', 'kegg_pathways'}
@@ -42,7 +46,7 @@ class PathwayTransformer(Transformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        pathway = read_from_stack(stack=self._transform_stack, file='pathway',
+        pathway = read_from_stack(stack=self.transform_stack, file='pathway',
                                   default_columns=self.read_columns, reader=read_json_lines)
         pathway = self._transform_pathway(pathway)
 

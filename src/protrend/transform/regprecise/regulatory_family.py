@@ -2,25 +2,29 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
+from protrend.model.model import RegulatoryFamily
 from protrend.transform.connector import Connector
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list_nan,
                                            to_int_str, to_nan, to_list)
 from protrend.transform.regprecise import PublicationTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (RegulatoryFamilySettings, RegulatoryFamilyToSource,
+from protrend.transform.regprecise.settings import (RegulatoryFamilyToSource,
                                                     RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator)
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.transform.transformer import Transformer
 
 
-class RegulatoryFamilyTransformer(Transformer):
-    default_settings = RegulatoryFamilySettings
+class RegulatoryFamilyTransformer(RegPreciseTransformer):
+    default_node = RegulatoryFamily
+    default_node_factors = ('name', 'rfam')
+    default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
+                               'tf': 'TranscriptionFactor.json', 'rna': 'RNAFamily.json'}
+    default_order = 100
     columns = {'protrend_id',
                'mechanism'
                'tffamily_id', 'riboswitch_id', 'collection_id', 'name', 'url_tf_family', 'url_tf', 'url_rna',
                'description', 'pubmed', 'rfam', 'regulog'}
-
     tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
     tf_columns = {'collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
     rna_columns = {'riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'}
@@ -84,17 +88,17 @@ class RegulatoryFamilyTransformer(Transformer):
 
     def transform(self):
         # -------------------- TFs -------------------
-        tf_family = read_from_stack(stack=self._transform_stack, file='tf_family', 
+        tf_family = read_from_stack(stack=self.transform_stack, file='tf_family',
                                     default_columns=self.tf_family_columns, reader=read_json_lines)
         tf_family = self._transform_tf_family(tf_family)
 
-        tf = read_from_stack(stack=self._transform_stack, file='tf', 
+        tf = read_from_stack(stack=self.transform_stack, file='tf',
                              default_columns=self.tf_columns, reader=read_json_lines)
         tf = self._transform_tf(tf)
         tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
 
         # -------------------- RNAs -------------------
-        rna = read_from_stack(stack=self._transform_stack, file='rna', 
+        rna = read_from_stack(stack=self.transform_stack, file='rna',
                               default_columns=self.rna_columns, reader=read_json_lines)
         rna = self._transform_rna(rna)
 

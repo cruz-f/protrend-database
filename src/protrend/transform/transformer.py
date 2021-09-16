@@ -8,7 +8,6 @@ import pandas as pd
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.transform.processors import take_last, apply_processors, to_nan
-from protrend.transform.settings import TransformerSettings
 from protrend.utils.miscellaneous import is_null
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
@@ -71,11 +70,22 @@ class Transformer(AbstractTransformer):
     This Transformer object has implemented several utilities for the hard-working de facto transformers to be created
     for each data source and node
     """
-
-    default_settings: Type[TransformerSettings] = TransformerSettings
+    default_transform_stack: Dict[str, str] = {}
+    default_source: str = ''
+    default_version: str = '0.0.0'
+    default_node: Type[Node] = Node
+    default_node_factors: Tuple[str] = ()
+    default_order: int = 0
     columns: Set[str] = set()
+    read_columns: Set[str] = set()
 
-    def __init__(self, settings: TransformerSettings = None):
+    def __init__(self,
+                 transform_stack: Dict[str, str] = None,
+                 source: str = None,
+                 version: str = None,
+                 node: Type[Node] = None,
+                 node_factors: Tuple[str] = None,
+                 order: int = None):
 
         """
         The transform object must implement several transformation procedures for a given neomodel Node.
@@ -88,23 +98,46 @@ class Transformer(AbstractTransformer):
         Pandas is the main engine to read, process, transform and integrate data
         contained in the staging area files into structured nodes.
 
-        :type settings: TransformerSettings
-        :param settings: a TransformerSettings than contains all settings for source,
-        version and files to perform the transformation on
-        """
-        if not settings:
-            settings = self.default_settings()
+        :type transform_stack: Dict[str, str]
+        :type source: str
+        :type version: str
+        :type node: Type[Node]
+        :type node_factors: Tuple[str]
+        :type order: int
 
-        self._settings = settings
+        :param transform_stack: Dictionary containing the pair name and file name.
+        The key should be used to identify the file in the transform stack,
+        whereas the value should be the file name in the staging area or data lake
+        :param source: The name of the data source in the staging area (e.g. regprecise, collectf, etc)
+        :param version: The version of the data source in the staging area (e.g. 0.0.0, 0.0.1, etc)
+        :param node: The node type associated with this transformer.
+        Note that, it should be created only one transformer for each node
+        :param node_factors: The node attributes that must be used during the integration.
+        The node factors will be used iteratively one-by-one to find nodes already available in the database.
+        For instance, if the Regulator uniprot_accession attribute is used as node factor,
+        regulators in transformation and available in the database will be merged by their uniprot_accession.
+        :param order: The order value is used by the director to rearrange transformers and their execution.
+        Transformers having higher order are executed first.
+        """
 
         self._transform_stack = {}
         self._write_stack = []
+        self._source = source
+        self._version = version
+        self._node = node
+        self._node_factors = node_factors
+        self._order = order
 
-        self._load_settings()
+        self.load_transform_stack(transform_stack)
 
-    def _load_settings(self):
+    def load_transform_stack(self, transform_stack: Dict[str, str] = None):
 
-        for key, file in self._settings.transform.items():
+        self._transform_stack = {}
+
+        if not transform_stack:
+            transform_stack = self.default_transform_stack
+
+        for key, file in transform_stack.items():
 
             sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
             dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
@@ -121,39 +154,43 @@ class Transformer(AbstractTransformer):
     # Static properties
     # --------------------------------------------------------
     @property
-    def settings(self) -> TransformerSettings:
-        return self._settings
-
-    # --------------------------------------------------------
-    # Dynamic properties
-    # --------------------------------------------------------
-    @property
     def source(self) -> str:
-        return self.settings.source
+        if not self._source:
+            return self.default_source
+
+        return self._source
 
     @property
     def version(self) -> str:
-        return self.settings.version
+        if not self._version:
+            return self.default_version
+
+        return self._version
 
     @property
     def node(self) -> Type[Node]:
-        return self.settings.node
+        if not self._node:
+            return self.default_node
+
+        return self._node
 
     @property
     def node_factors(self) -> Tuple[str]:
-        return self.settings.node_factors
+        if not self._node_factors:
+            return self.default_node_factors
+
+        return self._node_factors
 
     @property
     def transform_stack(self) -> Dict[str, str]:
         return self._transform_stack
 
     @property
-    def write_stack(self) -> List[Callable]:
-        return self._write_stack
-
-    @property
     def order(self) -> int:
-        return self.settings.order
+        if self._order is None:
+            return self.default_order
+
+        return self._order
 
     @property
     def write_path(self) -> str:
@@ -163,14 +200,33 @@ class Transformer(AbstractTransformer):
     # Python API
     # --------------------------------------------------------
     def __str__(self):
-        return f'{self.__class__.__name__}: {self.settings}'
+        return f'{self.__class__.__name__}: {self.source} - {self.version} - ' \
+               f'{self.node.node_name()} - {self.node_factors}'
 
     def __hash__(self):
         return hash(str(self))
 
     def __eq__(self, other: 'Transformer'):
 
-        return self.__class__.__name__ and other.__class__.__name__ and self.settings == other.settings
+        other_values = {other.__class__.__name__, other.source, other.version, other.node.node_name(),
+                        other.node_factors}
+
+        if self.__class__.__name__ not in other_values:
+            return False
+
+        if self.source not in other_values:
+            return False
+
+        if self.version not in other_values:
+            return False
+
+        if self.node.node_name() not in other_values:
+            return False
+
+        if self.node_factors not in other_values:
+            return False
+
+        return True
 
     # --------------------------------------------------------
     # Transformer API
