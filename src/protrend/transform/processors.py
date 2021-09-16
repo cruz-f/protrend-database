@@ -13,6 +13,7 @@ more2_pattern = re.compile(r'\s\smore\s')
 white_space_pattern = re.compile(r'\s')
 multiple_white_space_pattern = re.compile(r' +')
 pubmed_pattern = re.compile(r'\[[0-9]*]|\[[0-9]*,|\s[0-9]*,|\s[0-9]*]')
+pubmed_pattern2 = re.compile(r'\[pmid::[0-9]*]|\[pmid: [0-9]*]|\[pmid:: [0-9]*]|\[pmid:[0-9]*]')
 
 
 def apply_processors(df: pd.DataFrame, **processors: Dict[str, Union[Callable, List[Callable]]]) -> pd.DataFrame:
@@ -270,8 +271,36 @@ def remove_pubmed(item: str) -> str:
     return re.sub(pubmed_pattern, repl='', string=item)
 
 
+def remove_pubmed2(item: str) -> str:
+    return re.sub(pubmed_pattern2, repl='', string=item)
+
+
 def remove_html_tags(item: str) -> str:
     return remove_tags(item)
+
+
+def parse_collectf_description(item: List[str]) -> str:
+
+    escapes = ''.join([chr(char) for char in range(1, 32)])
+    translator = str.maketrans('', '', escapes)
+
+    to_concat = []
+    for string in item:
+
+        to_remove = string.replace(' ', '').replace('.', '')
+
+        if to_remove == '':
+            continue
+
+        if string.startswith('>a') or string.startswith('>c'):
+            continue
+
+        string = string.translate(translator)
+        string = remove_pubmed2(string)
+        string = remove_pubmed(string)
+        to_concat.append(string)
+
+    return ''.join(to_concat)
 
 
 def regulatory_effect(items: Set[str]) -> Union[None, str]:

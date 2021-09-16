@@ -3,6 +3,7 @@ from typing import List, Union, Type
 import pandas as pd
 
 from protrend.bioapis import NCBIGene, UniProtProtein, NCBIProtein, map_uniprot_identifiers
+from protrend.log import ProtrendLogger
 from protrend.transform import GeneDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
 
