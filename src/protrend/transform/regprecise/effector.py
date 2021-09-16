@@ -4,15 +4,12 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import Effector
+from protrend.model.model import Effector, Source, Organism, Regulator
 from protrend.transform.annotation import annotate_effectors
-from protrend.transform.connector import Connector
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (EffectorToSource, EffectorToOrganism,
-                                                    EffectorToRegulator)
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -60,8 +57,10 @@ class EffectorTransformer(RegPreciseTransformer):
         return df
 
 
-class EffectorToSourceConnector(Connector):
-    default_settings = EffectorToSource
+class EffectorToSourceConnector(RegPreciseConnector):
+    default_from_node = Effector
+    default_to_node = Source
+    default_connect_stack = {'effector': 'integrated_effector.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',
@@ -86,8 +85,10 @@ class EffectorToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class EffectorToOrganismConnector(Connector):
-    default_settings = EffectorToOrganism
+class EffectorToOrganismConnector(RegPreciseConnector):
+    default_from_node = Effector
+    default_to_node = Organism
+    default_connect_stack = {'effector': 'integrated_effector.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',
@@ -114,8 +115,10 @@ class EffectorToOrganismConnector(Connector):
         self.stack_json(df)
 
 
-class EffectorToRegulatorConnector(Connector):
-    default_settings = EffectorToRegulator
+class EffectorToRegulatorConnector(RegPreciseConnector):
+    default_from_node = Effector
+    default_to_node = Regulator
+    default_connect_stack = {'effector': 'integrated_effector.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',

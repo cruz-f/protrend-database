@@ -2,16 +2,13 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryFamily
-from protrend.transform.connector import Connector
+from protrend.model.model import RegulatoryFamily, Source, Publication, Regulator
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                            rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list_nan,
                                            to_int_str, to_nan, to_list)
 from protrend.transform.regprecise import PublicationTransformer
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (RegulatoryFamilyToSource,
-                                                    RegulatoryFamilyToPublication, RegulatoryFamilyToRegulator)
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -110,8 +107,11 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer):
         return df
 
 
-class RegulatoryFamilyToSourceConnector(Connector):
-    default_settings = RegulatoryFamilyToSource
+class RegulatoryFamilyToSourceConnector(RegPreciseConnector):
+    default_from_node = RegulatoryFamily
+    default_to_node = Source
+    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
+                             'source': 'integrated_source.json'}
 
     def connect(self):
         regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
@@ -150,8 +150,11 @@ class RegulatoryFamilyToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToPublicationConnector(Connector):
-    default_settings = RegulatoryFamilyToPublication
+class RegulatoryFamilyToPublicationConnector(RegPreciseConnector):
+    default_from_node = RegulatoryFamily
+    default_to_node = Publication
+    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
+                             'publication': 'integrated_publication.json'}
 
     def connect(self):
         regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',
@@ -181,8 +184,11 @@ class RegulatoryFamilyToPublicationConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToRegulatorConnector(Connector):
-    default_settings = RegulatoryFamilyToRegulator
+class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector):
+    default_from_node = RegulatoryFamily
+    default_to_node = Regulator
+    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
+                             'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         regulatory_family = read_from_stack(stack=self._connect_stack, file='regulatory_family',

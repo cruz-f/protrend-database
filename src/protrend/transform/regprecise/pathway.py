@@ -4,15 +4,13 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import Pathway
+from protrend.model.model import Pathway, Source, Regulator, Gene
 from protrend.transform.annotation import annotate_pathways
-from protrend.transform.connector import Connector
 from protrend.transform.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import PathwayToSource, PathwayToRegulator
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -64,8 +62,10 @@ class PathwayTransformer(RegPreciseTransformer):
         return df
 
 
-class PathwayToSourceConnector(Connector):
-    default_settings = PathwayToSource
+class PathwayToSourceConnector(RegPreciseConnector):
+    default_from_node = Pathway
+    default_to_node = Source
+    default_connect_stack = {'pathway': 'integrated_pathway.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         pathway = read_from_stack(stack=self._connect_stack, file='pathway',
@@ -90,8 +90,10 @@ class PathwayToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class PathwayToRegulatorConnector(Connector):
-    default_settings = PathwayToRegulator
+class PathwayToRegulatorConnector(RegPreciseConnector):
+    default_from_node = Pathway
+    default_to_node = Regulator
+    default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         pathway = read_from_stack(stack=self._connect_stack, file='pathway',
@@ -119,8 +121,11 @@ class PathwayToRegulatorConnector(Connector):
         self.stack_json(df)
 
 
-class PathwayToGeneConnector(Connector):
-    default_settings = PathwayToRegulator
+class PathwayToGeneConnector(RegPreciseConnector):
+    default_from_node = Pathway
+    default_to_node = Gene
+    default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json',
+                             'gene': 'integrated_gene.json'}
 
     def connect(self):
         pathway = read_from_stack(stack=self._connect_stack, file='pathway',

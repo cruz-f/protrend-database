@@ -182,15 +182,15 @@ class Transformer(AbstractTransformer):
         return self._node_factors
 
     @property
-    def transform_stack(self) -> Dict[str, str]:
-        return self._transform_stack
-
-    @property
     def order(self) -> int:
         if self._order is None:
             return self.default_order
 
         return self._order
+
+    @property
+    def transform_stack(self) -> Dict[str, str]:
+        return self._transform_stack
 
     @property
     def write_path(self) -> str:

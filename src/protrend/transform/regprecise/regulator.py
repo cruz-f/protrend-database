@@ -4,14 +4,12 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import Regulator
+from protrend.model.model import Regulator, Source, Organism
 from protrend.transform.annotation import annotate_genes
-from protrend.transform.connector import Connector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.organism import OrganismTransformer
-from protrend.transform.regprecise.settings import RegulatorToSource, RegulatorToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -175,8 +173,10 @@ class RegulatorTransformer(RegPreciseTransformer):
         return df
 
 
-class RegulatorToSourceConnector(Connector):
-    default_settings = RegulatorToSource
+class RegulatorToSourceConnector(RegPreciseConnector):
+    default_from_node = Regulator
+    default_to_node = Source
+    default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
@@ -201,8 +201,10 @@ class RegulatorToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatorToOrganismConnector(Connector):
-    default_settings = RegulatorToOrganism
+class RegulatorToOrganismConnector(RegPreciseConnector):
+    default_from_node = Regulator
+    default_to_node = Organism
+    default_connect_stack = {'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',

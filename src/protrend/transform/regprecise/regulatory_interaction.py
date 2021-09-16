@@ -2,18 +2,13 @@ import pandas as pd
 
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction
-from protrend.transform.connector import Connector
+from protrend.model.model import RegulatoryInteraction, Source, Organism, Effector, Regulator, Operon, Gene, TFBS
 from protrend.transform.processors import (apply_processors, to_list, to_int_str, to_set, flatten_set,
                                            regulatory_effect, take_last)
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.effector import EffectorTransformer
 from protrend.transform.regprecise.operon import OperonTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (RegulatoryInteractionToSource,
-                                                    RegulatoryInteractionToOrganism, RegulatoryInteractionToEffector,
-                                                    RegulatoryInteractionToRegulator, RegulatoryInteractionToOperon,
-                                                    RegulatoryInteractionToGene, RegulatoryInteractionToTFBS)
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -122,8 +117,11 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
         return df
 
 
-class RegulatoryInteractionToSourceConnector(Connector):
-    default_settings = RegulatoryInteractionToSource
+class RegulatoryInteractionToSourceConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Source
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
+                             'source': 'integrated_source.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
@@ -148,8 +146,10 @@ class RegulatoryInteractionToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOrganismConnector(Connector):
-    default_settings = RegulatoryInteractionToOrganism
+class RegulatoryInteractionToOrganismConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Organism
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
@@ -165,8 +165,10 @@ class RegulatoryInteractionToOrganismConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToEffectorConnector(Connector):
-    default_settings = RegulatoryInteractionToEffector
+class RegulatoryInteractionToEffectorConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Effector
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
@@ -184,8 +186,10 @@ class RegulatoryInteractionToEffectorConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToRegulatorConnector(Connector):
-    default_settings = RegulatoryInteractionToRegulator
+class RegulatoryInteractionToRegulatorConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Regulator
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
@@ -200,8 +204,10 @@ class RegulatoryInteractionToRegulatorConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(Connector):
-    default_settings = RegulatoryInteractionToOperon
+class RegulatoryInteractionToOperonConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Operon
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
@@ -216,8 +222,10 @@ class RegulatoryInteractionToOperonConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(Connector):
-    default_settings = RegulatoryInteractionToGene
+class RegulatoryInteractionToGeneConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Gene
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
@@ -239,8 +247,10 @@ class RegulatoryInteractionToGeneConnector(Connector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(Connector):
-    default_settings = RegulatoryInteractionToTFBS
+class RegulatoryInteractionToTFBSConnector(RegPreciseConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = TFBS
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',

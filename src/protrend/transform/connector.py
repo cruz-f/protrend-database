@@ -1,13 +1,12 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import List, Any, Type, Callable, Dict, Set
+from typing import List, Any, Type, Dict
 
 import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node
-from protrend.transform.settings import ConnectorSettings
 from protrend.utils.settings import DATA_LAKE_PATH
 
 
@@ -52,9 +51,18 @@ class Connector(AbstractConnector):
 
     A connector starts with data from the data lake and ends with structured relationships.
     """
-    default_settings: Type[ConnectorSettings] = ConnectorSettings
+    default_connect_stack: Dict[str, str] = {}
+    default_source: str = ''
+    default_version: str = '0.0.0'
+    default_from_node: Type[Node] = Node
+    default_to_node: Type[Node] = Node
 
-    def __init__(self, settings: ConnectorSettings = None):
+    def __init__(self,
+                 connect_stack: Dict[str, str] = None,
+                 source: str = None,
+                 version: str = None,
+                 from_node: Type[Node] = None,
+                 to_node: Type[Node] = None):
         """
         The connector object uses results obtained during the transformation procedures
         for a given neomodel node entity.
@@ -66,22 +74,39 @@ class Connector(AbstractConnector):
         A pandas DataFrame is the main engine to read, load, process and transform data contained in these files into
         structured relationships
 
-        :param settings: a ConnectorSettings than contains all settings for source,
-        version and files to perform the connection on
+        :type connect_stack: Dict[str, str]
+        :type source: str
+        :type version: str
+        :type from_node: Type[Node]
+        :type to_node: Type[Node]
+
+        :param connect_stack: Dictionary containing the pair name and file name.
+        The key should be used to identify the file in the connect stack,
+        whereas the value should be the file name in the data lake
+        :param source: The name of the data source in the data lake (e.g. regprecise, collectf, etc)
+        :param version: The version of the data source in the data lake (e.g. 0.0.0, 0.0.1, etc)
+        :param from_node: The source node type associated with this connector, and thus the source of the relation.
+        Note that, it should be created only one connector for each node-node relationship
+        :param to_node: The target node type associated with this connector, and thus the end of the relation.
+        Note that, it should be created only one connector for each node-node relationship
         """
-
-        if not settings:
-            settings = self.default_settings()
-
-        self._settings = settings
-
         self._connect_stack = {}
         self._write_stack = []
+        self._source = source
+        self._version = version
+        self._from_node = from_node
+        self._to_node = to_node
 
-        self._load_settings()
+        self.load_connect_stack(connect_stack)
 
-    def _load_settings(self):
-        for key, file in self._settings.connect.items():
+    def load_connect_stack(self, connect_stack: Dict[str, str] = None):
+
+        self._connect_stack = {}
+
+        if not connect_stack:
+            connect_stack = self.default_connect_stack
+
+        for key, file in connect_stack.items():
             dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
 
             self._connect_stack[key] = dl_file
@@ -90,35 +115,36 @@ class Connector(AbstractConnector):
     # Static properties
     # --------------------------------------------------------
     @property
-    def settings(self) -> ConnectorSettings:
-        return self._settings
-
-    # --------------------------------------------------------
-    # Dynamic properties
-    # --------------------------------------------------------
-    @property
     def source(self) -> str:
-        return self.settings.source
+        if not self._source:
+            return self.default_source
+
+        return self._source
 
     @property
     def version(self) -> str:
-        return self.settings.version
+        if not self._version:
+            return self.default_version
+
+        return self._version
 
     @property
     def from_node(self) -> Type[Node]:
-        return self.settings.from_node
+        if not self._from_node:
+            return self.default_from_node
+
+        return self._from_node
 
     @property
     def to_node(self) -> Type[Node]:
-        return self.settings.to_node
+        if not self._to_node:
+            return self.default_to_node
+
+        return self._to_node
 
     @property
     def connect_stack(self) -> Dict[str, str]:
         return self._connect_stack
-
-    @property
-    def write_stack(self) -> List[Callable]:
-        return self._write_stack
 
     @property
     def write_path(self) -> str:
@@ -128,13 +154,33 @@ class Connector(AbstractConnector):
     # Python API
     # --------------------------------------------------------
     def __str__(self):
-        return f'{self.__class__.__name__}: {self.settings}'
+        return f'{self.__class__.__name__}: {self.source} - {self.version} - ' \
+               f'{self.from_node.node_name()} - {self.to_node.node_name()}'
 
     def __hash__(self):
         return hash(str(self))
 
     def __eq__(self, other: 'Connector'):
-        return self.__class__.__name__ and other.__class__.__name__ and self.settings == other.settings
+
+        other_values = {other.__class__.__name__, other.source, other.version, other.from_node.node_name(),
+                        other.to_node.node_name()}
+
+        if self.__class__.__name__ not in other_values:
+            return False
+
+        if self.source not in other_values:
+            return False
+
+        if self.version not in other_values:
+            return False
+
+        if self.from_node.node_name() not in other_values:
+            return False
+
+        if self.to_node.node_name() not in other_values:
+            return False
+
+        return True
 
     # --------------------------------------------------------
     # Connector API

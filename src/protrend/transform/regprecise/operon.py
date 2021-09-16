@@ -5,16 +5,12 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import Operon
-from protrend.transform.connector import Connector
+from protrend.model.model import Operon, Source, Organism, Regulator, Gene, TFBS
 from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set, to_list,
                                            to_nan, to_int_str)
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import (OperonToSource, OperonToOrganism, OperonToRegulator,
-                                                    OperonToGene, OperonToTFBS, GeneToTFBS, GeneToRegulator,
-                                                    TFBSToRegulator)
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.utils import build_graph, find_connected_nodes
@@ -243,8 +239,10 @@ class OperonTransformer(RegPreciseTransformer):
         return df
 
 
-class OperonToSourceConnector(Connector):
-    default_settings = OperonToSource
+class OperonToSourceConnector(RegPreciseConnector):
+    default_from_node = Operon
+    default_to_node = Source
+    default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -271,8 +269,10 @@ class OperonToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class OperonToOrganismConnector(Connector):
-    default_settings = OperonToOrganism
+class OperonToOrganismConnector(RegPreciseConnector):
+    default_from_node = Operon
+    default_to_node = Organism
+    default_connect_stack = {'regulator': 'integrated_regulator.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -297,8 +297,10 @@ class OperonToOrganismConnector(Connector):
         self.stack_json(df)
 
 
-class OperonToRegulatorConnector(Connector):
-    default_settings = OperonToRegulator
+class OperonToRegulatorConnector(RegPreciseConnector):
+    default_from_node = Operon
+    default_to_node = Regulator
+    default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -326,8 +328,10 @@ class OperonToRegulatorConnector(Connector):
         self.stack_json(df)
 
 
-class OperonToGeneConnector(Connector):
-    default_settings = OperonToGene
+class OperonToGeneConnector(RegPreciseConnector):
+    default_from_node = Operon
+    default_to_node = Gene
+    default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -349,8 +353,10 @@ class OperonToGeneConnector(Connector):
         self.stack_json(df)
 
 
-class OperonToTFBSConnector(Connector):
-    default_settings = OperonToTFBS
+class OperonToTFBSConnector(RegPreciseConnector):
+    default_from_node = Operon
+    default_to_node = TFBS
+    default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -372,8 +378,10 @@ class OperonToTFBSConnector(Connector):
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(Connector):
-    default_settings = GeneToTFBS
+class GeneToTFBSConnector(RegPreciseConnector):
+    default_from_node = Gene
+    default_to_node = TFBS
+    default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -398,8 +406,10 @@ class GeneToTFBSConnector(Connector):
         self.stack_json(df)
 
 
-class GeneToRegulatorConnector(Connector):
-    default_settings = GeneToRegulator
+class GeneToRegulatorConnector(RegPreciseConnector):
+    default_from_node = Gene
+    default_to_node = Regulator
+    default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',
@@ -433,8 +443,10 @@ class GeneToRegulatorConnector(Connector):
         self.stack_json(df)
 
 
-class TFBSToRegulatorConnector(Connector):
-    default_settings = TFBSToRegulator
+class TFBSToRegulatorConnector(RegPreciseConnector):
+    default_from_node = TFBS
+    default_to_node = Regulator
+    default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         operon = read_from_stack(stack=self._connect_stack, file='operon',

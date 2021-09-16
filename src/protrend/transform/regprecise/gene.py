@@ -4,14 +4,12 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import Gene
+from protrend.model.model import Gene, Source, Organism
 from protrend.transform.annotation import annotate_genes
-from protrend.transform.connector import Connector
 from protrend.transform.dto import GeneDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list, to_int_str
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import GeneToSource, GeneToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -112,8 +110,10 @@ class GeneTransformer(RegPreciseTransformer):
         return df
 
 
-class GeneToSourceConnector(Connector):
-    default_settings = GeneToSource
+class GeneToSourceConnector(RegPreciseConnector):
+    default_from_node = Gene
+    default_to_node = Source
+    default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         gene = read_from_stack(stack=self._connect_stack, file='gene',
@@ -140,8 +140,10 @@ class GeneToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class GeneToOrganismConnector(Connector):
-    default_settings = GeneToOrganism
+class GeneToOrganismConnector(RegPreciseConnector):
+    default_from_node = Gene
+    default_to_node = Organism
+    default_connect_stack = {'gene': 'integrated_gene.json'}
 
     def connect(self):
         gene = read_from_stack(stack=self._connect_stack, file='gene',

@@ -3,13 +3,11 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
-from protrend.model.model import Organism
-from protrend.transform import Connector
+from protrend.model.model import Organism, Source
 from protrend.transform import OrganismDTO
 from protrend.transform.annotation import annotate_organisms
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str
-from protrend.transform.regprecise.base import RegPreciseTransformer
-from protrend.transform.regprecise.settings import OrganismToSource
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.source import SourceTransformer
 
 
@@ -75,8 +73,10 @@ class OrganismTransformer(RegPreciseTransformer):
         return df
 
 
-class OrganismToSourceConnector(Connector):
-    default_settings = OrganismToSource
+class OrganismToSourceConnector(RegPreciseConnector):
+    default_from_node = Organism
+    default_to_node = Source
+    default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         organism = read_from_stack(stack=self._connect_stack, file='organism',

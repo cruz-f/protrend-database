@@ -8,14 +8,12 @@ import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import TFBS
-from protrend.transform.connector import Connector
+from protrend.model.model import TFBS, Source, Organism
 from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set,
                                            take_last, to_int_str, genes_to_hash, to_str)
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.settings import TFBSToSource, TFBSToOrganism
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils.miscellaneous import is_null
 
@@ -231,8 +229,10 @@ class TFBSTransformer(RegPreciseTransformer):
         return df
 
 
-class TFBSToSourceConnector(Connector):
-    default_settings = TFBSToSource
+class TFBSToSourceConnector(RegPreciseConnector):
+    default_from_node = TFBS
+    default_to_node = Source
+    default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
@@ -257,8 +257,10 @@ class TFBSToSourceConnector(Connector):
         self.stack_json(df)
 
 
-class TFBSToOrganismConnector(Connector):
-    default_settings = TFBSToOrganism
+class TFBSToOrganismConnector(RegPreciseConnector):
+    default_from_node = TFBS
+    default_to_node = Organism
+    default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
