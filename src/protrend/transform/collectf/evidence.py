@@ -3,8 +3,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model.model import Evidence
 from protrend.transform.collectf.base import CollectfTransformer
-from protrend.transform.processors import apply_processors, remove_white_space, rstrip, lstrip, \
-    remove_multiple_white_space, parse_collectf_description
+from protrend.transform.processors import apply_processors, rstrip, lstrip
 
 
 class EvidenceTransformer(CollectfTransformer):

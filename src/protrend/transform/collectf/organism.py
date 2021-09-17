@@ -18,7 +18,7 @@ class OrganismTransformer(CollectfTransformer):
     default_transform_stack = {'organism': 'Organism.json'}
     default_order = 100
     columns = {'protrend_id',
-               'genome_accession', 'taxonomy', 'regulon', 'tfbs'
+               'genome_accession', 'taxonomy', 'regulon', 'tfbs', 'name_collectf'
                'name', 'species', 'strain',
                'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                'genbank_accession', 'genbank_ftp',
@@ -77,9 +77,11 @@ class OrganismTransformer(CollectfTransformer):
         nucleotide = organism['genome_accession'].tolist()
         organisms = self._transform_organisms(nucleotide, names)
 
-        df = pd.merge(organisms, organism, on='input_value', suffixes=('_annotation', '_regprecise'))
+        df = pd.merge(organisms, organism, on='input_value', suffixes=('_annotation', '_collectf'))
 
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
+        names_collectf = df['name_collectf'].tolist()
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
+        df['name_collectf'] = names_collectf
 
         df = df.drop(columns=['input_value'])
 
