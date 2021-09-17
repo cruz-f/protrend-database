@@ -1,8 +1,7 @@
 import re
 from collections import defaultdict
-from typing import Callable, Any, List, Union, Sequence, Dict, Set
+from typing import Callable, Any, List, Union, Sequence, Set
 
-import numpy as np
 import pandas as pd
 from w3lib.html import remove_tags
 
@@ -13,7 +12,7 @@ more2_pattern = re.compile(r'\s\smore\s')
 white_space_pattern = re.compile(r'\s')
 multiple_white_space_pattern = re.compile(r' +')
 pubmed_pattern = re.compile(r'\[[0-9]*]|\[[0-9]*,|\s[0-9]*,|\s[0-9]*]')
-pubmed_pattern2 = re.compile(r'\[pmid::[0-9]*]|\[pmid: [0-9]*]|\[pmid:: [0-9]*]|\[pmid:[0-9]*]')
+pubmed_pattern2 = re.compile(r'\[pmid::[0-9]*]|\[pmid: [0-9]*]|\[pmid:: [0-9]*]|\[pmid:[0-9]*]|\[ pmid: : [0-9]* ]|\[pmid: : [0-9]*]|\[pmid::[0-9]* ]|\[ pmid::[0-9]*]|\[pmid::[0-9]* .]')
 
 
 def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callable]]) -> pd.DataFrame:
@@ -78,10 +77,10 @@ def to_int_str(item: Any) -> str:
     if is_null(item):
         return item
 
-    item = to_int(item)
+    item_to_int = to_int(item)
 
     try:
-        return str(item)
+        return str(item_to_int)
     except (ValueError, TypeError):
         return item
 
@@ -277,6 +276,35 @@ def remove_pubmed2(item: str) -> str:
 
 def remove_html_tags(item: str) -> str:
     return remove_tags(item)
+
+
+def parse_collectf_pubmed(item: List[str]) -> List[str]:
+
+    escapes = ''.join([chr(char) for char in range(1, 32)])
+    translator = str.maketrans('', '', escapes)
+
+    all_pmids = set()
+    for string in item:
+
+        to_remove = string.replace(' ', '').replace('.', '')
+
+        if to_remove == '':
+            continue
+
+        if string.startswith('>a') or string.startswith('>c'):
+            continue
+
+        string = string.translate(translator)
+
+        pmids1 = re.findall(pubmed_pattern, string)
+        pmids2 = re.findall(pubmed_pattern2, string)
+        pmids = pmids1 + pmids2
+        for pmid in pmids:
+            pmid = ''.join(l for l in pmid if l.isdigit())
+            if pmid:
+                all_pmids.add(pmid)
+
+    return list(all_pmids)
 
 
 def parse_collectf_description(item: List[str]) -> str:
