@@ -16,7 +16,7 @@ pubmed_pattern = re.compile(r'\[[0-9]*]|\[[0-9]*,|\s[0-9]*,|\s[0-9]*]')
 pubmed_pattern2 = re.compile(r'\[pmid::[0-9]*]|\[pmid: [0-9]*]|\[pmid:: [0-9]*]|\[pmid:[0-9]*]')
 
 
-def apply_processors(df: pd.DataFrame, **processors: Dict[str, Union[Callable, List[Callable]]]) -> pd.DataFrame:
+def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callable]]) -> pd.DataFrame:
     """
     Helping function to apply processors over a pandas DataFrame column
 
