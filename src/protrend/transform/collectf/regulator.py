@@ -35,7 +35,7 @@ class RegulatorTransformer(CollectfTransformer):
                'mechanism', 'name',
                'locus_tag', 'synonyms', 'function', 'description',
                'ncbi_gene', 'ncbi_protein',
-               'genbank_accession', 'refseq_accession', 'uniprot_accession',
+               'genbank_accession', 'refseq_accession',
                'sequence', 'strand', 'start', 'stop',
                'uniprot_accession', 'name', 'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
                'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'}
@@ -123,6 +123,8 @@ class RegulatorTransformer(CollectfTransformer):
         tf = pd.merge(tfs, regulon, on='input_value', suffixes=('_annotation', '_collectf'))
 
         tf = self.merge_columns(df=tf, column='name', left='name_annotation', right='name_collectf')
+        tf = self.merge_columns(df=tf, column='uniprot_accession',
+                                left='uniprot_accession_annotation', right='uniprot_accession_collectf')
 
         tf = tf.drop(columns=['input_value'])
 
