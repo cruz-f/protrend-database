@@ -20,7 +20,7 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
     default_order = 50
     columns = {'protrend_id',
                'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
-               }
+               'regulon'}
 
     def transform(self) -> pd.DataFrame:
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
@@ -47,7 +47,7 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
         df = pd.merge(df, operon, left_on='operon', right_on='operon_id_old')
 
         df = df.drop(columns=['operon_id_old', 'uniprot_accession', 'operon'])
-        df = df.rename(columns={'protrend_id': 'operon'})
+        df = df.rename(columns={'protrend_id': 'operon', 'mode': 'regulatory_effect'})
         df = self.drop_duplicates(df=df, subset=['regulator', 'operon'], perfect_match=True, preserve_nan=True)
         df = df.dropna(subset=['regulator', 'operon'])
 
