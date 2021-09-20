@@ -354,10 +354,12 @@ class Transformer(AbstractTransformer):
     def _stack_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
-            df.loc[:, 'load'] = None
-            df.loc[:, 'what'] = None
+            df['load'] = None
+            df['what'] = None
+            df['node'] = self.node.node_name()
 
-        df.loc[:, 'node'] = self.node.node_name()
+        else:
+            df.loc[:, 'node'] = self.node.node_name()
 
         node_cols = list(self.node.node_keys()) + ['load', 'what', 'node']
         cols_to_drop = [col for col in df.columns if col not in node_cols]
@@ -369,10 +371,12 @@ class Transformer(AbstractTransformer):
     def _stack_integrated_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
-            df.loc[:, 'load'] = None
-            df.loc[:, 'what'] = None
+            df['load'] = None
+            df['what'] = None
+            df['node'] = self.node.node_name()
 
-        df.loc[:, 'node'] = self.node.node_name()
+        else:
+            df.loc[:, 'node'] = self.node.node_name()
 
         df_name = f'integrated_{self.node.node_name()}'
         self.stack_json(df_name, df)

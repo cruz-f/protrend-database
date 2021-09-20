@@ -1,4 +1,4 @@
-from statistics import mode
+from statistics import mode, StatisticsError
 
 import numpy as np
 import pandas as pd
@@ -102,12 +102,20 @@ class OperonTransformer(RegPreciseTransformer):
     def _operon_coordinates(operon: pd.DataFrame) -> pd.DataFrame:
 
         def strand_mode(item):
-            m = mode(item)
 
-            if is_null(m):
+            if is_null(item):
                 return None
 
-            return m
+            try:
+                m = mode(item)
+
+                if is_null(m):
+                    return None
+
+                return m
+
+            except StatisticsError:
+                return item[0]
 
         def start(item):
             if is_null(item):

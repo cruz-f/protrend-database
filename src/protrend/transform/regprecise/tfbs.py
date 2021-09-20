@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from statistics import mode
+from statistics import mode, StatisticsError
 from typing import List, Union
 
 import numpy as np
@@ -148,12 +148,20 @@ class TFBSTransformer(RegPreciseTransformer):
     def _tfbs_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
 
         def strand_mode(item):
-            m = mode(item)
 
-            if is_null(m):
+            if is_null(item):
                 return None
 
-            return m
+            try:
+                m = mode(item)
+
+                if is_null(m):
+                    return None
+
+                return m
+
+            except StatisticsError:
+                return item[0]
 
         def start_forward(item):
             if is_null(item):

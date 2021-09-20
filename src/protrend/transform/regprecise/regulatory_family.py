@@ -101,6 +101,10 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer):
 
         df = pd.concat([tfs, rna])
 
+        # clean the other regulatory family
+        other_mask = df['name'] != '[Other]'
+        df = df[other_mask]
+
         df = apply_processors(df, tffamily_id=to_int_str, riboswitch_id=to_int_str, collection_id=to_int_str)
 
         self._stack_transformed_nodes(df)

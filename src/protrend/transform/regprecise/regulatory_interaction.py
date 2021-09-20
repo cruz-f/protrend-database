@@ -22,7 +22,8 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
                                'tfbs': 'integrated_tfbs.json'}
     default_order = 50
     columns = {'protrend_id',
-               'effectors', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect'}
+               'effectors', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
+               'organism_protrend_id', 'url', 'regulon_id'}
 
     def transform(self) -> pd.DataFrame:
         # merge effector and regulator

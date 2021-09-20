@@ -82,7 +82,7 @@ class PublicationTransformer(RegPreciseTransformer):
 
         df = df.drop(columns=['input_value'])
 
-        df = apply_processors(df, pmid=to_int_str)
+        df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         self._stack_transformed_nodes(df)
 

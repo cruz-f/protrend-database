@@ -132,13 +132,6 @@ class PathwayToGeneConnector(RegPreciseConnector):
                                   default_columns=PathwayTransformer.columns, reader=read_json_frame)
         pathway = apply_processors(pathway, pathway_id=to_int_str)
 
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-
-        gene = apply_processors(gene, regulon=to_list)
-        gene = gene.explode('regulon')
-        gene = apply_processors(gene, regulon=to_int_str)
-
         regulator = read_from_stack(stack=self._connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, pathway=to_list)
@@ -150,6 +143,14 @@ class PathwayToGeneConnector(RegPreciseConnector):
         merged = merged.dropna(subset=['protrend_id_pathway'])
         merged = merged.dropna(subset=['protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
+        merged = apply_processors(merged, regulon_id=to_int_str)
+
+        gene = read_from_stack(stack=self._connect_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+
+        gene = apply_processors(gene, regulon=to_list)
+        gene = gene.explode('regulon')
+        gene = apply_processors(gene, regulon=to_int_str)
 
         merged = pd.merge(merged, gene, left_on='regulon_id', right_on='regulon',
                           suffixes=('_pathway_regulator', '_gene'))
