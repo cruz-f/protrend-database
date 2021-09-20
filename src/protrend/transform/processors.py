@@ -347,3 +347,17 @@ def regulatory_effect(items: Set[str]) -> Union[None, str]:
         return 'activation'
 
     return 'dual'
+
+
+def regulatory_effect_collectf(item: str) -> Union[None, str]:
+
+    if is_null(item):
+        return
+
+    if item.lower() == 'rep':
+        return 'repression'
+
+    if item.lower() == 'act':
+        return 'activation'
+
+    return
