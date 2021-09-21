@@ -90,8 +90,8 @@ class PublicationToRegulatorConnector(CollectfConnector):
         df = df.dropna(subset=['regulator_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'regulator_protrend_id'])
 
-        from_identifiers = publication['publication_protrend_id'].tolist()
-        to_identifiers = publication['regulator_protrend_id'].tolist()
+        from_identifiers = df['publication_protrend_id'].tolist()
+        to_identifiers = df['regulator_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -120,8 +120,8 @@ class PublicationToOperonConnector(CollectfConnector):
         df = df.dropna(subset=['operon_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'operon_protrend_id'])
 
-        from_identifiers = publication['publication_protrend_id'].tolist()
-        to_identifiers = publication['operon_protrend_id'].tolist()
+        from_identifiers = df['publication_protrend_id'].tolist()
+        to_identifiers = df['operon_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -150,8 +150,8 @@ class PublicationToGeneConnector(CollectfConnector):
         df = df.dropna(subset=['gene_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'gene_protrend_id'])
 
-        from_identifiers = publication['publication_protrend_id'].tolist()
-        to_identifiers = publication['gene_protrend_id'].tolist()
+        from_identifiers = df['publication_protrend_id'].tolist()
+        to_identifiers = df['gene_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -176,8 +176,8 @@ class PublicationToTFBSConnector(CollectfConnector):
         df = df.dropna(subset=['tfbs_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'tfbs_protrend_id'])
 
-        from_identifiers = publication['publication_protrend_id'].tolist()
-        to_identifiers = publication['tfbs_protrend_id'].tolist()
+        from_identifiers = df['publication_protrend_id'].tolist()
+        to_identifiers = df['tfbs_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -207,8 +207,8 @@ class PublicationToRegulatoryInteractionConnector(CollectfConnector):
         df = df.dropna(subset=['rin_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'rin_protrend_id'])
 
-        from_identifiers = publication['publication_protrend_id'].tolist()
-        to_identifiers = publication['rin_protrend_id'].tolist()
+        from_identifiers = df['publication_protrend_id'].tolist()
+        to_identifiers = df['rin_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
