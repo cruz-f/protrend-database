@@ -1,63 +1,76 @@
 import os
-from typing import List, Type
+from typing import List
 
 import pandas as pd
 
 from protrend.io.json import read_json_frame
-from protrend.load.settings import LoaderSettings
 from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
 from protrend.utils.settings import DATA_LAKE_PATH
 
 
 class Loader:
-    default_settings: Type[LoaderSettings] = LoaderSettings
+    default_load_stack: List[str] = []
+    default_source: str = ''
+    default_version: str = '0.0.0'
 
-    def __init__(self, settings: LoaderSettings = None):
+    def __init__(self,
+                 load_stack: List[str] = None,
+                 source: str = None,
+                 version: str = None):
 
         """
+        The load object must implements loading procedures for a set of data lake files.
+        Using these files, the loader will create or update existing nodes in the neo4j database.
 
-        :param settings: a TransformerSettings than contains all settings for source,
-        version and files to perform the transformation on
+        :type load_stack: List[str]
+        :type source: str
+        :type version: str
+
+        :param load_stack: List containing the files. The value should be the file name in the data lake
+        :param source: The name of the data source in the data lake (e.g. regprecise, collectf, etc)
+        :param version: The version of the data source in the data lake (e.g. 0.0.0, 0.0.1, etc)
         """
-        if not settings:
-            settings = self.default_settings()
+        self._load_stack = []
+        self._source = source
+        self._version = version
 
-        self._settings = settings
-        self._files = []
+        self.load_transform_stack(load_stack)
 
-        self._load_settings()
+    def load_transform_stack(self, load_stack: List[str] = None):
 
-    def _load_settings(self):
+        self._load_stack = []
 
-        for file in self._settings.files:
+        if not load_stack:
+            load_stack = self.default_load_stack
 
-            file_path = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+        for file in load_stack:
 
-            if os.path.exists(file_path):
-                self._files.append(file_path)
+            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+
+            if os.path.exists(dl_file):
+                self._load_stack.append(dl_file)
 
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
     @property
-    def settings(self) -> LoaderSettings:
-        return self._settings
-
-    # --------------------------------------------------------
-    # Dynamic properties
-    # --------------------------------------------------------
-    @property
     def source(self) -> str:
-        return self.settings.source
+        if not self._source:
+            return self.default_source
+
+        return self._source
 
     @property
     def version(self) -> str:
-        return self.settings.version
+        if not self._version:
+            return self.default_version
+
+        return self._version
 
     @property
-    def files(self) -> List[str]:
-        return self._files
+    def load_stack(self) -> List[str]:
+        return self._load_stack
 
     @property
     def read_path(self) -> str:
@@ -75,7 +88,7 @@ class Loader:
         :return:
         """
 
-        for file_path in self._files:
+        for file_path in self.load_stack:
             df = read_json_frame(file_path)
 
             # update nodes
@@ -155,7 +168,7 @@ class Loader:
 
                 except:
                     ProtrendLogger.log.exception(f'Could not connect {from_node_instance.identifier} to '
-                                         f'{to_node_instance.identifier} using {relationship} relation')
+                                                 f'{to_node_instance.identifier} using {relationship} relation')
 
             # reverse connection
             for attr in to_rels:
@@ -166,4 +179,4 @@ class Loader:
 
                 except:
                     ProtrendLogger.log.exception(f'Could not connect {to_node_instance.identifier} to '
-                                         f'{from_node_instance.identifier} using {relationship} relation')
+                                                 f'{from_node_instance.identifier} using {relationship} relation')
