@@ -2,8 +2,8 @@ import pandas as pd
 
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction
-from protrend.transform.collectf.base import CollectfTransformer
+from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
+from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
@@ -102,3 +102,89 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
         self._stack_nodes(df)
 
         return df
+
+
+class RegulatoryInteractionToRegulatorConnector(CollectfConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Regulator
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+    def connect(self):
+        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = rin['protrend_id'].tolist()
+        to_identifiers = rin['regulator'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class RegulatoryInteractionToOperonConnector(CollectfConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Operon
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+    def connect(self):
+        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = rin['protrend_id'].tolist()
+        to_identifiers = rin['operon'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class RegulatoryInteractionToGeneConnector(CollectfConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Gene
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+    def connect(self):
+        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+
+        rin = apply_processors(rin, genes=to_list)
+        rin = rin.explode(column='genes')
+        rin = rin.dropna(subset=['genes'])
+
+        from_identifiers = rin['protrend_id'].tolist()
+        to_identifiers = rin['genes'].tolist()
+
+        kwargs = dict(operon=rin['operon'].tolist())
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_json(df)
+
+
+class RegulatoryInteractionToTFBSConnector(CollectfConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = TFBS
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+
+    def connect(self):
+        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+
+        rin = apply_processors(rin, tfbss=to_list)
+        rin = rin.explode(column='tfbss')
+        rin = rin.dropna(subset=['tfbss'])
+
+        from_identifiers = rin['protrend_id'].tolist()
+        to_identifiers = rin['tfbss'].tolist()
+
+        kwargs = dict(operon=rin['operon'].tolist())
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_json(df)
