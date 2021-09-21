@@ -44,6 +44,7 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
         regulator = apply_processors(regulator, regulator_effector=to_list, regulator_operon=to_list)
 
         regulator = regulator.explode(column='regulator_effector')
+        regulator = apply_processors(regulator, regulator_effector=to_int_str)
         df = pd.merge(regulator, effector, how='left', left_on='regulator_effector', right_on='effector_id')
 
         aggregation = {'regulator_operon': flatten_set,
