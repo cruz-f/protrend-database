@@ -140,9 +140,9 @@ if __name__ == "__main__":
     # ----------------------------------------------------
     # TRANSFORM
     # ----------------------------------------------------
-    # reg_transformer, reg_data_lake = transform_runner(install_labels=True, clear_indexes=True, clear_constraints=True)
+    reg_transformer, reg_data_lake = transform_runner()
 
     # ----------------------------------------------------
     # LOAD
     # ----------------------------------------------------
-    reg_loader, reg_database = load_runner(install_labels=True, clear_indexes=True, clear_constraints=True)
+    reg_loader, reg_database = load_runner()
