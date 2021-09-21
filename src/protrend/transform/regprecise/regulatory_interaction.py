@@ -126,7 +126,7 @@ class RegulatoryInteractionToSourceConnector(RegPreciseConnector):
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         source = read_from_stack(stack=self._connect_stack, file='source',
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
 
