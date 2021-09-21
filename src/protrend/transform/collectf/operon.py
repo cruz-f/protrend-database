@@ -271,6 +271,7 @@ class RegulatorToOperonConnector(CollectfConnector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
 
+        self.stack_json(df)
 
 class RegulatorToGeneConnector(CollectfConnector):
     default_from_node = Regulator
@@ -303,6 +304,8 @@ class RegulatorToGeneConnector(CollectfConnector):
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
 
+        self.stack_json(df)
+
 
 class RegulatorToTFBSConnector(CollectfConnector):
     default_from_node = Regulator
@@ -334,6 +337,7 @@ class RegulatorToTFBSConnector(CollectfConnector):
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
                                   kwargs=kwargs)
+        self.stack_json(df)
 
 
 class OperonToGeneConnector(CollectfConnector):

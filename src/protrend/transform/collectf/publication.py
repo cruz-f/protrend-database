@@ -95,6 +95,7 @@ class PublicationToRegulatorConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class PublicationToOperonConnector(CollectfConnector):
@@ -125,6 +126,7 @@ class PublicationToOperonConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class PublicationToGeneConnector(CollectfConnector):
@@ -155,6 +157,7 @@ class PublicationToGeneConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class PublicationToTFBSConnector(CollectfConnector):
@@ -181,6 +184,7 @@ class PublicationToTFBSConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class PublicationToRegulatoryInteractionConnector(CollectfConnector):
@@ -212,3 +216,4 @@ class PublicationToRegulatoryInteractionConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)

@@ -60,3 +60,4 @@ class RegulatoryFamilyToRegulatorConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)

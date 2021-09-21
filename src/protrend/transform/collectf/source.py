@@ -43,9 +43,9 @@ class SourceTransformer(CollectfTransformer):
         return df
 
 
-class SourceToOrganismConnector(CollectfConnector):
-    default_from_node = Source
-    default_to_node = Organism
+class OrganismToSourceConnector(CollectfConnector):
+    default_from_node = Organism
+    default_to_node = Source
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -82,9 +82,9 @@ class SourceToOrganismConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class SourceToRegulatoryFamilyConnector(CollectfConnector):
-    default_from_node = Source
-    default_to_node = RegulatoryFamily
+class RegulatoryFamilyToSourceConnector(CollectfConnector):
+    default_from_node = RegulatoryFamily
+    default_to_node = Source
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'source': 'integrated_source.json'}
 
@@ -111,9 +111,9 @@ class SourceToRegulatoryFamilyConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class SourceToRegulatorConnector(CollectfConnector):
-    default_from_node = Source
-    default_to_node = Regulator
+class RegulatorToSourceConnector(CollectfConnector):
+    default_from_node = Regulator
+    default_to_node = Source
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -150,9 +150,9 @@ class SourceToRegulatorConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class SourceToOperonConnector(CollectfConnector):
-    default_from_node = Source
-    default_to_node = Operon
+class OperonToSourceConnector(CollectfConnector):
+    default_from_node = Operon
+    default_to_node = Source
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):

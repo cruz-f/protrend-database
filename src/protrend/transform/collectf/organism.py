@@ -116,6 +116,7 @@ class OrganismToRegulatorConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class OrganismToOperonConnector(CollectfConnector):
@@ -148,6 +149,7 @@ class OrganismToOperonConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class OrganismToGeneConnector(CollectfConnector):
@@ -180,6 +182,7 @@ class OrganismToGeneConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class OrganismToTFBSConnector(CollectfConnector):
@@ -212,6 +215,7 @@ class OrganismToTFBSConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
 
 
 class OrganismToRegulatoryInteractionConnector(CollectfConnector):
@@ -244,3 +248,4 @@ class OrganismToRegulatoryInteractionConnector(CollectfConnector):
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
+        self.stack_json(df)
