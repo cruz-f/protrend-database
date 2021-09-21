@@ -354,6 +354,7 @@ class Transformer(AbstractTransformer):
     def _stack_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
+            df['protrend_id'] = None
             df['load'] = None
             df['what'] = None
             df['node'] = self.node.node_name()
@@ -371,6 +372,7 @@ class Transformer(AbstractTransformer):
     def _stack_integrated_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
+            df['protrend_id'] = None
             df['load'] = None
             df['what'] = None
             df['node'] = self.node.node_name()

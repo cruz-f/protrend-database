@@ -115,7 +115,8 @@ class OperonTransformer(RegPreciseTransformer):
                 return m
 
             except StatisticsError:
-                return item[0]
+                for sub_item in item:
+                    return sub_item
 
         def start(item):
             if is_null(item):
