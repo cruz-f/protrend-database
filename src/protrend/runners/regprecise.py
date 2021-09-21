@@ -10,7 +10,6 @@ from protrend.log import ProtrendLogger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.regprecise import *
-from protrend.transform.regprecise.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils import NeoDatabase, ROOT_PATH, DATA_LAKE_PATH, STAGING_AREA_PATH
 from protrend.utils.miscellaneous import log_file_from_name
 
