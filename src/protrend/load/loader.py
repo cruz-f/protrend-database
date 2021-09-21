@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import pandas as pd
+from neomodel import AttemptedCardinalityViolation
 
 from protrend.io.json import read_json_frame
 from protrend.log import ProtrendLogger
@@ -166,6 +167,9 @@ class Loader:
                     connect_nodes(from_node=from_node_instance, to_node=to_node_instance, relationship=attr,
                                   kwargs=relationship)
 
+                except AttemptedCardinalityViolation:
+                    continue
+
                 except:
                     ProtrendLogger.log.exception(f'Could not connect {from_node_instance.identifier} to '
                                                  f'{to_node_instance.identifier} using {relationship} relation')
@@ -176,6 +180,9 @@ class Loader:
                 try:
                     connect_nodes(from_node=to_node_instance, to_node=from_node_instance, relationship=attr,
                                   kwargs=relationship)
+
+                except AttemptedCardinalityViolation:
+                    continue
 
                 except:
                     ProtrendLogger.log.exception(f'Could not connect {to_node_instance.identifier} to '
