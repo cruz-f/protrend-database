@@ -129,7 +129,7 @@ class Director:
         for loader in self.loaders:
             try:
                 ProtrendLogger.log.info(f'Starting loader: {loader.__class__.__name__} with the following files:')
-                for file_path in loader.files:
+                for file_path in loader.load_stack:
                     ProtrendLogger.log.info(f'{file_path}')
 
                 loader.load()
