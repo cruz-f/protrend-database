@@ -20,8 +20,8 @@ class EffectorTransformer(RegulondbTransformer):
                'name', 'synonyms', 'mechanism', 'kegg_compounds',
                'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
                'effector_internal_comment', 'key_id_org'}
-    read_columns = {'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
-                    'effector_internal_comment', 'key_id_org'}
+    read_columns = ('effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
+                    'effector_internal_comment', 'key_id_org')
 
     def _transform_effector(self, effector: pd.DataFrame):
         effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=True)
