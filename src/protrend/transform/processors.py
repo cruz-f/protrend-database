@@ -361,3 +361,10 @@ def regulatory_effect_collectf(item: str) -> Union[None, str]:
         return 'activation'
 
     return
+
+
+def parse_effector_name_regulondb(item: str) -> str:
+    if is_null(item):
+        return
+
+    return item.replace('&', '').replace(';', '')
