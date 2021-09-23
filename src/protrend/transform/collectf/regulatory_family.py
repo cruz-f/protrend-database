@@ -49,7 +49,7 @@ class RegulatoryFamilyToRegulatorConnector(CollectfConnector):
 
         rfam = read_from_stack(stack=self.connect_stack, file='rfam',
                                default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        rfam = regulator.rename(columns={'protrend_id': 'rfam_protrend_id'})
+        rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
         rfam = apply_processors(rfam, regulon=to_list)
         rfam = rfam.explode(column='regulon')
 

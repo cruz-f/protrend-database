@@ -13,7 +13,7 @@ white_space_pattern = re.compile(r'\s')
 multiple_white_space_pattern = re.compile(r' +')
 pubmed_pattern = re.compile(r'\[[0-9]*]|\[[0-9]*,|\s[0-9]*,|\s[0-9]*]')
 pubmed_pattern2 = re.compile(r'\[pmid::[0-9]*]|\[pmid: [0-9]*]|\[pmid:: [0-9]*]|\[pmid:[0-9]*]|\[ pmid: : [0-9]* ]|\[pmid: : [0-9]*]|\[pmid::[0-9]* ]|\[ pmid::[0-9]*]|\[pmid::[0-9]* .]')
-
+pubmed_pattern3 = re.compile(r'\[PMID::[0-9]*]|\[PMID: [0-9]*]|\[PMID:: [0-9]*]|\[PMID:[0-9]*]|\[ PMID: : [0-9]* ]|\[PMID: : [0-9]*]|\[PMID::[0-9]* ]|\[ PMID::[0-9]*]|\[PMID::[0-9]* .]')
 
 def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callable]]) -> pd.DataFrame:
     """
@@ -274,6 +274,10 @@ def remove_pubmed2(item: str) -> str:
     return re.sub(pubmed_pattern2, repl='', string=item)
 
 
+def remove_pubmed3(item: str) -> str:
+    return re.sub(pubmed_pattern3, repl='', string=item)
+
+
 def remove_html_tags(item: str) -> str:
     return remove_tags(item)
 
@@ -325,6 +329,7 @@ def parse_collectf_description(item: List[str]) -> str:
 
         string = string.translate(translator)
         string = remove_pubmed2(string)
+        string = remove_pubmed3(string)
         string = remove_pubmed(string)
         to_concat.append(string)
 

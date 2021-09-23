@@ -9,7 +9,7 @@ from protrend.model.model import Regulator
 from protrend.transform import GeneDTO
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.collectf.base import CollectfTransformer
-from protrend.transform.processors import take_first, flatten_set
+from protrend.transform.processors import take_first, flatten_set, apply_processors, to_list_nan
 
 
 def _find_in_mapping(acc: str, mapping: pd.DataFrame) -> List[Union[str, None]]:
@@ -42,6 +42,8 @@ class RegulatorTransformer(CollectfTransformer):
     read_columns = {'uniprot_accession', 'name', 'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence'}
 
     def _transform_regulon(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+        regulon = apply_processors(regulon, tfbs=to_list_nan, experimental_evidence=to_list_nan,
+                                   operon=to_list_nan, gene=to_list_nan)
         aggregation = {'tfbs': flatten_set, 'experimental_evidence': flatten_set,
                        'operon': flatten_set, 'gene': flatten_set}
         regulon = self.group_by(df=regulon, column='uniprot_accession', aggregation=aggregation, default=take_first)
@@ -49,6 +51,10 @@ class RegulatorTransformer(CollectfTransformer):
         regulon['mechanism'] = 'transcription factor'
 
         df = pd.merge(regulon, organism, how='left', left_on='organism', right_on='organism_name_collectf')
+
+        df = self.drop_duplicates(df=df, subset=['uniprot_accession', 'organism'],
+                                  perfect_match=True, preserve_nan=True)
+        df = self.create_input_value(df=df, col='uniprot_accession')
         return df
 
     @staticmethod
@@ -57,6 +63,9 @@ class RegulatorTransformer(CollectfTransformer):
 
         if annotations:
             loci = annotations.get('gene_name_ordered locus', [])
+
+            if not loci:
+                loci = annotations.get('gene_name_ORF', [])
 
             for locus in loci:
                 return locus
@@ -107,8 +116,10 @@ class RegulatorTransformer(CollectfTransformer):
     def transform(self):
         regulon = read_from_stack(stack=self.transform_stack, file='regulon',
                                   default_columns=self.read_columns, reader=read_json_lines)
+
+        from protrend.transform.collectf import OrganismTransformer
         organism = read_from_stack(stack=self.transform_stack, file='organism',
-                                   default_columns=self.read_columns, reader=read_json_frame)
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'name_collectf', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id',
                                             'name_collectf': 'organism_name_collectf'})
@@ -125,6 +136,12 @@ class RegulatorTransformer(CollectfTransformer):
         tf = self.merge_columns(df=tf, column='name', left='name_annotation', right='name_collectf')
         tf = self.merge_columns(df=tf, column='uniprot_accession',
                                 left='uniprot_accession_annotation', right='uniprot_accession_collectf')
+
+        # dropping those tfs with incomplete locus_tag, as it means that the uniprot accession is wrongly assigned by
+        # collectf or absent
+        tf = tf.dropna(subset=['locus_tag'])
+        non_empty_tf = tf['locus_tag'] != ''
+        tf = tf[non_empty_tf]
 
         tf = tf.drop(columns=['input_value'])
 

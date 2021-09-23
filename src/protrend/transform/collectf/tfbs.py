@@ -1,5 +1,3 @@
-import re
-
 import pandas as pd
 
 from protrend.io.json import read_json_lines, read_json_frame
@@ -8,10 +6,8 @@ from protrend.model.model import TFBS
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.processors import (apply_processors, to_list, flatten_set,
-                                           take_last, genes_to_hash, to_str)
+                                           take_last, genes_to_hash, to_str, to_set)
 from protrend.utils.miscellaneous import is_null
-
-regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 
 class TFBSTransformer(CollectfTransformer):
@@ -37,14 +33,14 @@ class TFBSTransformer(CollectfTransformer):
         tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='gene_old_locus_tag')
 
         aggr = {'pubmed': flatten_set, 'regulon': flatten_set, 'operon': flatten_set,
-                'gene': flatten_set, 'experimental_evidence': flatten_set}
+                'experimental_evidence': flatten_set, 'gene': to_set}
         tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
 
         # filter by regulon, sequence and position
         tfbs = apply_processors(tfbs, regulon=to_list)
         tfbs = tfbs.explode(column='regulon')
         tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
-                                    perfect_match=True, preserve_nan=False)
+                                    perfect_match=True, preserve_nan=True)
         tfbs = tfbs.reset_index(drop=True)
 
         return tfbs
@@ -64,7 +60,16 @@ class TFBSTransformer(CollectfTransformer):
 
             return None
 
-        tfbs['length'] = tfbs['sequence'].str.len()
+        def sequence_len(item):
+            if is_null(item):
+                return None
+
+            if isinstance(item, str):
+                return len(item)
+
+            return None
+
+        tfbs['length'] = tfbs['sequence'].map(sequence_len, na_action='ignore')
         tfbs['strand'] = tfbs['strand'].map(strand_translation, na_action='ignore')
 
         return tfbs
@@ -81,7 +86,7 @@ class TFBSTransformer(CollectfTransformer):
         gene = gene.dropna(subset=['gene_old_locus_tag'])
         gene = gene.dropna(subset=['gene_protrend_id'])
         gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag', 'gene_protrend_id'],
-                                    perfect_match=False, preserve_nan=False)
+                                    perfect_match=True, preserve_nan=False)
 
         df = self._transform_tfbs(tfbs=tfbs, gene=gene)
 
@@ -95,7 +100,7 @@ class TFBSTransformer(CollectfTransformer):
         str_genes = df['gene_protrend_id'].map(genes_to_hash, na_action='ignore').fillna('')
         df['site_hash'] = str_sequence + str_len + str_strand + str_start + str_genes
 
-        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=False, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True, preserve_nan=True)
 
         self._stack_transformed_nodes(df)
 

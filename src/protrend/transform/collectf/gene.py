@@ -30,17 +30,18 @@ class GeneTransformer(CollectfTransformer):
     read_columns = {'locus_tag', 'regulon', 'operon', 'tfbs'}
 
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
-        gene = apply_processors(gene, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
-
+        gene = apply_processors(gene, locus_tag=[rstrip, lstrip])
         gene = self.group_by(df=gene, column='locus_tag', aggregation={}, default=flatten_set)
 
         gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
-        gene = apply_processors(gene, regulon=to_int_str)
 
-        gene = pd.merge(gene, regulator, how='left', left_on='regulon', right_on='regulator_uniprot_accession')
+        gene = pd.merge(gene, regulator, left_on='regulon', right_on='regulator_uniprot_accession')
+        gene = self.drop_duplicates(df=gene, subset=['locus_tag', 'organism_protrend_id'],
+                                    perfect_match=True, preserve_nan=True)
 
-        aggregation = {'regulator_uniprot_accession': to_set,
+        aggregation = {'regulon': to_set,
+                       'regulator_uniprot_accession': to_set,
                        'regulator_protrend_id': to_set,
                        'ncbi_taxonomy': take_first,
                        'organism_protrend_id': take_first}
@@ -79,11 +80,12 @@ class GeneTransformer(CollectfTransformer):
     def transform(self):
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=self.read_columns, reader=read_json_lines)
+        non_empty_gene = gene['locus_tag'] != ''
+        gene = gene[non_empty_gene]
 
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = self.select_columns(regulator,
-                                        'protrend_id', 'uniprot_accession',
+        regulator = self.select_columns(regulator, 'protrend_id', 'uniprot_accession',
                                         'ncbi_taxonomy', 'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id',
                                               'uniprot_accession': 'regulator_uniprot_accession'})

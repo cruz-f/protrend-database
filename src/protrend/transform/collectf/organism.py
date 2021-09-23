@@ -8,11 +8,7 @@ from protrend.model.model import Organism, Regulator, Operon, Gene, TFBS, Regula
 from protrend.transform import OrganismDTO
 from protrend.transform.annotation import annotate_organisms
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
-from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.collectf.operon import OperonTransformer
-from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set, to_list
 from protrend.utils.miscellaneous import is_null
 
@@ -37,6 +33,7 @@ class OrganismTransformer(CollectfTransformer):
         organism = apply_processors(organism, name=[rstrip, lstrip], genome_accession=[rstrip, lstrip],
                                     taxonomy=to_int_str)
 
+        organism = self.drop_duplicates(df=organism, subset=['genome_accession', 'name'])
         organism = self.create_input_value(organism, col='name')
 
         return organism
@@ -103,16 +100,16 @@ class OrganismToRegulatorConnector(CollectfConnector):
     default_connect_stack = {'regulator': 'integrated_regulator.json'}
 
     def connect(self):
+        from protrend.transform.collectf import RegulatorTransformer
         regulator = read_from_stack(stack=self.connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
+        regulator = regulator.dropna(subset=['protrend_id'])
         regulator = regulator.dropna(subset=['organism_protrend_id'])
-        regulator = regulator.dropna(subset=['regulator_protrend_id'])
-        regulator = regulator.drop_duplicates(subset=['organism_protrend_id', 'regulator_protrend_id'])
+        regulator = regulator.drop_duplicates(subset=['protrend_id', 'organism_protrend_id'])
 
         from_identifiers = regulator['organism_protrend_id'].tolist()
-        to_identifiers = regulator['regulator_protrend_id'].tolist()
+        to_identifiers = regulator['protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -122,30 +119,15 @@ class OrganismToRegulatorConnector(CollectfConnector):
 class OrganismToOperonConnector(CollectfConnector):
     default_from_node = Organism
     default_to_node = Operon
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'operon': 'integrated_operon.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
+        rin = read_from_stack(stack=self.connect_stack, file='rin',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = rin.drop_duplicates(subset=['organism_protrend_id', 'operon'])
 
-        regulator = regulator.dropna(subset=['organism_protrend_id'])
-        regulator = regulator.dropna(subset=['regulator_protrend_id'])
-        regulator = regulator.drop_duplicates(subset=['organism_protrend_id', 'regulator_protrend_id'])
-
-        operon = read_from_stack(stack=self.connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = operon.rename(columns={'protrend_id': 'operon_protrend_id'})
-        operon = apply_processors(operon, regulon=to_list)
-        operon = operon.explode(column='regulon')
-
-        df = pd.merge(regulator, operon, left_on='uniprot_accession', right_on='regulon')
-        df = df.dropna(subset=['organism_protrend_id'])
-        df = df.dropna(subset=['operon_protrend_id'])
-        df = df.drop_duplicates(subset=['organism_protrend_id', 'operon_protrend_id'])
-
-        from_identifiers = df['organism_protrend_id'].tolist()
-        to_identifiers = df['operon_protrend_id'].tolist()
+        from_identifiers = rin['organism_protrend_id'].tolist()
+        to_identifiers = rin['operon'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -155,30 +137,17 @@ class OrganismToOperonConnector(CollectfConnector):
 class OrganismToGeneConnector(CollectfConnector):
     default_from_node = Organism
     default_to_node = Gene
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'gene': 'integrated_gene.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
+        rin = read_from_stack(stack=self.connect_stack, file='rin',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = apply_processors(rin, genes=to_list)
+        rin = rin.explode(column='genes')
+        rin = rin.drop_duplicates(subset=['organism_protrend_id', 'genes'])
 
-        regulator = regulator.dropna(subset=['organism_protrend_id'])
-        regulator = regulator.dropna(subset=['regulator_protrend_id'])
-        regulator = regulator.drop_duplicates(subset=['organism_protrend_id', 'regulator_protrend_id'])
-
-        gene = read_from_stack(stack=self.connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
-        gene = apply_processors(gene, regulon=to_list)
-        gene = gene.explode(column='regulon')
-
-        df = pd.merge(regulator, gene, left_on='uniprot_accession', right_on='regulon')
-        df = df.dropna(subset=['organism_protrend_id'])
-        df = df.dropna(subset=['gene_protrend_id'])
-        df = df.drop_duplicates(subset=['organism_protrend_id', 'gene_protrend_id'])
-
-        from_identifiers = df['organism_protrend_id'].tolist()
-        to_identifiers = df['gene_protrend_id'].tolist()
+        from_identifiers = rin['organism_protrend_id'].tolist()
+        to_identifiers = rin['genes'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -188,30 +157,17 @@ class OrganismToGeneConnector(CollectfConnector):
 class OrganismToTFBSConnector(CollectfConnector):
     default_from_node = Organism
     default_to_node = TFBS
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'tfbs': 'integrated_tfbs.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
+        rin = read_from_stack(stack=self.connect_stack, file='rin',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = apply_processors(rin, tfbss=to_list)
+        rin = rin.explode(column='tfbss')
+        rin = rin.drop_duplicates(subset=['organism_protrend_id', 'tfbss'])
 
-        regulator = regulator.dropna(subset=['organism_protrend_id'])
-        regulator = regulator.dropna(subset=['regulator_protrend_id'])
-        regulator = regulator.drop_duplicates(subset=['organism_protrend_id', 'regulator_protrend_id'])
-
-        tfbs = read_from_stack(stack=self.connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-        tfbs = apply_processors(tfbs, regulon=to_list)
-        tfbs = tfbs.explode(column='regulon')
-
-        df = pd.merge(regulator, tfbs, left_on='uniprot_accession', right_on='regulon')
-        df = df.dropna(subset=['organism_protrend_id'])
-        df = df.dropna(subset=['tfbs_protrend_id'])
-        df = df.drop_duplicates(subset=['organism_protrend_id', 'tfbs_protrend_id'])
-
-        from_identifiers = df['organism_protrend_id'].tolist()
-        to_identifiers = df['tfbs_protrend_id'].tolist()
+        from_identifiers = rin['organism_protrend_id'].tolist()
+        to_identifiers = rin['tfbss'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -221,30 +177,15 @@ class OrganismToTFBSConnector(CollectfConnector):
 class OrganismToRegulatoryInteractionConnector(CollectfConnector):
     default_from_node = Organism
     default_to_node = RegulatoryInteraction
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'rin': 'integrated_tfbs.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
-
-        regulator = regulator.dropna(subset=['organism_protrend_id'])
-        regulator = regulator.dropna(subset=['regulator_protrend_id'])
-        regulator = regulator.drop_duplicates(subset=['organism_protrend_id', 'regulator_protrend_id'])
-
         rin = read_from_stack(stack=self.connect_stack, file='rin',
                               default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = rin.rename(columns={'protrend_id': 'rin_protrend_id'})
-        rin = apply_processors(rin, regulon=to_list)
-        rin = rin.explode(column='regulon')
+        rin = rin.drop_duplicates(subset=['organism_protrend_id', 'protrend_id'])
 
-        df = pd.merge(regulator, rin, left_on='uniprot_accession', right_on='regulon')
-        df = df.dropna(subset=['organism_protrend_id'])
-        df = df.dropna(subset=['rin_protrend_id'])
-        df = df.drop_duplicates(subset=['organism_protrend_id', 'rin_protrend_id'])
-
-        from_identifiers = df['organism_protrend_id'].tolist()
-        to_identifiers = df['rin_protrend_id'].tolist()
+        from_identifiers = rin['organism_protrend_id'].tolist()
+        to_identifiers = rin['protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)

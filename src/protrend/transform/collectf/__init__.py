@@ -8,10 +8,7 @@ from .gene import GeneTransformer
 from .operon import (OperonTransformer,
                      GeneToTFBSConnector,
                      OperonToGeneConnector,
-                     OperonToTFBSConnector,
-                     RegulatorToGeneConnector,
-                     RegulatorToOperonConnector,
-                     RegulatorToTFBSConnector)
+                     OperonToTFBSConnector)
 from .organism import (OrganismToGeneConnector,
                        OrganismToOperonConnector,
                        OrganismToRegulatorConnector,
@@ -31,7 +28,10 @@ from .regulatory_interaction import (RegulatoryInteractionToGeneConnector,
                                      RegulatoryInteractionToOperonConnector,
                                      RegulatoryInteractionToRegulatorConnector,
                                      RegulatoryInteractionToTFBSConnector,
-                                     RegulatoryInteractionTransformer)
+                                     RegulatoryInteractionTransformer,
+                                     RegulatorToGeneConnector,
+                                     RegulatorToOperonConnector,
+                                     RegulatorToTFBSConnector)
 from .source import (GeneToSourceConnector,
                      OperonToSourceConnector,
                      OrganismToSourceConnector,

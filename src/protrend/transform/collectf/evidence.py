@@ -21,9 +21,8 @@ class EvidenceTransformer(CollectfTransformer):
 
     def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=evidence, subset=['exp_id'], perfect_match=True, preserve_nan=True)
-
         df = apply_processors(df, exp_id=[rstrip, lstrip])
-
+        df = df.dropna(subset=['exp_id'])
         df['name'] = df['exp_id']
         df['description'] = None
 
@@ -123,10 +122,8 @@ class EvidenceToOperonConnector(CollectfConnector):
 
         df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-        df = apply_processors(df, tfbss=to_list)
-        df = df.explode(column='tfbss')
 
-        df = pd.merge(df, rin, on='tfbss')
+        df = pd.merge(df, rin, left_on='tfbs_protrend_id', right_on='tfbss')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'operon_protrend_id'])
 
         from_identifiers = df['evidence_protrend_id'].tolist()
@@ -166,12 +163,10 @@ class EvidenceToGeneConnector(CollectfConnector):
 
         df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-        df = apply_processors(df, tfbss=to_list)
-        df = df.explode(column='tfbss')
 
-        df = pd.merge(df, rin, on='tfbss')
+        df = pd.merge(df, rin, left_on='tfbs_protrend_id', right_on='tfbss')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'operon_protrend_id'])
-        df = df.explode(column='genes')
+        df = df.explode(column='genes_protrend_id')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'genes_protrend_id'])
 
         from_identifiers = df['evidence_protrend_id'].tolist()
@@ -211,10 +206,8 @@ class EvidenceToRegulatoryInteractionConnector(CollectfConnector):
 
         df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-        df = apply_processors(df, tfbss=to_list)
-        df = df.explode(column='tfbss')
 
-        df = pd.merge(df, rin, on='tfbss')
+        df = pd.merge(df, rin, left_on='tfbs_protrend_id', right_on='tfbss')
         df = df.drop_duplicates(subset=['evidence_protrend_id', 'regulatory_interaction_protrend_id'])
 
         from_identifiers = df['evidence_protrend_id'].tolist()
