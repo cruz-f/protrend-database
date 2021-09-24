@@ -21,6 +21,7 @@ class Node(StructuredNode):
     identifying_property = 'protrend_id'
     header = 'PRT'
     entity = 'PRT'
+    node_factors = {}
 
     node_register: Dict[str, Type['Node']] = {}
 
