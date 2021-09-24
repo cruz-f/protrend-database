@@ -188,7 +188,6 @@ class OperonTransformer(CollectfTransformer):
         tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
-
         tfbs = tfbs.dropna(subset=['protrend_id'])
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id', 'operon': 'tfbs_operon'})
 
