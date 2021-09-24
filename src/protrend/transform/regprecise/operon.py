@@ -3,11 +3,10 @@ from statistics import mode, StatisticsError
 import numpy as np
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
+from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import Operon, Source, Organism, Regulator, Gene, TFBS
-from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set_list, to_list,
-                                           to_nan, to_int_str)
+from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
+                                           to_int_str, to_set_list, operon_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
@@ -24,7 +23,7 @@ class OperonTransformer(RegPreciseTransformer):
     default_order = 60
     columns = SetList(['operon_id_new', 'gene', 'operon_id_old', 'url', 'regulon', 'tfbs',
                        'tfbss', 'genes', 'gene_locus_tag', 'gene_name', 'gene_old_locus_tag',
-                       'gene_strand', 'gene_start', 'gene_stop', 'operon_id', 'name', 'strand',
+                       'gene_strand', 'gene_start', 'gene_stop', 'name', 'strand',
                        'start', 'stop', 'operon_hash', 'protrend_id'])
     read_columns = SetList(['operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'])
 
@@ -32,7 +31,7 @@ class OperonTransformer(RegPreciseTransformer):
         # group duplicates
         operon = operon.explode('gene')
 
-        aggregation = {'operon_id': set}
+        aggregation = {'operon_id': to_set_list}
         operon = self.group_by(df=operon, column='gene', aggregation=aggregation, default=flatten_set_list)
 
         return operon
@@ -45,7 +44,7 @@ class OperonTransformer(RegPreciseTransformer):
         operon = pd.DataFrame({'gene': operons})
 
         operon['operon_id'] = operon['gene']
-        operon = apply_processors(operon, operon_id=str_join, gene=to_list)
+        operon = apply_processors(operon, operon_id=[to_list, operon_hash], gene=to_list)
         operon = operon.explode('gene')
         return operon
 
@@ -58,7 +57,7 @@ class OperonTransformer(RegPreciseTransformer):
         operon = pd.merge(normalized_operon, operon_by_gene, on='gene', suffixes=("_new", "_old"))
 
         # group by the new operons
-        aggregation = {'gene': set}
+        aggregation = {'gene': to_set_list}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
         operon = apply_processors(operon, gene=to_list)
@@ -67,17 +66,24 @@ class OperonTransformer(RegPreciseTransformer):
         operon = pd.merge(operon, gene, left_on='gene', right_on='gene_old_locus_tag')
 
         # group by the new genes
-        aggregation = {'gene': set,
-                       'gene_protrend_id': set, 'gene_locus_tag': set, 'gene_name': set, 'gene_old_locus_tag': set,
-                       'gene_strand': set, 'gene_start': set, 'gene_stop': set}
+        aggregation = {'gene': to_set_list,
+                       'gene_protrend_id': to_set_list,
+                       'gene_locus_tag': to_set_list,
+                       'gene_name': to_set_list,
+                       'gene_old_locus_tag': to_set_list,
+                       'gene_strand': to_set_list,
+                       'gene_start': to_set_list,
+                       'gene_stop': to_set_list}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
-        operon['operon_id'] = operon['genes']
+        operon['operon_hash'] = operon['genes']
         operon['name'] = operon['gene_name']
 
-        operon = apply_processors(operon, operon_id=[to_list, str_join], name=[to_list, operon_name])
+        operon = apply_processors(operon, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
+        operon = operon.dropna(subset=['operon_hash'])
+        operon = self.drop_duplicates(df=operon, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
 
         return operon
 
@@ -86,7 +92,8 @@ class OperonTransformer(RegPreciseTransformer):
         tfbs_by_operon = tfbs.explode('tfbs_operon')
         operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='operon_id', right_on='tfbs_operon')
 
-        aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set, 'tfbs_operon': set}
+        aggregation = {'url': to_set_list, 'regulon': to_set_list,
+                       'tfbs_protrend_id': to_set_list, 'tfbs_operon': to_set_list}
         operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set_list)
 
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
@@ -189,12 +196,6 @@ class OperonTransformer(RegPreciseTransformer):
         df = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
         df = self._transform_operon_by_gene(operon=df, gene=gene)
         df = self._operon_coordinates(operon=df)
-
-        # filter by operon hash: genes
-        df['operon_hash'] = df['genes']
-        df = apply_processors(df, operon_hash=[genes_to_hash, to_nan])
-        df = df.dropna(subset=['operon_hash'])
-        df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
 
         self._stack_transformed_nodes(df)
 

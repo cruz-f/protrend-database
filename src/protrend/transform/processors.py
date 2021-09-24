@@ -28,7 +28,8 @@ def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callab
 
     """
 
-    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan)
+    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan,
+                             operon_hash, site_hash, regulatory_interaction_hash)
 
     new_columns = {}
 
@@ -229,12 +230,31 @@ def operon_name(items: List[str]) -> str:
     return ''
 
 
-def genes_to_hash(items: List[str]) -> str:
+def operon_hash(items: List[str]) -> Union[None, str]:
+
+    if is_null(items):
+        return None
+
     items = sorted(items)
+    item = '_'.join(items)
+
+    if is_null(item):
+        return None
+
+    return item
+
+
+def site_hash(items: List[str]) -> Union[None, str]:
+    if is_null(items):
+        return None
+
     return '_'.join(items)
 
 
-def str_join(items: List[str]) -> str:
+def regulatory_interaction_hash(items: List[str]) -> Union[None, str]:
+    if is_null(items):
+        return None
+
     return '_'.join(items)
 
 

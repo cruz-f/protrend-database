@@ -4,7 +4,7 @@ from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryInteraction, Source, Organism, Effector, Regulator, Operon, Gene, TFBS
 from protrend.transform.processors import (apply_processors, to_list, to_int_str, to_set_list, flatten_set_list,
-                                           regulatory_effect, take_last)
+                                           regulatory_effect, take_last, regulatory_interaction_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.effector import EffectorTransformer
 from protrend.transform.regprecise.operon import OperonTransformer
@@ -66,7 +66,11 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
         df = df.dropna(subset=['regulator', 'operon'])
 
         # filter by regulator + operon
-        df['regulatory_interaction_hash'] = df['regulator'] + df['operon']
+        df2 = apply_processors(df, regulator=to_list, operon=to_list)
+
+        df['regulatory_interaction_hash'] = df2['regulator'] + df2['operon']
+        df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
+        df = df.dropna(subset=['regulatory_interaction_hash'])
 
         df = apply_processors(df, regulatory_effect=regulatory_effect)
 
