@@ -110,8 +110,12 @@ class Node(StructuredNode):
 
                 for key, val in node.items():
 
-                    if key in node_keys and val is not None:
-                        setattr(structured_node, key, val)
+                    if key in node_keys:
+
+                        last_val = getattr(structured_node, key, None)
+
+                        if not is_null(val) and is_null(last_val):
+                            setattr(structured_node, key, val)
 
                 if save:
                     structured_node.updated = datetime.utcnow().replace(tzinfo=pytz.utc)
@@ -189,8 +193,12 @@ class Node(StructuredNode):
 
                 for key, val in node.items():
 
-                    if key in node_keys and not is_null(val):
-                        setattr(structured_node, key, val)
+                    if key in node_keys:
+
+                        last_val = getattr(structured_node, key, None)
+
+                        if not is_null(val) and is_null(last_val):
+                            setattr(structured_node, key, val)
 
                 if save:
                     structured_node.updated = datetime.utcnow().replace(tzinfo=pytz.utc)
