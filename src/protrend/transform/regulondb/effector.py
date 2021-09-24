@@ -9,19 +9,19 @@ from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, remove_html_tags, \
     parse_effector_name_regulondb
 from protrend.transform.regulondb.base import RegulondbTransformer
+from protrend.utils import SetList
 
 
 class EffectorTransformer(RegulondbTransformer):
     default_node = Effector
-    default_node_factors = ('name', )
     default_transform_stack = {'effector': 'effector.txt'}
     default_order = 100
-    columns = {'protrend_id',
-               'name', 'synonyms', 'mechanism', 'kegg_compounds',
-               'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
-               'effector_internal_comment', 'key_id_org'}
-    read_columns = ('effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
-                    'effector_internal_comment', 'key_id_org')
+    columns = SetList(['protrend_id',
+                       'name', 'synonyms', 'mechanism', 'kegg_compounds',
+                       'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
+                       'effector_internal_comment', 'key_id_org'])
+    read_columns = SetList(['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
+                            'effector_internal_comment', 'key_id_org'])
 
     def _transform_effector(self, effector: pd.DataFrame):
         effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=True)

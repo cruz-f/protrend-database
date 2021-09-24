@@ -2,22 +2,25 @@ from typing import Union
 
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines, read_txt
+from protrend.io import read_from_stack, read_txt
 from protrend.model.model import Evidence
-from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip
+from protrend.transform.regulondb.base import RegulondbTransformer
+from protrend.utils import SetList
 
 
 class EvidenceTransformer(RegulondbTransformer):
     default_node = Evidence
-    default_node_factors = ('name',)
     default_transform_stack = {'evidence': 'evidence.txt'}
     default_order = 100
-    columns = {'protrend_id',
-               'name', 'description',
-               }
-    read_columns = ('evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
-                    'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head', 'example')
+    columns = SetList(['protrend_id',
+                       'name', 'description',
+                       'evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
+                       'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head',
+                       'example'])
+    read_columns = SetList(['evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
+                            'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head',
+                            'example'])
 
     def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=evidence, subset=['evidence_id', 'evidence_name'],
@@ -32,8 +35,7 @@ class EvidenceTransformer(RegulondbTransformer):
         df = apply_processors(df,
                               evidence_id=[rstrip, lstrip], evidence_name=[rstrip, lstrip],
                               evidence_note=[rstrip, lstrip, remove_evidence_note])
-        df = df.dropna(subset=['evidence_id'])
-        df = df.dropna(subset=['evidence_name'])
+        df = df.dropna(subset=['evidence_id', 'evidence_name'])
         df['name'] = df['evidence_name']
         df['description'] = df['evidence_note']
 

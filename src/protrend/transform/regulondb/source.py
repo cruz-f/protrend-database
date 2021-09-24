@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.model.model import Source
 from protrend.transform.regulondb.base import RegulondbTransformer
+from protrend.utils import SetList
 
 
 class SourceTransformer(RegulondbTransformer):
@@ -17,9 +18,8 @@ class SourceTransformer(RegulondbTransformer):
     description = 'RegulonDB v 10.5: tackling challenges to unify classic and high throughput knowledge of gene regulation in E. coli K-12'
 
     default_node = Source
-    default_node_factors = ('name',)
     default_order = 100
-    columns = {'protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'}
+    columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
         collectf = dict(name=[self.name],
