@@ -12,17 +12,17 @@ from protrend.transform.regprecise.base import RegPreciseTransformer, RegPrecise
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class PathwayTransformer(RegPreciseTransformer):
     default_node = Pathway
-    default_node_factors = ('name', )
+    default_node_factors = SetList(['name'])
     default_transform_stack = {'pathway': 'Pathway.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'pathway_id', 'name', 'url', 'regulog',
-               'synonyms', 'kegg_pathways'}
-    read_columns = {'pathway_id', 'name', 'url', 'regulog'}
+    columns = SetList(['synonyms', 'kegg_pathways', 'pathway_id', 'url', 'regulog', 'name',
+                       'protrend_id'])
+    read_columns = SetList(['pathway_id', 'name', 'url', 'regulog'])
 
     def _transform_pathway(self, pathway: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=pathway, subset=['name'], perfect_match=True, preserve_nan=False)

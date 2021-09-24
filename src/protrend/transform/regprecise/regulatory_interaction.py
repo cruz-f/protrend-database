@@ -10,20 +10,19 @@ from protrend.transform.regprecise.effector import EffectorTransformer
 from protrend.transform.regprecise.operon import OperonTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class RegulatoryInteractionTransformer(RegPreciseTransformer):
     default_node = RegulatoryInteraction
-    default_node_factors = ()
+    default_node_factors = SetList(['regulatory_interaction_hash'])
     default_transform_stack = {'effector': 'integrated_effector.json',
                                'regulator': 'integrated_regulator.json',
-                               'operon': 'integrated_operon.json',
-                               'gene': 'integrated_gene.json',
-                               'tfbs': 'integrated_tfbs.json'}
+                               'operon': 'integrated_operon.json'}
     default_order = 50
-    columns = {'protrend_id',
-               'effectors', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
-               'organism_protrend_id', 'url', 'regulon_id'}
+    columns = SetList(['regulator', 'regulatory_effect', 'organism_protrend_id', 'url',
+                       'regulon_id', 'effectors', 'operon', 'genes', 'tfbss',
+                       'regulatory_interaction_hash', 'protrend_id'])
 
     def transform(self) -> pd.DataFrame:
         # merge effector and regulator

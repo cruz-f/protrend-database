@@ -9,22 +9,22 @@ from protrend.transform.annotation import annotate_publications
 from protrend.transform.dto import PublicationDTO
 from protrend.transform.processors import apply_processors, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.utils import SetList
 
 
 class PublicationTransformer(RegPreciseTransformer):
     default_node = Publication
-    default_node_factors = ('pmid', )
+    default_node_factors = SetList(['pmid'])
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
-                               'tf': 'TranscriptionFactor.json', 'rna': 'RNAFamily.json'}
+                               'tf': 'TranscriptionFactor.json',
+                               'rna': 'RNAFamily.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'pmid', 'doi', 'title', 'author', 'year'}
-    tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
-    tf_columns = {'collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
-    rna_columns = {'riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'}
+    columns = SetList(['pmid', 'doi', 'title', 'author', 'year', 'protrend_id'])
+    tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
+    tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
+    rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
     def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
 
         df = df.drop(columns=['tffamily_id', 'name', 'url', 'description', 'regulog'])
@@ -32,14 +32,12 @@ class PublicationTransformer(RegPreciseTransformer):
         return df
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
 
         df = df.drop(columns=['collection_id', 'name', 'url', 'description', 'regulog'])
         return df
 
     def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
-
         df = self.drop_duplicates(df=rna, subset=['name'], perfect_match=True, preserve_nan=False)
 
         df = df.drop(columns=['riboswitch_id', 'name', 'url', 'description', 'rfam', 'regulog'])
@@ -47,7 +45,6 @@ class PublicationTransformer(RegPreciseTransformer):
 
     @staticmethod
     def _transform_publications(identifiers: List[str]):
-
         dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
         annotate_publications(dtos=dtos, identifiers=identifiers)
 
@@ -59,7 +56,6 @@ class PublicationTransformer(RegPreciseTransformer):
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-
         tf_family = read_from_stack(stack=self.transform_stack, file='tf_family',
                                     default_columns=self.tf_family_columns, reader=read_json_lines)
         tf_family = self._transform_tf_family(tf_family)

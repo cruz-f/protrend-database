@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.model.model import Source
 from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.utils import SetList
 
 
 class SourceTransformer(RegPreciseTransformer):
@@ -15,9 +16,9 @@ class SourceTransformer(RegPreciseTransformer):
     description = 'RegPrecise 3.0: A resource for genome-scale exploration of transcriptional regulation in bacteria'
 
     default_node = Source
-    default_node_factors = ('name',)
+    default_node_factors = SetList(['name'])
     default_order = 100
-    columns = {'protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'}
+    columns = SetList(['name', 'type', 'url', 'doi', 'authors', 'description', 'protrend_id'])
 
     def transform(self):
 

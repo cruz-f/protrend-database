@@ -11,37 +11,31 @@ from protrend.transform.processors import rstrip, lstrip, apply_processors, to_i
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class RegulatorTransformer(RegPreciseTransformer):
     default_node = Regulator
-    default_node_factors = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
-                            'genbank_accession', 'refseq_accession',
-                            'locus_tag')
+    default_node_factors = SetList(['uniprot_accession', 'locus_tag'])
     default_transform_stack = {'regulon': 'Regulon.json',
                                'organism': 'integrated_organism.json'}
     default_order = 90
-    columns = {'protrend_id',
-               'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-               'mechanism',
-               'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
-               'biological_process', 'regulation_effector', 'regulation_regulog',
-               'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
-               'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
-               'regulation_mode', 'transcription_factor', 'tf_family',
-               'locus_tag', 'synonyms', 'function', 'description',
-               'ncbi_gene', 'ncbi_protein',
-               'genbank_accession', 'refseq_accession', 'uniprot_accession',
-               'sequence', 'strand', 'start', 'stop', }
+    columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession',
+                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
+                       'regulon_id', 'genome', 'url', 'regulator_type', 'rfam',
+                       'biological_process', 'regulation_effector', 'regulation_regulog',
+                       'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
+                       'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
+                       'regulation_mode', 'transcription_factor', 'tf_family', 'mechanism',
+                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy', 'name',
+                       'protrend_id'])
 
-    read_columns = {'regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
-                    'biological_process', 'regulation_effector', 'regulation_regulog',
-                    'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
-                    'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
-                    'regulation_mode', 'transcription_factor', 'tf_family'}
+    read_columns = SetList(['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam', 'biological_process',
+                            'regulation_effector', 'regulation_regulog', 'regulog', 'taxonomy', 'rna_family',
+                            'effector', 'pathway', 'operon', 'tfbs', 'gene'])
 
     def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-
         # filter tfs only
         regulon = regulon.dropna(subset=['regulator_locus_tag', 'genome'])
 
@@ -58,7 +52,6 @@ class RegulatorTransformer(RegPreciseTransformer):
         return df
 
     def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-
         # filter tfs only
         regulon = regulon.dropna(subset=['rfam', 'genome'])
 
@@ -74,7 +67,6 @@ class RegulatorTransformer(RegPreciseTransformer):
 
     @staticmethod
     def _annotate_tfs(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
-
         dtos = [GeneDTO(input_value=locus) for locus in loci]
         annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
 
@@ -103,7 +95,6 @@ class RegulatorTransformer(RegPreciseTransformer):
 
     @staticmethod
     def _annotate_rnas(names: List[str]):
-
         dtos = [GeneDTO(input_value=name) for name in names]
 
         # locus_tag: List[str]

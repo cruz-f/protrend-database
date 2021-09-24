@@ -15,6 +15,7 @@ from protrend.transform.regprecise.base import RegPreciseTransformer, RegPrecise
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
@@ -22,14 +23,14 @@ regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 class TFBSTransformer(RegPreciseTransformer):
     default_node = TFBS
-    default_node_factors = ('site_hash',)
+    default_node_factors = SetList(['site_hash'])
     default_transform_stack = {'tfbs': 'TFBS.json', 'gene': 'integrated_gene.json'}
     default_order = 70
-    columns = {'protrend_id',
-               'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene',
-               'tfbs_id_old', 'start', 'stop', 'length', 'gene_strand', 'gene_start', 'gene_old_locus_tag',
-               'site_hash', 'gene_protrend_id'}
-    read_columns = {'position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene'}
+    columns = SetList(['position', 'score', 'sequence', 'tfbs_id_old', 'tfbs_id', 'url',
+                       'regulon', 'operon', 'gene', 'gene_protrend_id', 'gene_strand',
+                       'gene_start', 'gene_old_locus_tag', 'length', 'strand', 'start', 'stop',
+                       'site_hash', 'protrend_id'])
+    read_columns = SetList(['position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene'])
 
     @staticmethod
     def _reduce_sequence(position, sequence):

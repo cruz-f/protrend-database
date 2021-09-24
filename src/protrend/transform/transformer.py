@@ -1,13 +1,14 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Type, Callable, Dict, Set
+from typing import Tuple, Union, List, Type, Callable, Dict
 
 import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.transform.processors import take_last, apply_processors, to_nan
+from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
 
@@ -74,17 +75,17 @@ class Transformer(AbstractTransformer):
     default_source: str = ''
     default_version: str = '0.0.0'
     default_node: Type[Node] = Node
-    default_node_factors: Tuple[str] = ()
+    default_node_factors: SetList[str] = SetList()
     default_order: int = 0
-    columns: Set[str] = set()
-    read_columns: Set[str] = set()
+    columns: SetList[str] = SetList()
+    read_columns: SetList[str] = SetList()
 
     def __init__(self,
                  transform_stack: Dict[str, str] = None,
                  source: str = None,
                  version: str = None,
                  node: Type[Node] = None,
-                 node_factors: Tuple[str] = None,
+                 node_factors: SetList[str] = None,
                  order: int = None):
 
         """
@@ -102,7 +103,7 @@ class Transformer(AbstractTransformer):
         :type source: str
         :type version: str
         :type node: Type[Node]
-        :type node_factors: Tuple[str]
+        :type node_factors: : SetList[str]
         :type order: int
 
         :param transform_stack: Dictionary containing the pair name and file name.
@@ -175,7 +176,7 @@ class Transformer(AbstractTransformer):
         return self._node
 
     @property
-    def node_factors(self) -> Tuple[str]:
+    def node_factors(self) -> SetList[str]:
         if not self._node_factors:
             return self.default_node_factors
 

@@ -11,24 +11,21 @@ from protrend.transform.processors import rstrip, lstrip, apply_processors, take
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class GeneTransformer(RegPreciseTransformer):
     default_node = Gene
-    default_node_factors = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
-                            'genbank_accession', 'refseq_accession',
-                            'locus_tag')
+    default_node_factors = SetList(['uniprot_accession', 'locus_tag'])
     default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
     default_order = 80
-    columns = {'protrend_id',
-               'locus_tag', 'name', 'synonyms', 'function', 'description',
-               'ncbi_gene', 'ncbi_protein', 'genbank_accession',
-               'refseq_accession', 'uniprot_accession',
-               'sequence', 'strand', 'start', 'stop',
-               'organism_protrend_id', 'genome_id', 'ncbi_taxonomy',
-               'regulator_protrend_id', 'regulon_id', 'locus_tag_old',
-               'regulon', 'operon', 'tfbs'}
-    read_columns = {'locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'}
+    columns = SetList(['synonyms', 'description', 'ncbi_gene', 'ncbi_protein',
+                       'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                       'sequence', 'strand', 'start', 'stop', 'url', 'regulon', 'operon',
+                       'tfbs', 'regulator_protrend_id', 'genome_id', 'ncbi_taxonomy',
+                       'regulon_id', 'organism_protrend_id', 'locus_tag_old', 'locus_tag',
+                       'name', 'function', 'protrend_id'])
+    read_columns = SetList(['locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'])
 
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         gene = apply_processors(gene, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])

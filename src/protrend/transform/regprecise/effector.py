@@ -11,21 +11,23 @@ from protrend.transform.processors import rstrip, lstrip, apply_processors, to_i
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class EffectorTransformer(RegPreciseTransformer):
     default_node = Effector
-    default_node_factors = ('name', )
+    default_node_factors = SetList(['name'])
     default_transform_stack = {'effector': 'Effector.json'}
     default_order = 100
-    columns = {'protrend_id', 'effector_id', 'name', 'url', 'regulog', 'mechanism', 'synonyms', 'kegg_compounds'}
-    read_columns = {'effector_id', 'name', 'url', 'regulog'}
+    columns = SetList(['synonyms', 'mechanism', 'kegg_compounds', 'effector_id', 'url',
+                       'regulog', 'name', 'protrend_id'])
+    read_columns = SetList(['effector_id', 'name', 'url', 'regulog'])
 
     def _transform_effector(self, effector: pd.DataFrame):
         effector = effector.dropna(subset=['name'])
         effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=False)
 
-        effector = apply_processors(effector,  effector_id=to_int_str, name=[rstrip, lstrip], regulog=to_int_str)
+        effector = apply_processors(effector, effector_id=to_int_str, name=[rstrip, lstrip], regulog=to_int_str)
 
         effector = self.create_input_value(effector, 'name')
 

@@ -9,20 +9,19 @@ from protrend.transform.annotation import annotate_organisms
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class OrganismTransformer(RegPreciseTransformer):
     default_node = Organism
-    default_node_factors = ('ncbi_taxonomy', 'name')
+    default_node_factors = SetList(['ncbi_taxonomy', 'name'])
     default_transform_stack = {'genome': 'Genome.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'genome_id', 'name', 'taxonomy', 'url', 'regulon',
-               'species', 'strain',
-               'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
-               'genbank_accession', 'genbank_ftp',
-               'ncbi_assembly', 'assembly_accession'}
-    read_columns = {'genome_id', 'name', 'taxonomy', 'url', 'regulon'}
+    columns = SetList(['species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+                       'genbank_accession', 'genbank_ftp', 'ncbi_assembly',
+                       'assembly_accession', 'genome_id', 'taxonomy', 'url', 'regulon', 'name',
+                       'protrend_id'])
+    read_columns = SetList(['genome_id', 'name', 'taxonomy', 'url', 'regulon'])
 
     def _transform_genome(self, genome: pd.DataFrame) -> pd.DataFrame:
         genome = self.drop_duplicates(df=genome, subset=['name'], perfect_match=True, preserve_nan=False)

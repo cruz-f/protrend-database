@@ -13,22 +13,20 @@ from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
-from protrend.utils import build_graph, find_connected_nodes
+from protrend.utils import build_graph, find_connected_nodes, SetList
 from protrend.utils.miscellaneous import is_null
 
 
 class OperonTransformer(RegPreciseTransformer):
     default_node = Operon
-    default_node_factors = ()
+    default_node_factors = SetList(['operon_hash'])
     default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
     default_order = 60
-    columns = {'protrend_id',
-               'operon_id', 'name', 'url', 'regulon', 'tfbs',
-               'tfbss', 'genes',
-               'operon_id_old', 'operon_id_new', 'gene_locus_tag', 'gene_old_locus_tag', 'gene_name',
-               'gene_strand', 'gene_start', 'gene_stop',
-               'strand', 'start', 'stop'}
-    read_columns = {'operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'}
+    columns = SetList(['operon_id_new', 'gene', 'operon_id_old', 'url', 'regulon', 'tfbs',
+                       'tfbss', 'genes', 'gene_locus_tag', 'gene_name', 'gene_old_locus_tag',
+                       'gene_strand', 'gene_start', 'gene_stop', 'operon_id', 'name', 'strand',
+                       'start', 'stop', 'operon_hash', 'protrend_id'])
+    read_columns = SetList(['operon_id', 'name', 'url', 'regulon', 'tfbs', 'gene'])
 
     def _operon_by_gene(self, operon: pd.DataFrame) -> pd.DataFrame:
         # group duplicates

@@ -10,21 +10,22 @@ from protrend.transform.regprecise import PublicationTransformer
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
+from protrend.utils import SetList
 
 
 class RegulatoryFamilyTransformer(RegPreciseTransformer):
     default_node = RegulatoryFamily
-    default_node_factors = ('name', 'rfam')
+    default_node_factors = SetList(['name'])
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
-                               'tf': 'TranscriptionFactor.json', 'rna': 'RNAFamily.json'}
+                               'tf': 'TranscriptionFactor.json',
+                               'rna': 'RNAFamily.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'mechanism'
-               'tffamily_id', 'riboswitch_id', 'collection_id', 'name', 'url_tf_family', 'url_tf', 'url_rna',
-               'description', 'pubmed', 'rfam', 'regulog'}
-    tf_family_columns = {'tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
-    tf_columns = {'collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'}
-    rna_columns = {'riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'}
+    columns = SetList(['tffamily_id', 'name', 'url_tf_family', 'collection_id', 'url_tf',
+                       'mechanism', 'description', 'pubmed', 'regulog', 'riboswitch_id',
+                       'url_rna', 'rfam', 'protrend_id'])
+    tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
+    tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
+    rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
     def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
