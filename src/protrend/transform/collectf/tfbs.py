@@ -5,8 +5,8 @@ from protrend.io.utils import read_from_stack
 from protrend.model.model import TFBS
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.processors import (apply_processors, to_list, flatten_set,
-                                           take_last, genes_to_hash, to_str, to_set)
+from protrend.transform.processors import (apply_processors, to_list, flatten_set_list,
+                                           take_last, genes_to_hash, to_str, to_set_list)
 from protrend.utils.miscellaneous import is_null
 
 
@@ -32,8 +32,8 @@ class TFBSTransformer(CollectfTransformer):
 
         tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='gene_old_locus_tag')
 
-        aggr = {'pubmed': flatten_set, 'regulon': flatten_set, 'operon': flatten_set,
-                'experimental_evidence': flatten_set, 'gene': to_set}
+        aggr = {'pubmed': flatten_set_list, 'regulon': flatten_set_list, 'operon': flatten_set_list,
+                'experimental_evidence': flatten_set_list, 'gene': to_set_list}
         tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
 
         # filter by regulon, sequence and position
@@ -83,8 +83,7 @@ class TFBSTransformer(CollectfTransformer):
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag_old')
         gene = gene.rename(columns={'locus_tag_old': 'gene_old_locus_tag', 'protrend_id': 'gene_protrend_id'})
-        gene = gene.dropna(subset=['gene_old_locus_tag'])
-        gene = gene.dropna(subset=['gene_protrend_id'])
+        gene = gene.dropna(subset=['gene_old_locus_tag', 'gene_protrend_id'])
         gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag', 'gene_protrend_id'],
                                     perfect_match=True, preserve_nan=False)
 

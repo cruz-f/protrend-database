@@ -9,7 +9,7 @@ from protrend.transform import OrganismDTO
 from protrend.transform.annotation import annotate_organisms
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set, to_list
+from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list, to_list
 from protrend.utils.miscellaneous import is_null
 
 
@@ -28,7 +28,7 @@ class OrganismTransformer(CollectfTransformer):
 
     def _transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         aggregation = {'genome_accession': take_last, 'taxonomy': take_last}
-        organism = self.group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set)
+        organism = self.group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
 
         organism = apply_processors(organism, name=[rstrip, lstrip], genome_accession=[rstrip, lstrip],
                                     taxonomy=to_int_str)
@@ -104,8 +104,7 @@ class OrganismToRegulatorConnector(CollectfConnector):
         regulator = read_from_stack(stack=self.connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
-        regulator = regulator.dropna(subset=['protrend_id'])
-        regulator = regulator.dropna(subset=['organism_protrend_id'])
+        regulator = regulator.dropna(subset=['protrend_id', 'organism_protrend_id'])
         regulator = regulator.drop_duplicates(subset=['protrend_id', 'organism_protrend_id'])
 
         from_identifiers = regulator['organism_protrend_id'].tolist()

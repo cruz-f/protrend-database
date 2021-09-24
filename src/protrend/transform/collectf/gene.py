@@ -8,8 +8,8 @@ from protrend.transform import GeneDTO
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.transform.processors import take_first, flatten_set, to_int_str, apply_processors, rstrip, lstrip, \
-    to_list, to_set
+from protrend.transform.processors import take_first, flatten_set_list, to_int_str, apply_processors, rstrip, lstrip, \
+    to_list, to_set_list
 
 
 class GeneTransformer(CollectfTransformer):
@@ -31,7 +31,7 @@ class GeneTransformer(CollectfTransformer):
 
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         gene = apply_processors(gene, locus_tag=[rstrip, lstrip])
-        gene = self.group_by(df=gene, column='locus_tag', aggregation={}, default=flatten_set)
+        gene = self.group_by(df=gene, column='locus_tag', aggregation={}, default=flatten_set_list)
 
         gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
@@ -40,12 +40,12 @@ class GeneTransformer(CollectfTransformer):
         gene = self.drop_duplicates(df=gene, subset=['locus_tag', 'organism_protrend_id'],
                                     perfect_match=True, preserve_nan=True)
 
-        aggregation = {'regulon': to_set,
-                       'regulator_uniprot_accession': to_set,
-                       'regulator_protrend_id': to_set,
+        aggregation = {'regulon': to_set_list,
+                       'regulator_uniprot_accession': to_set_list,
+                       'regulator_protrend_id': to_set_list,
                        'ncbi_taxonomy': take_first,
                        'organism_protrend_id': take_first}
-        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
+        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
 
         gene['locus_tag_old'] = gene['locus_tag']
 

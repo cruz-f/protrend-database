@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Tuple, Union, List, Type, Callable, Dict
+from typing import Tuple, Union, List, Type, Callable, Dict, Sequence
 
 import pandas as pd
 
@@ -75,17 +75,17 @@ class Transformer(AbstractTransformer):
     default_source: str = ''
     default_version: str = '0.0.0'
     default_node: Type[Node] = Node
-    default_node_factors: SetList[str] = SetList()
+    default_node_factors: Sequence[str] = SetList()
     default_order: int = 0
-    columns: SetList[str] = SetList()
-    read_columns: SetList[str] = SetList()
+    columns: Sequence[str] = SetList()
+    read_columns: Sequence[str] = SetList()
 
     def __init__(self,
                  transform_stack: Dict[str, str] = None,
                  source: str = None,
                  version: str = None,
                  node: Type[Node] = None,
-                 node_factors: SetList[str] = None,
+                 node_factors: Sequence[str] = None,
                  order: int = None):
 
         """
@@ -103,7 +103,7 @@ class Transformer(AbstractTransformer):
         :type source: str
         :type version: str
         :type node: Type[Node]
-        :type node_factors: : SetList[str]
+        :type node_factors: : Sequence[str]
         :type order: int
 
         :param transform_stack: Dictionary containing the pair name and file name.
@@ -176,7 +176,7 @@ class Transformer(AbstractTransformer):
         return self._node
 
     @property
-    def node_factors(self) -> SetList[str]:
+    def node_factors(self) -> Sequence[str]:
         if not self._node_factors:
             return self.default_node_factors
 
@@ -285,7 +285,7 @@ class Transformer(AbstractTransformer):
 
         return nodes
 
-    def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
+    def integrate(self, df: pd.DataFrame):
 
         """
         The method responsible for integrating the transformed pandas DataFrame with the current state of the neo4j
@@ -305,8 +305,7 @@ class Transformer(AbstractTransformer):
         :return: it creates a new pandas DataFrame of the integrated data
         """
         # ensure uniqueness
-        df = self.standardize_nulls(df=df)
-        df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
+        df = self.standardize_factors(df=df)
 
         # take a db snapshot for the current node
         snapshot = self.node_view()
@@ -325,8 +324,6 @@ class Transformer(AbstractTransformer):
 
         self._stack_integrated_nodes(df)
         self._stack_nodes(df)
-
-        return df
 
     def write(self):
 
@@ -390,11 +387,11 @@ class Transformer(AbstractTransformer):
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
-    def standardize_nulls(self, df: pd.DataFrame) -> pd.DataFrame:
-
+    def standardize_factors(self, df: pd.DataFrame) -> pd.DataFrame:
         processors = {col: to_nan for col in self.node_factors}
-
         df = apply_processors(df, **processors)
+        df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
+        df = df.dropna(subset=self.node_factors)
         return df
 
     @staticmethod

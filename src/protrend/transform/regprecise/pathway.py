@@ -108,8 +108,7 @@ class PathwayToRegulatorConnector(RegPreciseConnector):
 
         merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
                           suffixes=('_pathway', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_pathway'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['protrend_id_pathway', 'protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
 
         from_identifiers = merged['protrend_id_pathway'].tolist()
@@ -140,8 +139,7 @@ class PathwayToGeneConnector(RegPreciseConnector):
 
         merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
                           suffixes=('_pathway', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_pathway'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['protrend_id_pathway', 'protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
         merged = apply_processors(merged, regulon_id=to_int_str)
 

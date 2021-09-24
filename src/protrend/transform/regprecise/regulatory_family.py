@@ -4,7 +4,7 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryFamily, Source, Publication, Regulator
 from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
-                                           rstrip, lstrip, remove_pubmed, apply_processors, to_set, to_list_nan,
+                                           rstrip, lstrip, remove_pubmed, apply_processors, to_set_list, to_list_nan,
                                            to_int_str, to_nan, to_list)
 from protrend.transform.regprecise import PublicationTransformer
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
@@ -51,8 +51,8 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer):
         df = apply_processors(df, name=remove_white_space, rfam=remove_white_space,
                               description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
                                            lstrip],
-                              pubmed=to_set,
-                              regulog=to_set)
+                              pubmed=to_set_list,
+                              regulog=to_set_list)
 
         df = df.rename(columns={'url': 'url_rna'})
 
@@ -75,12 +75,12 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer):
         # concat pubmed
         df = apply_processors(df, pubmed_tf_family=to_list_nan, pubmed_tf=to_list_nan)
         df = self.concat_columns(df=df, column='pubmed', left='pubmed_tf_family', right='pubmed_tf')
-        df = apply_processors(df, pubmed=to_set)
+        df = apply_processors(df, pubmed=to_set_list)
 
         # concat regulog
         df = apply_processors(df, regulog_tf_family=to_list_nan, regulog_tf=to_list_nan)
         df = self.concat_columns(df=df, column='regulog', left='regulog_tf_family', right='regulog_tf')
-        df = apply_processors(df, regulog=to_set)
+        df = apply_processors(df, regulog=to_set_list)
 
         return df
 
@@ -176,8 +176,7 @@ class RegulatoryFamilyToPublicationConnector(RegPreciseConnector):
 
         merged = pd.merge(regulatory_family, publication, left_on='pubmed', right_on='pmid',
                           suffixes=('_regulatory_family', '_publication'))
-        merged = merged.dropna(subset=['protrend_id_regulatory_family'])
-        merged = merged.dropna(subset=['protrend_id_publication'])
+        merged = merged.dropna(subset=['protrend_id_regulatory_family', 'protrend_id_publication'])
         merged = merged.drop_duplicates(subset=['protrend_id_regulatory_family', 'protrend_id_publication'])
 
         from_identifiers = merged['protrend_id_regulatory_family'].tolist()
@@ -217,8 +216,7 @@ class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector):
             merged = pd.merge(family_df, regulator_df, left_on=family_key, right_on=regulator_key,
                               suffixes=('_regulatory_family', '_regulator'))
 
-            merged = merged.dropna(subset=['protrend_id_regulatory_family'])
-            merged = merged.dropna(subset=['protrend_id_regulator'])
+            merged = merged.dropna(subset=['protrend_id_regulatory_family', 'protrend_id_regulator'])
             merged = merged.drop_duplicates(subset=['protrend_id_regulatory_family', 'protrend_id_regulator'])
 
             from_identifiers.extend(merged['protrend_id_regulatory_family'].tolist())

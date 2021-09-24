@@ -6,7 +6,7 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import Operon, Source, Organism, Regulator, Gene, TFBS
-from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set, to_list,
+from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set_list, to_list,
                                            to_nan, to_int_str)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
@@ -33,7 +33,7 @@ class OperonTransformer(RegPreciseTransformer):
         operon = operon.explode('gene')
 
         aggregation = {'operon_id': set}
-        operon = self.group_by(df=operon, column='gene', aggregation=aggregation, default=flatten_set)
+        operon = self.group_by(df=operon, column='gene', aggregation=aggregation, default=flatten_set_list)
 
         return operon
 
@@ -59,7 +59,7 @@ class OperonTransformer(RegPreciseTransformer):
 
         # group by the new operons
         aggregation = {'gene': set}
-        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
+        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
         operon = apply_processors(operon, gene=to_list)
         operon = operon.explode('gene')
@@ -70,7 +70,7 @@ class OperonTransformer(RegPreciseTransformer):
         aggregation = {'gene': set,
                        'gene_protrend_id': set, 'gene_locus_tag': set, 'gene_name': set, 'gene_old_locus_tag': set,
                        'gene_strand': set, 'gene_start': set, 'gene_stop': set}
-        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
+        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
@@ -87,7 +87,7 @@ class OperonTransformer(RegPreciseTransformer):
         operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='operon_id', right_on='tfbs_operon')
 
         aggregation = {'url': set, 'regulon': set, 'tfbs_protrend_id': set, 'tfbs_operon': set}
-        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set)
+        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set_list)
 
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
         operon = operon.drop(columns=['tfbs_operon'])
@@ -165,8 +165,7 @@ class OperonTransformer(RegPreciseTransformer):
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand', 'start', 'stop')
 
-        gene = gene.dropna(subset=['protrend_id'])
-        gene = gene.dropna(subset=['locus_tag_old'])
+        gene = gene.dropna(subset=['protrend_id', 'locus_tag_old'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
                                     'locus_tag': 'gene_locus_tag',
                                     'name': 'gene_name',
@@ -191,57 +190,13 @@ class OperonTransformer(RegPreciseTransformer):
         df = self._transform_operon_by_gene(operon=df, gene=gene)
         df = self._operon_coordinates(operon=df)
 
+        # filter by operon hash: genes
+        df['operon_hash'] = df['genes']
+        df = apply_processors(df, operon_hash=[genes_to_hash, to_nan])
+        df = df.dropna(subset=['operon_hash'])
+        df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
+
         self._stack_transformed_nodes(df)
-
-        return df
-
-    def _update_nodes(self, df: pd.DataFrame, mask: pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
-
-        # nodes to be updated
-        nodes = df[mask]
-
-        if nodes.empty:
-            nodes['protrend_id'] = None
-            nodes['load'] = None
-            nodes['what'] = None
-            return nodes
-
-        # find/set protrend identifiers for update nodes
-        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=('genes_id',))
-        nodes.loc[:, 'protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
-        nodes.loc[:, 'load'] = 'update'
-        nodes.loc[:, 'what'] = 'nodes'
-
-        return nodes
-
-    def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
-
-        df['genes_id'] = df['genes']
-        df = apply_processors(df, genes_id=[genes_to_hash, to_nan])
-
-        # ensure uniqueness
-        df = self.drop_duplicates(df=df, subset=['genes_id'], perfect_match=True, preserve_nan=True)
-
-        # take a db snapshot for the current node
-        snapshot = self.node_view()
-        snapshot['genes_id'] = snapshot['genes']
-        snapshot = apply_processors(snapshot, genes_id=[genes_to_hash, to_nan])
-
-        # find matching nodes according to several node factors/properties
-        mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id',))
-
-        # nodes to be updated
-        update_nodes = self._update_nodes(df=df, mask=mask, snapshot=snapshot)
-
-        # nodes to be created
-        create_nodes = self._create_nodes(df=df, mask=mask)
-
-        # concat both dataframes
-        df = pd.concat([create_nodes, update_nodes], axis=0)
-        df = df.drop(columns=['genes_id'])
-
-        self._stack_integrated_nodes(df)
-        self._stack_nodes(df)
 
         return df
 
@@ -291,8 +246,7 @@ class OperonToOrganismConnector(RegPreciseConnector):
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_operon'])
-        merged = merged.dropna(subset=['organism_protrend_id'])
+        merged = merged.dropna(subset=['protrend_id_operon', 'organism_protrend_id'])
         merged = merged.drop_duplicates(subset=['protrend_id_operon', 'organism_protrend_id'])
 
         from_identifiers = merged['protrend_id_operon'].tolist()
@@ -322,8 +276,7 @@ class OperonToRegulatorConnector(RegPreciseConnector):
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
 
-        merged = merged.dropna(subset=['protrend_id_operon'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['protrend_id_operon', 'protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_operon', 'protrend_id_regulator'])
 
         from_identifiers = merged['protrend_id_operon'].tolist()
@@ -347,8 +300,7 @@ class OperonToGeneConnector(RegPreciseConnector):
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
 
-        operon = operon.dropna(subset=['protrend_id'])
-        operon = operon.dropna(subset=['genes'])
+        operon = operon.dropna(subset=['protrend_id', 'genes'])
         operon = operon.drop_duplicates(subset=['protrend_id', 'genes'])
 
         from_identifiers = operon['protrend_id'].tolist()
@@ -372,8 +324,7 @@ class OperonToTFBSConnector(RegPreciseConnector):
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
 
-        operon = operon.dropna(subset=['protrend_id'])
-        operon = operon.dropna(subset=['tfbss'])
+        operon = operon.dropna(subset=['protrend_id', 'tfbss'])
         operon = operon.drop_duplicates(subset=['protrend_id', 'tfbss'])
 
         from_identifiers = operon['protrend_id'].tolist()
@@ -398,8 +349,7 @@ class GeneToTFBSConnector(RegPreciseConnector):
         operon = operon.explode('tfbss')
         operon = operon.explode('genes')
 
-        operon = operon.dropna(subset=['genes'])
-        operon = operon.dropna(subset=['tfbss'])
+        operon = operon.dropna(subset=['genes', 'tfbss'])
         operon = operon.drop_duplicates(subset=['genes', 'tfbss'])
 
         from_identifiers = operon['genes'].tolist()
@@ -431,8 +381,7 @@ class GeneToRegulatorConnector(RegPreciseConnector):
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_operon'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['protrend_id_operon', 'protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_operon', 'protrend_id_regulator'])
 
         merged = merged.explode('genes')
@@ -468,8 +417,7 @@ class TFBSToRegulatorConnector(RegPreciseConnector):
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_operon'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['protrend_id_operon', 'protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_operon', 'protrend_id_regulator'])
 
         merged = merged.explode('tfbss')

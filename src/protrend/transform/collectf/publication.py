@@ -86,8 +86,7 @@ class PublicationToRegulatorConnector(CollectfConnector):
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         df = pd.merge(publication, regulator, left_on='regulon', right_on='uniprot_accession')
-        df = df.dropna(subset=['publication_protrend_id'])
-        df = df.dropna(subset=['regulator_protrend_id'])
+        df = df.dropna(subset=['publication_protrend_id', 'regulator_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'regulator_protrend_id'])
 
         from_identifiers = df['publication_protrend_id'].tolist()
@@ -117,8 +116,7 @@ class PublicationToOperonConnector(CollectfConnector):
         operon = operon.rename(columns={'protrend_id': 'operon_protrend_id'})
 
         df = pd.merge(publication, operon, left_on='operon', right_on='operon_id_old')
-        df = df.dropna(subset=['publication_protrend_id'])
-        df = df.dropna(subset=['operon_protrend_id'])
+        df = df.dropna(subset=['publication_protrend_id', 'operon_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'operon_protrend_id'])
 
         from_identifiers = df['publication_protrend_id'].tolist()
@@ -148,8 +146,7 @@ class PublicationToGeneConnector(CollectfConnector):
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
         df = pd.merge(publication, gene, left_on='gene', right_on='locus_tag_old')
-        df = df.dropna(subset=['publication_protrend_id'])
-        df = df.dropna(subset=['gene_protrend_id'])
+        df = df.dropna(subset=['publication_protrend_id', 'gene_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'gene_protrend_id'])
 
         from_identifiers = df['publication_protrend_id'].tolist()
@@ -175,8 +172,7 @@ class PublicationToTFBSConnector(CollectfConnector):
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
         df = pd.merge(publication, tfbs, on='tfbs_id')
-        df = df.dropna(subset=['publication_protrend_id'])
-        df = df.dropna(subset=['tfbs_protrend_id'])
+        df = df.dropna(subset=['publication_protrend_id', 'tfbs_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'tfbs_protrend_id'])
 
         from_identifiers = df['publication_protrend_id'].tolist()
@@ -207,8 +203,7 @@ class PublicationToRegulatoryInteractionConnector(CollectfConnector):
         rin = rin.rename(columns={'protrend_id': 'rin_protrend_id'})
 
         df = pd.merge(publication, rin, on='regulon')
-        df = df.dropna(subset=['publication_protrend_id'])
-        df = df.dropna(subset=['rin_protrend_id'])
+        df = df.dropna(subset=['publication_protrend_id', 'rin_protrend_id'])
         df = df.drop_duplicates(subset=['publication_protrend_id', 'rin_protrend_id'])
 
         from_identifiers = df['publication_protrend_id'].tolist()

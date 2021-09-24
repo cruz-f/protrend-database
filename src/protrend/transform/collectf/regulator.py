@@ -9,7 +9,7 @@ from protrend.model.model import Regulator
 from protrend.transform import GeneDTO
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.collectf.base import CollectfTransformer
-from protrend.transform.processors import take_first, flatten_set, apply_processors, to_list_nan
+from protrend.transform.processors import take_first, flatten_set_list, apply_processors, to_list_nan
 
 
 def _find_in_mapping(acc: str, mapping: pd.DataFrame) -> List[Union[str, None]]:
@@ -44,8 +44,8 @@ class RegulatorTransformer(CollectfTransformer):
     def _transform_regulon(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         regulon = apply_processors(regulon, tfbs=to_list_nan, experimental_evidence=to_list_nan,
                                    operon=to_list_nan, gene=to_list_nan)
-        aggregation = {'tfbs': flatten_set, 'experimental_evidence': flatten_set,
-                       'operon': flatten_set, 'gene': flatten_set}
+        aggregation = {'tfbs': flatten_set_list, 'experimental_evidence': flatten_set_list,
+                       'operon': flatten_set_list, 'gene': flatten_set_list}
         regulon = self.group_by(df=regulon, column='uniprot_accession', aggregation=aggregation, default=take_first)
 
         regulon['mechanism'] = 'transcription factor'

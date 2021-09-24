@@ -104,8 +104,7 @@ class EffectorToOrganismConnector(RegPreciseConnector):
 
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
                           suffixes=('_effector', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_effector'])
-        merged = merged.dropna(subset=['organism_protrend_id'])
+        merged = merged.dropna(subset=['protrend_id_effector', 'organism_protrend_id'])
         merged = merged.drop_duplicates(subset=['protrend_id_effector', 'organism_protrend_id'])
 
         from_identifiers = merged['protrend_id_effector'].tolist()
@@ -134,8 +133,7 @@ class EffectorToRegulatorConnector(RegPreciseConnector):
 
         merged = pd.merge(effector, regulator, left_on='effector_id', right_on='effector',
                           suffixes=('_effector', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_effector'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
+        merged = merged.dropna(subset=['protrend_id_effector', 'protrend_id_regulator'])
         merged = merged.drop_duplicates(subset=['protrend_id_effector', 'protrend_id_regulator'])
 
         from_identifiers = merged['protrend_id_effector'].tolist()

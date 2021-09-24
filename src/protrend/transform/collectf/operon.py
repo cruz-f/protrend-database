@@ -9,8 +9,8 @@ from protrend.model.model import Operon, Gene, TFBS
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set, to_list,
-                                           to_nan, to_set)
+from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set_list, to_list,
+                                           to_nan, to_set_list)
 from protrend.utils import build_graph, find_connected_nodes
 from protrend.utils.miscellaneous import is_null
 
@@ -31,8 +31,8 @@ class OperonTransformer(CollectfTransformer):
         # group duplicates
         operon = operon.explode('gene')
 
-        aggregation = {'operon_id': to_set}
-        operon = self.group_by(df=operon, column='gene', aggregation=aggregation, default=flatten_set)
+        aggregation = {'operon_id': to_set_list}
+        operon = self.group_by(df=operon, column='gene', aggregation=aggregation, default=flatten_set_list)
 
         return operon
 
@@ -58,8 +58,8 @@ class OperonTransformer(CollectfTransformer):
         operon = pd.merge(normalized_operon, operon_by_gene, on='gene', suffixes=("_new", "_old"))
 
         # group by the new operons
-        aggregation = {'gene': to_set}
-        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
+        aggregation = {'gene': to_set_list}
+        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
         operon = apply_processors(operon, gene=to_list)
         operon = operon.explode(column='gene')
@@ -67,12 +67,12 @@ class OperonTransformer(CollectfTransformer):
         operon = pd.merge(operon, gene, left_on='gene', right_on='gene_old_locus_tag')
 
         # group by the new genes
-        aggregation = {'gene': to_set,
-                       'gene_protrend_id': to_set, 'gene_locus_tag': to_set, 'gene_name': to_set,
-                       'gene_old_locus_tag': to_set,
-                       'gene_strand': to_set, 'gene_start': to_set, 'gene_stop': to_set,
-                       'organism_protrend_id': to_set}
-        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set)
+        aggregation = {'gene': to_set_list,
+                       'gene_protrend_id': to_set_list, 'gene_locus_tag': to_set_list, 'gene_name': to_set_list,
+                       'gene_old_locus_tag': to_set_list,
+                       'gene_strand': to_set_list, 'gene_start': to_set_list, 'gene_stop': to_set_list,
+                       'organism_protrend_id': to_set_list}
+        operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
         mask = operon['organism_protrend_id'].map(len) == 1
         operon = operon[mask]
@@ -91,8 +91,8 @@ class OperonTransformer(CollectfTransformer):
         tfbs_by_operon = tfbs.explode('tfbs_operon')
         operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='operon_id', right_on='tfbs_operon')
 
-        aggregation = {'tfbs_protrend_id': to_set, 'tfbs_operon': to_set}
-        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set)
+        aggregation = {'tfbs_protrend_id': to_set_list, 'tfbs_operon': to_set_list}
+        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set_list)
 
         operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
         operon = operon.drop(columns=['tfbs_operon'])
@@ -164,16 +164,15 @@ class OperonTransformer(CollectfTransformer):
         operon = operon.explode('regulon')
         operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
 
-        aggregation = {'regulon': to_set}
-        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set)
+        aggregation = {'regulon': to_set_list}
+        operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set_list)
 
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand', 'start', 'stop',
                                    'organism_protrend_id')
 
-        gene = gene.dropna(subset=['protrend_id'])
-        gene = gene.dropna(subset=['locus_tag_old'])
+        gene = gene.dropna(subset=['protrend_id', 'locus_tag_old'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
                                     'locus_tag': 'gene_locus_tag',
                                     'name': 'gene_name',
@@ -265,8 +264,7 @@ class OperonToGeneConnector(CollectfConnector):
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
 
-        operon = operon.dropna(subset=['protrend_id'])
-        operon = operon.dropna(subset=['genes'])
+        operon = operon.dropna(subset=['protrend_id', 'genes'])
         operon = operon.drop_duplicates(subset=['protrend_id', 'genes'])
 
         from_identifiers = operon['protrend_id'].tolist()
@@ -290,8 +288,7 @@ class OperonToTFBSConnector(CollectfConnector):
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
 
-        operon = operon.dropna(subset=['protrend_id'])
-        operon = operon.dropna(subset=['tfbss'])
+        operon = operon.dropna(subset=['protrend_id', 'tfbss'])
         operon = operon.drop_duplicates(subset=['protrend_id', 'tfbss'])
 
         from_identifiers = operon['protrend_id'].tolist()
@@ -316,8 +313,7 @@ class GeneToTFBSConnector(CollectfConnector):
         operon = operon.explode('tfbss')
         operon = operon.explode('genes')
 
-        operon = operon.dropna(subset=['genes'])
-        operon = operon.dropna(subset=['tfbss'])
+        operon = operon.dropna(subset=['genes', 'tfbss'])
         operon = operon.drop_duplicates(subset=['genes', 'tfbss'])
 
         from_identifiers = operon['genes'].tolist()

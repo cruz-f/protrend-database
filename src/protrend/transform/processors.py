@@ -1,10 +1,11 @@
 import re
 from collections import defaultdict
-from typing import Callable, Any, List, Union, Sequence, Set
+from typing import Callable, Any, List, Union, Sequence
 
 import pandas as pd
 from w3lib.html import remove_tags
 
+from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
 more_pattern = re.compile(r'\s\smore\s\s\s')
@@ -14,6 +15,7 @@ multiple_white_space_pattern = re.compile(r' +')
 pubmed_pattern = re.compile(r'\[[0-9]*]|\[[0-9]*,|\s[0-9]*,|\s[0-9]*]')
 pubmed_pattern2 = re.compile(r'\[pmid::[0-9]*]|\[pmid: [0-9]*]|\[pmid:: [0-9]*]|\[pmid:[0-9]*]|\[ pmid: : [0-9]* ]|\[pmid: : [0-9]*]|\[pmid::[0-9]* ]|\[ pmid::[0-9]*]|\[pmid::[0-9]* .]')
 pubmed_pattern3 = re.compile(r'\[PMID::[0-9]*]|\[PMID: [0-9]*]|\[PMID:: [0-9]*]|\[PMID:[0-9]*]|\[ PMID: : [0-9]* ]|\[PMID: : [0-9]*]|\[PMID::[0-9]* ]|\[ PMID::[0-9]*]|\[PMID::[0-9]* .]')
+
 
 def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callable]]) -> pd.DataFrame:
     """
@@ -63,11 +65,17 @@ def to_str(item: Any) -> str:
         return item
 
 
-def to_nan(item: Any) -> Union[None, Any]:
-    if is_null(item):
-        return None
+def to_int(item: Any) -> int:
+    if isinstance(item, int):
+        return item
 
-    return item
+    if is_null(item):
+        return item
+
+    try:
+        return int(item)
+    except (ValueError, TypeError):
+        return item
 
 
 def to_int_str(item: Any) -> str:
@@ -85,31 +93,6 @@ def to_int_str(item: Any) -> str:
         return item
 
 
-def to_int(item: Any) -> int:
-    if isinstance(item, int):
-        return item
-
-    if is_null(item):
-        return item
-
-    try:
-        return int(item)
-    except (ValueError, TypeError):
-        return item
-
-
-def to_set(item: Any) -> set:
-    if isinstance(item, str):
-        return {item}
-
-    try:
-        iterator = iter(item)
-    except TypeError:
-        iterator = iter([item])
-
-    return set(iterator)
-
-
 def to_list(item: Any) -> list:
     if isinstance(item, str):
         return [item]
@@ -120,6 +103,25 @@ def to_list(item: Any) -> list:
         iterator = iter([item])
 
     return list(iterator)
+
+
+def to_set_list(item: Any) -> SetList:
+    if isinstance(item, str):
+        return SetList([item])
+
+    try:
+        iterator = iter(item)
+    except TypeError:
+        iterator = iter([item])
+
+    return SetList(iterator)
+
+
+def to_nan(item: Any) -> Union[None, Any]:
+    if is_null(item):
+        return None
+
+    return item
 
 
 def to_list_nan(item: Any) -> list:
@@ -137,12 +139,13 @@ def to_list_nan(item: Any) -> list:
     return list(iterator)
 
 
-def flatten_set(items):
-    return {i for arg in items for i in arg}
-
-
 def flatten_list(items):
     return [i for arg in items for i in arg]
+
+
+def flatten_set_list(items):
+    flatten_lst = flatten_list(items=items)
+    return SetList(flatten_lst)
 
 
 def take_last(items: Sequence[Any]) -> Any:
@@ -283,7 +286,6 @@ def remove_html_tags(item: str) -> str:
 
 
 def parse_collectf_pubmed(item: List[str]) -> List[str]:
-
     escapes = ''.join([chr(char) for char in range(1, 32)])
     translator = str.maketrans('', '', escapes)
 
@@ -312,7 +314,6 @@ def parse_collectf_pubmed(item: List[str]) -> List[str]:
 
 
 def parse_collectf_description(item: List[str]) -> str:
-
     escapes = ''.join([chr(char) for char in range(1, 32)])
     translator = str.maketrans('', '', escapes)
 
@@ -336,7 +337,7 @@ def parse_collectf_description(item: List[str]) -> str:
     return ''.join(to_concat)
 
 
-def regulatory_effect(items: Set[str]) -> Union[None, str]:
+def regulatory_effect(items: Sequence[str]) -> Union[None, str]:
     new_items = {item.replace(' ', '') for item in items if not is_null(item)}
 
     if len(new_items) == 0:
@@ -355,7 +356,6 @@ def regulatory_effect(items: Set[str]) -> Union[None, str]:
 
 
 def regulatory_effect_collectf(item: str) -> Union[None, str]:
-
     if is_null(item):
         return
 

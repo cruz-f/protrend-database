@@ -204,6 +204,7 @@ class Operon(Node):
     strand = StringProperty()
     start = IntegerProperty()
     stop = IntegerProperty()
+    operon_hash = StringProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -338,6 +339,7 @@ class RegulatoryInteraction(Node):
     tfbss = ArrayProperty(StringProperty())
     effectors = ArrayProperty(StringProperty())
     regulatory_effect = StringProperty()
+    regulatory_interaction_hash = StringProperty()
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)

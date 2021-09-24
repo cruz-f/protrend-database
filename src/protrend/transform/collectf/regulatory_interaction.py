@@ -7,7 +7,8 @@ from protrend.transform.collectf.base import CollectfTransformer, CollectfConnec
 from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_collectf, to_set, flatten_set,
+from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_collectf, to_set_list,
+                                           flatten_set_list,
                                            take_first, to_list_nan)
 
 
@@ -30,8 +31,7 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
         tfbs = apply_processors(tfbs, regulon=to_list_nan, operon=to_list_nan)
         tfbs = tfbs.explode('regulon')
         tfbs = tfbs.explode('operon')
-        tfbs = tfbs.dropna(subset=['regulon'])
-        tfbs = tfbs.dropna(subset=['operon'])
+        tfbs = tfbs.dropna(subset=['regulon', 'operon'])
         tfbs = tfbs.drop_duplicates(subset=['regulon', 'operon'])
 
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
@@ -54,11 +54,10 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
 
         df = df.rename(columns={'operon': 'operon_id', 'operon_protrend_id': 'operon', 'mode': 'regulatory_effect'})
         df = self.drop_duplicates(df=df, subset=['regulator', 'operon'], perfect_match=True, preserve_nan=True)
-        df = df.dropna(subset=['regulator'])
-        df = df.dropna(subset=['operon'])
+        df = df.dropna(subset=['regulator', 'operon'])
 
-        aggregation = {'genes': flatten_set, 'tfbss': flatten_set,
-                       'organism_protrend_id': to_set, 'regulator': to_set}
+        aggregation = {'genes': flatten_set_list, 'tfbss': flatten_set_list,
+                       'organism_protrend_id': to_set_list, 'regulator': to_set_list}
         df = self.group_by(df=df, column='operon', aggregation=aggregation, default=take_first)
         mask = df['organism_protrend_id'].map(len) == 1
         df = df[mask]

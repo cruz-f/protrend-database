@@ -7,7 +7,7 @@ from protrend.io.utils import read_from_stack
 from protrend.model.model import Gene, Source, Organism
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set, to_list, to_int_str
+from protrend.transform.processors import rstrip, lstrip, apply_processors, take_last, flatten_set_list, to_list, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
@@ -31,7 +31,7 @@ class GeneTransformer(RegPreciseTransformer):
         gene = apply_processors(gene, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
 
         aggregation = {'name': take_last, 'function': take_last, 'url': set}
-        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
+        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
 
         gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
@@ -42,7 +42,7 @@ class GeneTransformer(RegPreciseTransformer):
         aggregation = {'name': take_last, 'function': take_last,
                        'organism_protrend_id': take_last, 'genome_id': take_last, 'ncbi_taxonomy': take_last,
                        'regulator_protrend_id': take_last, 'regulon_id': take_last, 'regulon': set}
-        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set)
+        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
 
         gene['locus_tag_old'] = gene['locus_tag']
 

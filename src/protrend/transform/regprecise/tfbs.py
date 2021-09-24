@@ -9,7 +9,7 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import TFBS, Source, Organism
-from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set,
+from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
                                            take_last, to_int_str, genes_to_hash, to_str)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
@@ -126,7 +126,7 @@ class TFBSTransformer(RegPreciseTransformer):
         tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='gene_old_locus_tag')
 
         aggr = {'gene': set, 'gene_protrend_id': set, 'gene_strand': set, 'gene_start': set, 'gene_old_locus_tag': set,
-                'regulon': flatten_set, 'operon': flatten_set}
+                'regulon': flatten_set_list, 'operon': flatten_set_list}
         tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
 
         # filter by regulon, sequence and position
@@ -216,8 +216,7 @@ class TFBSTransformer(RegPreciseTransformer):
         gene = self.select_columns(gene, 'protrend_id', 'strand', 'start', 'locus_tag_old')
         gene = gene.rename(columns={'strand': 'gene_strand', 'start': 'gene_start',
                                     'locus_tag_old': 'gene_old_locus_tag', 'protrend_id': 'gene_protrend_id'})
-        gene = gene.dropna(subset=['gene_old_locus_tag'])
-        gene = gene.dropna(subset=['gene_protrend_id'])
+        gene = gene.dropna(subset=['gene_old_locus_tag', 'gene_protrend_id'])
         gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag', 'gene_protrend_id'],
                                     perfect_match=False, preserve_nan=False)
 
@@ -282,9 +281,7 @@ class TFBSToOrganismConnector(RegPreciseConnector):
         regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(tfbs, regulator, left_on='regulon', right_on='regulon_id', suffixes=('_tfbs', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_tfbs'])
-        merged = merged.dropna(subset=['protrend_id_regulator'])
-        merged = merged.dropna(subset=['organism_protrend_id'])
+        merged = merged.dropna(subset=['protrend_id_tfbs', 'protrend_id_regulator', 'organism_protrend_id'])
         merged = merged.drop_duplicates(subset=['protrend_id_tfbs', 'protrend_id_regulator'])
 
         from_identifiers = merged['protrend_id_tfbs'].tolist()
