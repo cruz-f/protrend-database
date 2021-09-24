@@ -232,7 +232,7 @@ class TFBSTransformer(RegPreciseTransformer):
                                length=[to_str, to_list],
                                strand=[to_str, to_list],
                                start=[to_str, to_list],
-                               gene_protrend_id=[to_list, operon_hash])
+                               gene_protrend_id=[to_list, operon_hash, to_list])
 
         df['site_hash'] = df2['sequence'] + df2['length'] + df2['strand'] + df2['start'] + df2['gene_protrend_id']
         df = apply_processors(df, site_hash=site_hash)
