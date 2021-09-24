@@ -17,7 +17,6 @@ from protrend.utils import SetList
 
 class PathwayTransformer(RegPreciseTransformer):
     default_node = Pathway
-    default_node_factors = SetList(['name'])
     default_transform_stack = {'pathway': 'Pathway.json'}
     default_order = 100
     columns = SetList(['synonyms', 'kegg_pathways', 'pathway_id', 'url', 'regulog', 'name',

@@ -18,7 +18,6 @@ from protrend.utils.miscellaneous import is_null
 
 class OperonTransformer(RegPreciseTransformer):
     default_node = Operon
-    default_node_factors = SetList(['operon_hash'])
     default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
     default_order = 60
     columns = SetList(['operon_id_new', 'gene', 'operon_id_old', 'url', 'regulon', 'tfbs',

@@ -23,7 +23,6 @@ regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 class TFBSTransformer(RegPreciseTransformer):
     default_node = TFBS
-    default_node_factors = SetList(['site_hash'])
     default_transform_stack = {'tfbs': 'TFBS.json', 'gene': 'integrated_gene.json'}
     default_order = 70
     columns = SetList(['position', 'score', 'sequence', 'tfbs_id_old', 'tfbs_id', 'url',

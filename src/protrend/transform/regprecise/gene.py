@@ -17,7 +17,6 @@ from protrend.utils import SetList
 
 class GeneTransformer(RegPreciseTransformer):
     default_node = Gene
-    default_node_factors = SetList(['uniprot_accession', 'locus_tag'])
     default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
     default_order = 80
     columns = SetList(['synonyms', 'description', 'ncbi_gene', 'ncbi_protein',

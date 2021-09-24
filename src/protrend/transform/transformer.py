@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.transform.processors import take_last, apply_processors, to_nan
+from protrend.transform.processors import take_last, apply_processors
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
@@ -75,7 +75,6 @@ class Transformer(AbstractTransformer):
     default_source: str = ''
     default_version: str = '0.0.0'
     default_node: Type[Node] = Node
-    default_node_factors: Sequence[str] = SetList()
     default_order: int = 0
     columns: Sequence[str] = SetList()
     read_columns: Sequence[str] = SetList()
@@ -85,7 +84,6 @@ class Transformer(AbstractTransformer):
                  source: str = None,
                  version: str = None,
                  node: Type[Node] = None,
-                 node_factors: Sequence[str] = None,
                  order: int = None):
 
         """
@@ -103,7 +101,6 @@ class Transformer(AbstractTransformer):
         :type source: str
         :type version: str
         :type node: Type[Node]
-        :type node_factors: : Sequence[str]
         :type order: int
 
         :param transform_stack: Dictionary containing the pair name and file name.
@@ -113,10 +110,6 @@ class Transformer(AbstractTransformer):
         :param version: The version of the data source in the staging area (e.g. 0.0.0, 0.0.1, etc)
         :param node: The node type associated with this transformer.
         Note that, it should be created only one transformer for each node
-        :param node_factors: The node attributes that must be used during the integration.
-        The node factors will be used iteratively one-by-one to find nodes already available in the database.
-        For instance, if the Regulator uniprot_accession attribute is used as node factor,
-        regulators in transformation and available in the database will be merged by their uniprot_accession.
         :param order: The order value is used by the director to rearrange transformers and their execution.
         Transformers having higher order are executed first.
         """
@@ -126,7 +119,6 @@ class Transformer(AbstractTransformer):
         self._source = source
         self._version = version
         self._node = node
-        self._node_factors = node_factors
         self._order = order
 
         self.load_transform_stack(transform_stack)
@@ -176,11 +168,12 @@ class Transformer(AbstractTransformer):
         return self._node
 
     @property
-    def node_factors(self) -> Sequence[str]:
-        if not self._node_factors:
-            return self.default_node_factors
+    def node_factors(self) -> Dict[str, Callable]:
+        return self.node.node_factors
 
-        return self._node_factors
+    @property
+    def node_factors_keys(self) -> List[str]:
+        return list(self.node.node_factors.keys())
 
     @property
     def order(self) -> int:
@@ -202,7 +195,7 @@ class Transformer(AbstractTransformer):
     # --------------------------------------------------------
     def __str__(self):
         return f'{self.__class__.__name__}: {self.source} - {self.version} - ' \
-               f'{self.node.node_name()} - {self.node_factors}'
+               f'{self.node.node_name()} - {self.node_factors_keys}'
 
     def __hash__(self):
         return hash(str(self))
@@ -210,7 +203,7 @@ class Transformer(AbstractTransformer):
     def __eq__(self, other: 'Transformer'):
 
         other_values = {other.__class__.__name__, other.source, other.version, other.node.node_name(),
-                        other.node_factors}
+                        other.node_factors_keys}
 
         if self.__class__.__name__ not in other_values:
             return False
@@ -259,7 +252,7 @@ class Transformer(AbstractTransformer):
             return nodes
 
         # find/set protrend identifiers for update nodes
-        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=self.node_factors)
+        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=self.node_factors_keys)
         nodes.loc[:, 'protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
         nodes.loc[:, 'load'] = 'update'
         nodes.loc[:, 'what'] = 'nodes'
@@ -305,13 +298,20 @@ class Transformer(AbstractTransformer):
         :return: it creates a new pandas DataFrame of the integrated data
         """
         # ensure uniqueness
-        df = self.standardize_factors(df=df)
+        df = self.drop_duplicates(df=df, subset=self.node_factors_keys, perfect_match=False, preserve_nan=True)
 
-        # take a db snapshot for the current node
+        # take a db snapshot for the current node and ensure uniqueness
         snapshot = self.node_view()
+        snapshot = self.drop_duplicates(df=snapshot, subset=self.node_factors_keys,
+                                        perfect_match=False, preserve_nan=True)
+
+        # ensure persistence
+        standardized_nodes = self.standardize_factors(df=df)
+        standardized_snapshot = self.standardize_factors(df=snapshot)
 
         # find matching nodes according to several node factors/properties
-        mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=self.node_factors)
+        mask = self.find_nodes(nodes=standardized_nodes, snapshot=standardized_snapshot,
+                               node_factors=self.node_factors_keys)
 
         # nodes to be updated
         update_nodes = self._update_nodes(df=df, mask=mask, snapshot=snapshot)
@@ -388,10 +388,7 @@ class Transformer(AbstractTransformer):
         self.stack_json(df_name, df)
 
     def standardize_factors(self, df: pd.DataFrame) -> pd.DataFrame:
-        processors = {col: to_nan for col in self.node_factors}
-        df = apply_processors(df, **processors)
-        df = self.drop_duplicates(df=df, subset=self.node_factors, perfect_match=False, preserve_nan=True)
-        df = df.dropna(subset=self.node_factors)
+        df = apply_processors(df, **self.node_factors)
         return df
 
     @staticmethod

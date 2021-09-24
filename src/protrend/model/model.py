@@ -8,7 +8,7 @@ from neomodel import (StringProperty,
                       OneOrMore)
 
 from protrend.model.node import Node
-from protrend.transform.processors import to_str, rstrip, lstrip, lower_case, to_int_str
+from protrend.transform.processors import to_str, rstrip, lstrip, lower_case, to_int_str, to_nan
 
 # the main relationship type
 REL_TYPE = 'HAS'
@@ -16,7 +16,7 @@ REL_TYPE = 'HAS'
 
 class Source(Node):
     entity = 'SRC'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -53,7 +53,7 @@ class SourceRelationship(StructuredRel):
 
 class Evidence(Node):
     entity = 'EVI'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -71,7 +71,7 @@ class Evidence(Node):
 
 class Publication(Node):
     entity = 'PUB'
-    node_factors = {'pmid': [to_int_str, lower_case, rstrip, lstrip]}
+    node_factors = {'pmid': [to_int_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     doi = StringProperty()
@@ -96,8 +96,8 @@ class Publication(Node):
 
 class Organism(Node):
     entity = 'ORG'
-    node_factors = {'ncbi_taxonomy': [to_int_str, lower_case, rstrip, lstrip],
-                    'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'ncbi_taxonomy': [to_int_str, lower_case, rstrip, lstrip, to_nan],
+                    'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -126,7 +126,7 @@ class Organism(Node):
 
 class Pathway(Node):
     entity = 'PTH'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -141,7 +141,7 @@ class Pathway(Node):
 
 class RegulatoryFamily(Node):
     entity = 'RFAM'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -167,8 +167,8 @@ class OperonRelationship(StructuredRel):
 
 class Regulator(Node):
     entity = 'REG'
-    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip],
-                    'locus_tag': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     locus_tag = StringProperty()
@@ -205,7 +205,7 @@ class Regulator(Node):
 
 class Operon(Node):
     entity = 'OPN'
-    node_factors = {'operon_hash': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'operon_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty()
@@ -232,7 +232,7 @@ class Operon(Node):
 
 class Promoter(Node):
     entity = 'PRO'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -251,8 +251,8 @@ class Promoter(Node):
 
 class Gene(Node):
     entity = 'GEN'
-    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip],
-                    'locus_tag': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     locus_tag = StringProperty()
@@ -286,7 +286,7 @@ class Gene(Node):
 
 class TFBS(Node):
     entity = 'TBS'
-    node_factors = {'site_hash': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'site_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     sequence = StringProperty(required=True)
@@ -310,7 +310,7 @@ class TFBS(Node):
 
 class Effector(Node):
     entity = 'EFC'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -348,7 +348,7 @@ class Regulon(Node):
 
 class RegulatoryInteraction(Node):
     entity = 'RIN'
-    node_factors = {'regulatory_interaction_hash': [to_str, lower_case, rstrip, lstrip]}
+    node_factors = {'regulatory_interaction_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     regulator = StringProperty(required=True)

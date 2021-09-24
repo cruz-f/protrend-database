@@ -16,7 +16,6 @@ from protrend.utils import SetList
 
 class RegulatorTransformer(RegPreciseTransformer):
     default_node = Regulator
-    default_node_factors = SetList(['uniprot_accession', 'locus_tag'])
     default_transform_stack = {'regulon': 'Regulon.json',
                                'organism': 'integrated_organism.json'}
     default_order = 90

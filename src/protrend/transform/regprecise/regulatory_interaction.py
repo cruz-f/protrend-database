@@ -15,7 +15,6 @@ from protrend.utils import SetList
 
 class RegulatoryInteractionTransformer(RegPreciseTransformer):
     default_node = RegulatoryInteraction
-    default_node_factors = SetList(['regulatory_interaction_hash'])
     default_transform_stack = {'effector': 'integrated_effector.json',
                                'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json'}

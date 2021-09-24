@@ -16,7 +16,6 @@ class SourceTransformer(RegPreciseTransformer):
     description = 'RegPrecise 3.0: A resource for genome-scale exploration of transcriptional regulation in bacteria'
 
     default_node = Source
-    default_node_factors = SetList(['name'])
     default_order = 100
     columns = SetList(['name', 'type', 'url', 'doi', 'authors', 'description', 'protrend_id'])
 

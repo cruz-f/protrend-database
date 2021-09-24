@@ -14,7 +14,6 @@ from protrend.utils import SetList
 
 class OrganismTransformer(RegPreciseTransformer):
     default_node = Organism
-    default_node_factors = SetList(['ncbi_taxonomy', 'name'])
     default_transform_stack = {'genome': 'Genome.json'}
     default_order = 100
     columns = SetList(['species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',

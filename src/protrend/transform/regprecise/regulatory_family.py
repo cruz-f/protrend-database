@@ -15,7 +15,6 @@ from protrend.utils import SetList
 
 class RegulatoryFamilyTransformer(RegPreciseTransformer):
     default_node = RegulatoryFamily
-    default_node_factors = SetList(['name'])
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
                                'tf': 'TranscriptionFactor.json',
                                'rna': 'RNAFamily.json'}

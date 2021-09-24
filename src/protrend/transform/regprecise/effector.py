@@ -16,7 +16,6 @@ from protrend.utils import SetList
 
 class EffectorTransformer(RegPreciseTransformer):
     default_node = Effector
-    default_node_factors = SetList(['name'])
     default_transform_stack = {'effector': 'Effector.json'}
     default_order = 100
     columns = SetList(['synonyms', 'mechanism', 'kegg_compounds', 'effector_id', 'url',

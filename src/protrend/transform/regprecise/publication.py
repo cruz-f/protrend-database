@@ -14,7 +14,6 @@ from protrend.utils import SetList
 
 class PublicationTransformer(RegPreciseTransformer):
     default_node = Publication
-    default_node_factors = SetList(['pmid'])
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
                                'tf': 'TranscriptionFactor.json',
                                'rna': 'RNAFamily.json'}
