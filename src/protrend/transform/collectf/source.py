@@ -12,6 +12,7 @@ from protrend.transform.collectf.regulatory_family import RegulatoryFamilyTransf
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.transform.processors import apply_processors, to_list
+from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
 
@@ -24,9 +25,8 @@ class SourceTransformer(CollectfTransformer):
     description = 'CollecTF: a database of experimentally validated transcription factor-binding sites in Bacteria'
 
     default_node = Source
-    default_node_factors = ('name',)
     default_order = 100
-    columns = {'protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'}
+    columns = SetList(['name', 'type', 'url', 'doi', 'authors', 'description', 'protrend_id'])
 
     def transform(self):
         collectf = dict(name=[self.name],

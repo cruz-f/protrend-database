@@ -7,17 +7,15 @@ from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_list
+from protrend.utils import SetList
 
 
 class EvidenceTransformer(CollectfTransformer):
     default_node = Evidence
-    default_node_factors = ('name',)
     default_transform_stack = {'evidence': 'ExperimentalEvidence.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'name', 'description',
-               'exp_id', 'regulon', 'tfbs'}
-    read_columns = {'exp_id', 'regulon', 'tfbs'}
+    columns = SetList(['exp_id', 'regulon', 'tfbs', 'name', 'description', 'protrend_id'])
+    read_columns = SetList(['exp_id', 'regulon', 'tfbs'])
 
     def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=evidence, subset=['exp_id'], perfect_match=True, preserve_nan=True)

@@ -9,23 +9,21 @@ from protrend.model.model import Operon, Gene, TFBS
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, str_join, operon_name, genes_to_hash, flatten_set_list, to_list,
-                                           to_nan, to_set_list)
-from protrend.utils import build_graph, find_connected_nodes
+from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
+                                           to_set_list, operon_hash)
+from protrend.utils import build_graph, find_connected_nodes, SetList
 from protrend.utils.miscellaneous import is_null
 
 
 class OperonTransformer(CollectfTransformer):
     default_node = Operon
-    default_node_factors = ()
     default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
     default_order = 60
-    columns = {'protrend_id',
-               'name', 'genes', 'tfbss', 'strand', 'start', 'stop',
-               'operon_id', 'regulon', 'gene', 'tfbs',
-               'operon_id_old', 'operon_id_new', 'gene_locus_tag', 'gene_old_locus_tag', 'gene_name',
-               'gene_strand', 'gene_start', 'gene_stop', 'organism_protrend_id'}
-    read_columns = {'operon_id', 'regulon', 'gene', 'tfbs'}
+    columns = SetList(['operon_id_new', 'gene', 'operon_id_old', 'regulon', 'tfbs', 'tfbss',
+                       'genes', 'gene_locus_tag', 'gene_name', 'gene_old_locus_tag',
+                       'gene_strand', 'gene_start', 'gene_stop', 'organism_protrend_id',
+                       'operon_id', 'name', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id'])
+    read_columns = SetList(['operon_id', 'regulon', 'gene', 'tfbs'])
 
     def _operon_by_gene(self, operon: pd.DataFrame) -> pd.DataFrame:
         # group duplicates
@@ -44,7 +42,7 @@ class OperonTransformer(CollectfTransformer):
         operon = pd.DataFrame({'gene': operons})
 
         operon['operon_id'] = operon['gene']
-        operon = apply_processors(operon, operon_id=str_join, gene=to_list)
+        operon = apply_processors(operon, operon_id=[to_list, operon_hash], gene=to_list)
         operon = operon.explode('gene')
         return operon
 
@@ -68,9 +66,13 @@ class OperonTransformer(CollectfTransformer):
 
         # group by the new genes
         aggregation = {'gene': to_set_list,
-                       'gene_protrend_id': to_set_list, 'gene_locus_tag': to_set_list, 'gene_name': to_set_list,
+                       'gene_protrend_id': to_set_list,
+                       'gene_locus_tag': to_set_list,
+                       'gene_name': to_set_list,
                        'gene_old_locus_tag': to_set_list,
-                       'gene_strand': to_set_list, 'gene_start': to_set_list, 'gene_stop': to_set_list,
+                       'gene_strand': to_set_list,
+                       'gene_start': to_set_list,
+                       'gene_stop': to_set_list,
                        'organism_protrend_id': to_set_list}
         operon = self.group_by(df=operon, column='operon_id_new', aggregation=aggregation, default=flatten_set_list)
 
@@ -79,10 +81,12 @@ class OperonTransformer(CollectfTransformer):
 
         operon = operon.rename(columns={'gene_protrend_id': 'genes'})
 
-        operon['operon_id'] = operon['genes']
+        operon['operon_hash'] = operon['genes']
         operon['name'] = operon['gene_name']
 
-        operon = apply_processors(operon, operon_id=[to_list, str_join], name=[to_list, operon_name])
+        operon = apply_processors(operon, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
+        operon = operon.dropna(subset=['operon_hash'])
+        operon = self.drop_duplicates(df=operon, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
 
         return operon
 
@@ -200,56 +204,6 @@ class OperonTransformer(CollectfTransformer):
         self._stack_transformed_nodes(operon)
 
         return operon
-
-    def _update_nodes(self, df: pd.DataFrame, mask: pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
-
-        # nodes to be updated
-        nodes = df[mask]
-
-        if nodes.empty:
-            nodes['protrend_id'] = None
-            nodes['load'] = None
-            nodes['what'] = None
-            return nodes
-
-        # find/set protrend identifiers for update nodes
-        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=('genes_id',))
-        nodes.loc[:, 'protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
-        nodes.loc[:, 'load'] = 'update'
-        nodes.loc[:, 'what'] = 'nodes'
-
-        return nodes
-
-    def integrate(self, df: pd.DataFrame) -> pd.DataFrame:
-
-        df['genes_id'] = df['genes']
-        df = apply_processors(df, genes_id=[genes_to_hash, to_nan])
-
-        # ensure uniqueness
-        df = self.drop_duplicates(df=df, subset=['genes_id'], perfect_match=True, preserve_nan=True)
-
-        # take a db snapshot for the current node
-        snapshot = self.node_view()
-        snapshot['genes_id'] = snapshot['genes']
-        snapshot = apply_processors(snapshot, genes_id=[genes_to_hash, to_nan])
-
-        # find matching nodes according to several node factors/properties
-        mask = self.find_nodes(nodes=df, snapshot=snapshot, node_factors=('genes_id',))
-
-        # nodes to be updated
-        update_nodes = self._update_nodes(df=df, mask=mask, snapshot=snapshot)
-
-        # nodes to be created
-        create_nodes = self._create_nodes(df=df, mask=mask)
-
-        # concat both dataframes
-        df = pd.concat([create_nodes, update_nodes], axis=0)
-        df = df.drop(columns=['genes_id'])
-
-        self._stack_integrated_nodes(df)
-        self._stack_nodes(df)
-
-        return df
 
 
 class OperonToGeneConnector(CollectfConnector):

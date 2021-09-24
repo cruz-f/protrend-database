@@ -10,24 +10,20 @@ from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.processors import take_first, flatten_set_list, to_int_str, apply_processors, rstrip, lstrip, \
     to_list, to_set_list
+from protrend.utils import SetList
 
 
 class GeneTransformer(CollectfTransformer):
     default_node = Gene
-    default_node_factors = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
-                            'genbank_accession', 'refseq_accession',
-                            'locus_tag')
     default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
     default_order = 80
-    columns = {'protrend_id',
-               'name', 'locus_tag', 'synonyms', 'function', 'description',
-               'ncbi_gene', 'ncbi_protein',
-               'genbank_accession', 'refseq_accession', 'uniprot_accession',
-               'sequence', 'strand', 'start', 'stop',
-               'locus_tag_old', 'regulon', 'operon', 'tfbs',
-               'organism_protrend_id', 'ncbi_taxonomy',
-               'regulator_uniprot_accession', 'regulator_protrend_id'}
-    read_columns = {'locus_tag', 'regulon', 'operon', 'tfbs'}
+    columns = SetList(['name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession',
+                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'regulon',
+                       'operon', 'tfbs', 'regulator_protrend_id',
+                       'regulator_uniprot_accession', 'ncbi_taxonomy', 'organism_protrend_id',
+                       'locus_tag_old', 'locus_tag', 'protrend_id'])
+    read_columns = SetList(['locus_tag', 'regulon', 'operon', 'tfbs'])
 
     def _transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         gene = apply_processors(gene, locus_tag=[rstrip, lstrip])

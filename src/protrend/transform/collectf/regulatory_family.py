@@ -4,24 +4,23 @@ from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.transform.processors import apply_processors, remove_white_space, rstrip, lstrip, \
-    remove_multiple_white_space, parse_collectf_description, to_list
+from protrend.transform.processors import (apply_processors, remove_white_space, rstrip, lstrip,
+                                           remove_multiple_white_space, parse_collectf_description, to_list)
+from protrend.utils import SetList
 
 
 class RegulatoryFamilyTransformer(CollectfTransformer):
     default_node = RegulatoryFamily
-    default_node_factors = ('name',)
     default_transform_stack = {'tf': 'TranscriptionFactor.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'mechanism'
-               'name', 'family', 'description', 'regulon'}
-    read_columns = {'name', 'family', 'description', 'regulon'}
+    columns = SetList(['name', 'family', 'description', 'regulon', 'mechanism', 'protrend_id'])
+    read_columns = SetList(['name', 'family', 'description', 'regulon'])
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
         df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=True)
 
-        df = apply_processors(df, name=remove_white_space,
+        df = apply_processors(df,
+                              name=remove_white_space,
                               description=[parse_collectf_description, remove_multiple_white_space, rstrip, lstrip])
 
         df['mechanism'] = 'transcription factor'

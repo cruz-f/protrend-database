@@ -9,22 +9,21 @@ from protrend.transform import OrganismDTO
 from protrend.transform.annotation import annotate_organisms
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list, to_list
+from protrend.transform.processors import (apply_processors, rstrip, lstrip, to_int_str, take_last,
+                                           flatten_set_list, to_list)
+from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
 
 class OrganismTransformer(CollectfTransformer):
     default_node = Organism
-    default_node_factors = ('ncbi_taxonomy', 'name')
     default_transform_stack = {'organism': 'Organism.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'genome_accession', 'taxonomy', 'regulon', 'tfbs', 'name_collectf'
-                                                                  'name', 'species', 'strain',
-               'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
-               'genbank_accession', 'genbank_ftp',
-               'ncbi_assembly', 'assembly_accession'}
-    read_columns = {'name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'}
+    columns = SetList(['species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+                       'genbank_accession', 'genbank_ftp', 'ncbi_assembly',
+                       'assembly_accession', 'genome_accession', 'taxonomy', 'regulon', 'tfbs',
+                       'name', 'name_collectf', 'protrend_id'])
+    read_columns = SetList(['name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
 
     def _transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         aggregation = {'genome_accession': take_last, 'taxonomy': take_last}

@@ -6,20 +6,20 @@ from protrend.model.model import TFBS
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.processors import (apply_processors, to_list, flatten_set_list,
-                                           take_last, genes_to_hash, to_str, to_set_list)
+                                           take_last, to_str, to_set_list, operon_hash, site_hash)
+from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
 
 class TFBSTransformer(CollectfTransformer):
     default_node = TFBS
-    default_node_factors = ('site_hash', )
     default_transform_stack = {'tfbs': 'TFBS.json', 'gene': 'integrated_gene.json'}
     default_order = 70
-    columns = {'protrend_id',
-               'sequence', 'strand', 'start', 'stop', 'length', 'site_hash',
-               'tfbs_id', 'mode', 'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'}
-    read_columns = {'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence', 'pubmed', 'organism',
-                    'regulon', 'operon', 'gene', 'experimental_evidence'}
+    columns = SetList(['tfbs_id', 'start', 'stop', 'strand', 'mode', 'sequence', 'pubmed',
+                       'organism', 'regulon', 'experimental_evidence', 'operon', 'gene',
+                       'gene_protrend_id', 'gene_old_locus_tag', 'length', 'site_hash', 'protrend_id'])
+    read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode',  'sequence',
+                            'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
     def _transform_tfbs(self, tfbs: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
 
@@ -92,14 +92,18 @@ class TFBSTransformer(CollectfTransformer):
         df = self._tfbs_coordinates(df)
 
         # filter by site hash: length + strand + start + genes
-        str_sequence = df['sequence'].map(to_str, na_action='ignore').fillna('')
-        str_len = df['length'].map(to_str, na_action='ignore').fillna('')
-        str_strand = df['strand'].map(to_str, na_action='ignore').fillna('')
-        str_start = df['start'].map(to_str, na_action='ignore').fillna('')
-        str_genes = df['gene_protrend_id'].map(genes_to_hash, na_action='ignore').fillna('')
-        df['site_hash'] = str_sequence + str_len + str_strand + str_start + str_genes
+        df2 = apply_processors(df,
+                               sequence=[to_str, to_list],
+                               length=[to_str, to_list],
+                               strand=[to_str, to_list],
+                               start=[to_str, to_list],
+                               gene_protrend_id=[to_list, operon_hash])
+
+        df['site_hash'] = df2['sequence'] + df2['length'] + df2['strand'] + df2['start'] + df2['gene_protrend_id']
+        df = apply_processors(df, site_hash=site_hash)
 
         df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True, preserve_nan=True)
+        df = df.dropna(subset=['site_hash'])
 
         self._stack_transformed_nodes(df)
 

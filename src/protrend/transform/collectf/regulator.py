@@ -10,6 +10,7 @@ from protrend.transform import GeneDTO
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.processors import take_first, flatten_set_list, apply_processors, to_list_nan
+from protrend.utils import SetList
 
 
 def _find_in_mapping(acc: str, mapping: pd.DataFrame) -> List[Union[str, None]]:
@@ -26,20 +27,16 @@ def _find_in_mapping(acc: str, mapping: pd.DataFrame) -> List[Union[str, None]]:
 
 class RegulatorTransformer(CollectfTransformer):
     default_node = Regulator
-    default_node_factors = ('uniprot_accession', 'ncbi_protein', 'ncbi_gene',
-                            'genbank_accession', 'refseq_accession',
-                            'locus_tag')
     default_transform_stack = {'regulon': 'Regulon.json', 'organism': 'integrated_organism.json'}
     default_order = 90
-    columns = {'protrend_id',
-               'mechanism', 'name',
-               'locus_tag', 'synonyms', 'function', 'description',
-               'ncbi_gene', 'ncbi_protein',
-               'genbank_accession', 'refseq_accession',
-               'sequence', 'strand', 'start', 'stop',
-               'uniprot_accession', 'name', 'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
-               'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'}
-    read_columns = {'uniprot_accession', 'name', 'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence'}
+    columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'sequence',
+                       'strand', 'start', 'stop', 'url', 'organism', 'tfbs',
+                       'experimental_evidence', 'operon', 'gene', 'mechanism',
+                       'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy',
+                       'name', 'uniprot_accession', 'protrend_id'])
+    read_columns = SetList(['uniprot_accession', 'name', 'url', 'organism', 'operon',
+                            'gene', 'tfbs', 'experimental_evidence'])
 
     def _transform_regulon(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         regulon = apply_processors(regulon, tfbs=to_list_nan, experimental_evidence=to_list_nan,

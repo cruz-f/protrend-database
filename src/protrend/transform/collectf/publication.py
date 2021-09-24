@@ -13,19 +13,19 @@ from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.transform.processors import apply_processors, to_int_str, to_list
+from protrend.utils import SetList
 
 
 class PublicationTransformer(CollectfTransformer):
     default_node = Publication
-    default_node_factors = ('pmid',)
     default_transform_stack = {'tfbs': 'TFBS.json'}
     default_order = 100
-    columns = {'protrend_id',
-               'pmid', 'doi', 'title', 'author', 'year',
-               'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
-               'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'}
-    read_columns = {'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence', 'pubmed', 'organism',
-                    'regulon', 'operon', 'gene', 'experimental_evidence'}
+    columns = SetList(['protrend_id',
+                       'pmid', 'doi', 'title', 'author', 'year', 'tfbs_id', 'site_start',
+                       'site_end', 'site_strand', 'mode', 'sequence', 'pubmed', 'organism',
+                       'regulon', 'experimental_evidence', 'operon', 'gene', 'protrend_id'])
+    read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
+                            'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
         df = apply_processors(df=tfbs, pubmed=to_list)
