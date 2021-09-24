@@ -4,6 +4,8 @@ from typing import Optional
 
 import pandas as pd
 
+from protrend.utils import SetList
+
 
 def read_json(file_path: str) -> dict:
     if not os.path.exists(file_path):
@@ -55,5 +57,13 @@ def read_json_frame(file_path: str, **kwargs) -> pd.DataFrame:
     return pd.read_json(file_path, **kwargs)
 
 
+def _set_list_serializer(o: SetList) -> list:
+    return o.data
+
+
 def write_json_frame(file_path: str, df: pd.DataFrame, **kwargs) -> Optional[str]:
+
+    if 'default_handler' not in kwargs:
+        kwargs['default_handler'] = _set_list_serializer
+
     return df.to_json(file_path, **kwargs)
