@@ -1,11 +1,11 @@
-from typing import Set, Dict, Callable
+from typing import Set, Dict, Callable, Sequence
 
 import pandas as pd
 
 
 def read_from_stack(stack: Dict[str, str],
                     file: str,
-                    default_columns: Set[str],
+                    default_columns: Sequence[str],
                     reader: Callable,
                     **kwargs) -> pd.DataFrame:
 

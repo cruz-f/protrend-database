@@ -20,8 +20,7 @@ class PublicationTransformer(CollectfTransformer):
     default_node = Publication
     default_transform_stack = {'tfbs': 'TFBS.json'}
     default_order = 100
-    columns = SetList(['protrend_id',
-                       'pmid', 'doi', 'title', 'author', 'year', 'tfbs_id', 'site_start',
+    columns = SetList(['pmid', 'doi', 'title', 'author', 'year', 'tfbs_id', 'site_start',
                        'site_end', 'site_strand', 'mode', 'sequence', 'pubmed', 'organism',
                        'regulon', 'experimental_evidence', 'operon', 'gene', 'protrend_id'])
     read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
