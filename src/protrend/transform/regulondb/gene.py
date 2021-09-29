@@ -9,6 +9,7 @@ from protrend.io import read_from_stack, read_txt
 from protrend.model.model import Gene
 from protrend.transform import GeneDTO
 from protrend.transform.annotation import annotate_genes
+from protrend.transform.processors import apply_processors, rstrip, lstrip
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.utils import SetList
 
@@ -16,7 +17,7 @@ from protrend.utils import SetList
 class GeneTransformer(RegulondbTransformer):
     default_node = Gene
     default_transform_stack = {'gene': 'gene.txt', 'sequence': 'sequence.gb'}
-    default_order = 80
+    default_order = 100
     columns = SetList(['name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
@@ -97,6 +98,7 @@ class GeneTransformer(RegulondbTransformer):
                                                'genbank_accession', 'uniprot_accession'])
 
     def _transform_gene(self, gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
+        gene = apply_processors(gene, transcription_factor_name=[rstrip, lstrip])
         gene = gene.dropna(subset=['gene_name'])
         gene = self.drop_duplicates(df=gene, subset=['gene_name'], perfect_match=True, preserve_nan=True)
 
@@ -150,7 +152,8 @@ class GeneTransformer(RegulondbTransformer):
 
     def transform(self):
         gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=self.read_columns, reader=read_txt)
+                               default_columns=self.read_columns, reader=read_txt,
+                               skiprows=39, names=self.read_columns)
 
         gb_file = self.transform_stack['sequence']
         sequence = SeqIO.read(gb_file, "genbank")
