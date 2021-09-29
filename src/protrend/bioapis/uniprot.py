@@ -90,7 +90,6 @@ def fetch_uniprot_record(uniprot_accession: str) -> SeqRecord:
 def query_uniprot(query: Dict[str, str],
                   limit: int = 5,
                   sort: bool = True,
-                  cache: bool = True,
                   output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
     query_str = ''
 
