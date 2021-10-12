@@ -244,6 +244,13 @@ def operon_hash(items: List[str]) -> Union[None, str]:
     return item
 
 
+def promoter_hash(items: List[str]) -> Union[None, str]:
+    if is_null(items):
+        return None
+
+    return '_'.join(items)
+
+
 def site_hash(items: List[str]) -> Union[None, str]:
     if is_null(items):
         return None
