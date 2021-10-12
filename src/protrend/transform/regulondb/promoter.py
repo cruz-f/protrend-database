@@ -15,7 +15,7 @@ class PromoterTransformer(RegulondbTransformer):
     default_transform_stack = {'promoter': 'promoter.txt',
                                'gene': 'integrated_gene.json'}
     default_order = 90
-    columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
+    columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'promoter_hash', 'protrend_id',
                        'promoter_id', 'promoter_name', 'promoter_strand', 'pos_1', 'sigma_factor',
                        'basal_trans_val', 'equilibrium_const', 'kinetic_const', 'strength_seq',
                        'promoter_sequence', 'key_id_org', 'promoter_note', 'promoter_internal_comment'])

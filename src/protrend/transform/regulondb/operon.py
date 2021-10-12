@@ -20,8 +20,10 @@ class OperonTransformer(RegulondbTransformer):
     default_transform_stack = {'tu': 'transcription_unit.txt', 'tu_gene': 'tu_gene_link.txt',
                                'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json',
                                'promoter': 'integrated_promoter.json'}
-    default_order = 60
-    columns = SetList(['name', 'promoters', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id'])
+    default_order = 80
+    columns = SetList(['name', 'promoters', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
+                       'transcription_unit_id', 'promoter_id', 'operon_id', 'gene_id',
+                       'gene_name', 'gene_strand', 'gene_start', 'gene_stop'])
 
     tu_columns = SetList(['transcription_unit_id', 'promoter_id', 'transcription_unit_name', 'operon_id',
                           'key_id_org', 'transcription_unit_note', 'tu_internal_comment'])

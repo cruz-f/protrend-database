@@ -395,6 +395,22 @@ def regulatory_effect_collectf(item: str) -> Union[None, str]:
     return
 
 
+def regulatory_effect_regulondb(item: str) -> Union[None, str]:
+    if is_null(item):
+        return
+
+    if item.lower() == '-':
+        return 'repression'
+
+    if item.lower() == '+':
+        return 'activation'
+
+    if item.lower() == '+-':
+        return 'activation'
+
+    return
+
+
 def parse_effector_name_regulondb(item: str) -> str:
     if is_null(item):
         return
