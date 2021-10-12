@@ -215,7 +215,7 @@ class Operon(Node):
     strand = StringProperty()
     start = IntegerProperty()
     stop = IntegerProperty()
-    operon_hash = StringProperty()
+    operon_hash = StringProperty(required=True)
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -232,13 +232,15 @@ class Operon(Node):
 
 class Promoter(Node):
     entity = 'PRO'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
+    node_factors = {'promoter_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
-    name = StringProperty(required=True)
     sequence = StringProperty()
     strand = StringProperty()
     start = IntegerProperty()
+    stop = IntegerProperty()
+    length = IntegerProperty()
+    promoter_hash = StringProperty(required=True)
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
@@ -294,7 +296,7 @@ class TFBS(Node):
     start = IntegerProperty()
     stop = IntegerProperty()
     length = IntegerProperty()
-    site_hash = StringProperty()
+    site_hash = StringProperty(required=True)
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
