@@ -23,9 +23,10 @@ class TFBSTransformer(RegulondbTransformer):
                             'site_internal_comment', 'key_id_org', 'site_length'])
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+        # filter by id
         tfbs = self.drop_duplicates(df=tfbs, subset=['site_id'], perfect_match=True, preserve_nan=True)
 
-        # drop nan
+        # filter by nan
         tfbs = tfbs.dropna(subset=['site_id', 'site_sequence'])
 
         # filter out non-tfbs data
@@ -43,8 +44,8 @@ class TFBSTransformer(RegulondbTransformer):
 
         tfbs = apply_processors(tfbs, site_sequence=remove_non_tfbs_sequence)
 
-        # filter by id and sequence
-        tfbs = self.drop_duplicates(df=tfbs, subset=['site_id', 'site_sequence', 'site_posleft', 'site_posright'],
+        # filter by coordinates
+        tfbs = self.drop_duplicates(df=tfbs, subset=['site_sequence', 'site_posleft', 'site_posright'],
                                     perfect_match=True, preserve_nan=True)
 
         tfbs['sequence'] = tfbs['site_sequence']
