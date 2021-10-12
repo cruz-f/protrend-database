@@ -19,7 +19,8 @@ class RegulondbTransformer(Transformer):
                        'tf': 'transcription_factor.txt',
                        'srna': 'srna_interaction.txt',
                        'sigma': 'sigma_tmp.txt',
-                       'tu': 'transcription_unit.txt'}
+                       'tu': 'transcription_unit.txt',
+                       'tu_gene': 'tu_gene_link.txt'}
 
     tfbs_columns = SetList(['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                             'site_internal_comment', 'key_id_org', 'site_length'])
