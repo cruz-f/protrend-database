@@ -129,7 +129,7 @@ class RegulatoryInteractionToEffectorConnector(RegPreciseConnector):
 
         rin = apply_processors(rin, effectors=to_list)
         from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['effector'].tolist()
+        to_identifiers = rin['regulator_effector'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
