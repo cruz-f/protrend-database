@@ -399,14 +399,14 @@ def regulatory_effect_regulondb(item: str) -> Union[None, str]:
     if is_null(item):
         return
 
-    if item.lower() == '-':
+    if item.lower() == '-' or item.lower() == 'repressor':
         return 'repression'
 
-    if item.lower() == '+':
+    if item.lower() == '+' or item.lower() == 'activator':
         return 'activation'
 
-    if item.lower() == '+-':
-        return 'activation'
+    if item.lower() == '+-' or item.lower() == 'dual':
+        return 'dual'
 
     return
 

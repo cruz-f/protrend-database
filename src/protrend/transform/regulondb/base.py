@@ -121,7 +121,8 @@ class RegulondbTransformer(Transformer):
                              default_columns=self.srna_columns, reader=read_txt,
                              skiprows=38, names=self.srna_columns)
         return self._build(df=df,
-                           selection=['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id'],
+                           selection=['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
+                                      'srna_function'],
                            duplicates=['srna_gene_id', 'srna_gene_regulated_id'],
                            nan=['srna_gene_id', 'srna_gene_regulated_id'])
 
@@ -194,7 +195,7 @@ class RegulondbTransformer(Transformer):
                              skiprows=35, names=self.gen_net_columns)
         return self._build(df=df,
                            selection=['regulator_id', 'regulator_name', 'regulated_id' 'regulated_name',
-                                      'function_interaction', 'regulator_type', 'regulated_type'],
+                                      'function_interaction', 'evidence', 'regulator_type', 'regulated_type'],
                            duplicates=['regulator_id', 'regulated_id'],
                            nan=['regulator_id', 'regulated_id'])
 
@@ -203,7 +204,7 @@ class RegulondbTransformer(Transformer):
                              reader=read_txt, skiprows=42, names=self.ri_columns)
         return self._build(df=df,
                            selection=['regulatory_interaction_id', 'conformation_id', 'promoter_id', 'site_id',
-                                      'ri_dist_first_gene'],
+                                      'ri_function', 'ri_dist_first_gene'],
                            duplicates=['conformation_id', 'site_id', 'ri_dist_first_gene'],
                            nan=['conformation_id', 'ri_dist_first_gene'])
 
@@ -213,7 +214,7 @@ class RegulondbTransformer(Transformer):
                              skiprows=43, names=self.tf_gene_columns)
         return self._build(df=df,
                            selection=['regulatory_interaction_id', 'conformation_id', 'object_id',
-                                      'site_id', 'ri_first_gene_id'],
+                                      'site_id', 'ri_function', 'ri_first_gene_id'],
                            duplicates=['conformation_id', 'object_id', 'site_id'],
                            nan=['conformation_id', 'object_id', 'ri_first_gene_id'])
 
