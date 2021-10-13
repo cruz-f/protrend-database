@@ -196,6 +196,11 @@ def split_str(item: str) -> List[str]:
     return item.split(sep=' ')
 
 
+def split_semi_colon(item: str) -> List[str]:
+    items = item.split(sep=';')
+    return [i.rstrip().lstrip() for i in items]
+
+
 def upper_case(item: str) -> str:
     return item.upper()
 

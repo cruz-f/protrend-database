@@ -19,9 +19,10 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
                                'effector': 'integrated_effector.json',
                                'gene': 'integrated_gene.json'}
     default_order = 70
-    columns = SetList(['operon', 'regulon', 'operon_id', 'regulatory_effect', 'regulator',
-                       'organism_protrend_id', 'genes', 'tfbss',
-                       'regulatory_interaction_hash', 'protrend_id'])
+    columns = SetList(['regulator', 'operon', 'genes', 'tfbss', 'regulator_effector', 'regulatory_effect',
+                       'regulatory_interaction_hash', 'protrend_id',
+                       'gene_id', 'effector_id', 'transcription_factor_id', 'srna_gene_id', 'sigma_id', 'operon_id',
+                       ])
 
     def transform(self) -> pd.DataFrame:
         gene = read_from_stack(stack=self.transform_stack, file='gene',
