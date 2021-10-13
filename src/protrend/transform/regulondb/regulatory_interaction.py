@@ -83,10 +83,9 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
 
         operon = self._build_operon()
         operon_by_gene = operon.explode(column='gene_id')
-
-        regulator_effector = self._build_regulator_effector()
         regulator_operon = pd.merge(regulator_gene, operon_by_gene, on='gene_id')
 
+        regulator_effector = self._build_regulator_effector()
         regulatory_interaction = pd.merge(regulator_operon, regulator_effector, how='left', on='regulator_id')
 
         regulatory_interaction = apply_processors(regulatory_interaction,
