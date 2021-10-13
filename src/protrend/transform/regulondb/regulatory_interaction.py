@@ -3,8 +3,7 @@ import pandas as pd
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryInteraction
-from protrend.transform.processors import (apply_processors, to_list, to_list_nan, regulatory_interaction_hash,
-                                           regulatory_effect_regulondb)
+from protrend.transform.processors import (apply_processors, to_list_nan, regulatory_effect_regulondb)
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
@@ -33,7 +32,7 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
         effector = read_from_stack(stack=self.transform_stack, file='effector',
                                    default_columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = self.select_columns(effector, 'protrend_id', 'effector_id')
-        effector = effector.rename(columns={'protrend_id': 'effectors'})
+        effector = effector.rename(columns={'protrend_id': 'regulator_effector'})
 
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
@@ -95,25 +94,13 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
 
         regulator_effector = self._build_regulator_effector()
         regulatory_interaction = pd.merge(regulator_operon, regulator_effector, how='left', on='regulator_id')
+        regulatory_interaction = pd.merge(regulatory_interaction, effector, how='left', on='effector_id')
 
-        regulatory_interaction = apply_processors(regulatory_interaction,
-                                                  ri_function=regulatory_effect_regulondb)
         regulatory_interaction = regulatory_interaction.rename(columns={'ri_function': 'regulatory_effect'})
-
-        # filter by regulatory effect + effector + regulator + operon
-        df2 = apply_processors(regulatory_interaction,
-                               regulatory_effect=to_list, effector=to_list, regulator=to_list, operon=to_list)
-
-        _hash = df2['effectors'] + df2['regulator'] + df2['operon'] + df2['regulatory_effect']
-        regulatory_interaction['regulatory_interaction_hash'] = _hash
-
         regulatory_interaction = apply_processors(regulatory_interaction,
-                                                  regulatory_interaction_hash=regulatory_interaction_hash)
-        regulatory_interaction = self.drop_duplicates(regulatory_interaction,
-                                                      subset=['regulatory_interaction_hash'],
-                                                      perfect_match=True,
-                                                      preserve_nan=True)
-        regulatory_interaction = regulatory_interaction.dropna(subset=['regulatory_interaction_hash'])
+                                                  regulatory_effect=regulatory_effect_regulondb)
+
+        regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
 
         self._stack_transformed_nodes(regulatory_interaction)
 

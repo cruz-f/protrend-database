@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.transform.processors import take_last, apply_processors
+from protrend.transform.processors import take_last, apply_processors, to_list, to_list_nan, regulatory_interaction_hash
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
@@ -24,7 +24,6 @@ class AbstractTransformer(metaclass=ABCMeta):
     # --------------------------------------------------------
     @abstractmethod
     def transform(self) -> pd.DataFrame:
-
         """
         The method responsible for transforming multiple pandas DataFrames into an annotated, cleaned and standardized
         pandas DataFrame ready to be integrated into structured nodes.
@@ -499,6 +498,19 @@ class Transformer(AbstractTransformer):
             mask = mask.any(axis=1)
 
         return mask
+
+    def regulatory_interaction_hash(self, df: pd.DataFrame) -> pd.DataFrame:
+        # filter by effector + regulator + operon + regulatory effect
+        to_filter = apply_processors(df, regulator_effector=to_list_nan, regulator=to_list_nan,
+                                     operon=to_list_nan, regulatory_effect=to_list_nan)
+
+        _hash = to_filter['regulator_effector'] + to_filter['regulator'] + to_filter['operon'] + to_filter['regulatory_effect']
+        df['regulatory_interaction_hash'] = _hash
+        df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
+        df = self.drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True, preserve_nan=True)
+        df = df.dropna(subset=['regulatory_interaction_hash'])
+
+        return df
 
     def protrend_identifiers_batch(self, size):
 

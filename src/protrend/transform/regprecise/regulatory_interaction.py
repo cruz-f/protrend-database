@@ -3,8 +3,7 @@ import pandas as pd
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryInteraction, Source, Organism, Effector, Regulator, Operon, Gene, TFBS
-from protrend.transform.processors import (apply_processors, to_list, to_int_str, to_set_list, flatten_set_list,
-                                           regulatory_effect, take_last, regulatory_interaction_hash)
+from protrend.transform.processors import (apply_processors, to_list, to_int_str, regulatory_effect, take_last)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.effector import EffectorTransformer
 from protrend.transform.regprecise.operon import OperonTransformer
@@ -20,7 +19,7 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
                                'operon': 'integrated_operon.json'}
     default_order = 50
     columns = SetList(['regulator', 'regulatory_effect', 'organism_protrend_id', 'url',
-                       'regulon_id', 'effectors', 'operon', 'genes', 'tfbss',
+                       'regulon_id', 'effector', 'operon', 'genes', 'tfbss',
                        'regulatory_interaction_hash', 'protrend_id'])
 
     def transform(self) -> pd.DataFrame:
@@ -28,7 +27,7 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
         effector = read_from_stack(stack=self.transform_stack, file='effector',
                                    default_columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = self.select_columns(effector, 'protrend_id', 'effector_id')
-        effector = effector.rename(columns={'protrend_id': 'effectors'})
+        effector = effector.rename(columns={'protrend_id': 'effector'})
         effector = apply_processors(effector, effector_id=to_int_str)
 
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
@@ -40,42 +39,35 @@ class RegulatoryInteractionTransformer(RegPreciseTransformer):
                                               'operon': 'regulator_operon',
                                               'regulation_mode': 'regulatory_effect'})
         regulator = apply_processors(regulator, regulator_effector=to_list, regulator_operon=to_list)
-
         regulator = regulator.explode(column='regulator_effector')
         regulator = apply_processors(regulator, regulator_effector=to_int_str)
-        df = pd.merge(regulator, effector, how='left', left_on='regulator_effector', right_on='effector_id')
-
-        aggregation = {'regulator_operon': flatten_set_list,
-                       'organism_protrend_id': take_last, 'url': take_last, 'regulon_id': take_last}
-        df = self.group_by(df=df, column='regulator', aggregation=aggregation, default=to_set_list)
-        df = df.drop(columns=['effector_id', 'regulator_effector'])
 
         operon = read_from_stack(stack=self.transform_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
         operon = self.select_columns(operon, 'protrend_id', 'operon_id_old', 'genes', 'tfbss')
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = apply_processors(operon, operon_id_old=to_list, genes=to_list, tfbss=to_list)
-
-        df = apply_processors(df, regulator_operon=to_list)
-        df = df.explode(column='regulator_operon')
         operon = operon.explode(column='operon_id_old')
-        df = pd.merge(df, operon, left_on='regulator_operon', right_on='operon_id_old')
-        df = df.drop(columns=['operon_id_old', 'regulator_operon'])
-        df = self.drop_duplicates(df=df, subset=['regulator', 'operon'], perfect_match=True, preserve_nan=True)
-        df = df.dropna(subset=['regulator', 'operon'])
 
-        # filter by regulator + operon
-        df2 = apply_processors(df, regulator=to_list, operon=to_list)
+        regulator_effector = pd.merge(regulator, effector, how='left',
+                                      left_on='regulator_effector', right_on='effector_id')
+        regulator_effector = regulator_effector.drop(columns=['effector_id', 'regulator_effector'])
+        regulator_effector = regulator_effector.rename(columns={'effector': 'regulator_effector'})
 
-        df['regulatory_interaction_hash'] = df2['regulator'] + df2['operon']
-        df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
-        df = df.dropna(subset=['regulatory_interaction_hash'])
+        regulator_effector = apply_processors(regulator_effector, regulator_operon=to_list)
+        regulator_effector = regulator_effector.explode(column='regulator_operon')
 
-        df = apply_processors(df, regulatory_effect=regulatory_effect)
+        regulatory_interaction = pd.merge(regulator_effector, operon,
+                                          left_on='regulator_operon', right_on='operon_id_old')
+        regulatory_interaction = regulatory_interaction.drop(columns=['operon_id_old', 'regulator_operon'])
 
-        self._stack_transformed_nodes(df)
+        regulatory_interaction = apply_processors(regulatory_interaction, regulatory_effect=regulatory_effect)
 
-        return df
+        regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
+
+        self._stack_transformed_nodes(regulatory_interaction)
+
+        return regulatory_interaction
 
 
 class RegulatoryInteractionToSourceConnector(RegPreciseConnector):
@@ -136,10 +128,8 @@ class RegulatoryInteractionToEffectorConnector(RegPreciseConnector):
                               default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, effectors=to_list)
-        rin = rin.explode(column='effectors')
-        rin = rin.dropna(subset=['effectors'])
         from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['effectors'].tolist()
+        to_identifiers = rin['effector'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)

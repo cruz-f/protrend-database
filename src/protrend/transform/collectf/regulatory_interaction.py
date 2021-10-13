@@ -8,7 +8,7 @@ from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_collectf, to_set_list,
-                                           flatten_set_list, take_first, to_list_nan, regulatory_interaction_hash)
+                                           flatten_set_list, take_first, to_list_nan)
 from protrend.utils import SetList
 
 
@@ -44,36 +44,32 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
         operon = apply_processors(operon, genes=to_list_nan, tfbss=to_list_nan, operon=to_list_nan)
         operon = operon.explode(column='operon')
 
-        df = pd.merge(tfbs, regulator, on='regulon')
-        df = df.dropna(subset=['regulator'])
+        regulator_tfbs = pd.merge(regulator, tfbs, on='regulon')
 
-        df = pd.merge(df, operon, on='operon')
-        df = df.dropna(subset=['operon_protrend_id'])
+        regulatory_interaction = pd.merge(regulator_tfbs, operon, on='operon')
 
-        df = df.rename(columns={'operon': 'operon_id', 'operon_protrend_id': 'operon', 'mode': 'regulatory_effect'})
-        df = self.drop_duplicates(df=df, subset=['regulator', 'operon'], perfect_match=True, preserve_nan=True)
-        df = df.dropna(subset=['regulator', 'operon'])
+        regulatory_interaction = regulatory_interaction.rename(columns={'operon': 'operon_id',
+                                                                        'operon_protrend_id': 'operon',
+                                                                        'mode': 'regulatory_effect'})
 
+        # filter by organism
         aggregation = {'genes': flatten_set_list, 'tfbss': flatten_set_list,
                        'organism_protrend_id': to_set_list, 'regulator': to_set_list}
-        df = self.group_by(df=df, column='operon', aggregation=aggregation, default=take_first)
-        mask = df['organism_protrend_id'].map(len) == 1
-        df = df[mask]
-        df = apply_processors(df, organism_protrend_id=[to_list, take_first], regulator=to_list)
-        df = df.explode(column='regulator')
+        regulatory_interaction = self.group_by(df=regulatory_interaction, column='operon',
+                                               aggregation=aggregation, default=take_first)
+        mask = regulatory_interaction['organism_protrend_id'].map(len) == 1
+        regulatory_interaction = regulatory_interaction[mask]
+        regulatory_interaction = apply_processors(regulatory_interaction, organism_protrend_id=take_first)
+        regulatory_interaction = regulatory_interaction.explode(column='regulator')
 
-        # filter by regulator + operon
-        df2 = apply_processors(df, regulator=to_list, operon=to_list)
+        regulatory_interaction = apply_processors(regulatory_interaction, regulatory_effect=regulatory_effect_collectf)
+        regulatory_interaction['regulator_effector'] = None
 
-        df['regulatory_interaction_hash'] = df2['regulator'] + df2['operon']
-        df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
-        df = df.dropna(subset=['regulatory_interaction_hash'])
+        regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
 
-        df = apply_processors(df, regulatory_effect=regulatory_effect_collectf)
+        self._stack_transformed_nodes(regulatory_interaction)
 
-        self._stack_transformed_nodes(df)
-
-        return df
+        return regulatory_interaction
 
 
 class RegulatoryInteractionToRegulatorConnector(CollectfConnector):

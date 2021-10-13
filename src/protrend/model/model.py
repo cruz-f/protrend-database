@@ -357,7 +357,7 @@ class RegulatoryInteraction(Node):
     operon = StringProperty(required=True)
     genes = ArrayProperty(StringProperty(), required=True)
     tfbss = ArrayProperty(StringProperty())
-    effectors = ArrayProperty(StringProperty())
+    regulator_effector = StringProperty()
     regulatory_effect = StringProperty()
     regulatory_interaction_hash = StringProperty()
 
