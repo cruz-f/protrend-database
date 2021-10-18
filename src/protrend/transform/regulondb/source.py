@@ -34,14 +34,14 @@ class SourceTransformer(RegulondbTransformer):
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
-        collectf = dict(name=[self.name],
+        db = dict(name=[self.name],
                         type=[self.type],
                         url=[self.url],
                         doi=[self.doi],
                         authors=[self.authors],
                         description=[self.description])
 
-        df = pd.DataFrame(collectf, index=[0])
+        df = pd.DataFrame(db, index=[0])
 
         self._stack_transformed_nodes(df)
 
