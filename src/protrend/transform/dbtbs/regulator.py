@@ -18,24 +18,25 @@ class RegulatorTransformer(DBTBSTransformer):
     default_order = 90
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
-                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
-                       'protrend_id'])
+                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'protrend_id',
+                       'name_regulondb', 'family', 'domain', 'domain_description', 'url',
+                       'type', 'comment', 'operon', 'subti_list', 'consensus_sequence'])
 
     read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',
                             'type', 'comment', 'operon', 'subti_list', 'consensus_sequence'])
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+        tf = tf.drop(columns=['description'])
+
         # filter nan and duplicates
         tf = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True,
                                   preserve_nan=True)
         tf = tf.dropna(subset=['name'])
 
-        tf = apply_processors(tf, name=[rstrip, lstrip])
-
         tf['mechanism'] = 'transcription factor'
 
+        tf = apply_processors(tf, name=[rstrip, lstrip])
         tf = self.create_input_value(df=tf, col='name')
-
         tf['input_value'] = apply_processors(df=tf, input_value=lower_case)
 
         return tf
