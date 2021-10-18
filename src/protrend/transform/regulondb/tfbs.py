@@ -3,7 +3,8 @@ import pandas as pd
 from protrend.io import read_txt, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import TFBS
-from protrend.transform.processors import (apply_processors, to_list, to_str, operon_hash, site_hash)
+from protrend.transform.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
+                                           take_first)
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.utils import SetList
@@ -72,8 +73,8 @@ class TFBSTransformer(RegulondbTransformer):
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, file='site', default_columns=self.columns,
-                               reader=read_txt, skiprows=35, names=self.columns)
+        tfbs = read_from_stack(stack=self.transform_stack, file='site', default_columns=self.read_columns,
+                               reader=read_txt, skiprows=35, names=self.read_columns)
 
         tfbs = self._transform_tfbs(tfbs)
         tfbs = self._tfbs_coordinates(tfbs)
@@ -86,6 +87,8 @@ class TFBSTransformer(RegulondbTransformer):
         gene_tfbs = self._build_gene_tfbs()
         gene_tfbs = pd.merge(gene, gene_tfbs, on='gene_id')
         gene_tfbs = pd.merge(tfbs, gene_tfbs, on='site_id')
+        aggregation = {'gene_id': to_set_list, 'gene_protrend_id': to_set_list}
+        gene_tfbs = self.group_by(df=gene_tfbs, column='site_id', aggregation=aggregation, default=take_first)
 
         # filter by site hash: length + strand + start + genes
         df = apply_processors(gene_tfbs,

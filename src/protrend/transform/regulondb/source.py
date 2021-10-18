@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, Promoter, Effector, \
     RegulatoryInteraction
+from protrend.transform.regulondb import EffectorTransformer
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
@@ -333,7 +334,7 @@ class EffectorToSourceConnector(RegulondbConnector):
 
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
         source = read_from_stack(stack=self._connect_stack, file='source',
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
 

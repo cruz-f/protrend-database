@@ -1,14 +1,14 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_txt
+from protrend.io import read_from_stack, read_txt, read_json_frame
 from protrend.model.model import Regulator
-from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip
+from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.utils import SetList
 
 
-class RegulatorTransformer(CollectfTransformer):
+class RegulatorTransformer(RegulondbTransformer):
     default_node = Regulator
     default_transform_stack = {'tf': 'transcription_factor.txt',
                                'srna': 'srna_interaction.txt',
@@ -78,8 +78,8 @@ class RegulatorTransformer(CollectfTransformer):
                                 skiprows=36, names=self.sigma_columns)
 
         gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_txt)
-        gene = self.select_columns(gene, 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                                    'ncbi_protein', 'genbank_accession', 'refseq_accession',
                                    'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
                                    'gene_name_lower', 'gene_id', 'protrend_id')

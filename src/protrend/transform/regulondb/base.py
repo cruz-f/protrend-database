@@ -1,26 +1,32 @@
-from typing import List
+import os
+from typing import List, Dict
 
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt
 from protrend.transform import Transformer, Connector
 from protrend.transform.processors import to_set_list
-from protrend.utils import SetList
+from protrend.utils import SetList, STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
 class RegulondbTransformer(Transformer):
     default_source = 'regulondb'
     default_version = '0.0.0'
 
-    regulondb_stack = {'site': 'site.txt',
-                       'ri': 'regulatory_interaction.txt',
-                       'tf_gene_interaction': 'tf_gene_interaction.txt',
-                       'gene': 'gene.txt',
-                       'tf': 'transcription_factor.txt',
-                       'srna': 'srna_interaction.txt',
-                       'sigma': 'sigma_tmp.txt',
-                       'tu': 'transcription_unit.txt',
-                       'tu_gene': 'tu_gene_link.txt'}
+    default_regulondb_stack = {'site': 'site.txt',
+                               'ri': 'regulatory_interaction.txt',
+                               'tf_gene_interaction': 'tf_gene_interaction.txt',
+                               'genetic_network': 'genetic_network.txt',
+                               'gene': 'gene.txt',
+                               'tf': 'transcription_factor.txt',
+                               'srna': 'srna_interaction.txt',
+                               'sigma': 'sigma_tmp.txt',
+                               'tu': 'transcription_unit.txt',
+                               'tu_gene': 'tu_gene_link.txt',
+                               'conformation': 'conformation.txt',
+                               'effector': 'effector.txt',
+                               'promoter': 'promoter.txt',
+                               'conformation_effector': 'conformation_effector_link.txt'}
 
     tfbs_columns = SetList(['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                             'site_internal_comment', 'key_id_org', 'site_length'])
@@ -70,6 +76,36 @@ class RegulondbTransformer(Transformer):
                                'ri_function', 'center_position', 'ri_dist_first_gene', 'ri_first_gene_id',
                                'affinity_exp', 'regulatory_interaction_note', 'ri_internal_comment', 'key_id_org',
                                'ri_sequence', 'ri_orientation', 'ri_sequence_orientation', 'object_type'])
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._regulondb_stack = {}
+
+        self.load_regulondb_stack()
+
+    def load_regulondb_stack(self, regulondb_stack: Dict[str, str] = None):
+
+        self._regulondb_stack = {}
+
+        if not regulondb_stack:
+            regulondb_stack = self.default_regulondb_stack
+
+        for key, file in regulondb_stack.items():
+
+            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+
+            if os.path.exists(sa_file):
+
+                self._regulondb_stack[key] = sa_file
+
+            else:
+
+                self._regulondb_stack[key] = dl_file
+
+    @property
+    def regulondb_stack(self):
+        return self._regulondb_stack
 
     def _build(self, df: pd.DataFrame, selection: List[str], duplicates: List[str], nan: List[str]) -> pd.DataFrame:
         df = self.select_columns(df, *selection)
@@ -194,7 +230,7 @@ class RegulondbTransformer(Transformer):
                              default_columns=self.gen_net_columns, reader=read_txt,
                              skiprows=35, names=self.gen_net_columns)
         return self._build(df=df,
-                           selection=['regulator_id', 'regulator_name', 'regulated_id' 'regulated_name',
+                           selection=['regulator_id', 'regulator_name', 'regulated_id', 'regulated_name',
                                       'function_interaction', 'evidence', 'regulator_type', 'regulated_type'],
                            duplicates=['regulator_id', 'regulated_id'],
                            nan=['regulator_id', 'regulated_id'])
@@ -204,9 +240,9 @@ class RegulondbTransformer(Transformer):
                              reader=read_txt, skiprows=42, names=self.ri_columns)
         return self._build(df=df,
                            selection=['regulatory_interaction_id', 'conformation_id', 'promoter_id', 'site_id',
-                                      'ri_function', 'ri_dist_first_gene'],
-                           duplicates=['conformation_id', 'site_id', 'ri_dist_first_gene'],
-                           nan=['conformation_id', 'ri_dist_first_gene'])
+                                      'ri_function', 'ri_first_gene_id'],
+                           duplicates=['conformation_id', 'site_id', 'ri_first_gene_id'],
+                           nan=['conformation_id', 'ri_first_gene_id'])
 
     def _build_tf_gene_interaction(self):
         df = read_from_stack(stack=self.regulondb_stack, file='tf_gene_interaction',
@@ -217,6 +253,63 @@ class RegulondbTransformer(Transformer):
                                       'site_id', 'ri_function', 'ri_first_gene_id'],
                            duplicates=['conformation_id', 'object_id', 'site_id'],
                            nan=['conformation_id', 'object_id', 'ri_first_gene_id'])
+
+    def _build_meta_regulatory_interaction(self):
+        tf = self._build_tf()
+        tf = self.select_columns(tf, 'transcription_factor_id')
+
+        sigma = self._build_sigma()
+        sigma = self.select_columns(sigma, 'sigma_id', 'sigma_gene_id')
+
+        gene = self._build_gene()
+        gene = self.select_columns(gene, 'gene_id')
+
+        # Genetic network
+        gen_net = self._build_genetic_network()
+        gen_net = self.select_columns(gen_net, 'regulator_id', 'regulated_id', 'function_interaction', 'evidence')
+        gen_net = gen_net.rename(columns={'function_interaction': 'ri_function'})
+
+        tf_gen_net = pd.merge(gen_net, tf, left_on='regulator_id', right_on='transcription_factor_id')
+        tf_gen_net = tf_gen_net.drop(columns=['transcription_factor_id'])
+
+        sigma_gen_net = pd.merge(gen_net, sigma, left_on='regulator_id', right_on='sigma_id')
+        sigma_gen_net = sigma_gen_net.drop(columns=['sigma_id', 'regulator_id'])
+        sigma_gen_net = sigma_gen_net.rename(columns={'sigma_gene_id': 'regulator_id'})
+
+        gen_net = pd.concat([tf_gen_net, sigma_gen_net], axis=0)
+        gen_net = pd.merge(gen_net, gene, left_on='regulated_id', right_on='gene_id')
+        gen_net = gen_net.drop(columns=['regulated_id'])
+
+        conformation = self._build_conformation()
+        tf_conformation = pd.merge(conformation, tf, on='transcription_factor_id')
+
+        # Regulatory Interaction
+        ri = self._build_regulatory_interaction()
+        ri = self.select_columns(ri, 'conformation_id', 'site_id', 'ri_function', 'ri_first_gene_id')
+        ri = pd.merge(ri, tf_conformation, on='conformation_id')
+        ri = pd.merge(ri, gene, left_on='ri_first_gene_id', right_on='gene_id')
+        ri = ri.drop(columns=['ri_first_gene_id', 'conformation_id'])
+        ri = ri.rename(columns={'transcription_factor_id': 'regulator_id'})
+
+        # TF-Gene Interaction
+        interaction = self._build_tf_gene_interaction()
+        interaction = self.select_columns(interaction, 'conformation_id', 'object_id', 'site_id', 'ri_function')
+        interaction = pd.merge(interaction, tf_conformation, on='conformation_id')
+        interaction = pd.merge(interaction, gene, left_on='object_id', right_on='gene_id')
+        interaction = interaction.drop(columns=['conformation_id', 'object_id'])
+        interaction = interaction.rename(columns={'transcription_factor_id': 'regulator_id'})
+
+        # SRNA Interaction
+        srna = self._build_srna()
+        srna = self.select_columns(srna, 'srna_gene_id', 'srna_gene_regulated_id', 'srna_function')
+        srna = srna.rename(columns={'srna_gene_id': 'regulator_id',
+                                    'srna_gene_regulated_id': 'gene_id',
+                                    'srna_function': 'ri_function'})
+
+        regulatory_interaction = pd.concat([gen_net, ri, interaction, srna], axis=0)
+
+        # columns = ['regulator_id', 'gene_id', 'site_id', 'ri_function', 'evidence']
+        return regulatory_interaction
 
     def _build_regulator_gene(self):
         tf = self._build_tf()
@@ -240,7 +333,7 @@ class RegulondbTransformer(Transformer):
         # Regulatory Interaction
         ri = self._build_regulatory_interaction()
         ri = pd.merge(ri, tf_conformation, on='conformation_id')
-        ri = pd.merge(ri, gene, left_on='ri_dist_first_gene', right_on='gene_id')
+        ri = pd.merge(ri, gene, left_on='ri_first_gene_id', right_on='gene_id')
         ri = self.select_columns(ri, 'transcription_factor_id', 'gene_id')
         ri = ri.rename(columns={'transcription_factor_id': 'regulator_id'})
 
@@ -274,20 +367,6 @@ class RegulondbTransformer(Transformer):
         return self._build(df=regulator_operon, selection=['regulator_id', 'operon_id'],
                            duplicates=['regulator_id', 'operon_id'], nan=['regulator_id', 'operon_id'])
 
-    def _build_operon_gene(self):
-        operon = self._build_operon()
-        operon_gene = operon.explode(column='gene_id')
-        operon_gene = self.select_columns(operon_gene, 'operon_id', 'gene_id')
-
-        return operon_gene
-
-    def _build_operon_promoter(self):
-        operon = self._build_operon()
-        operon_promoter = operon.explode(column='promoter_id')
-        operon_promoter = self.select_columns(operon_promoter, 'operon_id', 'promoter_id')
-
-        return operon_promoter
-
     def _build_regulator_tfbs(self):
         tf = self._build_tf()
         tfbs = self._build_tfbs()
@@ -314,25 +393,51 @@ class RegulondbTransformer(Transformer):
         return self._build(df=regulator_tfbs, selection=['regulator_id', 'site_id'],
                            duplicates=['regulator_id', 'site_id'], nan=['regulator_id', 'site_id'])
 
+    def _build_operon_promoter(self):
+        operon = self._build_operon()
+        operon_promoter = operon.explode(column='promoter_id')
+        operon_promoter = self.select_columns(operon_promoter, 'operon_id', 'promoter_id')
+
+        return operon_promoter
+
+    def _build_operon_gene(self):
+        operon = self._build_operon()
+        operon_gene = operon.explode(column='gene_id')
+        operon_gene = self.select_columns(operon_gene, 'operon_id', 'gene_id')
+
+        return operon_gene
+
     def _build_operon_tfbs(self):
-        regulator_tfbs = self._build_regulator_tfbs()
+        tf = self._build_tf()
+        tfbs = self._build_tfbs()
 
-        regulator_operon = self._build_regulator_operon()
+        conformation = self._build_conformation()
+        tf_conformation = pd.merge(conformation, tf, on='transcription_factor_id')
 
-        operon_tfbs = pd.merge(regulator_operon, regulator_tfbs, on='regulator_id')
+        # Regulatory Interaction
+        ri = self._build_regulatory_interaction()
+        ri = pd.merge(ri, tf_conformation, on='conformation_id')
+        ri = pd.merge(ri, tfbs, on='site_id')
+        ri = self.select_columns(ri, 'transcription_factor_id', 'site_id', 'ri_first_gene_id')
+        ri = ri.rename(columns={'transcription_factor_id': 'regulator_id', 'ri_first_gene_id': 'gene_id'})
+
+        # TF-Gene Interaction
+        interaction = self._build_tf_gene_interaction()
+        interaction = pd.merge(interaction, tf_conformation, on='conformation_id')
+        interaction = pd.merge(interaction, tfbs, on='site_id')
+        interaction = self.select_columns(interaction, 'transcription_factor_id', 'site_id', 'ri_first_gene_id')
+        interaction = interaction.rename(columns={'transcription_factor_id': 'regulator_id',
+                                                  'ri_first_gene_id': 'gene_id'})
+
+        regulator_tfbs_gene = pd.concat([ri, interaction], axis=0)
+
+        operon = self._build_operon()
+        operon_by_gene = operon.explode(column='gene_id')
+
+        operon_tfbs = pd.merge(regulator_tfbs_gene, operon_by_gene, on='gene_id')
 
         return self._build(df=operon_tfbs, selection=['operon_id', 'site_id'],
                            duplicates=['operon_id', 'site_id'], nan=['operon_id', 'site_id'])
-
-    def _build_gene_tfbs(self):
-        operon = self._build_operon()
-        operon_tfbs = self._build_operon_tfbs()
-
-        gene_tfbs = pd.merge(operon_tfbs, operon, on='operon_id')
-        gene_tfbs = gene_tfbs.explode(column='gene_id')
-
-        return self._build(df=gene_tfbs, selection=['gene_id', 'site_id'],
-                           duplicates=['gene_id', 'site_id'], nan=['gene_id', 'site_id'])
 
     def _build_gene_promoter(self):
         tu = self._build_tu()
@@ -349,7 +454,40 @@ class RegulondbTransformer(Transformer):
         return self._build(df=gene_promoter, selection=['gene_id', 'promoter_id'],
                            duplicates=['gene_id', 'promoter_id'], nan=['gene_id', 'promoter_id'])
 
+    def _build_gene_tfbs(self):
+        operon = self._build_operon()
+        operon_tfbs = self._build_operon_tfbs()
+
+        gene_tfbs = pd.merge(operon_tfbs, operon, on='operon_id')
+        gene_tfbs = gene_tfbs.explode(column='gene_id')
+
+        return self._build(df=gene_tfbs, selection=['gene_id', 'site_id'],
+                           duplicates=['gene_id', 'site_id'], nan=['gene_id', 'site_id'])
+
 
 class RegulondbConnector(Connector):
     default_source: str = 'regulondb'
     default_version: str = '0.0.0'
+
+    def __init__(self, **kwargs):
+
+        super().__init__(**kwargs)
+
+    def load_connect_stack(self, connect_stack: Dict[str, str] = None):
+
+        self._connect_stack = {}
+
+        if not connect_stack:
+            connect_stack = self.default_connect_stack
+
+        for key, file in connect_stack.items():
+            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+
+            if os.path.exists(sa_file):
+
+                self._connect_stack[key] = sa_file
+
+            else:
+
+                self._connect_stack[key] = dl_file

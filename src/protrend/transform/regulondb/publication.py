@@ -22,7 +22,7 @@ class PublicationTransformer(RegulondbTransformer):
     default_order = 100
     columns = SetList(['pmid', 'doi', 'title', 'author', 'year',
                        'publication_id', 'reference_id', 'external_db_id', 'source',
-                       'publication_note', 'publication_internal_comment'])
+                       'publication_note', 'publication_internal_comment', 'protrend_id'])
     read_columns = SetList(['publication_id', 'reference_id', 'external_db_id', 'author', 'title', 'source',
                             'year', 'publication_note', 'publication_internal_comment'])
 
@@ -66,6 +66,8 @@ class PublicationTransformer(RegulondbTransformer):
 
         self._stack_transformed_nodes(df)
 
+        return df
+
 
 class PublicationToRegulatorConnector(RegulondbConnector):
     default_from_node = Publication
@@ -90,9 +92,14 @@ class PublicationToRegulatorConnector(RegulondbConnector):
                                      default_columns=obj_ev_pub_cols, reader=read_txt,
                                      names=obj_ev_pub_cols, skiprows=31)
 
-        obj_tf = pd.merge(obj_ev_pub, regulator, left_on='object_id', right_on='transcription_factor_id')
-        obj_sigma = pd.merge(obj_ev_pub, regulator, left_on='object_id', right_on='sigma_id')
-        obj_srna = pd.merge(obj_ev_pub, regulator, left_on='object_id', right_on='srna_id')
+        regulator_tf = regulator.dropna(subset=['transcription_factor_id'])
+        obj_tf = pd.merge(obj_ev_pub, regulator_tf, left_on='object_id', right_on='transcription_factor_id')
+
+        regulator_sigma = regulator.dropna(subset=['sigma_id'])
+        obj_sigma = pd.merge(obj_ev_pub, regulator_sigma, left_on='object_id', right_on='sigma_id')
+
+        regulator_srna = regulator.dropna(subset=['srna_id'])
+        obj_srna = pd.merge(obj_ev_pub, regulator_srna, left_on='object_id', right_on='srna_id')
 
         obj_reg = pd.concat([obj_tf, obj_sigma, obj_srna], axis=0)
 

@@ -4,13 +4,13 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
 from protrend.model.model import Evidence, Promoter, Regulator, TFBS, Operon, Gene, RegulatoryInteraction
-from protrend.transform.collectf import TFBSTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
 from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.regulator import RegulatorTransformer
+from protrend.transform.regulondb.tfbs import TFBSTransformer
 from protrend.transform.regulondb.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils import SetList
 
@@ -79,9 +79,14 @@ class EvidenceToRegulatorConnector(RegulondbConnector):
                                      default_columns=obj_ev_pub_cols, reader=read_txt,
                                      names=obj_ev_pub_cols, skiprows=31)
 
-        obj_tf = pd.merge(obj_ev_pub, regulator, left_on='object_id', right_on='transcription_factor_id')
-        obj_sigma = pd.merge(obj_ev_pub, regulator, left_on='object_id', right_on='sigma_id')
-        obj_srna = pd.merge(obj_ev_pub, regulator, left_on='object_id', right_on='srna_id')
+        regulator_tf = regulator.dropna(subset=['transcription_factor_id'])
+        obj_tf = pd.merge(obj_ev_pub, regulator_tf, left_on='object_id', right_on='transcription_factor_id')
+
+        regulator_sigma = regulator.dropna(subset=['sigma_id'])
+        obj_sigma = pd.merge(obj_ev_pub, regulator_sigma, left_on='object_id', right_on='sigma_id')
+
+        regulator_srna = regulator.dropna(subset=['srna_id'])
+        obj_srna = pd.merge(obj_ev_pub, regulator_srna, left_on='object_id', right_on='srna_id')
 
         obj_reg = pd.concat([obj_tf, obj_sigma, obj_srna], axis=0)
 

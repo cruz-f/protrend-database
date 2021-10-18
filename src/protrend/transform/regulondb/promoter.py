@@ -76,8 +76,8 @@ class PromoterTransformer(RegulondbTransformer):
         return promoter
 
     def transform(self):
-        promoter = read_from_stack(stack=self.transform_stack, file='promoter', default_columns=self.columns,
-                                   reader=read_txt, skiprows=35, names=self.columns)
+        promoter = read_from_stack(stack=self.transform_stack, file='promoter', default_columns=self.read_columns,
+                                   reader=read_txt, skiprows=40, names=self.read_columns)
 
         promoter = self._transform_promoter(promoter)
         promoter = self._promoter_coordinates(promoter)

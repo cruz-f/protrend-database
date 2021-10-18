@@ -24,6 +24,7 @@ class EffectorTransformer(RegulondbTransformer):
                             'effector_internal_comment', 'key_id_org'])
 
     def _transform_effector(self, effector: pd.DataFrame):
+        effector['name'] = effector['effector_name']
         effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=True)
         effector = effector.dropna(subset=['name'])
 
@@ -51,7 +52,8 @@ class EffectorTransformer(RegulondbTransformer):
 
         df = pd.merge(effectors, effector, on='input_value')
 
-        df = df.drop(columns=['input_value'])
+        df = df.rename(columns={'name_y': 'name'})
+        df = df.drop(columns=['input_value', 'name_x'])
 
         self._stack_transformed_nodes(df)
 

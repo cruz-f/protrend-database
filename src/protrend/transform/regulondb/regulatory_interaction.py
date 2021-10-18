@@ -22,18 +22,17 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
     columns = SetList(['regulator', 'operon', 'genes', 'tfbss', 'regulator_effector', 'regulatory_effect',
                        'regulatory_interaction_hash', 'protrend_id',
                        'gene_id', 'effector_id', 'transcription_factor_id', 'srna_gene_id', 'sigma_id', 'operon_id',
-                       ])
+                       'regulator_id', 'evidence'])
 
     def transform(self) -> pd.DataFrame:
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'gene_id')
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
-
         effector = read_from_stack(stack=self.transform_stack, file='effector',
                                    default_columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = self.select_columns(effector, 'protrend_id', 'effector_id')
         effector = effector.rename(columns={'protrend_id': 'regulator_effector'})
+
+        # columns = ['regulator_id', 'effector_id', 'regulator_effector']
+        regulator_effector = self._build_regulator_effector()
+        effector = pd.merge(regulator_effector, effector, on='effector_id')
 
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
@@ -49,53 +48,46 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
         operon = self.select_columns(operon, 'genes', 'tfbss', 'operon_id', 'protrend_id')
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = apply_processors(operon, genes=to_list_nan, tfbss=to_list_nan)
+        operon_by_gene = operon.explode(column='genes')
 
-        # Genetic network
-        # columns = 'regulator_id', 'regulator_name', 'regulated_id' 'regulated_name',
-        # 'function_interaction', 'evidence', 'regulator_type', 'regulated_type'
-        gen_net = self._build_genetic_network()
+        gene = read_from_stack(stack=self.transform_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = self.select_columns(gene, 'protrend_id', 'gene_id')
+        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
-        tf_gen_net = pd.merge(gen_net, regulator, left_on='regulator_id', right_on='transcription_factor_id')
-        sigma_gen_net = pd.merge(gen_net, regulator, left_on='regulator_id', right_on='sigma_id')
+        # columns = ['genes', 'tfbss', 'operon_id', 'operon', 'gene_id', 'gene_protrend_id']
+        operon_by_gene = pd.merge(operon_by_gene, gene, left_on='genes', right_on='gene_protrend_id')
 
-        gen_net = pd.concat([tf_gen_net, sigma_gen_net], axis=0)
-        gen_net = pd.merge(gen_net, gene, left_on='regulated_id', right_on='gene_id')
-        gen_net = gen_net.rename(columns={'regulated_id': 'gene_id', 'function_interaction': 'ri_function'})
+        # columns = ['regulator_id', 'gene_id', 'site_id', 'ri_function', 'evidence',
+        # 'genes', 'tfbss', 'operon_id', 'operon', 'gene_protrend_id']
+        meta_regulatory_interaction = self._build_meta_regulatory_interaction()
+        meta_regulatory_interaction = pd.merge(meta_regulatory_interaction, operon_by_gene, on='gene_id')
 
-        conformation = self._build_conformation()
-        tf_conformation = pd.merge(conformation, regulator, on='transcription_factor_id')
+        regulator_tf = regulator.dropna(subset=['transcription_factor_id'])
+        regulatory_interaction_tf = pd.merge(meta_regulatory_interaction, regulator_tf,
+                                             left_on='regulator_id', right_on='transcription_factor_id')
 
-        # Regulatory Interaction
-        # columns = 'regulatory_interaction_id', 'conformation_id', 'promoter_id', 'site_id',
-        # 'ri_function', 'ri_dist_first_gene'
-        ri = self._build_regulatory_interaction()
-        ri = pd.merge(ri, tf_conformation, on='conformation_id')
-        ri = pd.merge(ri, gene, left_on='ri_dist_first_gene', right_on='gene_id')
-        ri = ri.rename(columns={'transcription_factor_id': 'regulator_id'})
+        regulator_srna = regulator.dropna(subset=['srna_gene_id'])
+        regulatory_interaction_srna = pd.merge(meta_regulatory_interaction, regulator_srna,
+                                               left_on='regulator_id', right_on='srna_gene_id')
 
-        # TF-Gene Interaction
-        # columns = 'regulatory_interaction_id', 'conformation_id', 'object_id', 'site_id',
-        # 'ri_function', 'ri_first_gene_id'
-        interaction = self._build_tf_gene_interaction()
-        interaction = pd.merge(interaction, tf_conformation, on='conformation_id')
-        interaction = pd.merge(interaction, gene, left_on='object_id', right_on='gene_id')
-        interaction = interaction.rename(columns={'transcription_factor_id': 'regulator_id'})
+        regulator_sigma = regulator.dropna(subset=['sigma_id'])
+        regulatory_interaction_sigma = pd.merge(meta_regulatory_interaction, regulator_sigma,
+                                                left_on='regulator_id', right_on='sigma_id')
 
-        # SRNA Interaction
-        # columns = 'srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id', 'srna_function'
-        srna = self._build_srna()
-        srna = srna.rename(columns={'srna_gene_id': 'regulator_id', 'srna_gene_regulated_id': 'gene_id',
-                                    'srna_function': 'ri_function'})
+        # columns = ['regulator_id', 'gene_id', 'site_id', 'ri_function', 'evidence',
+        # 'genes', 'tfbss', 'operon_id', 'operon', 'gene_protrend_id', 'transcription_factor_id', 'srna_gene_id',
+        # 'sigma_id', 'regulator']
+        regulatory_interaction = pd.concat([regulatory_interaction_tf,
+                                            regulatory_interaction_srna,
+                                            regulatory_interaction_sigma], axis=0)
 
-        regulator_gene = pd.concat([gen_net, ri, interaction, srna], axis=0)
+        # add effectors
+        regulatory_interaction = pd.merge(regulatory_interaction, effector, how='left', on='regulator_id')
 
-        operon = self._build_operon()
-        operon_by_gene = operon.explode(column='gene_id')
-        regulator_operon = pd.merge(regulator_gene, operon_by_gene, on='gene_id')
-
-        regulator_effector = self._build_regulator_effector()
-        regulatory_interaction = pd.merge(regulator_operon, regulator_effector, how='left', on='regulator_id')
-        regulatory_interaction = pd.merge(regulatory_interaction, effector, how='left', on='effector_id')
+        # add genes and tfbs
+        regulatory_interaction = regulatory_interaction.drop(columns=['genes', 'tfbss', 'operon_id'])
+        regulatory_interaction = pd.merge(regulatory_interaction, operon, on='operon')
 
         regulatory_interaction = regulatory_interaction.rename(columns={'ri_function': 'regulatory_effect'})
         regulatory_interaction = apply_processors(regulatory_interaction,
@@ -117,7 +109,7 @@ class RegulatoryInteractionToEffectorConnector(RegulondbConnector):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
                               default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
-        rin = apply_processors(rin, effectors=to_list)
+        rin = apply_processors(rin, regulator_effector=to_list)
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['regulator_effector'].tolist()
 

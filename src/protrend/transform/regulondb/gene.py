@@ -18,7 +18,7 @@ class GeneTransformer(RegulondbTransformer):
     default_node = Gene
     default_transform_stack = {'gene': 'gene.txt', 'sequence': 'sequence.gb'}
     default_order = 100
-    columns = SetList(['name', 'synonyms', 'function', 'description', 'ncbi_gene',
+    columns = SetList(['locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
                        'gene_id', 'gene_name', 'gene_posleft', 'gene_posright', 'gene_strand',
@@ -98,7 +98,7 @@ class GeneTransformer(RegulondbTransformer):
                                                'genbank_accession', 'uniprot_accession'])
 
     def _transform_gene(self, gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
-        gene = apply_processors(gene, transcription_factor_name=[rstrip, lstrip])
+        gene = apply_processors(gene, gene_name=[rstrip, lstrip])
         gene = gene.dropna(subset=['gene_name'])
         gene = self.drop_duplicates(df=gene, subset=['gene_name'], perfect_match=True, preserve_nan=True)
 
@@ -165,7 +165,7 @@ class GeneTransformer(RegulondbTransformer):
         names = gene['gene_name'].tolist()
         gbs = gene['genbank_accession'].tolist()
         accessions = gene['uniprot_accession'].tolist()
-        taxa = gene['511145'] * len(loci)
+        taxa = ['511145'] * len(loci)
         genes = self._annotate_genes(loci=loci, names=names, genbanks=gbs, accessions=accessions, taxa=taxa)
 
         df = pd.merge(genes, gene, on='input_value', suffixes=('_annotation', '_regulondb'))
