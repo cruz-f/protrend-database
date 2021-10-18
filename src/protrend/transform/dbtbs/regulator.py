@@ -15,10 +15,10 @@ from protrend.utils import SetList
 class RegulatorTransformer(DBTBSTransformer):
     default_node = Regulator
     default_transform_stack = {'tf': 'TranscriptionFactor.json'}
-    default_order = 90
+    default_order = 100
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
-                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'protrend_id',
+                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'mechanism', 'protrend_id',
                        'name_regulondb', 'family', 'domain', 'domain_description', 'url',
                        'type', 'comment', 'operon', 'subti_list', 'consensus_sequence'])
 
