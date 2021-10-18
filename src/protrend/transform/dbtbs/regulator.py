@@ -80,13 +80,13 @@ class RegulatorTransformer(DBTBSTransformer):
 
         tfs = self._annotate_tfs(names, taxa)
 
-        df = pd.merge(tfs, tf, on='input_value', suffixes=('_annotation', '_regulondb'))
+        df = pd.merge(tfs, tf, on='input_value', suffixes=('_annotation', '_dbtbs'))
 
         df = df.dropna(subset=['locus_tag'])
 
-        df['old_name'] = df['name_regulondb']
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regulondb')
-        df = df.rename(columns={'old_name': 'name_regulondb'})
+        df['old_name'] = df['name_dbtbs']
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_dbtbs')
+        df = df.rename(columns={'old_name': 'name_dbtbs'})
 
         df = df.drop(columns=['input_value'])
 
