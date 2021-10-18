@@ -56,11 +56,10 @@ class PublicationTransformer(RegulondbTransformer):
         publications = self._transform_publications(pmids)
 
         df = pd.merge(publications, df, on='input_value', suffixes=('_annotation', '_regulondb'))
-        df = df.drop(columns=['author_regulondb', 'year_regulondb', 'title_regulondb'])
+        df = df.drop(columns=['author_regulondb', 'year_regulondb', 'title_regulondb', 'input_value'])
         df = df.rename(columns={'author_annotation': 'author',
                                 'year_annotation': 'year',
                                 'title_regulondb': 'title'})
-        df = df.drop(columns=['input_value'])
 
         df = apply_processors(df, pmid=to_int_str)
 
