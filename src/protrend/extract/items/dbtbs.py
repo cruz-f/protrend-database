@@ -71,7 +71,7 @@ class TFBSItem(Item):
     regulation = Field()
     location = Field(input_processor=MapCompose(DBTBSProcessors.process_nd))
     absolute_position = Field(input_processor=MapCompose(DBTBSProcessors.process_nd))
-    sequence = Field(input_processor=MapCompose(DBTBSProcessors.process_nd), output_processor=Join(separator=''))
+    sequence = Field(input_processor=MapCompose(DBTBSProcessors.process_nd))
     pubmed = Field(input_processor=MapCompose(DBTBSProcessors.process_pubmed, DBTBSProcessors.process_nd))
 
     # relationships
