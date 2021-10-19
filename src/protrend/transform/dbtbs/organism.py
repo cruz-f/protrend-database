@@ -1,7 +1,13 @@
 import pandas as pd
 
-from protrend.model.model import Organism
-from protrend.transform.dbtbs.base import DBTBSTransformer
+from protrend.io import read_from_stack, read_json_frame
+from protrend.model.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
+from protrend.transform.dbtbs.gene import GeneTransformer
+from protrend.transform.dbtbs.operon import OperonTransformer
+from protrend.transform.dbtbs.regulator import RegulatorTransformer
+from protrend.transform.dbtbs.regulatory_interaction import RegulatoryInteractionTransformer
+from protrend.transform.dbtbs.tfbs import TFBSTransformer
 from protrend.utils import SetList
 
 
@@ -39,3 +45,119 @@ class OrganismTransformer(DBTBSTransformer):
         self._stack_transformed_nodes(df)
 
         return df
+
+
+class RegulatorToOrganismConnector(DBTBSConnector):
+    default_from_node = Regulator
+    default_to_node = Organism
+    default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = regulator['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = organism['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class OperonToOrganismConnector(DBTBSConnector):
+    default_from_node = Operon
+    default_to_node = Organism
+    default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = operon['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = organism['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class GeneToOrganismConnector(DBTBSConnector):
+    default_from_node = Gene
+    default_to_node = Organism
+    default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        gene = read_from_stack(stack=self._connect_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = gene['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = organism['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class TFBSToOrganismConnector(DBTBSConnector):
+    default_from_node = TFBS
+    default_to_node = Organism
+    default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
+                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = tfbs['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = organism['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class RegulatoryInteractionToOrganismConnector(DBTBSConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Organism
+    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
+                             'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = rin['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = organism['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
