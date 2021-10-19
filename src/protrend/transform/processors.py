@@ -369,7 +369,7 @@ def parse_collectf_description(item: List[str]) -> str:
     return ''.join(to_concat)
 
 
-def regulatory_effect(items: Sequence[str]) -> Union[None, str]:
+def regulatory_effect_regprecise(items: Sequence[str]) -> Union[None, str]:
     new_items = {item.replace(' ', '') for item in items if not is_null(item)}
 
     if len(new_items) == 0:
@@ -412,6 +412,39 @@ def regulatory_effect_regulondb(item: str) -> Union[None, str]:
 
     if item.lower() == '+-' or item.lower() == 'dual':
         return 'dual'
+
+    return
+
+
+def regulatory_effect_dbtbs(item: str) -> Union[None, str]:
+    if is_null(item):
+        return
+
+    item = item.rstrip().lstrip()
+
+    if item.lower() == 'negative':
+        return 'repression'
+
+    if item.lower() == 'positive':
+        return 'activation'
+
+    if item.lower() == 'promoter' or item.lower() == 'promorter':
+        return 'activation'
+
+    if item.lower() == 'pos/neg':
+        return 'dual'
+
+    if item.lower() == 'positive (siga promoter); negative (sige promoter)':
+        return 'dual'
+
+    if item.lower() == 'negative (sige promoter)':
+        return 'repression'
+
+    if item.lower() == 'negative at high mn(ii) concentration':
+        return 'repression'
+
+    if item.lower() == 'positive at low mn(ii) concentration':
+        return 'activation'
 
     return
 
