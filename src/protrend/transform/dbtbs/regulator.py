@@ -19,7 +19,7 @@ class RegulatorTransformer(DBTBSTransformer):
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'mechanism', 'protrend_id',
-                       'name_regulondb', 'family', 'domain', 'domain_description', 'url',
+                       'name_dbtbs', 'family', 'domain', 'domain_description', 'url',
                        'type', 'comment', 'operon', 'subti_list', 'consensus_sequence'])
 
     read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',

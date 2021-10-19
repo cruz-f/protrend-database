@@ -20,7 +20,7 @@ class GeneTransformer(DBTBSTransformer):
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
                        'url', 'position', 'cog_id', 'conversed_groups', 'tf',
-                       'operon', 'tfbs'])
+                       'operon', 'tfbs', 'name_dbtbs'])
     read_columns = SetList(['name', 'url', 'synonyms', 'strand', 'position', 'cog_id', 'conversed_groups', 'tf',
                             'operon', 'tfbs', 'function'])
 
