@@ -22,11 +22,11 @@ class RegulatoryFamilyTransformer(DBTBSTransformer):
 
         # drop not assigned
         tf_not_assigned_mask = tf['family'] == 'Not assigned'
-        tf = tf[tf_not_assigned_mask]
+        tf = tf[~tf_not_assigned_mask]
 
         # drop other family
         tf_other_mask = tf['family'] == 'Other family'
-        tf = tf[tf_other_mask]
+        tf = tf[~tf_other_mask]
 
         tf = tf.rename(columns={'name': 'tf'})
         tf = self.select_columns(tf, 'tf', 'family')

@@ -17,7 +17,8 @@ class RegulatoryInteractionTransformer(DBTBSTransformer):
                                'operon': 'integrated_operon.json',
                                'tfbs': 'integrated_tfbs.json'}
     default_order = 80
-    columns = SetList([])
+    columns = SetList(['identifier', 'url', 'pubmed', 'operon_name',
+                       'regulator', 'operon', 'genes', 'tfbss', 'regulator_effector', 'regulatory_effect'])
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = self.select_columns(tfbs, 'identifier', 'url', 'regulation', 'pubmed', 'tf', 'operon')
@@ -34,7 +35,7 @@ class RegulatoryInteractionTransformer(DBTBSTransformer):
         return regulator
 
     def _transform_operon(self, operon: pd.DataFrame) -> pd.DataFrame:
-        operon = self.select_columns(operon, 'protrend_id', 'name')
+        operon = self.select_columns(operon, 'protrend_id', 'name', 'genes', 'tfbss')
         operon = operon.rename(columns={'protrend_id': 'operon_protrend_id', 'name': 'operon_name'})
         return operon
 
@@ -55,8 +56,7 @@ class RegulatoryInteractionTransformer(DBTBSTransformer):
 
         regulatory_interaction = pd.merge(regulator_tfbs, operon, left_on='operon', right_on='operon_name')
 
-        regulatory_interaction = regulatory_interaction.drop(columns=['regulator_name_dbtbs', 'operon_name',
-                                                                      'tf', 'operon'])
+        regulatory_interaction = regulatory_interaction.drop(columns=['regulator_name_dbtbs', 'operon', 'tf'])
         regulatory_interaction = regulatory_interaction.rename(columns={'regulator_protrend_id': 'regulator',
                                                                         'operon_protrend_id': 'operon',
                                                                         'regulation': 'regulatory_effect'})
