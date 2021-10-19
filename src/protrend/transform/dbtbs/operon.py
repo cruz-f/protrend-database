@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Operon
-from protrend.transform.dbtbs.base import DBTBSTransformer
+from protrend.model.model import Operon, Gene, TFBS
+from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
 from protrend.transform.processors import (apply_processors, flatten_set_list, to_list,
@@ -166,3 +166,78 @@ class OperonTransformer(DBTBSTransformer):
         self._stack_transformed_nodes(df)
 
         return df
+
+
+class OperonToGeneConnector(DBTBSConnector):
+    default_from_node = Operon
+    default_to_node = Gene
+    default_connect_stack = {'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        operon = apply_processors(operon, genes=to_list)
+        operon = operon.explode('genes')
+
+        operon = operon.dropna(subset=['protrend_id', 'genes'])
+        operon = operon.drop_duplicates(subset=['protrend_id', 'genes'])
+
+        from_identifiers = operon['protrend_id'].tolist()
+        to_identifiers = operon['genes'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class OperonToTFBSConnector(DBTBSConnector):
+    default_from_node = Operon
+    default_to_node = TFBS
+    default_connect_stack = {'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        operon = apply_processors(operon, tfbss=to_list)
+        operon = operon.explode('tfbss')
+
+        operon = operon.dropna(subset=['protrend_id', 'tfbss'])
+        operon = operon.drop_duplicates(subset=['protrend_id', 'tfbss'])
+
+        from_identifiers = operon['protrend_id'].tolist()
+        to_identifiers = operon['tfbss'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class GeneToTFBSConnector(DBTBSConnector):
+    default_from_node = Gene
+    default_to_node = TFBS
+    default_connect_stack = {'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        operon = apply_processors(operon, genes=to_list, tfbss=to_list)
+        operon = operon.explode('tfbss')
+        operon = operon.explode('genes')
+
+        operon = operon.dropna(subset=['genes', 'tfbss'])
+        operon = operon.drop_duplicates(subset=['genes', 'tfbss'])
+
+        from_identifiers = operon['genes'].tolist()
+        to_identifiers = operon['tfbss'].tolist()
+        kwargs = dict(operon=operon['protrend_id'].tolist())
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers,
+                                  kwargs=kwargs)
+
+        self.stack_json(df)
