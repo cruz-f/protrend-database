@@ -1,8 +1,9 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines
-from protrend.model.model import RegulatoryFamily
-from protrend.transform.dbtbs.base import DBTBSTransformer
+from protrend.io import read_from_stack, read_json_lines, read_json_frame
+from protrend.model.model import RegulatoryFamily, Regulator
+from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
+from protrend.transform.dbtbs.regulator import RegulatorTransformer
 from protrend.transform.processors import (apply_processors, rstrip, lstrip, take_first)
 from protrend.utils import SetList
 
@@ -53,3 +54,31 @@ class RegulatoryFamilyTransformer(DBTBSTransformer):
 
         self._stack_transformed_nodes(tf)
         return tf
+
+
+class RegulatorToRegulatoryFamilyConnector(DBTBSConnector):
+    default_from_node = Regulator
+    default_to_node = RegulatoryFamily
+    default_connect_stack = {'regulator': 'integrated_regulator.json', 'rfam': 'integrated_regulatoryfamily.json'}
+
+    def connect(self):
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = regulator[['protrend_id', 'name_dbtbs']]
+        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
+
+        rfam = read_from_stack(stack=self._connect_stack, file='rfam',
+                               default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
+        rfam = rfam[['protrend_id', 'tf']]
+        rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
+
+        df = pd.merge(regulator, rfam, right_on='name_dbtbs', left_on='tf')
+        df = df.drop_duplicates(subset=['regulator_protrend_id', 'rfam_protrend_id'])
+
+        from_identifiers = df['regulator_protrend_id'].tolist()
+        to_identifiers = df['rfam_protrend_id'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
