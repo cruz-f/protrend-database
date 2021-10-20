@@ -1,11 +1,11 @@
 import pandas as pd
 
 from protrend.model.model import Source
-from protrend.transform.dbtbs.base import DBTBSTransformer
+from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
 from protrend.utils import SetList
 
 
-class SourceTransformer(DBTBSTransformer):
+class SourceTransformer(CoryneRegNetTransformer):
     name = 'coryneregnet'
     type = 'database'
     url = 'https://www.exbio.wzw.tum.de/coryneregnet/'
