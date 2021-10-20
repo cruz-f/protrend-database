@@ -1,6 +1,9 @@
-from typing import List
+from collections import defaultdict
+from typing import List, Dict, Union
 
 import pandas as pd
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 from protrend.io.json import read_json_lines
 from protrend.io.utils import read_from_stack
@@ -8,13 +11,13 @@ from protrend.model.model import Regulator
 from protrend.transform.annotation import annotate_genes
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, lower_case
+from protrend.transform.processors import rstrip, lstrip, apply_processors
 from protrend.utils import SetList
 
 
 class RegulatorTransformer(DBTBSTransformer):
     default_node = Regulator
-    default_transform_stack = {'tf': 'TranscriptionFactor.json'}
+    default_transform_stack = {'tf': 'TranscriptionFactor.json', 'sequence': 'sequence.gb'}
     default_order = 100
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
@@ -25,29 +28,112 @@ class RegulatorTransformer(DBTBSTransformer):
     read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',
                             'type', 'comment', 'operon', 'subti_list', 'consensus_sequence'])
 
-    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _get_gene_name(qualifiers: Dict) -> Union[str, None]:
+        gene: List[str] = qualifiers.get('gene', [None])
+
+        if gene[0]:
+            return gene[0].lower()
+
+        return
+
+    @staticmethod
+    def _get_locus(qualifiers: Dict) -> Union[str, None]:
+        locus: List[str] = qualifiers.get('locus_tag', [None])
+
+        if locus[0]:
+            return locus[0].lower()
+
+        return
+
+    @staticmethod
+    def _get_genbank(qualifiers: Dict) -> Union[str, None]:
+        gb: List[str] = qualifiers.get('protein_id', [None])
+
+        if gb[0]:
+            return gb[0]
+
+        return
+
+    @staticmethod
+    def _get_uniprot(qualifiers: Dict) -> Union[str, None]:
+        xrefs: List[str] = qualifiers.get('db_xref', [])
+
+        for xref in xrefs:
+
+            if 'UniProtKB/Swiss-Prot:' in xref:
+                return xref.replace('UniProtKB/Swiss-Prot:', '').rstrip().lstrip()
+
+        return
+
+    def _index_sequence(self, sequence: SeqRecord) -> pd.DataFrame:
+
+        sequence_idx = defaultdict(SetList)
+
+        for feature in sequence.features:
+
+            if feature.type == 'CDS':
+
+                gene_name = self._get_gene_name(feature.qualifiers)
+
+                if gene_name:
+                    sequence_idx[gene_name].append(gene_name)
+
+                    locus = self._get_locus(feature.qualifiers)
+                    sequence_idx[gene_name].append(locus)
+
+                    gb_acc = self._get_genbank(feature.qualifiers)
+                    sequence_idx[gene_name].append(gb_acc)
+
+                    uniprot_acc = self._get_uniprot(feature.qualifiers)
+                    sequence_idx[gene_name].append(uniprot_acc)
+
+        # filter out duplicated gene names
+        sequence_idx = {i: val for i, val in enumerate(sequence_idx.values())
+                        if len(val) == 4}
+
+        return pd.DataFrame.from_dict(sequence_idx,
+                                      orient='index',
+                                      columns=['gene_name_lower', 'locus_tag',
+                                               'genbank_accession', 'uniprot_accession'])
+
+    def _transform_tf(self, tf: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
         tf = tf.drop(columns=['description'])
 
         # filter nan and duplicates
-        tf = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True,
-                                  preserve_nan=True)
+        tf = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=True)
         tf = tf.dropna(subset=['name'])
 
         tf['mechanism'] = 'transcription factor'
 
         tf = apply_processors(tf, name=[rstrip, lstrip])
-        tf = self.create_input_value(df=tf, col='name')
-        tf['input_value'] = apply_processors(df=tf, input_value=lower_case)
 
+        tf['gene_name_lower'] = tf['name'].str.lower()
+
+        tf = pd.merge(tf, sequence, on='gene_name_lower')
+
+        tf = self.create_input_value(df=tf, col='locus_tag')
         return tf
 
     @staticmethod
-    def _annotate_tfs(names: List[str], taxa: List[str]):
-        dtos = [GeneDTO(input_value=name) for name in names]
-        annotate_genes(dtos=dtos, names=names, taxa=taxa)
+    def _annotate_tfs(loci: List[str],
+                      names: List[str],
+                      genbanks: List[str],
+                      accessions: List[str],
+                      taxa: List[str]) -> pd.DataFrame:
+        # annotate with uniprot_accessions, ncbi_proteins, locus_tag for ncbi_gene
+        dtos = [GeneDTO(input_value=locus) for locus in loci]
+        annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa,
+                       uniprot_proteins=accessions, ncbi_genbanks=genbanks)
 
-        for dto, name in zip(dtos, names):
+        for dto, locus, name, acc, gb in zip(dtos, loci, names, accessions, genbanks):
             dto.synonyms.append(name)
+            dto.synonyms.append(locus)
+
+            dto.locus_tag.insert(0, locus)
+            dto.name.insert(0, name)
+            dto.uniprot_accession.insert(0, acc)
+            dto.genbank_accession.insert(0, gb)
 
         # locus_tag: List[str]
         # name: List[str]
@@ -64,31 +150,45 @@ class RegulatorTransformer(DBTBSTransformer):
         # start: List[int]
         # stop: List[int]
 
-        df = pd.DataFrame([dto.to_dict() for dto in dtos])
-        strand_mask = (df['strand'] != 'reverse') & (df['strand'] != 'forward')
-        df.loc[strand_mask, 'strand'] = None
-        return df
+        tfs = pd.DataFrame([dto.to_dict() for dto in dtos])
+        strand_mask = (tfs['strand'] != 'reverse') & (tfs['strand'] != 'forward')
+        tfs.loc[strand_mask, 'strand'] = None
+        return tfs
 
     def transform(self):
         tf = read_from_stack(stack=self.transform_stack, file='tf',
                              default_columns=self.read_columns, reader=read_json_lines)
 
-        tf = self._transform_tf(tf)
+        gb_file = self.transform_stack['sequence']
+        sequence = SeqIO.read(gb_file, "genbank")
+        sequence = self._index_sequence(sequence)
 
-        names = tf['input_value'].tolist()
-        taxa = tf['224308'] * len(names)
+        tf = self._transform_tf(tf=tf, sequence=sequence)
 
-        tfs = self._annotate_tfs(names, taxa)
+        loci = tf['input_value'].tolist()
+        names = tf['name'].tolist()
+        gbs = tf['genbank_accession'].tolist()
+        accessions = tf['uniprot_accession'].tolist()
+        taxa = ['224308'] * len(loci)
+        genes = self._annotate_tfs(loci=loci, names=names, genbanks=gbs, accessions=accessions, taxa=taxa)
 
-        df = pd.merge(tfs, tf, on='input_value', suffixes=('_annotation', '_dbtbs'))
+        df = pd.merge(genes, tf, on='input_value', suffixes=('_annotation', '_dbtbs'))
 
-        df = df.dropna(subset=['locus_tag'])
+        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_dbtbs')
 
         df['old_name'] = df['name_dbtbs']
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_dbtbs')
         df = df.rename(columns={'old_name': 'name_dbtbs'})
 
+        df = self.merge_columns(df=df, column='genbank_accession',
+                                left='genbank_accession_annotation', right='genbank_accession_dbtbs')
+        df = self.merge_columns(df=df, column='uniprot_accession',
+                                left='uniprot_accession_annotation', right='uniprot_accession_dbtbs')
+
+        df = df.dropna(subset=['locus_tag'])
+
         df = df.drop(columns=['input_value'])
 
         self._stack_transformed_nodes(df)
+
         return df

@@ -9,7 +9,7 @@ from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
 from protrend.transform.processors import (apply_processors, flatten_set_list, to_list,
-                                           to_set_list, operon_hash)
+                                           to_set_list, operon_hash, to_list_nan)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
@@ -26,6 +26,8 @@ class OperonTransformer(DBTBSTransformer):
         operon = operon.explode(column='name')
         operon = self.drop_duplicates(df=operon, subset=['name'], perfect_match=True, preserve_nan=True)
         operon = operon.dropna(subset=['name'])
+        operon = apply_processors(operon, tf=to_list_nan, url=to_list_nan, evidence=to_list_nan, pubmed=to_list_nan,
+                                  comment=to_list_nan, gene=to_list_nan, tfbs=to_list_nan)
         return operon
 
     def _transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
@@ -60,30 +62,30 @@ class OperonTransformer(DBTBSTransformer):
                        'gene_strand': to_set_list,
                        'gene_start': to_set_list,
                        'gene_stop': to_set_list}
-        operon = self.group_by(df=operon, column='name', aggregation=aggregation, default=flatten_set_list)
+        df = self.group_by(df=df, column='name', aggregation=aggregation, default=flatten_set_list)
 
-        operon = operon.rename(columns={'gene_protrend_id': 'genes'})
+        df = df.rename(columns={'gene_protrend_id': 'genes'})
 
-        operon['operon_hash'] = operon['genes']
+        df['operon_hash'] = df['genes']
 
-        operon = apply_processors(operon, operon_hash=[to_list, operon_hash])
-        operon = operon.dropna(subset=['operon_hash'])
-        operon = self.drop_duplicates(df=operon, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
+        df = apply_processors(df, operon_hash=[to_list, operon_hash])
+        df = df.dropna(subset=['operon_hash'])
+        df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
 
-        return operon
+        return df
 
     def _transform_operon_by_tfbs(self, operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
 
         tfbs_by_operon = tfbs.explode('tfbs_operon')
-        operon = pd.merge(operon, tfbs_by_operon, how='left', left_on='name', right_on='tfbs_operon')
+        df = pd.merge(operon, tfbs_by_operon, how='left', left_on='name', right_on='tfbs_operon')
 
         aggregation = {'tfbs_protrend_id': to_set_list, 'tfbs_operon': to_set_list}
-        operon = self.group_by(df=operon, column='name', aggregation=aggregation, default=flatten_set_list)
+        df = self.group_by(df=df, column='name', aggregation=aggregation, default=flatten_set_list)
 
-        operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
-        operon = operon.drop(columns=['tfbs_operon'])
+        df = df.rename(columns={'tfbs_protrend_id': 'tfbss'})
+        df = df.drop(columns=['tfbs_operon'])
 
-        return operon
+        return df
 
     @staticmethod
     def _operon_coordinates(operon: pd.DataFrame) -> pd.DataFrame:

@@ -26,6 +26,7 @@ class PublicationTransformer(DBTBSTransformer):
                             'location', 'absolute_position', 'sequence'])
 
     def _transform_publication(self, operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
+        operon = operon.explode(column='name')
         operon = operon.dropna(subset=['pubmed'])
         operon = operon.explode(column='pubmed')
         operon = self.drop_duplicates(df=operon, subset=['pubmed'], perfect_match=True, preserve_nan=True)
@@ -87,14 +88,15 @@ class PublicationToRegulatorConnector(DBTBSConnector):
     def connect(self):
         publication = read_from_stack(stack=self.connect_stack, file='publication',
                                       default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = apply_processors(publication, pmid=to_int_str)
 
         regulator = read_from_stack(stack=self.connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         tfbs = read_from_stack(stack=self.connect_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = apply_processors(tfbs, pubmed=to_list, tf=to_list)
         tfbs = tfbs.dropna(subset=['pubmed', 'tf'])
+        tfbs = apply_processors(tfbs, pubmed=to_list, tf=to_list)
         tfbs = tfbs.explode(column='pubmed')
         tfbs = tfbs.explode(column='tf')
         tfbs = apply_processors(tfbs, pubmed=to_int_str)

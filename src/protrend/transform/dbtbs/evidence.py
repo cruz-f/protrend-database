@@ -16,8 +16,10 @@ class EvidenceTransformer(DBTBSTransformer):
                        'operon', 'tf', 'url', 'evidence', 'pubmed', 'comment', 'gene', 'tfbs'])
     read_columns = SetList(['name', 'tf', 'url', 'evidence', 'pubmed', 'comment', 'gene', 'tfbs'])
 
-    def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
-        df = evidence.dropna(subset=['evidence'])
+    def _transform_evidence(self, operon: pd.DataFrame) -> pd.DataFrame:
+        df = operon.explode(column='name')
+
+        df = df.dropna(subset=['evidence'])
 
         def split_dbtbs_evidence(item: list) -> list:
             item = item[0]
@@ -26,8 +28,7 @@ class EvidenceTransformer(DBTBSTransformer):
         df = apply_processors(df, evidence=split_dbtbs_evidence)
         df = df.explode(column='evidence')
 
-        df = self.drop_duplicates(df=evidence, subset=['evidence'],
-                                  perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['evidence'], perfect_match=True, preserve_nan=True)
 
         df = df.rename(columns={'name': 'operon'})
 

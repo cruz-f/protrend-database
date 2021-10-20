@@ -29,6 +29,8 @@ class TFBSTransformer(DBTBSTransformer):
         # filter by id
         tfbs = self.drop_duplicates(df=tfbs, subset=['identifier'], perfect_match=True, preserve_nan=True)
 
+        # processing
+        tfbs = tfbs.explode(column='sequence')
         tfbs = apply_processors(tfbs, sequence=upper_case, location=take_first, absolute_position=take_first)
 
         # filter by coordinates

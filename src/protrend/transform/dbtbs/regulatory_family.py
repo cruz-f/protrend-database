@@ -62,17 +62,17 @@ class RegulatorToRegulatoryFamilyConnector(DBTBSConnector):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator[['protrend_id', 'name_dbtbs']]
+        regulator = regulator.loc[:, ['protrend_id', 'name_dbtbs']]
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
-        rfam = read_from_stack(stack=self._connect_stack, file='rfam',
+        rfam = read_from_stack(stack=self.connect_stack, file='rfam',
                                default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
         rfam = rfam[['protrend_id', 'tf']]
         rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
 
-        df = pd.merge(regulator, rfam, right_on='name_dbtbs', left_on='tf')
+        df = pd.merge(regulator, rfam, left_on='name_dbtbs', right_on='tf')
         df = df.drop_duplicates(subset=['regulator_protrend_id', 'rfam_protrend_id'])
 
         from_identifiers = df['regulator_protrend_id'].tolist()
