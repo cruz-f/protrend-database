@@ -18,7 +18,7 @@ class EvidenceTransformer(CoryneRegNetTransformer):
                        'name', 'description',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source',
+                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',
                        'locus_tag', 'evidence', 'srna_class', 'start_position', 'end_position',
                        'genome', 'orientation', 'evidence_functional', 'functional_rna', 'sequence'])
     cglu_rna_columns = SetList(['locus_tag', 'evidence', 'srna_class', 'start_position', 'end_position',

@@ -35,7 +35,7 @@ class CoryneRegNetTransformer(Transformer):
                                  file=file,
                                  default_columns=self.default_regulation_columns,
                                  reader=read_csv)
-            df['taxa'] = self.taxa_to_organism_code[file]
+            df['taxonomy'] = self.taxa_to_organism_code[file]
             dfs.append(df)
 
         return pd.concat(dfs, axis=0)

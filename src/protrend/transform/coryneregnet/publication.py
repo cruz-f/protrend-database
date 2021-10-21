@@ -20,7 +20,7 @@ class PublicationTransformer(CoryneRegNetTransformer):
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source'])
+                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy'])
 
     def _transform_publication(self, regulation: pd.DataFrame) -> pd.DataFrame:
         regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True, preserve_nan=True)
