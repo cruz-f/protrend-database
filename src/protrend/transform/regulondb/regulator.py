@@ -17,7 +17,7 @@ class RegulatorTransformer(RegulondbTransformer):
     default_order = 90
     columns = SetList(['locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'sequence',
-                       'strand', 'start', 'stop',
+                       'strand', 'start', 'stop', 'mechanism',
                        'transcription_factor_id', 'transcription_factor_name', 'transcription_factor_family',
                        'srna_id', 'srna_gene_id', 'sigma_id', 'sigma_name', 'sigma_id', 'sigma_name',
                        'gene_id', 'gene_name_lower', 'gene_protrend_id', 'protrend_id'])
