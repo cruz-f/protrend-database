@@ -22,8 +22,9 @@ class OperonTransformer(CoryneRegNetTransformer):
                                'mtub': 'mtub_regulation.csv',
                                'gene': 'integrated_gene.json'}
     default_order = 80
-    columns = SetList(['name', 'promoters', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
-                       ])
+    columns = SetList(['name', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
+                       'Operon', 'Orientation', 'Genes', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag',
+                       'gene_name', 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop'])
 
     def _transform_operon_by_gene(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon'
@@ -147,6 +148,9 @@ class OperonTransformer(CoryneRegNetTransformer):
 
         # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon'
         operon_tfbs = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
+
+        # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag', 'gene_name',
+        # 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop', 'operon_hash', 'name'
         operon_tfbs_gene = self._transform_operon_by_gene(operon=operon_tfbs, gene=gene)
 
         operon_tfbs_gene = self._operon_coordinates(operon=operon_tfbs_gene)
