@@ -23,63 +23,57 @@ class OperonTransformer(CoryneRegNetTransformer):
                                'gene': 'integrated_gene.json'}
     default_order = 80
     columns = SetList(['name', 'promoters', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
-                       'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
-                       'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',
-                       'Orientation', 'Genes'])
+                       ])
 
     def _transform_operon_by_gene(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+        # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon'
         operon = operon.explode(column='Genes')
 
-        # 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop',
-        # 'TG_locusTag'
-        # 'Operon', 'Orientation', 'Genes'
-        operon = pd.merge(operon, gene, left_on='Genes', right_on='gene_TG_locusTag')
+        # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag', 'gene_name',
+        # 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop'
+        operon_gene = pd.merge(operon, gene, left_on='Genes', right_on='gene_TG_locusTag')
 
         # group by the operon_id
         aggregation = {'Orientation': take_first, 'tfbss': flatten_set_list}
-        operon = self.group_by(df=operon, column='Operon', aggregation=aggregation, default=to_set_list)
+        operon_gene = self.group_by(df=operon_gene, column='Operon', aggregation=aggregation, default=to_set_list)
 
-        operon = operon.rename(columns={'gene_protrend_id': 'genes'})
+        operon_gene = operon_gene.rename(columns={'gene_protrend_id': 'genes'})
 
-        operon['operon_hash'] = operon['genes']
-        operon['name'] = operon['gene_name']
+        operon_gene['operon_hash'] = operon_gene['genes']
+        operon_gene['name'] = operon_gene['gene_name']
 
-        operon = apply_processors(operon, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
-        operon = operon.dropna(subset=['operon_hash'])
-        operon = self.drop_duplicates(df=operon, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
+        operon_gene = apply_processors(operon_gene, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
 
-        return operon
+        operon_gene = self.drop_duplicates(df=operon_gene, subset=['operon_hash'],
+                                           perfect_match=True, preserve_nan=True)
+        operon_gene = operon_gene.dropna(subset=['operon_hash'])
+
+        return operon_gene
 
     def _transform_operon_by_tfbs(self, operon: pd.DataFrame, tfbs: pd.DataFrame) -> pd.DataFrame:
-        operon_tfbs = pd.merge(operon, tfbs, on='Operon')
+        # 'Operon', 'Orientation', 'Genes', 'tfbs_protrend_id', 'tfbs_operon'
+        operon_tfbs = pd.merge(operon, tfbs, left_on='Operon', right_on='tfbs_operon')
 
-        aggregation = {'Orientation': take_first, 'Genes': flatten_set_list}
-        operon = self.group_by(df=operon, column='Operon', aggregation=aggregation, default=to_set_list)
+        aggregation = {'Orientation': take_first, 'tfbs_operon': take_first, 'Genes': flatten_set_list}
+        operon_tfbs = self.group_by(df=operon_tfbs, column='Operon', aggregation=aggregation, default=to_set_list)
 
-        operon = operon.rename(columns={'tfbs_protrend_id': 'tfbss'})
-
-        return operon
+        operon_tfbs = operon_tfbs.rename(columns={'tfbs_protrend_id': 'tfbss'})
+        return operon_tfbs
 
     @staticmethod
     def _operon_coordinates(operon: pd.DataFrame) -> pd.DataFrame:
 
-        def strand_mode(item):
-
+        def strand(item):
             if is_null(item):
                 return None
 
-            try:
-                m = mode(item)
+            if item == '-':
+                return 'reverse'
 
-                if is_null(m):
-                    return None
+            if item == '+':
+                return 'forward'
 
-                return m
-
-            except StatisticsError:
-                for sub_item in item:
-                    return sub_item
+            return None
 
         def start(item):
             if is_null(item):
@@ -99,7 +93,7 @@ class OperonTransformer(CoryneRegNetTransformer):
             x = np.array(item, dtype=np.float64)
             return np.nanmax(x)
 
-        operon['strand'] = operon['gene_strand'].map(strand_mode, na_action='ignore')
+        operon['strand'] = operon['Orientation'].map(strand, na_action='ignore')
         forward = operon['strand'] == 'forward'
         reverse = operon['strand'] == 'reverse'
 
@@ -117,15 +111,10 @@ class OperonTransformer(CoryneRegNetTransformer):
 
         return operon
 
-    def transform(self):
-        # 'Operon', 'Orientation', 'Genes'
-        operon = self._build_operons()
-
+    def _transform_gene(self) -> pd.DataFrame:
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop',
-                                   'TG_locusTag')
-
+        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop', 'TG_locusTag')
         gene = gene.dropna(subset=['protrend_id', 'TG_locusTag'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
                                     'locus_tag': 'gene_locus_tag',
@@ -134,24 +123,34 @@ class OperonTransformer(CoryneRegNetTransformer):
                                     'strand': 'gene_strand',
                                     'start': 'gene_start',
                                     'stop': 'gene_stop'})
+        return gene
 
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+    def _transform_tfbs(self) -> pd.DataFrame:
+        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs', default_columns=TFBSTransformer.columns,
+                               reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'Operon')
+        tfbs = tfbs.dropna(subset=['protrend_id', 'Operon'])
+        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id',
+                                    'Operon': 'tfbs_operon'})
+        return tfbs
 
-        tfbs = tfbs.dropna(subset=['protrend_id'])
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
+    def transform(self):
+        # 'Operon', 'Orientation', 'Genes'
+        operon = self._build_operons()
 
-        # genes
-        # promoters
-        # tfbss
-        # strand
-        # start
-        # stop
-        operon = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
-        operon = self._transform_operon_by_gene(operon=operon, gene=gene)
-        operon = self._operon_coordinates(operon=operon)
+        # 'tfbs_protrend_id', 'tfbs_operon'
+        tfbs = self._transform_tfbs()
 
-        self._stack_transformed_nodes(operon)
+        # 'gene_protrend_id', 'gene_locus_tag', 'gene_name', 'gene_TG_locusTag', 'gene_strand', 'gene_start',
+        # 'gene_stop'
+        gene = self._transform_gene()
 
-        return operon
+        # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon'
+        operon_tfbs = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
+        operon_tfbs_gene = self._transform_operon_by_gene(operon=operon_tfbs, gene=gene)
+
+        operon_tfbs_gene = self._operon_coordinates(operon=operon_tfbs_gene)
+
+        self._stack_transformed_nodes(operon_tfbs_gene)
+
+        return operon_tfbs_gene

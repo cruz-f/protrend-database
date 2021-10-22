@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from protrend.io import read_json_frame
@@ -20,10 +21,9 @@ class TFBSTransformer(CoryneRegNetTransformer):
                                'gene': 'integrated_gene.json'}
     default_order = 90
     columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
-                       'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
-                       'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',
-                       'Orientation', 'Genes'])
+                       'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role', 'TG_locusTag', 'TG_altLocusTag',
+                       'TG_name', 'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',
+                       'Operon', 'Orientation', 'Genes', 'gene_protrend_id', 'gene_start'])
 
     def _transform_tfbs(self, regulation: pd.DataFrame) -> pd.DataFrame:
         # process multiple bs
@@ -70,18 +70,50 @@ class TFBSTransformer(CoryneRegNetTransformer):
 
             return None
 
+        def stop_forward(item):
+            if is_null(item):
+                return None
+
+            item = to_list(item)
+
+            x = np.array(item, dtype=np.float64)
+            return np.nanmin(x)
+
+        def stop_reverse(item):
+            if is_null(item):
+                return None
+
+            item = to_list(item)
+
+            x = np.array(item, dtype=np.float64)
+            return np.nanmax(x)
+
         tfbs['length'] = tfbs['sequence'].map(sequence_len, na_action='ignore')
+
+        tfbs['strand'] = tfbs['Orientation'].map(strand, na_action='ignore')
+        forward = tfbs['strand'] == 'forward'
+        reverse = tfbs['strand'] == 'reverse'
+
         tfbs['start'] = None
         tfbs['stop'] = None
-        tfbs['strand'] = tfbs['Orientation'].map(strand, na_action='ignore')
+
+        tfbs.loc[forward, 'stop'] = tfbs.loc[forward, 'gene_start'].map(stop_forward, na_action='ignore')
+        tfbs.loc[reverse, 'stop'] = tfbs.loc[reverse, 'gene_start'].map(stop_reverse, na_action='ignore')
+
+        tfbs.loc[forward, 'start'] = tfbs.loc[forward, 'stop'] - tfbs.loc[forward, 'length']
+        tfbs.loc[reverse, 'start'] = tfbs.loc[reverse, 'stop'] + tfbs.loc[reverse, 'length']
+
+        strand_mask = (tfbs['strand'] != 'reverse') & (tfbs['strand'] != 'forward')
+        tfbs.loc[strand_mask, 'strand'] = None
 
         return tfbs
 
     def _transform_gene(self) -> pd.DataFrame:
         gene = read_from_stack(stack=self.transform_stack, file='gene', default_columns=GeneTransformer.columns,
                                reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'TG_locusTag')
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
+        gene = self.select_columns(gene, 'protrend_id', 'start', 'stop', 'TG_locusTag')
+        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
+                                    'start': 'gene_start'})
         return gene
 
     def _transform_operon(self) -> pd.DataFrame:
@@ -93,7 +125,7 @@ class TFBSTransformer(CoryneRegNetTransformer):
     def _transform_operon_gene(self) -> pd.DataFrame:
         # 'Operon', 'Orientation', 'Genes'
         operon = self._transform_operon()
-        # 'gene_protrend_id', 'TG_locusTag'
+        # 'gene_protrend_id', 'TG_locusTag', 'gene_start'
         gene = self._transform_gene()
         operon_gene = pd.merge(operon, gene, left_on='Genes', right_on='TG_locusTag')
 
@@ -103,7 +135,7 @@ class TFBSTransformer(CoryneRegNetTransformer):
 
     def _transform_operon_tfbs(self) -> pd.DataFrame:
         # 'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role', 'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-        # 'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy'
+        # 'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy', 'sequence'
         regulation = self._build_regulations()
         tfbs = self._transform_tfbs(regulation)
         tfbs = tfbs.drop(columns=['Operon'])
@@ -115,13 +147,13 @@ class TFBSTransformer(CoryneRegNetTransformer):
         return operon_tfbs
 
     def transform(self):
-        # 'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role', 'TG_locusTag', 'TG_altLocusTag', 'TG_name',
-        # 'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',
+        # 'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role', 'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
+        # 'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy', 'sequence'
         # 'Operon', 'Orientation', 'Genes'
         operon_tfbs = self._transform_operon_tfbs()
         operon_tfbs = operon_tfbs.drop(columns=['Orientation', 'Genes'])
 
-        # 'Operon', 'Orientation', 'Genes', 'gene_protrend_id', 'TG_locusTag'
+        # 'Operon', 'Orientation', 'Genes', 'gene_protrend_id', 'TG_locusTag', 'gene_start'
         operon_gene = self._transform_operon_gene()
         operon_gene = operon_gene.drop(columns=['TG_locusTag'])
 
