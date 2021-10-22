@@ -149,3 +149,6 @@ if __name__ == "__main__":
     # LOAD
     # ----------------------------------------------------
     reg_loader, reg_database = load_runner(install_labels=True, clear_constraints=True, clear_indexes=True)
+
+    # TODO:
+    #  - Operon

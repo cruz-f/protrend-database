@@ -18,7 +18,7 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
     columns = SetList(['regulator_effector', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
                        'regulatory_interaction_hash', 'protrend_id',
                        'Operon', 'Orientation', 'Genes', 'TF_locusTag', 'TG_locusTag',
-                       'Role', 'Evidence', 'PMID', 'Source'])
+                       'Role', 'Evidence', 'PMID', 'Source', 'taxonomy'])
 
     def _transform_regulator(self) -> pd.DataFrame:
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
@@ -36,14 +36,15 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
         return operon
 
     def transform(self) -> pd.DataFrame:
-        # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source'
+        # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'taxonomy'
         regulation = self._build_regulations()
-        regulation = self.select_columns(regulation, 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source')
+        regulation = self.select_columns(regulation, 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source',
+                                         'taxonomy')
 
         # 'regulator', 'TF_locusTag'
         regulator = self._transform_regulator()
 
-        # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'regulator'
+        # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'regulator', 'taxonomy'
         regulation_regulator = pd.merge(regulation, regulator, on='TF_locusTag')
 
         # 'Operon', 'Orientation', 'Genes'
@@ -51,19 +52,21 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
         operons = operons.explode(column='Genes')
 
         # 'Operon', 'Orientation', 'Genes', 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source',
-        # 'regulator'
+        # 'regulator', 'taxonomy'
         regulation_regulator_operons = pd.merge(regulation_regulator, operons, left_on='TG_locusTag', right_on='Genes')
 
         # 'operon', 'genes', 'tfbss', 'Operon'
         operon = self._transform_operon()
 
         # 'operon', 'genes', 'tfbss', 'Operon', 'Orientation', 'Genes', 'TF_locusTag', 'TG_locusTag',
-        # 'Role', 'Evidence', 'PMID', 'Source', 'regulator', 'regulatory_effect'
+        # 'Role', 'Evidence', 'PMID', 'Source', 'taxonomy', 'regulator', 'regulatory_effect'
         regulatory_interaction = pd.merge(regulation_regulator_operons, operon, on='Operon')
         regulatory_interaction['regulatory_effect'] = regulatory_interaction['Role']
 
         regulatory_interaction = apply_processors(regulatory_interaction,
                                                   regulatory_effect=regulatory_effect_coryneregnet)
+
+        regulatory_interaction['regulator_effector'] = None
 
         regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
 

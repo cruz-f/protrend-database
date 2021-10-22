@@ -18,7 +18,7 @@ class RegulatorTransformer(CoryneRegNetTransformer):
                                'mtub': 'mtub_regulation.csv'}
     default_order = 100
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'sequence',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
                        'strand', 'start', 'stop', 'mechanism',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',

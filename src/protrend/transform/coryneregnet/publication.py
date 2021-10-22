@@ -11,7 +11,7 @@ from protrend.transform.coryneregnet.operon import OperonTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer
 from protrend.transform.coryneregnet.regulator import RegulatorTransformer
 from protrend.transform.coryneregnet.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.processors import apply_processors, to_int_str, to_set_list
+from protrend.transform.processors import apply_processors, to_int_str, to_set_list, to_str
 from protrend.utils import SetList
 
 
@@ -38,7 +38,7 @@ class PublicationTransformer(CoryneRegNetTransformer):
             items = item.split(',')
             return [item.lstrip().rstrip() for item in items]
 
-        regulation = apply_processors(regulation, PMID=split_pmid)
+        regulation = apply_processors(regulation, PMID=[to_str, split_pmid])
 
         regulation = regulation.explode(column='PMID')
         regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True, preserve_nan=True)

@@ -14,11 +14,7 @@ from protrend.utils.miscellaneous import is_null
 
 class OperonTransformer(CoryneRegNetTransformer):
     default_node = Operon
-    default_transform_stack = {'bsub': 'bsub_regulation.csv',
-                               'cglu': 'cglu_regulation.csv',
-                               'ecol': 'ecol_regulation.csv',
-                               'mtub': 'mtub_regulation.csv',
-                               'gene': 'integrated_gene.json'}
+    default_transform_stack = {'gene': 'integrated_gene.json'}
     default_order = 80
     columns = SetList(['name', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
                        'Operon', 'Orientation', 'Genes', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag',

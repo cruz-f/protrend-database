@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 import pandas as pd
@@ -5,7 +6,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_csv
 from protrend.transform import Transformer, Connector
 from protrend.transform.processors import take_first, to_set_list
-from protrend.utils import SetList
+from protrend.utils import SetList, STAGING_AREA_PATH, DATA_LAKE_PATH
 
 
 class CoryneRegNetTransformer(Transformer):
@@ -32,10 +33,66 @@ class CoryneRegNetTransformer(Transformer):
                              'ecol': '511145',
                              'mtub': '83332'}
 
-    def _build_regulations(self, regulation_stack: Dict[str, str] = None) -> pd.DataFrame:
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._regulation_stack = {}
+        self._operon_stack = {}
+
+        self.load_regulation_stack()
+        self.load_operon_stack()
+
+    def load_regulation_stack(self, regulation_stack: Dict[str, str] = None):
+
+        self._regulation_stack = {}
 
         if not regulation_stack:
             regulation_stack = self.default_regulation_stack
+
+        for key, file in regulation_stack.items():
+
+            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+
+            if os.path.exists(sa_file):
+
+                self._regulation_stack[key] = sa_file
+
+            else:
+
+                self._regulation_stack[key] = dl_file
+
+    def load_operon_stack(self, operon_stack: Dict[str, str] = None):
+
+        self._operon_stack = {}
+
+        if not operon_stack:
+            operon_stack = self.default_operon_stack
+
+        for key, file in operon_stack.items():
+
+            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+
+            if os.path.exists(sa_file):
+
+                self._operon_stack[key] = sa_file
+
+            else:
+
+                self._operon_stack[key] = dl_file
+
+    @property
+    def regulation_stack(self):
+        return self._regulation_stack
+
+    @property
+    def operon_stack(self):
+        return self._operon_stack
+
+    def _build_regulations(self, regulation_stack: Dict[str, str] = None) -> pd.DataFrame:
+
+        if not regulation_stack:
+            regulation_stack = self.regulation_stack
 
         dfs = []
         for file in regulation_stack:
@@ -77,7 +134,7 @@ class CoryneRegNetTransformer(Transformer):
     def _build_operons(self, operon_stack: Dict[str, str] = None) -> pd.DataFrame:
 
         if not operon_stack:
-            operon_stack = self.default_operon_stack
+            operon_stack = self.operon_stack
 
         dfs = []
         for file in operon_stack:
