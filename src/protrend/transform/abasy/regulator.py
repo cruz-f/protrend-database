@@ -41,7 +41,7 @@ class RegulatorTransformer(AbasyTransformer):
                                reader=read_json_frame)
         gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                                    'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                   'sequence', 'strand', 'start', 'stop')
+                                   'sequence', 'strand', 'start', 'stop', 'gene_name_taxonomy')
 
         df = pd.merge(regulator, gene, left_on='source_taxonomy', right_on='gene_name_taxonomy')
 

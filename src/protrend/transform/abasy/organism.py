@@ -2,10 +2,16 @@ from typing import List
 
 import pandas as pd
 
-from protrend.model.model import Organism
+from protrend.io import read_from_stack, read_json_frame
+from protrend.model.model import Organism, Regulator, Operon, Gene, RegulatoryInteraction
 from protrend.transform import OrganismDTO
-from protrend.transform.abasy.base import AbasyTransformer
+from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
+from protrend.transform.abasy.gene import GeneTransformer
+from protrend.transform.abasy.operon import OperonTransformer
+from protrend.transform.abasy.regulator import RegulatorTransformer
+from protrend.transform.abasy.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.annotation import annotate_organisms
+from protrend.transform.processors import apply_processors, to_int_str
 from protrend.utils import SetList
 
 
@@ -126,3 +132,105 @@ class OrganismTransformer(AbasyTransformer):
         self._stack_transformed_nodes(df)
 
         return df
+
+
+class RegulatorToOrganismConnector(AbasyConnector):
+    default_from_node = Regulator
+    default_to_node = Organism
+    default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = apply_processors(regulator, taxonomy=to_int_str)
+
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
+
+        df = pd.merge(regulator, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
+                      suffixes=('_regulator', '_organism'))
+
+        from_identifiers = df['protrend_id_regulator'].tolist()
+        to_identifiers = df['protrend_id_organism'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class OperonToOrganismConnector(AbasyConnector):
+    default_from_node = Operon
+    default_to_node = Organism
+    default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = apply_processors(operon, taxonomy=to_int_str)
+
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
+
+        df = pd.merge(operon, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
+                      suffixes=('_operon', '_organism'))
+
+        from_identifiers = df['protrend_id_operon'].tolist()
+        to_identifiers = df['protrend_id_organism'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class GeneToOrganismConnector(AbasyConnector):
+    default_from_node = Gene
+    default_to_node = Organism
+    default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        gene = read_from_stack(stack=self._connect_stack, file='gene',
+                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = apply_processors(gene, taxonomy=to_int_str)
+
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
+
+        df = pd.merge(organism, gene, left_on='ncbi_taxonomy', right_on='taxonomy', suffixes=('_organism', '_gene'))
+
+        from_identifiers = df['protrend_id_gene'].tolist()
+        to_identifiers = df['protrend_id_organism'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class RegulatoryInteractionToOrganismConnector(AbasyConnector):
+    default_from_node = RegulatoryInteraction
+    default_to_node = Organism
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        rin = read_from_stack(stack=self._connect_stack, file='rin',
+                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = apply_processors(rin, taxonomy=to_int_str)
+
+        organism = read_from_stack(stack=self._connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
+
+        df = pd.merge(organism, rin, left_on='ncbi_taxonomy', right_on='taxonomy', suffixes=('_organism', '_rin'))
+
+        from_identifiers = df['protrend_id_rin'].tolist()
+        to_identifiers = df['protrend_id_organism'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)

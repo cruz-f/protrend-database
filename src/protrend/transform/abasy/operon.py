@@ -36,7 +36,7 @@ class OperonTransformer(AbasyTransformer):
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns,
                                reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'name', 'strand', 'start', 'stop')
+        gene = self.select_columns(gene, 'protrend_id', 'name', 'strand', 'start', 'stop', 'gene_name_taxonomy')
         gene = gene.rename(columns={'protrend_id': 'genes'})
         gene = apply_processors(gene, genes=to_list)
 
