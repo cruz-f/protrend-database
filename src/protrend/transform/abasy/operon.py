@@ -1,8 +1,8 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Operon
-from protrend.transform.abasy.base import AbasyTransformer
+from protrend.model.model import Operon, Gene, TFBS
+from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip, to_list, operon_hash
 from protrend.utils import SetList
@@ -52,3 +52,27 @@ class OperonTransformer(AbasyTransformer):
         self._stack_transformed_nodes(df)
 
         return df
+
+
+class OperonToGeneConnector(AbasyConnector):
+    default_from_node = Operon
+    default_to_node = Gene
+    default_connect_stack = {'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        operon = apply_processors(operon, genes=to_list)
+        operon = operon.explode('genes')
+
+        operon = operon.dropna(subset=['protrend_id', 'genes'])
+        operon = operon.drop_duplicates(subset=['protrend_id', 'genes'])
+
+        from_identifiers = operon['protrend_id'].tolist()
+        to_identifiers = operon['genes'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
