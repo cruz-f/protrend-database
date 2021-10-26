@@ -3,10 +3,11 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
-from protrend.model.model import Publication, Regulator, TFBS, Promoter, Operon, Gene
+from protrend.model.model import Publication, Regulator, TFBS, Promoter, Operon, Gene, Organism
 from protrend.transform import PublicationDTO
 from protrend.transform.annotation import annotate_publications
 from protrend.transform.processors import apply_processors, to_int_str
+from protrend.transform.regulondb import OrganismTransformer
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
@@ -66,6 +67,30 @@ class PublicationTransformer(RegulondbTransformer):
         self._stack_transformed_nodes(df)
 
         return df
+
+
+class PublicationToOrganismConnector(RegulondbConnector):
+    default_from_node = Publication
+    default_to_node = Organism
+    default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
+
+    def connect(self):
+        publication = read_from_stack(stack=self.connect_stack, file='publication',
+                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+
+        organism = read_from_stack(stack=self.connect_stack, file='organism',
+                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+
+        from_identifiers = publication['protrend_id'].tolist()
+        size = len(from_identifiers)
+
+        protrend_id = organism['protrend_id'].iloc[0]
+        to_identifiers = [protrend_id] * size
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
 
 
 class PublicationToRegulatorConnector(RegulondbConnector):

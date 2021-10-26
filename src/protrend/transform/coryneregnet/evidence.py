@@ -39,7 +39,7 @@ class EvidenceTransformer(CoryneRegNetTransformer):
 class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector):
     default_from_node = Evidence
     default_to_node = RegulatoryInteraction
-    default_connect_stack = {'operon': 'integrated_operon.json', 'rin': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='rin',

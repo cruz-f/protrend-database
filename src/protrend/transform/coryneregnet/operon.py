@@ -7,18 +7,18 @@ from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, Coryne
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.tfbs import TFBSTransformer
 from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
-                                           to_set_list, operon_hash, take_first)
+                                           to_set_list, operon_hash, take_first, to_list_nan)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
 
 class OperonTransformer(CoryneRegNetTransformer):
     default_node = Operon
-    default_transform_stack = {'gene': 'integrated_gene.json'}
+    default_transform_stack = {'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
     default_order = 80
     columns = SetList(['name', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
-                       'Operon', 'Orientation', 'Genes', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag',
-                       'gene_name', 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop'])
+                       'Operon', 'Orientation', 'Genes', 'taxonomy', 'tfbs_operon', 'gene_protrend_id',
+                       'gene_locus_tag', 'gene_name', 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop'])
 
     def _transform_operon_by_gene(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon'
@@ -26,7 +26,15 @@ class OperonTransformer(CoryneRegNetTransformer):
 
         # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag', 'gene_name',
         # 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop'
-        operon_gene = pd.merge(operon, gene, left_on='Genes', right_on='gene_TG_locusTag')
+        operon_gene = pd.merge(gene, operon, how='left', left_on='gene_TG_locusTag', right_on='Genes')
+
+        # genes without operon
+        mask = operon_gene['Operon'].isnull()
+        operon_id = operon_gene.loc[mask, 'gene_TG_locusTag'].tolist()
+        operon_gene.loc[mask, 'Operon'] = operon_id
+        operon_gene.loc[mask, 'Genes'] = operon_id
+
+        operon_gene = apply_processors(operon_gene, tfbss=to_list_nan)
 
         # group by the operon_id
         aggregation = {'Orientation': take_first, 'tfbss': flatten_set_list}
@@ -130,7 +138,7 @@ class OperonTransformer(CoryneRegNetTransformer):
         return tfbs
 
     def transform(self):
-        # 'Operon', 'Orientation', 'Genes'
+        # 'Operon', 'Orientation', 'Genes', 'taxonomy'
         operon = self._build_operons()
 
         # 'tfbs_protrend_id', 'tfbs_operon'
@@ -140,11 +148,11 @@ class OperonTransformer(CoryneRegNetTransformer):
         # 'gene_stop'
         gene = self._transform_gene()
 
-        # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon'
+        # 'Operon', 'Orientation', 'Genes', 'taxonomy', 'tfbss', 'tfbs_operon'
         operon_tfbs = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
 
-        # 'Operon', 'Orientation', 'Genes', 'tfbss', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag', 'gene_name',
-        # 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop', 'operon_hash', 'name'
+        # 'Operon', 'Orientation', 'Genes', 'taxonomy', 'tfbss', 'tfbs_operon', 'gene_protrend_id', 'gene_locus_tag',
+        # 'gene_name', 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop', 'operon_hash', 'name'
         operon_tfbs_gene = self._transform_operon_by_gene(operon=operon_tfbs, gene=gene)
 
         operon_tfbs_gene = self._operon_coordinates(operon=operon_tfbs_gene)

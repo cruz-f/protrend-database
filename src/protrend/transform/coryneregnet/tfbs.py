@@ -119,6 +119,7 @@ class TFBSTransformer(CoryneRegNetTransformer):
     def _transform_operon(self) -> pd.DataFrame:
         # 'Operon', 'Orientation', 'Genes'
         operon = self._build_operons()
+        operon = operon.drop(columns='taxonomy')
         operon_by_gene = operon.explode(column='Genes')
         return operon_by_gene
 

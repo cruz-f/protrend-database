@@ -30,16 +30,16 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
     def _transform_operon(self) -> pd.DataFrame:
         operon = read_from_stack(stack=self.transform_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = self.select_columns(operon, 'protrend_id', 'genes', 'tfbss', 'Operon')
+        operon = self.select_columns(operon, 'protrend_id', 'genes', 'tfbss', 'Operon', 'Orientation', 'Genes')
         operon = operon.rename(columns={'protrend_id': 'operon'})
-        operon = apply_processors(operon, genes=to_list, tfbss=to_list)
+        operon = apply_processors(operon, genes=to_list, tfbss=to_list, Genes=to_list)
         return operon
 
     def transform(self) -> pd.DataFrame:
         # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'taxonomy'
         regulation = self._build_regulations()
-        regulation = self.select_columns(regulation, 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source',
-                                         'taxonomy')
+        regulation = self.select_columns(regulation,
+                                         'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'taxonomy')
 
         # 'regulator', 'TF_locusTag'
         regulator = self._transform_regulator()
@@ -47,20 +47,22 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
         # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'regulator', 'taxonomy'
         regulation_regulator = pd.merge(regulation, regulator, on='TF_locusTag')
 
-        # 'Operon', 'Orientation', 'Genes'
-        operons = self._build_operons()
-        operons = operons.explode(column='Genes')
-
-        # 'Operon', 'Orientation', 'Genes', 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source',
-        # 'regulator', 'taxonomy'
-        regulation_regulator_operons = pd.merge(regulation_regulator, operons, left_on='TG_locusTag', right_on='Genes')
-
-        # 'operon', 'genes', 'tfbss', 'Operon'
+        # 'operon', 'genes', 'tfbss', 'Operon', 'Orientation', 'Genes'
         operon = self._transform_operon()
+
+        # 'operon', 'Genes'
+        operon_by_gene = operon.explode(column='Genes')
+        operon_by_gene = self.select_columns(operon_by_gene, 'operon', 'Genes')
+
+        # 'operon', 'Genes'
+        # 'TF_locusTag', 'TG_locusTag', 'Role', 'Evidence', 'PMID', 'Source', 'regulator', 'taxonomy'
+        regulation_regulator_operon = pd.merge(regulation_regulator, operon_by_gene,
+                                               left_on='TG_locusTag', right_on='Genes')
+        regulation_regulator_operon = regulation_regulator_operon.drop(columns=['Genes'])
 
         # 'operon', 'genes', 'tfbss', 'Operon', 'Orientation', 'Genes', 'TF_locusTag', 'TG_locusTag',
         # 'Role', 'Evidence', 'PMID', 'Source', 'taxonomy', 'regulator', 'regulatory_effect'
-        regulatory_interaction = pd.merge(regulation_regulator_operons, operon, on='Operon')
+        regulatory_interaction = pd.merge(regulation_regulator_operon, operon, on='operon')
         regulatory_interaction['regulatory_effect'] = regulatory_interaction['Role']
 
         regulatory_interaction = apply_processors(regulatory_interaction,

@@ -41,6 +41,7 @@ class RegulondbLoader(Loader):
 
         'connected_publication_gene.json',
         'connected_publication_operon.json',
+        'connected_publication_organism.json',
         'connected_publication_promoter.json',
         'connected_publication_regulator.json',
         'connected_publication_tfbs.json',

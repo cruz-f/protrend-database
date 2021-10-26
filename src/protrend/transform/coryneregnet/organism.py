@@ -125,13 +125,13 @@ class OperonToOrganismConnector(CoryneRegNetConnector):
         operon = operon.explode(column='genes')
 
         operon_gene = pd.merge(operon, gene, left_on='genes', right_on='protrend_id', suffixes=('_operon', '_gene'))
-        operon_gene = apply_processors(operon_gene, taxonomy=to_int_str)
+        operon_gene = apply_processors(operon_gene, taxonomy_gene=to_int_str)
 
         organism = read_from_stack(stack=self._connect_stack, file='organism',
                                    default_columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
-        df = pd.merge(organism, operon_gene, left_on='ncbi_taxonomy', right_on='taxonomy')
+        df = pd.merge(organism, operon_gene, left_on='ncbi_taxonomy', right_on='taxonomy_gene')
 
         df = OrganismTransformer.drop_duplicates(df=df, subset=['protrend_id', 'protrend_id_operon'],
                                                  perfect_match=True, preserve_nan=True)

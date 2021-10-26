@@ -11,7 +11,8 @@ from .organism import (EffectorToOrganismConnector, GeneToOrganismConnector, Ope
                        RegulatoryInteractionToOrganismConnector, TFBSToOrganismConnector)
 from .promoter import PromoterTransformer
 from .publication import (PublicationToGeneConnector, PublicationToOperonConnector, PublicationToPromoterConnector,
-                          PublicationToRegulatorConnector, PublicationToTFBSConnector, PublicationTransformer)
+                          PublicationToRegulatorConnector, PublicationToTFBSConnector, PublicationToOrganismConnector,
+                          PublicationTransformer)
 from .regulator import RegulatorTransformer
 from .regulatory_family import RegulatoryFamilyTransformer, RegulatorToRegulatoryFamilyConnector
 from .regulatory_interaction import (RegulatorToEffectorConnector, RegulatorToGeneConnector, RegulatorToOperonConnector,

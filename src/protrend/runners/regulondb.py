@@ -68,6 +68,7 @@ def transform_runner(transform: bool = True,
 
         PublicationToGeneConnector(),
         PublicationToOperonConnector(),
+        PublicationToOrganismConnector(),
         PublicationToPromoterConnector(),
         PublicationToRegulatorConnector(),
         PublicationToTFBSConnector(),

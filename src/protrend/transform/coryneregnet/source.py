@@ -140,7 +140,6 @@ class TFBSToSourceConnector(CoryneRegNetConnector):
     def connect(self):
         tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
                                default_columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.explode(column='operon')
 
         source = read_from_stack(stack=self._connect_stack, file='source',
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
