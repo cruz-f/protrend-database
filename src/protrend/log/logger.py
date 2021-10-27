@@ -1,11 +1,11 @@
 import logging.config
 from datetime import datetime
 
-from protrend.utils import ROOT_PATH
+from protrend.utils import Settings
 
-CONFIG_FILE = ROOT_PATH.joinpath('log', 'log.conf')
+CONFIG_FILE = Settings.ROOT_PATH.joinpath('log', 'log.conf')
 CURRENT_TIME = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-LOG_PATH = ROOT_PATH.joinpath('log', f'protrendTL_{CURRENT_TIME}.log')
+LOG_PATH = Settings.ROOT_PATH.joinpath('log', f'protrendTL_{CURRENT_TIME}.log')
 LOG_FILE = LOG_PATH.as_posix()
 
 

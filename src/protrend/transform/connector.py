@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node
-from protrend.utils.settings import DATA_LAKE_PATH
+from protrend.utils import Settings
 
 
 class AbstractConnector(metaclass=ABCMeta):
@@ -107,7 +107,7 @@ class Connector(AbstractConnector):
             connect_stack = self.default_connect_stack
 
         for key, file in connect_stack.items():
-            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
 
             self._connect_stack[key] = dl_file
 
@@ -148,7 +148,7 @@ class Connector(AbstractConnector):
 
     @property
     def write_path(self) -> str:
-        return os.path.join(DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Python API

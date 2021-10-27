@@ -258,7 +258,7 @@ class Gene(Node):
 
     # properties
     locus_tag = StringProperty()
-    name = StringProperty(required=True)
+    name = StringProperty()
     synonyms = ArrayProperty(StringProperty())
     function = StringProperty()
     description = StringProperty()

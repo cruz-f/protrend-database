@@ -7,7 +7,7 @@ from neomodel import AttemptedCardinalityViolation
 from protrend.io.json import read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
-from protrend.utils.settings import DATA_LAKE_PATH
+from protrend.utils import Settings
 
 
 class Loader:
@@ -47,7 +47,7 @@ class Loader:
 
         for file in load_stack:
 
-            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
 
             if os.path.exists(dl_file):
                 self._load_stack.append(dl_file)
@@ -75,7 +75,7 @@ class Loader:
 
     @property
     def read_path(self) -> str:
-        return os.path.join(DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Transformer API

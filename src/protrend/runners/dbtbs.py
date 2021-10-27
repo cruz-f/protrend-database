@@ -10,15 +10,15 @@ from protrend.log import ProtrendLogger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.dbtbs import *
-from protrend.utils import NeoDatabase, ROOT_PATH, DATA_LAKE_PATH, STAGING_AREA_PATH
+from protrend.utils import NeoDatabase, Settings
 from protrend.utils.miscellaneous import log_file_from_name
 
-src_path = ROOT_PATH.parent
+src_path = Settings.ROOT_PATH.parent
 sys.path.insert(0, str(src_path))
 from protrend.runners import run_spider
 
 
-def extract_runner(spider: str = 'dbtbs', staging_area: Path = STAGING_AREA_PATH, version: str = '0.0.3'):
+def extract_runner(spider: str = 'dbtbs', staging_area: Path = Settings.STAGING_AREA_PATH, version: str = '0.0.3'):
     return run_spider(spider=spider, staging_area=staging_area, version=version)
 
 
@@ -100,7 +100,7 @@ def transform_runner(transform: bool = True,
     if connect:
         director.connect()
 
-    regprecise_data_lake = DATA_LAKE_PATH.joinpath('dbtbs', '0.0.3')
+    regprecise_data_lake = Settings.DATA_LAKE_PATH.joinpath('dbtbs', '0.0.3')
     data_lake_files = regprecise_data_lake.glob('*.json')
     data_lake = {fp.stem: read_json_frame(fp)
                  for fp in data_lake_files}

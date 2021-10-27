@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 # CamelCase to snake_case
-from protrend.utils import ROOT_PATH
+from protrend.utils import Settings
 
 camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
@@ -80,5 +80,5 @@ def is_null(obj: Any) -> bool:
 
 def log_file_from_name(name: str) -> str:
     now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    log_path = ROOT_PATH.joinpath('log', f'{name}_{now}.log')
+    log_path = Settings.ROOT_PATH.joinpath('log', f'{name}_{now}.log')
     return log_path.as_posix()

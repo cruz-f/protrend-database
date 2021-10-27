@@ -7,10 +7,10 @@ import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.transform.processors import take_last, apply_processors, to_list, to_list_nan, regulatory_interaction_hash
+from protrend.transform.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
-from protrend.utils.settings import STAGING_AREA_PATH, DATA_LAKE_PATH
+from protrend.utils import Settings
 
 
 class AbstractTransformer(metaclass=ABCMeta):
@@ -131,8 +131,8 @@ class Transformer(AbstractTransformer):
 
         for key, file in transform_stack.items():
 
-            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -187,7 +187,7 @@ class Transformer(AbstractTransformer):
 
     @property
     def write_path(self) -> str:
-        return os.path.join(DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
 
     # --------------------------------------------------------
     # Python API

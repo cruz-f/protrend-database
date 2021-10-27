@@ -1,3 +1,11 @@
+from pathlib import Path
+# ----------------------------------------------------
+# DATA LAKE PATH
+# ----------------------------------------------------
+from protrend.utils import Settings
+Settings.DATA_LAKE_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\data_lake')
+Settings.DATA_LAKE_BIOAPI_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\data_lake\bioapi_cache')
+
 from typing import Tuple, Dict
 
 import pandas as pd
@@ -8,7 +16,7 @@ from protrend.log import ProtrendLogger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.abasy import *
-from protrend.utils import NeoDatabase, DATA_LAKE_PATH
+from protrend.utils import NeoDatabase, Settings
 from protrend.utils.miscellaneous import log_file_from_name
 
 
@@ -69,7 +77,7 @@ def transform_runner(transform: bool = True,
     if connect:
         director.connect()
 
-    regprecise_data_lake = DATA_LAKE_PATH.joinpath('abasy', '0.0.0')
+    regprecise_data_lake = Settings.DATA_LAKE_PATH.joinpath('abasy', '0.0.0')
     data_lake_files = regprecise_data_lake.glob('*.json')
     data_lake = {fp.stem: read_json_frame(fp)
                  for fp in data_lake_files}

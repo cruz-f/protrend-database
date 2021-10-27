@@ -4,7 +4,7 @@ import time
 import pandas as pd
 import requests
 
-from .settings import REQUEST_RETRIES, REQUEST_TIMEOUT
+from .settings import Settings
 
 
 def _request(url: str,
@@ -17,7 +17,7 @@ def _request(url: str,
                            cookies=None,
                            files=None,
                            auth=None,
-                           timeout=REQUEST_TIMEOUT,
+                           timeout=Settings.REQUEST_TIMEOUT,
                            allow_redirects=True,
                            proxies=None,
                            hooks=None,
@@ -58,7 +58,7 @@ def _request(url: str,
 def request(url: str,
             method: str = 'get',
             params: dict = None,
-            retries: int = REQUEST_RETRIES,
+            retries: int = Settings.REQUEST_RETRIES,
             **kwargs) -> requests.Response:
 
     if retries > 0:

@@ -10,9 +10,9 @@ from Bio.SeqIO import SeqRecord
 from diskcache import Cache
 
 from protrend.utils.request import request, read_response
-from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH, REQUEST_SLEEP
+from protrend.utils import Settings
 
-UNIPROT_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('uniprot')
+UNIPROT_PATH = Settings.DATA_LAKE_BIOAPI_PATH.joinpath('uniprot')
 
 
 def _init_uniprot_record() -> Cache:
@@ -81,7 +81,7 @@ def fetch_uniprot_record(uniprot_accession: str) -> SeqRecord:
     except:
         record = SeqRecord(Seq(""))
 
-    time.sleep(REQUEST_SLEEP)
+    time.sleep(Settings.REQUEST_SLEEP)
 
     return record
 
@@ -128,7 +128,7 @@ def query_uniprot(query: Dict[str, str],
     if df.empty:
         df = pd.DataFrame(columns=UniProtAPI.df_query_columns)
 
-    time.sleep(REQUEST_SLEEP)
+    time.sleep(Settings.REQUEST_SLEEP)
 
     if output == 'dataframe':
         return df
@@ -161,7 +161,7 @@ def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
     if df.empty:
         df = pd.DataFrame(columns=UniProtAPI.df_mapping_columns)
 
-    time.sleep(REQUEST_SLEEP)
+    time.sleep(Settings.REQUEST_SLEEP)
 
     if output == 'dataframe':
         return df

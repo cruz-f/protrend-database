@@ -8,7 +8,7 @@ from protrend.log import ProtrendLogger
 from protrend.model.node import Node
 from protrend.runners import Director
 from protrend.transform.regulondb import *
-from protrend.utils import NeoDatabase, DATA_LAKE_PATH
+from protrend.utils import NeoDatabase, Settings
 from protrend.utils.miscellaneous import log_file_from_name
 
 
@@ -105,7 +105,7 @@ def transform_runner(transform: bool = True,
     if connect:
         director.connect()
 
-    regulondb_data_lake = DATA_LAKE_PATH.joinpath('regulondb', '0.0.0')
+    regulondb_data_lake = Settings.DATA_LAKE_PATH.joinpath('regulondb', '0.0.0')
     data_lake_files = regulondb_data_lake.glob('*.json')
     data_lake = {fp.stem: read_json_frame(fp)
                  for fp in data_lake_files}

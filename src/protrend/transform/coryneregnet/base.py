@@ -6,7 +6,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_csv
 from protrend.transform import Transformer, Connector
 from protrend.transform.processors import take_first, to_set_list
-from protrend.utils import SetList, STAGING_AREA_PATH, DATA_LAKE_PATH
+from protrend.utils import SetList, Settings
 
 
 class CoryneRegNetTransformer(Transformer):
@@ -50,8 +50,8 @@ class CoryneRegNetTransformer(Transformer):
 
         for key, file in regulation_stack.items():
 
-            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -70,8 +70,8 @@ class CoryneRegNetTransformer(Transformer):
 
         for key, file in operon_stack.items():
 
-            sa_file = os.path.join(STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 

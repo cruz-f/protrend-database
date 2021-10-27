@@ -22,7 +22,7 @@ class RegulatoryInteractionTransformer(AbasyTransformer):
 
     def _transform_networks(self, networks: pd.DataFrame) -> pd.DataFrame:
         networks = networks.dropna(subset=['source', 'target', 'taxonomy', 'Effect'])
-        networks['source_target_taxonomy'] = networks['source'] + networks['target'] + networks['Effect'] + networks['taxonomy']
+        networks.loc[:, 'source_target_taxonomy'] = networks['source'] + networks['target'] + networks['Effect'] + networks['taxonomy']
 
         networks = self.drop_duplicates(df=networks, subset=['source_target_taxonomy'],
                                         perfect_match=True, preserve_nan=True)

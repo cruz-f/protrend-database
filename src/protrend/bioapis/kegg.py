@@ -8,11 +8,11 @@ from whoosh import searching
 from whoosh.fields import Schema, TEXT
 from whoosh.qparser import QueryParser
 
-from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH
+from protrend.utils import Settings
 from protrend.utils.request import request, read_response
 
 
-KEGG_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('kegg')
+KEGG_PATH = Settings.DATA_LAKE_BIOAPI_PATH.joinpath('kegg')
 
 if not os.path.exists(KEGG_PATH):
     os.makedirs(KEGG_PATH)

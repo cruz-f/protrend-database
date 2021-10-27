@@ -7,13 +7,13 @@ from Bio.SeqRecord import SeqRecord
 from diskcache import Cache, JSONDisk
 
 from protrend.bioapis.settings import ENTREZ_E_MAIL, ENTREZ_API_KEY, ENTREZ_TOOL
-from protrend.utils.settings import DATA_LAKE_BIOAPI_PATH
+from protrend.utils.settings import Settings
 
 Entrez.email = ENTREZ_E_MAIL
 Entrez.api_key = ENTREZ_API_KEY
 Entrez.tool = ENTREZ_TOOL
 
-ENTREZ_PATH = DATA_LAKE_BIOAPI_PATH.joinpath('entrez')
+ENTREZ_PATH = Settings.DATA_LAKE_BIOAPI_PATH.joinpath('entrez')
 
 
 def _init_entrez_search() -> Cache:
