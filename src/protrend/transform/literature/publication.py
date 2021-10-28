@@ -6,7 +6,7 @@ from protrend.model.model import Publication
 from protrend.transform import PublicationDTO
 from protrend.transform.annotation import annotate_publications
 from protrend.transform.literature.base import LiteratureTransformer
-from protrend.transform.processors import apply_processors, to_int_str, to_str, to_set_list
+from protrend.transform.processors import apply_processors, to_int_str, to_set_list
 from protrend.utils import SetList
 
 
