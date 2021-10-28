@@ -57,7 +57,8 @@ class LiteratureTransformer(Transformer):
 
     default_network_columns = SetList(['regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
                                        'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                                       'publication', 'taxonomy', 'source'])
+                                       'publication', 'taxonomy', 'source',
+                                       'network_id'])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -275,9 +276,11 @@ class LiteratureTransformer(Transformer):
         df['Operon'] = df['Operon'].fillna(df['Gene_Name'])
 
         df_gb = self.group_by(df, column='Operon', aggregation={}, default=to_set_list)
-        df_gb = df_gb.drop(columns=['Sigma factor number', 'Regulator number'])
+        df_gb = self.select_columns(df_gb, 'BSU Number', 'Gene_Name', 'Operon')
 
-        df = self.select_columns(df, 'Sigma factor number', 'Regulator number', 'Operon')
+        df = self.select_columns(df,
+                                 'Sigma factor number', 'Regulator number', 'Operon',
+                                 'Regulation sign', 'Metabolite(s) number')
 
         df = pd.merge(df, df_gb, on='Operon')
 
@@ -327,7 +330,11 @@ class LiteratureTransformer(Transformer):
     def _build_network(self) -> pd.DataFrame:
         dfs = [self._build_ecol_fang_et_al_2017(), self._build_mtub_turkarslan_et_al_2015(),
                self._build_paer_vasquez_et_al_2011(), self._build_bsub_faria_et_al_2017(), ]
-        return pd.concat(dfs, axis=0)
+        df = pd.concat(dfs, axis=0)
+
+        df['network_id'] = df['regulator_locus_tag'] + df['regulator_name'] + df['operon'] + df['taxonomy'] + df['source']
+
+        return df
 
 
 class LiteratureConnector(Connector):
