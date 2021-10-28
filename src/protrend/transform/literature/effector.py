@@ -14,7 +14,11 @@ from protrend.utils.miscellaneous import is_null
 class EffectorTransformer(LiteratureTransformer):
     default_node = Effector
     default_order = 100
-    columns = SetList(['name', 'mechanism', 'kegg_compounds', 'protrend_id'])
+    columns = SetList(['name', 'mechanism', 'kegg_compounds', 'protrend_id',
+                       'regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
+                       'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
+                       'publication', 'taxonomy', 'source',
+                       'network_id'])
 
     def _transform_effector(self, network: pd.DataFrame) -> pd.DataFrame:
         network = apply_processors(network, effector=to_set_list)
