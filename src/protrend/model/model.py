@@ -172,10 +172,10 @@ class Regulator(Node):
 
     # properties
     locus_tag = StringProperty()
-    name = StringProperty(required=True)
+    name = StringProperty()
     rfam = StringProperty()
     synonyms = ArrayProperty(StringProperty())
-    mechanism = StringProperty(required=True)
+    mechanism = StringProperty()
     function = StringProperty()
     description = StringProperty()
     ncbi_gene = IntegerProperty()

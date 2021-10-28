@@ -94,7 +94,12 @@ class GeneTransformer(AbasyTransformer):
 
         df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_abasy')
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_abasy')
+
         df = self.merge_columns(df=df, column='ncbi_gene', left='ncbi_gene_annotation', right='ncbi_gene_abasy')
+        pseudo_cap_mask = df['ncbi_gene'].str.startswith('PseudoCap')
+        pseudo_cap_mask = pseudo_cap_mask.fillna(False)
+        df.loc[pseudo_cap_mask, 'ncbi_gene'] = None
+
         df = self.merge_columns(df=df, column='uniprot_accession', left='uniprot_accession_annotation',
                                 right='uniprot_accession_abasy')
 

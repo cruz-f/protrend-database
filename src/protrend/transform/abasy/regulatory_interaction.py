@@ -60,7 +60,7 @@ class RegulatoryInteractionTransformer(AbasyTransformer):
         operon = self._transform_operon()
 
         regulatory_interaction = pd.merge(regulator_network, operon, on='target')
-        regulatory_interaction['regulatory_effect'] = regulatory_interaction['Effect']
+        regulatory_interaction.loc[:, 'regulatory_effect'] = regulatory_interaction['Effect'].tolist()
 
         regulatory_interaction = apply_processors(regulatory_interaction,
                                                   regulatory_effect=regulatory_effect_coryneregnet)

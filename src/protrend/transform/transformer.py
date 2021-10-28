@@ -397,7 +397,8 @@ class Transformer(AbstractTransformer):
 
     @staticmethod
     def select_columns(df: pd.DataFrame, *columns: str) -> pd.DataFrame:
-        df = df[list(columns)]
+        df = df.copy()
+        df = df.loc[:, list(columns)]
         return df
 
     @staticmethod
