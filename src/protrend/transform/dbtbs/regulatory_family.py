@@ -72,7 +72,7 @@ class RegulatorToRegulatoryFamilyConnector(DBTBSConnector):
         rfam = rfam[['protrend_id', 'tf']]
         rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
 
-        df = pd.merge(regulator, rfam, right_on='name_dbtbs', left_on='tf')
+        df = pd.merge(regulator, rfam, left_on='name_dbtbs', right_on='tf')
         df = df.drop_duplicates(subset=['regulator_protrend_id', 'rfam_protrend_id'])
 
         from_identifiers = df['regulator_protrend_id'].tolist()
