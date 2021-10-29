@@ -7,7 +7,8 @@ from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import Operon
 from protrend.transform.literature.base import LiteratureTransformer
 from protrend.transform.literature.gene import GeneTransformer
-from protrend.transform.processors import (apply_processors, operon_name, to_list, operon_hash, to_str)
+from protrend.transform.processors import (apply_processors, operon_name, to_list, operon_hash, to_str, to_set_list,
+                                           flatten_set_list, take_first)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 
@@ -17,16 +18,20 @@ class OperonTransformer(LiteratureTransformer):
     default_transform_stack = {'gene': 'integrated_gene.json'}
     default_order = 90
     columns = SetList(['name', 'genes', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
-                       'regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
-                       'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                       'publication', 'taxonomy', 'source', 'network_id'])
+                       'regulator_locus_tag', 'operon', 'genes_locus_tag', 'regulatory_effect', 'evidence',
+                       'effector', 'mechanism', 'publication', 'taxonomy', 'source', 'network_id'])
 
     def _transform_operon_by_gene(self, network: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-        network = apply_processors(network, operon=to_str)
         network = self.drop_duplicates(df=network, subset=['operon', 'taxonomy'], perfect_match=True, preserve_nan=True)
         network = network.dropna(subset=['operon'])
 
-        operon_gene = pd.merge(gene, network, left_on='gene_operon', right_on='operon')
+        network['operon_id'] = network['operon'] + network['taxonomy']
+
+        operon_gene = pd.merge(gene, network, on='network_id')
+
+        aggregation = {'genes_locus_tag': flatten_set_list, 'operon': take_first, 'taxonomy': take_first,
+                       'source': take_first, 'network_id': take_first}
+        operon_gene = self.group_by(df=operon_gene, column='operon_id', aggregation=aggregation, default=to_set_list)
 
         operon_gene = operon_gene.rename(columns={'gene_protrend_id': 'genes'})
 
@@ -100,13 +105,12 @@ class OperonTransformer(LiteratureTransformer):
     def _transform_gene(self) -> pd.DataFrame:
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop', 'operon')
+        gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop', 'network_id')
         gene = apply_processors(gene, operon=to_str)
         gene = gene.dropna(subset=['protrend_id', 'operon'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
                                     'locus_tag': 'gene_locus_tag',
                                     'name': 'gene_name',
-                                    'operon': 'gene_operon',
                                     'strand': 'gene_strand',
                                     'start': 'gene_start',
                                     'stop': 'gene_stop'})
@@ -114,6 +118,7 @@ class OperonTransformer(LiteratureTransformer):
 
     def transform(self):
         network = self._build_network()
+        network = self.select_columns(network, 'operon', 'genes_locus_tag', 'taxonomy', 'source', 'network_id')
         gene = self._transform_gene()
 
         operon = self._transform_operon_by_gene(network=network, gene=gene)

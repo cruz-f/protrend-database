@@ -367,7 +367,7 @@ class LiteratureTransformer(Transformer):
                self._build_paer_vasquez_et_al_2011(), self._build_bsub_faria_et_al_2017()]
         df = pd.concat(dfs, axis=0)
         df = df.reset_index(drop=True)
-        df = df.dropna(subset=['regulator_locus_tag'])
+        df = df.dropna(subset=['regulator_locus_tag', 'operon'])
 
         df = apply_processors(df, regulator_locus_tag=to_str, operon=to_str, taxonomy=to_str, source=to_str)
 

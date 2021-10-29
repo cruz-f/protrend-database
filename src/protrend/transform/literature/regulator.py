@@ -10,7 +10,7 @@ from protrend.transform.processors import apply_processors, rstrip, lstrip
 from protrend.utils import SetList
 
 
-class GeneTransformer(LiteratureTransformer):
+class RegulatorTransformer(LiteratureTransformer):
     default_node = Regulator
     default_order = 100
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',

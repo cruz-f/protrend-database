@@ -1,13 +1,13 @@
 from collections import UserList
 from dataclasses import field
 from functools import partial
-from typing import Sequence, Any
+from typing import Sequence, Any, Iterator, Union
 
 
 class SetList(UserList):
 
     def __init__(self,
-                 sequence: Sequence = None,
+                 sequence: Union[Iterator, Sequence] = None,
                  output: str = 'take_all'):
 
         super().__init__()
