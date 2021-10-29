@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -38,7 +39,7 @@ def read_json_lines(file_path: str) -> pd.DataFrame:
     return pd.DataFrame(lines)
 
 
-def read_json_frame(file_path: str, **kwargs) -> pd.DataFrame:
+def read_json_frame(file_path: Union[Path, str], **kwargs) -> pd.DataFrame:
     """
         Wrapper for pandas JSON reader.
         This method is optimized to read JSON files exported by the transformers,

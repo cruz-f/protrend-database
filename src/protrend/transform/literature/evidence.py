@@ -57,7 +57,7 @@ class EvidenceTransformer(LiteratureTransformer):
         return evidence
 
 
-class EvidenceToRegulator(LiteratureConnector):
+class EvidenceToRegulatorConnector(LiteratureConnector):
     default_from_node = Evidence
     default_to_node = Regulator
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
@@ -80,7 +80,7 @@ class EvidenceToRegulator(LiteratureConnector):
         self.stack_json(df)
 
 
-class EvidenceToOperon(LiteratureConnector):
+class EvidenceToOperonConnector(LiteratureConnector):
     default_from_node = Evidence
     default_to_node = Operon
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
@@ -103,7 +103,7 @@ class EvidenceToOperon(LiteratureConnector):
         self.stack_json(df)
 
 
-class EvidenceToGene(LiteratureConnector):
+class EvidenceToGeneConnector(LiteratureConnector):
     default_from_node = Evidence
     default_to_node = Gene
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
@@ -127,7 +127,7 @@ class EvidenceToGene(LiteratureConnector):
         self.stack_json(df)
 
 
-class EvidenceToRegulatoryInteraction(LiteratureConnector):
+class EvidenceToRegulatoryInteractionConnector(LiteratureConnector):
     default_from_node = Evidence
     default_to_node = Gene
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
