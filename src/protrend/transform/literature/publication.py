@@ -14,8 +14,8 @@ class PublicationTransformer(LiteratureTransformer):
     default_node = Publication
     default_order = 100
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
-                       'regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
-                       'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
+                       'regulator_locus_tag', 'operon', 'genes_locus_tag',
+                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
                        'publication', 'taxonomy', 'source', 'network_id'])
 
     def _transform_publication(self, network: pd.DataFrame) -> pd.DataFrame:

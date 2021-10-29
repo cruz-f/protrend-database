@@ -1,7 +1,11 @@
 import pandas as pd
 
-from protrend.model.model import Evidence
-from protrend.transform.literature.base import LiteratureTransformer
+from protrend.io import read_from_stack, read_json_frame
+from protrend.model.model import Evidence, Regulator, Operon, Gene
+from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.literature.operon import OperonTransformer
+from protrend.transform.literature.regulator import RegulatorTransformer
+from protrend.transform.literature.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.processors import apply_processors, to_set_list
 from protrend.utils import SetList
 
@@ -11,9 +15,9 @@ class EvidenceTransformer(LiteratureTransformer):
     default_order = 100
     columns = SetList(['protrend_id',
                        'name', 'description',
-                       'regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
-                       'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                       'publication', 'taxonomy', 'source'])
+                       'regulator_locus_tag', 'operon', 'genes_locus_tag',
+                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
+                       'publication', 'taxonomy', 'source', 'network_id'])
 
     def _transform_evidence(self, network: pd.DataFrame) -> pd.DataFrame:
         network = apply_processors(network, evidence=to_set_list)
@@ -51,3 +55,96 @@ class EvidenceTransformer(LiteratureTransformer):
 
         self._stack_transformed_nodes(evidence)
         return evidence
+
+
+class EvidenceToRegulator(LiteratureConnector):
+    default_from_node = Evidence
+    default_to_node = Regulator
+    default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
+
+    def connect(self):
+        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
+                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+
+        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
+                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+
+        df = pd.merge(regulator, evidence, on='network_id', suffixes=('_regulator', '_evidence'))
+
+        from_identifiers = df['protrend_id_evidence'].tolist()
+        to_identifiers = df['protrend_id_regulator'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class EvidenceToOperon(LiteratureConnector):
+    default_from_node = Evidence
+    default_to_node = Operon
+    default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
+                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        df = pd.merge(operon, evidence, on='network_id', suffixes=('_operon', '_evidence'))
+
+        from_identifiers = df['protrend_id_evidence'].tolist()
+        to_identifiers = df['protrend_id_operon'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class EvidenceToGene(LiteratureConnector):
+    default_from_node = Evidence
+    default_to_node = Gene
+    default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
+                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        df = pd.merge(operon, evidence, on='network_id', suffixes=('_operon', '_evidence'))
+        df = df.explode(column='genes')
+
+        from_identifiers = df['protrend_id_evidence'].tolist()
+        to_identifiers = df['genes'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
+
+
+class EvidenceToRegulatoryInteraction(LiteratureConnector):
+    default_from_node = Evidence
+    default_to_node = Gene
+    default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
+
+    def connect(self):
+        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
+                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+
+        rin = read_from_stack(stack=self._connect_stack, file='rin',
+                                 default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+
+        df = pd.merge(rin, evidence, on='network_id', suffixes=('_rin', '_evidence'))
+
+        from_identifiers = df['protrend_id_evidence'].tolist()
+        to_identifiers = df['protrend_id_rin'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)

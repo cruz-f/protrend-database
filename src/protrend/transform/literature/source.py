@@ -73,13 +73,17 @@ class OrganismToSourceConnector(LiteratureConnector):
                          '83332': 'mtub_turkarslan_et_al_2015',
                          '208964': 'paer_vasquez_et_al_2011'}
 
+        source_to_protrend_id = {source_name: source_id
+                                 for source_name, source_id in zip(source['name'], source['protrend_id'])}
+
         from_identifiers = []
         to_identifiers = []
 
         for organism_protrend_id, organism_id in zip(organism['protrend_id'], organism['ncbi_taxonomy']):
             from_identifiers.append(organism_protrend_id)
 
-            to_id = tax_to_source[organism_id]
+            to_name = tax_to_source[organism_id]
+            to_id = source_to_protrend_id[to_name]
             to_identifiers.append(to_id)
 
         df = self.make_connection(from_identifiers=from_identifiers,

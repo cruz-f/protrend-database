@@ -16,8 +16,8 @@ class RegulatorTransformer(LiteratureTransformer):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
                        'strand', 'start', 'stop', 'mechanism',
-                       'regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
-                       'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
+                       'regulator_locus_tag', 'operon', 'genes_locus_tag',
+                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
                        'publication', 'taxonomy', 'source', 'network_id'])
 
     regulator_mechanisms = {"sigma factor": "sigma factor",
