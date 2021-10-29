@@ -22,12 +22,12 @@ class EvidenceTransformer(LiteratureTransformer):
         network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True, preserve_nan=True)
         network = network.dropna(subset=['evidence'])
 
-        def split_evidence(item: str) -> list:
+        def split_evidence(item: str) -> SetList:
             res = SetList()
             comma_split = item.split(',')
 
             for element in comma_split:
-                and_split = item.split(' and ')
+                and_split = element.split(' and ')
 
                 for sub_element in and_split:
                     sub_element = sub_element.rstrip().lstrip()

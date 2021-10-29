@@ -15,10 +15,9 @@ class EffectorTransformer(LiteratureTransformer):
     default_node = Effector
     default_order = 100
     columns = SetList(['name', 'mechanism', 'kegg_compounds', 'protrend_id',
-                       'regulator_locus_tag', 'regulator_name', 'operon', 'genes_locus_tag',
-                       'genes_name', 'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                       'publication', 'taxonomy', 'source',
-                       'network_id'])
+                       'regulator_locus_tag', 'operon', 'genes_locus_tag',
+                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
+                       'publication', 'taxonomy', 'source', 'network_id'])
 
     def _transform_effector(self, network: pd.DataFrame) -> pd.DataFrame:
         network = apply_processors(network, effector=to_set_list)
@@ -47,7 +46,7 @@ class EffectorTransformer(LiteratureTransformer):
 
             return item.replace('stress:', '').replace('stress: ', '').replace(' stress:', '').replace(' stress: ', '')
 
-        def split_effectors(item: str) -> list:
+        def split_effectors(item: str) -> SetList:
             items = item.split('|')
 
             res = SetList()
@@ -56,7 +55,6 @@ class EffectorTransformer(LiteratureTransformer):
                 sub_items = item.split('/')
 
                 for sub_item in sub_items:
-
                     sub_item = sub_item.rstrip().lstrip()
                     sub_item = _filter_map_nan(sub_item)
                     sub_item = _filter_map_stress(sub_item)

@@ -54,16 +54,61 @@ class GeneTransformer(LiteratureTransformer):
                             "silico-riboswitch": "small RNA (sRNA)",
                             "silico-TF+TC": "transcription factor"}
 
-    def _transform_regulator(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = apply_processors(network, regulator_locus_tag=[rstrip, lstrip], regulator_name=[rstrip, lstrip])
+    @staticmethod
+    def _filter_ecol_locus_genes(df: pd.DataFrame) -> pd.Series:
+        df = df.copy()
+        mask = (df['regulator_locus_tag'].str.startswith('b')) & (df['source'] == 'ecol_fang_et_al_2017')
+        df = df.loc[mask, :]
+        df['locus_tag'] = df['regulator_locus_tag']
+        df['name'] = None
+        return df
 
-        network = self.drop_duplicates(df=network, subset=['regulator_locus_tag'],
+    @staticmethod
+    def _filter_mtub_locus_genes(df: pd.DataFrame) -> pd.Series:
+        mask = (df['regulator_locus_tag'].str.startswith('R')) & (df['source'] == 'mtub_turkarslan_et_al_2015')
+        df = df.loc[mask, :]
+        df['locus_tag'] = df['regulator_locus_tag']
+        df['name'] = None
+        return df
+
+    @staticmethod
+    def _filter_paer_locus_genes(df: pd.DataFrame) -> pd.Series:
+        mask = (df['regulator_locus_tag'].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
+        df = df.loc[mask, :]
+        df['locus_tag'] = df['regulator_locus_tag']
+        df['name'] = None
+        return df
+
+    @staticmethod
+    def _filter_paer_names_genes(df: pd.DataFrame) -> pd.Series:
+        mask = (~ df['regulator_locus_tag'].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
+        df = df.loc[mask, :]
+        df['locus_tag'] = None
+        df['name'] = df['regulator_locus_tag']
+        return df
+
+    @staticmethod
+    def _filter_bsub_locus_genes(df: pd.DataFrame) -> pd.Series:
+        mask = (df['regulator_locus_tag'].str.startswith('BSU')) & (df['source'] == 'bsub_faria_et_al_2017')
+        df = df.loc[mask, :]
+        df['locus_tag'] = df['regulator_locus_tag']
+        df['name'] = None
+        return df
+
+    def _transform_regulator(self, network: pd.DataFrame) -> pd.DataFrame:
+        network = apply_processors(network, regulator_locus_tag=[rstrip, lstrip])
+
+        network = self.drop_duplicates(df=network, subset=['regulator_locus_tag', 'taxonomy'],
                                        perfect_match=True, preserve_nan=True)
-        network['regulator_locus_tag'] = network['regulator_locus_tag'].fillna(network['regulator_name'])
         network = network.dropna(subset=['regulator_locus_tag'])
 
-        network['locus_tag'] = network['regulator_locus_tag']
-        network['name'] = network['regulator_name']
+        filtered_networks = [self._filter_ecol_locus_genes(network),
+                             self._filter_mtub_locus_genes(network),
+                             self._filter_paer_locus_genes(network),
+                             self._filter_paer_names_genes(network),
+                             self._filter_bsub_locus_genes(network)]
+        network = pd.concat(filtered_networks, axis=0)
+        network = network.reset_index(drop=True)
 
         regulator_mechanisms = {key.rstrip().lstrip().lower(): value
                                 for key, value in self.regulator_mechanisms.items()}
@@ -77,12 +122,17 @@ class GeneTransformer(LiteratureTransformer):
 
         network = apply_processors(network, mechanism=map_filter_mechanism)
 
-        network = self.create_input_value(df=network, col='locus_tag')
+        network['regulator_network_id'] = network['regulator_locus_tag'] + network['taxonomy']
+
+        network = self.create_input_value(df=network, col='regulator_network_id')
         return network
 
     @staticmethod
-    def _annotate_regulators(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
-        dtos = [GeneDTO(input_value=locus) for locus in loci]
+    def _annotate_regulators(input_values: Union[List[str], List[None]],
+                             loci: List[Union[None, str]],
+                             names: List[str],
+                             taxa: List[str]):
+        dtos = [GeneDTO(input_value=input_value) for input_value in input_values]
         annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
 
         for dto, name in zip(dtos, names):
@@ -112,18 +162,19 @@ class GeneTransformer(LiteratureTransformer):
         network = self._build_network()
         regulator = self._transform_regulator(network)
 
-        loci = regulator['input_value'].tolist()
-        names = regulator['genes_name'].tolist()
+        input_values = regulator['input_value'].tolist()
+        loci = regulator['locus_tag'].tolist()
+        names = regulator['name'].tolist()
         taxa = regulator['taxonomy'].tolist()
 
-        regulators = self._annotate_regulators(loci, names, taxa)
+        regulators = self._annotate_regulators(input_values, loci, names, taxa)
 
         df = pd.merge(regulators, regulator, on='input_value', suffixes=('_annotation', '_literature'))
 
         df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_literature')
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
 
-        df = df.drop(columns=['input_value'])
+        df = df.drop(columns=['input_value', 'regulator_network_id'])
 
         self._stack_transformed_nodes(df)
 
