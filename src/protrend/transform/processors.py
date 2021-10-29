@@ -478,7 +478,56 @@ def regulatory_effect_abasy(item: str) -> Union[None, str]:
     return
 
 
-def parse_effector_name_regulondb(item: str) -> str:
+def _parse_regulatory_effect_literature_bsub(item: str):
+    signs = item.split('|')
+
+    is_positive = False
+    is_negative = False
+    for sign in signs:
+
+        if sign.rstrip().lstrip().lower() == '-1':
+            is_negative = True
+
+        if sign.rstrip().lstrip().lower() == '1':
+            is_positive = True
+
+    if is_positive and is_negative:
+        return 'dual'
+
+    if is_positive:
+        return 'activation'
+
+    if is_negative:
+        return 'repression'
+
+    return 'unknown'
+
+
+def regulatory_effect_literature(item: str) -> Union[None, str]:
+    if is_null(item):
+        return
+
+    item = item.rstrip().lstrip().lower()
+
+    if '|' in item:
+        return _parse_regulatory_effect_literature_bsub(item)
+
+    if item == '+' or item == 'ind':
+        return 'activation'
+
+    if item == '-' or item == 'rep':
+        return 'repression'
+
+    if item == '?' or item == '.':
+        return 'unknown'
+
+    if item == 'd':
+        return 'dual'
+
+    return
+
+
+def parse_effector_name_regulondb(item: str) -> Union[None, str]:
     if is_null(item):
         return
 
