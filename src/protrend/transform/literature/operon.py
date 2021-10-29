@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Operon
-from protrend.transform.literature.base import LiteratureTransformer
+from protrend.model.model import Operon, Gene
+from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.gene import GeneTransformer
 from protrend.transform.processors import (apply_processors, operon_name, to_list, operon_hash, to_str, to_set_list,
                                            flatten_set_list, take_first)
@@ -128,3 +128,27 @@ class OperonTransformer(LiteratureTransformer):
         self._stack_transformed_nodes(operon)
 
         return operon
+
+
+class OperonToGeneConnector(LiteratureConnector):
+    default_from_node = Operon
+    default_to_node = Gene
+    default_connect_stack = {'operon': 'integrated_operon.json'}
+
+    def connect(self):
+        operon = read_from_stack(stack=self._connect_stack, file='operon',
+                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+
+        operon = apply_processors(operon, genes=to_list)
+        operon = operon.explode('genes')
+
+        operon = operon.dropna(subset=['protrend_id', 'genes'])
+        operon = operon.drop_duplicates(subset=['protrend_id', 'genes'])
+
+        from_identifiers = operon['protrend_id'].tolist()
+        to_identifiers = operon['genes'].tolist()
+
+        df = self.make_connection(from_identifiers=from_identifiers,
+                                  to_identifiers=to_identifiers)
+
+        self.stack_json(df)
