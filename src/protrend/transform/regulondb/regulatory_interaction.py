@@ -3,7 +3,8 @@ import pandas as pd
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryInteraction, Regulator, TFBS, Gene, Operon, Effector
-from protrend.transform.processors import (apply_processors, to_list_nan, regulatory_effect_regulondb, to_list)
+from protrend.transform.processors import (apply_processors, to_list_nan, regulatory_effect_regulondb, to_list,
+                                           to_set_list)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
@@ -109,7 +110,8 @@ class RegulatoryInteractionToEffectorConnector(RegulondbConnector):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
                               default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
-        rin = apply_processors(rin, regulator_effector=to_list)
+        rin = apply_processors(rin, regulator_effector=to_set_list)
+        rin = rin.explode(column='regulator_effector')
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['regulator_effector'].tolist()
 
@@ -213,7 +215,8 @@ class RegulatorToEffectorConnector(RegulondbConnector):
     def connect(self):
         rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
                               default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
+        rin = apply_processors(rin, regulator_effector=to_set_list)
+        rin = rin.explode(column='regulator_effector')
         rin = rin.drop_duplicates(subset=['regulator', 'regulator_effector'])
 
         from_identifiers = rin['regulator'].tolist()
