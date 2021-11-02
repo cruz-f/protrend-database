@@ -50,15 +50,19 @@ class EffectorTransformer(LiteratureTransformer):
             items = item.split('|')
 
             res = SetList()
-            for item in items:
+            for sub_item in items:
 
-                sub_items = item.split('/')
+                sub_item = sub_item.rstrip().lstrip()
 
-                for sub_item in sub_items:
-                    sub_item = sub_item.rstrip().lstrip()
-                    sub_item = _filter_map_nan(sub_item)
-                    sub_item = _filter_map_stress(sub_item)
-                    res.append(sub_item)
+                sub_items = sub_item.split('/')
+
+                for sub_sub_item in sub_items:
+                    sub_sub_item = sub_sub_item.rstrip().lstrip()
+                    sub_sub_item = _filter_map_nan(sub_sub_item)
+                    sub_sub_item = _filter_map_stress(sub_sub_item)
+                    if not is_null(sub_sub_item):
+                        sub_sub_item = sub_sub_item.rstrip().lstrip()
+                    res.append(sub_sub_item)
             return res
 
         network = apply_processors(network, effector=split_effectors)

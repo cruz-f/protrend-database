@@ -114,8 +114,9 @@ class RegulatorTransformer(LiteratureTransformer):
                                 for key, value in self.regulator_mechanisms.items()}
 
         def map_filter_mechanism(item: str) -> str:
+            item = item.rstrip().lstrip().lower()
 
-            if item.rstrip().lstrip().lower() in regulator_mechanisms:
+            if item in regulator_mechanisms:
                 return regulator_mechanisms[item]
 
             return 'unknown'

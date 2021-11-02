@@ -71,7 +71,10 @@ class OrganismToSourceConnector(LiteratureConnector):
         tax_to_source = {'224308': 'bsub_faria_et_al_2017',
                          '511145': 'ecol_fang_et_al_2017',
                          '83332': 'mtub_turkarslan_et_al_2015',
-                         '208964': 'paer_vasquez_et_al_2011'}
+                         '208964': 'paer_vasquez_et_al_2011',
+                         '1009714': 'paer_vasquez_et_al_2011',
+                         '652611': 'paer_vasquez_et_al_2011',
+                         '1081927': 'paer_vasquez_et_al_2011'}
 
         source_to_protrend_id = {source_name: source_id
                                  for source_name, source_id in zip(source['name'], source['protrend_id'])}

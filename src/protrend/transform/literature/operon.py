@@ -19,7 +19,7 @@ class OperonTransformer(LiteratureTransformer):
     default_order = 90
     columns = SetList(['name', 'genes', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
                        'regulator_locus_tag', 'operon', 'genes_locus_tag', 'regulatory_effect', 'evidence',
-                       'effector', 'mechanism', 'publication', 'taxonomy', 'source', 'network_id'])
+                       'effector', 'mechanism', 'publication', 'taxonomy', 'source', 'operon_id', 'network_id'])
 
     def _transform_operon_by_gene(self, network: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         network = self.drop_duplicates(df=network, subset=['operon', 'taxonomy'], perfect_match=True, preserve_nan=True)
@@ -106,8 +106,7 @@ class OperonTransformer(LiteratureTransformer):
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop', 'network_id')
-        gene = apply_processors(gene, operon=to_str)
-        gene = gene.dropna(subset=['protrend_id', 'operon'])
+        gene = gene.dropna(subset=['protrend_id', 'network_id'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
                                     'locus_tag': 'gene_locus_tag',
                                     'name': 'gene_name',

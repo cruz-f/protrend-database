@@ -455,7 +455,7 @@ class Transformer(AbstractTransformer):
         return df
 
     @staticmethod
-    def find_nodes(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: Tuple[str]) -> pd.Series:
+    def find_nodes(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: List[str]) -> pd.Series:
 
         n_rows, _ = nodes.shape
 
@@ -478,7 +478,7 @@ class Transformer(AbstractTransformer):
         return mask
 
     @staticmethod
-    def find_snapshot(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: Tuple[str]) -> pd.Series:
+    def find_snapshot(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: List[str]) -> pd.Series:
 
         n_rows, _ = snapshot.shape
 

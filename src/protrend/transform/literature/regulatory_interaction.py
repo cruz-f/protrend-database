@@ -33,14 +33,14 @@ class RegulatoryInteractionTransformer(LiteratureTransformer):
     def _transform_regulator(self) -> pd.DataFrame:
         regulator = read_from_stack(stack=self.transform_stack, file='regulator',
                                     default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = self.select_columns(regulator, 'protrend_id', 'network_id')
+        regulator = self.select_columns(regulator, 'protrend_id', 'regulator_locus_tag')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def _transform_operon(self) -> pd.DataFrame:
         operon = read_from_stack(stack=self.transform_stack, file='operon',
                                  default_columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = self.select_columns(operon, 'protrend_id', 'genes', 'network_id')
+        operon = self.select_columns(operon, 'protrend_id', 'genes', 'operon_id')
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = apply_processors(operon, genes=to_list)
         return operon
@@ -50,7 +50,8 @@ class RegulatoryInteractionTransformer(LiteratureTransformer):
         # 'regulatory_effect', 'evidence', 'effector', 'mechanism',
         # 'publication', 'taxonomy', 'source', 'network_id'
         network = self._build_network()
-        network = network.rename(columns={'operon': 'network_operon'})
+        network['operon_id'] = network['operon'] + network['taxonomy']
+        network = network.drop(columns=['operon'])
 
         # 'regulator_effector', 'network_id'
         effector = self._transform_effector()
@@ -69,12 +70,12 @@ class RegulatoryInteractionTransformer(LiteratureTransformer):
         # 'regulator_locus_tag', 'operon', 'genes_locus_tag',
         # 'regulatory_effect', 'evidence', 'effector', 'mechanism',
         # 'publication', 'taxonomy', 'source', 'network_id', 'regulator_effector', 'regulator'
-        network_effector_regulator = pd.merge(network_effector, regulator, on='network_id')
+        network_effector_regulator = pd.merge(network_effector, regulator, on='regulator_locus_tag')
 
         # 'regulator_locus_tag', 'operon', 'genes_locus_tag',
         # 'regulatory_effect', 'evidence', 'effector', 'mechanism',
         # 'publication', 'taxonomy', 'source', 'network_id', 'regulator_effector', 'regulator', 'operon', 'genes'
-        regulatory_interaction = pd.merge(network_effector_regulator, operon, on='network_id')
+        regulatory_interaction = pd.merge(network_effector_regulator, operon, on='operon_id')
 
         regulatory_interaction = apply_processors(regulatory_interaction,
                                                   regulatory_effect=regulatory_effect_literature)
@@ -97,6 +98,7 @@ class RegulatoryInteractionToEffectorConnector(LiteratureConnector):
 
         rin = apply_processors(rin, regulator_effector=to_list)
         rin = rin.explode(column='regulator_effector')
+        rin = rin.dropna(subset=['regulator_effector'])
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['regulator_effector'].tolist()
 
@@ -178,6 +180,7 @@ class RegulatorToEffectorConnector(LiteratureConnector):
 
         rin = apply_processors(rin, regulator_effector=to_set_list)
         rin = rin.explode(column='regulator_effector')
+        rin = rin.dropna(subset=['regulator_effector'])
         rin = rin.drop_duplicates(subset=['regulator', 'regulator_effector'])
 
         from_identifiers = rin['regulator'].tolist()
