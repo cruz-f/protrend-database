@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame, read_json_lines
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
+from protrend.io import read_json_frame, read_json_lines, read_from_stack
+from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
@@ -12,12 +11,15 @@ from protrend.utils.processors import (apply_processors, to_list, regulatory_eff
 from protrend.utils import SetList
 
 
-class RegulatoryInteractionTransformer(CollectfTransformer):
-    default_node = RegulatoryInteraction
+class RegulatoryInteractionTransformer(CollectfTransformer,
+                                       source='collectf',
+                                       version='0.0.1',
+                                       node=RegulatoryInteraction,
+                                       order=50,
+                                       register=True):
     default_transform_stack = {'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json',
                                'tfbs': 'TFBS.json'}
-    default_order = 50
     columns = SetList(['operon', 'regulon', 'operon_id', 'regulatory_effect', 'regulator',
                        'organism_protrend_id', 'genes', 'tfbss',
                        'regulatory_interaction_hash', 'protrend_id'])
@@ -72,9 +74,12 @@ class RegulatoryInteractionTransformer(CollectfTransformer):
         return regulatory_interaction
 
 
-class RegulatoryInteractionToRegulatorConnector(CollectfConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
+class RegulatoryInteractionToRegulatorConnector(CollectfConnector,
+                                                source='collectf',
+                                                version='0.0.1',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -90,9 +95,12 @@ class RegulatoryInteractionToRegulatorConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(CollectfConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
+class RegulatoryInteractionToOperonConnector(CollectfConnector,
+                                             source='collectf',
+                                             version='0.0.1',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Operon,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -108,9 +116,12 @@ class RegulatoryInteractionToOperonConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(CollectfConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
+class RegulatoryInteractionToGeneConnector(CollectfConnector,
+                                           source='collectf',
+                                           version='0.0.1',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -133,9 +144,12 @@ class RegulatoryInteractionToGeneConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(CollectfConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = TFBS
+class RegulatoryInteractionToTFBSConnector(CollectfConnector,
+                                           source='collectf',
+                                           version='0.0.1',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=TFBS,
+                                           register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -158,9 +172,12 @@ class RegulatoryInteractionToTFBSConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatorToOperonConnector(CollectfConnector):
-    default_from_node = Regulator
-    default_to_node = Operon
+class RegulatorToOperonConnector(CollectfConnector,
+                                 source='collectf',
+                                 version='0.0.1',
+                                 from_node=Regulator,
+                                 to_node=Operon,
+                                 register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -176,9 +193,12 @@ class RegulatorToOperonConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(CollectfConnector):
-    default_from_node = Regulator
-    default_to_node = Gene
+class RegulatorToGeneConnector(CollectfConnector,
+                               source='collectf',
+                               version='0.0.1',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -199,9 +219,12 @@ class RegulatorToGeneConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatorToTFBSConnector(CollectfConnector):
-    default_from_node = Regulator
-    default_to_node = TFBS
+class RegulatorToTFBSConnector(CollectfConnector,
+                               source='collectf',
+                               version='0.0.1',
+                               from_node=Regulator,
+                               to_node=TFBS,
+                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):

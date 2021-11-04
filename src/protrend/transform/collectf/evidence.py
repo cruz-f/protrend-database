@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Evidence, Regulator, Operon, TFBS, Gene, RegulatoryInteraction
+from protrend.model import Evidence, Regulator, Operon, TFBS, Gene, RegulatoryInteraction
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
@@ -10,15 +10,18 @@ from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list
 from protrend.utils import SetList
 
 
-class EvidenceTransformer(CollectfTransformer):
-    default_node = Evidence
+class EvidenceTransformer(CollectfTransformer,
+                          source='collectf',
+                          version='0.0.1',
+                          node=Evidence,
+                          order=100,
+                          register=True):
     default_transform_stack = {'evidence': 'ExperimentalEvidence.json'}
-    default_order = 100
     columns = SetList(['exp_id', 'regulon', 'tfbs', 'name', 'description', 'protrend_id'])
     read_columns = SetList(['exp_id', 'regulon', 'tfbs'])
 
     def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=evidence, subset=['exp_id'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=evidence, subset=['exp_id'], perfect_match=True)
         df = apply_processors(df, exp_id=[rstrip, lstrip])
         df = df.dropna(subset=['exp_id'])
         df['name'] = df['exp_id']
@@ -35,9 +38,12 @@ class EvidenceTransformer(CollectfTransformer):
         return evidence
 
 
-class EvidenceToRegulatorConnector(CollectfConnector):
-    default_from_node = Evidence
-    default_to_node = Regulator
+class EvidenceToRegulatorConnector(CollectfConnector,
+                                   source='collectf',
+                                   version='0.0.1',
+                                   from_node=Evidence,
+                                   to_node=Regulator,
+                                   register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -63,9 +69,12 @@ class EvidenceToRegulatorConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class EvidenceToTFBSConnector(CollectfConnector):
-    default_from_node = Evidence
-    default_to_node = TFBS
+class EvidenceToTFBSConnector(CollectfConnector,
+                              source='collectf',
+                              version='0.0.1',
+                              from_node=Evidence,
+                              to_node=TFBS,
+                              register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'tfbs': 'integrated_tfbs.json'}
 
@@ -93,9 +102,12 @@ class EvidenceToTFBSConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class EvidenceToOperonConnector(CollectfConnector):
-    default_from_node = Evidence
-    default_to_node = Operon
+class EvidenceToOperonConnector(CollectfConnector,
+                                source='collectf',
+                                version='0.0.1',
+                                from_node=Evidence,
+                                to_node=Operon,
+                                register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'rin': 'integrated_regulatoryinteraction.json',
                              'tfbs': 'integrated_tfbs.json'}
@@ -133,9 +145,12 @@ class EvidenceToOperonConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class EvidenceToGeneConnector(CollectfConnector):
-    default_from_node = Evidence
-    default_to_node = Gene
+class EvidenceToGeneConnector(CollectfConnector,
+                              source='collectf',
+                              version='0.0.1',
+                              from_node=Evidence,
+                              to_node=Gene,
+                              register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'rin': 'integrated_regulatoryinteraction.json',
                              'tfbs': 'integrated_tfbs.json'}
@@ -176,9 +191,12 @@ class EvidenceToGeneConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class EvidenceToRegulatoryInteractionConnector(CollectfConnector):
-    default_from_node = Evidence
-    default_to_node = RegulatoryInteraction
+class EvidenceToRegulatoryInteractionConnector(CollectfConnector,
+                                               source='collectf',
+                                               version='0.0.1',
+                                               from_node=Evidence,
+                                               to_node=RegulatoryInteraction,
+                                               register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'rin': 'integrated_regulatoryinteraction.json',
                              'tfbs': 'integrated_tfbs.json'}

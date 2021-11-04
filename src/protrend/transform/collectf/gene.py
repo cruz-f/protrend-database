@@ -3,20 +3,22 @@ from typing import List, Union
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Gene
-from protrend.transform import GeneDTO
-from protrend.annotation import annotate_genes
+from protrend.model import Gene
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.utils.processors import take_first, flatten_set_list, to_int_str, apply_processors, rstrip, lstrip, \
-    to_list, to_set_list
+from protrend.utils.processors import (take_first, flatten_set_list, to_int_str, apply_processors, rstrip, lstrip,
+                                       to_list, to_set_list)
 from protrend.utils import SetList
 
 
-class GeneTransformer(CollectfTransformer):
-    default_node = Gene
+class GeneTransformer(CollectfTransformer,
+                      source='collectf',
+                      version='0.0.1',
+                      node=Gene,
+                      order=80,
+                      register=True):
     default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
-    default_order = 80
     columns = SetList(['name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'regulon',

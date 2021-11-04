@@ -1,8 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, \
-    RegulatoryInteraction
+from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, RegulatoryInteraction)
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.operon import OperonTransformer
@@ -12,11 +11,15 @@ from protrend.transform.collectf.regulatory_family import RegulatoryFamilyTransf
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.utils.processors import apply_processors, to_list
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class SourceTransformer(CollectfTransformer):
+class SourceTransformer(CollectfTransformer,
+                        source='collectf',
+                        version='0.0.1',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = 'collectf'
     type = 'database'
     url = 'http://collectf.org/'
@@ -24,8 +27,6 @@ class SourceTransformer(CollectfTransformer):
     authors = ['Sefa Kiliç', 'Elliot R White', 'Dinara M Sagitova', 'Joseph P Cornish', 'Ivan Erill']
     description = 'CollecTF: a database of experimentally validated transcription factor-binding sites in Bacteria'
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['name', 'type', 'url', 'doi', 'authors', 'description', 'protrend_id'])
 
     def transform(self):
@@ -43,9 +44,12 @@ class SourceTransformer(CollectfTransformer):
         return df
 
 
-class OrganismToSourceConnector(CollectfConnector):
-    default_from_node = Organism
-    default_to_node = Source
+class OrganismToSourceConnector(CollectfConnector,
+                                source='collectf',
+                                version='0.0.1',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -82,9 +86,12 @@ class OrganismToSourceConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToSourceConnector(CollectfConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Source
+class RegulatoryFamilyToSourceConnector(CollectfConnector,
+                                        source='collectf',
+                                        version='0.0.1',
+                                        from_node=RegulatoryFamily,
+                                        to_node=Source,
+                                        register=True):
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'source': 'integrated_source.json'}
 
@@ -111,9 +118,12 @@ class RegulatoryFamilyToSourceConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(CollectfConnector):
-    default_from_node = Regulator
-    default_to_node = Source
+class RegulatorToSourceConnector(CollectfConnector,
+                                 source='collectf',
+                                 version='0.0.1',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -150,9 +160,12 @@ class RegulatorToSourceConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class OperonToSourceConnector(CollectfConnector):
-    default_from_node = Operon
-    default_to_node = Source
+class OperonToSourceConnector(CollectfConnector,
+                              source='collectf',
+                              version='0.0.1',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -191,9 +204,12 @@ class OperonToSourceConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class GeneToSourceConnector(CollectfConnector):
-    default_from_node = Gene
-    default_to_node = Source
+class GeneToSourceConnector(CollectfConnector,
+                            source='collectf',
+                            version='0.0.1',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -232,9 +248,12 @@ class GeneToSourceConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class TFBSToSourceConnector(CollectfConnector):
-    default_from_node = TFBS
-    default_to_node = Source
+class TFBSToSourceConnector(CollectfConnector,
+                            source='collectf',
+                            version='0.0.1',
+                            from_node=TFBS,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -273,9 +292,12 @@ class TFBSToSourceConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(CollectfConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
+class RegulatoryInteractionToSourceConnector(CollectfConnector,
+                                             source='collectf',
+                                             version='0.0.1',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Source,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'source': 'integrated_source.json'}
 

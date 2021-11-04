@@ -1,20 +1,21 @@
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import TFBS
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import TFBS
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.gene import GeneTransformer
-from protrend.utils.processors import (apply_processors, to_list, flatten_set_list,
-                                       take_last, to_str, to_set_list, operon_hash, site_hash)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
+from protrend.utils.processors import (apply_processors, to_list, flatten_set_list, to_str, to_set_list, operon_hash,
+                                       site_hash)
 
 
-class TFBSTransformer(CollectfTransformer):
-    default_node = TFBS
+class TFBSTransformer(CollectfTransformer,
+                      source='collectf',
+                      version='0.0.1',
+                      node=TFBS,
+                      order=70,
+                      register=True):
     default_transform_stack = {'tfbs': 'TFBS.json', 'gene': 'integrated_gene.json'}
-    default_order = 70
     columns = SetList(['tfbs_id', 'start', 'stop', 'strand', 'mode', 'sequence', 'pubmed',
                        'organism', 'regulon', 'experimental_evidence', 'operon', 'gene',
                        'gene_protrend_id', 'gene_old_locus_tag', 'length', 'site_hash', 'protrend_id'])
@@ -34,13 +35,12 @@ class TFBSTransformer(CollectfTransformer):
 
         aggr = {'pubmed': flatten_set_list, 'regulon': flatten_set_list, 'operon': flatten_set_list,
                 'experimental_evidence': flatten_set_list, 'gene': to_set_list}
-        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
+        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr)
 
         # filter by regulon, sequence and position
         tfbs = apply_processors(tfbs, regulon=to_list)
         tfbs = tfbs.explode(column='regulon')
-        tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'],
-                                    perfect_match=True, preserve_nan=True)
+        tfbs = self.drop_duplicates(df=tfbs, subset=['tfbs_id', 'sequence', 'regulon'], perfect_match=True)
         tfbs = tfbs.reset_index(drop=True)
 
         return tfbs
@@ -102,7 +102,7 @@ class TFBSTransformer(CollectfTransformer):
         df['site_hash'] = df2['sequence'] + df2['length'] + df2['strand'] + df2['start'] + df2['gene_protrend_id']
         df = apply_processors(df, site_hash=site_hash)
 
-        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True)
         df = df.dropna(subset=['site_hash'])
 
         self._stack_transformed_nodes(df)

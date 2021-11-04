@@ -5,9 +5,8 @@ from Bio.SeqRecord import SeqRecord
 
 from protrend.bioapis import map_uniprot_identifiers, fetch_uniprot_record
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Regulator
-from protrend.transform import GeneDTO
-from protrend.annotation import annotate_genes
+from protrend.model import Regulator
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.utils.processors import take_first, flatten_set_list, apply_processors, to_list_nan
 from protrend.utils import SetList
@@ -25,10 +24,13 @@ def _find_in_mapping(acc: str, mapping: pd.DataFrame) -> List[Union[str, None]]:
     return [None]
 
 
-class RegulatorTransformer(CollectfTransformer):
-    default_node = Regulator
+class RegulatorTransformer(CollectfTransformer,
+                           source='collectf',
+                           version='0.0.1',
+                           node=Regulator,
+                           order=90,
+                           register=True):
     default_transform_stack = {'regulon': 'Regulon.json', 'organism': 'integrated_organism.json'}
-    default_order = 90
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'sequence',
                        'strand', 'start', 'stop', 'url', 'organism', 'tfbs',
@@ -49,8 +51,7 @@ class RegulatorTransformer(CollectfTransformer):
 
         df = pd.merge(regulon, organism, how='left', left_on='organism', right_on='organism_name_collectf')
 
-        df = self.drop_duplicates(df=df, subset=['uniprot_accession', 'organism'],
-                                  perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['uniprot_accession', 'organism'], perfect_match=True)
         df = self.create_input_value(df=df, col='uniprot_accession')
         return df
 

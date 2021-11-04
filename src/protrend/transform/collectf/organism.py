@@ -4,21 +4,22 @@ import pandas as pd
 
 from protrend.bioapis import entrez_summary
 from protrend.io import read_json_lines, read_from_stack, read_json_frame
-from protrend.model.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import OrganismDTO
-from protrend.annotation import annotate_organisms
+from protrend.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.annotation import annotate_organisms, OrganismDTO
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils.processors import (apply_processors, rstrip, lstrip, to_int_str, take_last,
                                        flatten_set_list, to_list)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class OrganismTransformer(CollectfTransformer):
-    default_node = Organism
+class OrganismTransformer(CollectfTransformer,
+                          source='collectf',
+                          version='0.0.1',
+                          node=Organism,
+                          order=100,
+                          register=True):
     default_transform_stack = {'organism': 'Organism.json'}
-    default_order = 100
     columns = SetList(['species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly',
                        'assembly_accession', 'genome_accession', 'taxonomy', 'regulon', 'tfbs',
@@ -93,9 +94,12 @@ class OrganismTransformer(CollectfTransformer):
         return df
 
 
-class OrganismToRegulatorConnector(CollectfConnector):
-    default_from_node = Organism
-    default_to_node = Regulator
+class OrganismToRegulatorConnector(CollectfConnector,
+                                   source='collectf',
+                                   version='0.0.1',
+                                   from_node=Organism,
+                                   to_node=Regulator,
+                                   register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -114,9 +118,12 @@ class OrganismToRegulatorConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class OrganismToOperonConnector(CollectfConnector):
-    default_from_node = Organism
-    default_to_node = Operon
+class OrganismToOperonConnector(CollectfConnector,
+                                source='collectf',
+                                version='0.0.1',
+                                from_node=Organism,
+                                to_node=Operon,
+                                register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -132,9 +139,12 @@ class OrganismToOperonConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class OrganismToGeneConnector(CollectfConnector):
-    default_from_node = Organism
-    default_to_node = Gene
+class OrganismToGeneConnector(CollectfConnector,
+                              source='collectf',
+                              version='0.0.1',
+                              from_node=Organism,
+                              to_node=Gene,
+                              register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -152,9 +162,12 @@ class OrganismToGeneConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class OrganismToTFBSConnector(CollectfConnector):
-    default_from_node = Organism
-    default_to_node = TFBS
+class OrganismToTFBSConnector(CollectfConnector,
+                              source='collectf',
+                              version='0.0.1',
+                              from_node=Organism,
+                              to_node=TFBS,
+                              register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -172,9 +185,12 @@ class OrganismToTFBSConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class OrganismToRegulatoryInteractionConnector(CollectfConnector):
-    default_from_node = Organism
-    default_to_node = RegulatoryInteraction
+class OrganismToRegulatoryInteractionConnector(CollectfConnector,
+                                               source='collectf',
+                                               version='0.0.1',
+                                               from_node=Organism,
+                                               to_node=RegulatoryInteraction,
+                                               register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):

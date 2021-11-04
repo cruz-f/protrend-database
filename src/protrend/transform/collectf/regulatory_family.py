@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import RegulatoryFamily, Regulator
+from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.utils.processors import (apply_processors, remove_white_space, rstrip, lstrip,
@@ -9,15 +9,18 @@ from protrend.utils.processors import (apply_processors, remove_white_space, rst
 from protrend.utils import SetList
 
 
-class RegulatoryFamilyTransformer(CollectfTransformer):
-    default_node = RegulatoryFamily
+class RegulatoryFamilyTransformer(CollectfTransformer,
+                                  source='collectf',
+                                  version='0.0.1',
+                                  node=RegulatoryFamily,
+                                  order=100,
+                                  register=True):
     default_transform_stack = {'tf': 'TranscriptionFactor.json'}
-    default_order = 100
     columns = SetList(['name', 'family', 'description', 'regulon', 'mechanism', 'protrend_id'])
     read_columns = SetList(['name', 'family', 'description', 'regulon'])
 
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True)
 
         df = apply_processors(df,
                               name=remove_white_space,
@@ -36,9 +39,12 @@ class RegulatoryFamilyTransformer(CollectfTransformer):
         return tf
 
 
-class RegulatoryFamilyToRegulatorConnector(CollectfConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Regulator
+class RegulatoryFamilyToRegulatorConnector(CollectfConnector,
+                                           source='collectf',
+                                           version='0.0.1',
+                                           from_node=RegulatoryFamily,
+                                           to_node=Regulator,
+                                           register=True):
     default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):

@@ -3,22 +3,23 @@ from statistics import mode, StatisticsError
 import numpy as np
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Operon, Gene, TFBS
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import Operon, Gene, TFBS
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
                                        to_set_list, operon_hash)
-from protrend.utils import build_graph, find_connected_nodes, SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import build_graph, find_connected_nodes, SetList, is_null
 
 
-class OperonTransformer(CollectfTransformer):
-    default_node = Operon
+class OperonTransformer(CollectfTransformer,
+                        source='collectf',
+                        version='0.0.1',
+                        node=Operon,
+                        order=60,
+                        register=True):
     default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
-    default_order = 60
     columns = SetList(['operon_id_new', 'gene', 'operon_id_old', 'regulon', 'tfbs', 'tfbss',
                        'genes', 'gene_locus_tag', 'gene_name', 'gene_old_locus_tag',
                        'gene_strand', 'gene_start', 'gene_stop', 'organism_protrend_id',
@@ -166,7 +167,7 @@ class OperonTransformer(CollectfTransformer):
         operon = operon[non_empty_operon]
 
         operon = operon.explode('regulon')
-        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
+        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True)
 
         aggregation = {'regulon': to_set_list}
         operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set_list)
@@ -205,9 +206,12 @@ class OperonTransformer(CollectfTransformer):
         return operon
 
 
-class OperonToGeneConnector(CollectfConnector):
-    default_from_node = Operon
-    default_to_node = Gene
+class OperonToGeneConnector(CollectfConnector,
+                            source='collectf',
+                            version='0.0.1',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -229,9 +233,12 @@ class OperonToGeneConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class OperonToTFBSConnector(CollectfConnector):
-    default_from_node = Operon
-    default_to_node = TFBS
+class OperonToTFBSConnector(CollectfConnector,
+                            source='collectf',
+                            version='0.0.1',
+                            from_node=Operon,
+                            to_node=TFBS,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -253,9 +260,12 @@ class OperonToTFBSConnector(CollectfConnector):
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(CollectfConnector):
-    default_from_node = Gene
-    default_to_node = TFBS
+class GeneToTFBSConnector(CollectfConnector,
+                          source='collectf',
+                          version='0.0.1',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
