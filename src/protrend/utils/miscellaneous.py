@@ -1,4 +1,5 @@
 import re
+from collections import namedtuple
 from datetime import datetime
 from types import GeneratorType
 
@@ -7,9 +8,14 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-# CamelCase to snake_case
 from protrend.utils import Settings
 
+
+WriteStack = namedtuple('WriteStack',
+                        ['transformed', 'integrated', 'nodes', 'connected'],
+                        defaults=[None, None, None, None])
+
+# CamelCase to snake_case
 camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
 
