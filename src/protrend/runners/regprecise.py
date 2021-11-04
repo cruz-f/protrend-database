@@ -1,32 +1,42 @@
-import sys
 from pathlib import Path
+# ----------------------------------------------------
+# DATA LAKE PATH
+# ----------------------------------------------------
+from protrend.utils import Settings
+
+Settings.DATA_LAKE_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\data_lake')
+Settings.DATA_LAKE_BIOAPI_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\data_lake\bioapi_cache')
+
 from typing import Tuple, Dict
 
 import pandas as pd
 
-from protrend.io.json import read_json_frame
+from protrend.extract import RegPreciseExtractor
+from protrend.io import read_json_frame
 from protrend.load import RegPreciseLoader
 from protrend.log import ProtrendLogger
-from protrend.model.node import Node
-from protrend.runners import Director
+from protrend.model import Node
+from protrend.pipeline import Pipeline
 from protrend.transform.regprecise import *
-from protrend.utils import NeoDatabase, Settings
-from protrend.utils.miscellaneous import log_file_from_name
-
-src_path = Settings.ROOT_PATH.parent
-sys.path.insert(0, str(src_path))
-from protrend.runners import run_spider
+from protrend.utils import NeoDatabase, Settings, log_file_from_name
 
 
-def extract_runner(spider: str = 'regprecise', staging_area: Path = Settings.STAGING_AREA_PATH, version: str = '0.0.0'):
-    return run_spider(spider=spider, staging_area=staging_area, version=version)
+def extract_runner():
+    extractor = RegPreciseExtractor()
+    ProtrendLogger.log.info(f'Starting extract runner using {extractor.spider} spider')
+
+    extractors = [extractor]
+
+    pipeline = Pipeline(extractors=extractors)
+    pipeline.extract()
+    ProtrendLogger.log.info(f'Finished extract runner')
 
 
 def transform_runner(transform: bool = True,
                      connect: bool = True,
                      install_labels: bool = False,
                      clear_constraints: bool = False,
-                     clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+                     clear_indexes: bool = False) -> Tuple[Pipeline, Dict[str, pd.DataFrame]]:
     ProtrendLogger.log.info(f'Starting transform runner with transform: {transform}, connect: {connect}, '
                             f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
                             f'clear indexes: {clear_indexes}')
@@ -70,14 +80,14 @@ def transform_runner(transform: bool = True,
         TFBSToRegulatorConnector(), TFBSToOrganismConnector(), TFBSToSourceConnector(),
     ]
 
-    director = Director(transformers=transformers,
+    pipeline = Pipeline(transformers=transformers,
                         connectors=connectors)
 
     if transform:
-        director.transform()
+        pipeline.transform()
 
     if connect:
-        director.connect()
+        pipeline.connect()
 
     regprecise_data_lake = Settings.DATA_LAKE_PATH.joinpath('regprecise', '0.0.0')
     data_lake_files = regprecise_data_lake.glob('*.json')
@@ -89,12 +99,12 @@ def transform_runner(transform: bool = True,
     ProtrendLogger.log.info(f'Transform stats: {data_lake_info}')
     ProtrendLogger.log.info(f'Finished transform runner')
 
-    return director, data_lake
+    return pipeline, data_lake
 
 
 def load_runner(install_labels: bool = False,
                 clear_constraints: bool = False,
-                clear_indexes: bool = False) -> Tuple[Director, Dict[str, pd.DataFrame]]:
+                clear_indexes: bool = False) -> Tuple[Pipeline, Dict[str, pd.DataFrame]]:
     ProtrendLogger.log.info(f'Starting loader runner with transform: '
                             f'install labels: {install_labels}, clear constraints: {clear_constraints}, '
                             f'clear indexes: {clear_indexes}')
@@ -109,8 +119,8 @@ def load_runner(install_labels: bool = False,
         neo_db.clear_db(clear_constraints=clear_constraints, clear_indexes=clear_indexes)
 
     loaders = [RegPreciseLoader()]
-    director = Director(loaders=loaders)
-    director.load()
+    pipeline = Pipeline(loaders=loaders)
+    pipeline.load()
 
     database = {node_name: node.node_to_df()
                 for node_name, node in Node.node_register.items()}
@@ -120,7 +130,7 @@ def load_runner(install_labels: bool = False,
     ProtrendLogger.log.info(f'Database stats: {database_info}')
     ProtrendLogger.log.info(f'Finished loader runner')
 
-    return director, database
+    return pipeline, database
 
 
 if __name__ == "__main__":
