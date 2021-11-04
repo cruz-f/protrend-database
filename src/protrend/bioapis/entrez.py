@@ -105,7 +105,6 @@ def entrez_fetch(db: str,
                  identifier: str,
                  rettype: str = "gb",
                  retmode: str = "text") -> SeqRecord:
-
     if rettype == 'gb':
         ret_type = 'genbank'
 

@@ -6,7 +6,6 @@ import pandas as pd
 
 
 def read_csv(filepath_or_buffer: Union[str, Path, IO[AnyStr]], **kwargs) -> pd.DataFrame:
-
     """
     Wrapper for pandas CSV reader.
     This method is optimized to read CSV files exported by the transformers,

@@ -1,4 +1,5 @@
 import os
+from abc import abstractmethod
 from typing import Dict
 
 import pandas as pd
@@ -8,7 +9,7 @@ from protrend.transform import Transformer, Connector
 from protrend.utils import SetList, Settings
 
 
-def read_abasy_network(file_path: str, **kwargs) -> pd.DataFrame:
+def read_abasy_network(file_path: str) -> pd.DataFrame:
     network = read_json(file_path)
 
     network_edges = network['elements']['edges']
@@ -20,6 +21,11 @@ def read_abasy_network(file_path: str, **kwargs) -> pd.DataFrame:
 
 
 class AbasyTransformer(Transformer):
+
+    @abstractmethod
+    def transform(self):
+        pass
+
     default_source = 'abasy'
     default_version = '0.0.0'
     default_network_stack = {'bsub': 'bsub_network.json',
@@ -148,5 +154,10 @@ class AbasyTransformer(Transformer):
 
 
 class AbasyConnector(Connector):
+
+    @abstractmethod
+    def connect(self):
+        pass
+
     default_source = 'abasy'
     default_version = '0.0.0'

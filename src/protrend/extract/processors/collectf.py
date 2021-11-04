@@ -3,7 +3,6 @@ from typing import Union
 
 
 class CollecTFProcessors:
-
     pubmed_pattern = r'\[PMID:[0-9]*\]'
 
     @staticmethod

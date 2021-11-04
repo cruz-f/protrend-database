@@ -70,7 +70,6 @@ class UniProtAPI:
 
 @record_cache.memoize()
 def fetch_uniprot_record(uniprot_accession: str) -> SeqRecord:
-
     url = f'{UniProtAPI.record}/{uniprot_accession}.{UniProtAPI.record_format}'
     response = request(url)
     handle = io.StringIO(response.text)
