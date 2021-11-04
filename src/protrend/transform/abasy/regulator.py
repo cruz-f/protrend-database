@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Regulator
+from protrend.model import Regulator
 from protrend.transform.abasy.base import AbasyTransformer
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.utils.processors import apply_processors, rstrip, lstrip

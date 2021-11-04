@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Source, Organism, Regulator, Operon, Gene, RegulatoryInteraction
+from protrend.model import Source, Organism, Regulator, Operon, Gene, RegulatoryInteraction
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.abasy.operon import OperonTransformer

@@ -3,14 +3,13 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Organism, Regulator, Operon, Gene, RegulatoryInteraction
-from protrend.transform import OrganismDTO
+from protrend.model import Organism, Regulator, Operon, Gene, RegulatoryInteraction
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.abasy.operon import OperonTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
 from protrend.transform.abasy.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.annotation import annotate_organisms
+from protrend.annotation import annotate_organisms, OrganismDTO
 from protrend.utils.processors import apply_processors, to_int_str
 from protrend.utils import SetList
 

@@ -1,12 +1,11 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene
+from protrend.io import read_json_frame, read_from_stack
+from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.operon import OperonTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
-from protrend.utils.processors import (apply_processors, to_list, regulatory_effect_coryneregnet, rstrip, lstrip)
+from protrend.utils.processors import apply_processors, to_list, regulatory_effect_coryneregnet, rstrip, lstrip
 from protrend.utils import SetList
 
 
