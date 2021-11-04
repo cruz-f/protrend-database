@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import Effector, Source, Organism, Regulator
-from protrend.transform.annotation import annotate_effectors
+from protrend.annotation import annotate_effectors
 from protrend.transform.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector

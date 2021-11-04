@@ -6,7 +6,7 @@ from protrend.bioapis import entrez_summary
 from protrend.io import read_json_lines, read_from_stack, read_json_frame
 from protrend.model.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
 from protrend.transform import OrganismDTO
-from protrend.transform.annotation import annotate_organisms
+from protrend.annotation import annotate_organisms
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.processors import (apply_processors, rstrip, lstrip, to_int_str, take_last,

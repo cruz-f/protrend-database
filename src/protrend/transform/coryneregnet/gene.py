@@ -4,7 +4,7 @@ import pandas as pd
 
 from protrend.model.model import Gene
 from protrend.transform import GeneDTO
-from protrend.transform.annotation import annotate_genes
+from protrend.annotation import annotate_genes
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
 from protrend.transform.processors import apply_processors, rstrip, lstrip
 from protrend.utils import SetList

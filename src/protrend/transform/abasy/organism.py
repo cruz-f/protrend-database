@@ -10,7 +10,7 @@ from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.abasy.operon import OperonTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
 from protrend.transform.abasy.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.annotation import annotate_organisms
+from protrend.annotation import annotate_organisms
 from protrend.transform.processors import apply_processors, to_int_str
 from protrend.utils import SetList
 

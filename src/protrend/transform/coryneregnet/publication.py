@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import Publication, Regulator, Organism, Operon, Gene, TFBS, RegulatoryInteraction
 from protrend.transform import PublicationDTO
-from protrend.transform.annotation import annotate_publications
+from protrend.annotation import annotate_publications
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.operon import OperonTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer

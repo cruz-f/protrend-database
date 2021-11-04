@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_txt, read_json_frame
 from protrend.model.model import Publication, Regulator, TFBS, Promoter, Operon, Gene, Organism
 from protrend.transform import PublicationDTO
-from protrend.transform.annotation import annotate_publications
+from protrend.annotation import annotate_publications
 from protrend.transform.processors import apply_processors, to_int_str
 from protrend.transform.regulondb import OrganismTransformer
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector

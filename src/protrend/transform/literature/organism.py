@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import Organism, Regulator, Operon, Gene, RegulatoryInteraction, Effector
 from protrend.transform import OrganismDTO
-from protrend.transform.annotation import annotate_organisms
+from protrend.annotation import annotate_organisms
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.operon import OperonTransformer

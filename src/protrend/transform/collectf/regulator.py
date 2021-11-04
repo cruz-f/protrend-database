@@ -7,7 +7,7 @@ from protrend.bioapis import map_uniprot_identifiers, fetch_uniprot_record
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import Regulator
 from protrend.transform import GeneDTO
-from protrend.transform.annotation import annotate_genes
+from protrend.annotation import annotate_genes
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.processors import take_first, flatten_set_list, apply_processors, to_list_nan
 from protrend.utils import SetList

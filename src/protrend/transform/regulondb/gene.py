@@ -8,7 +8,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.io import read_from_stack, read_txt
 from protrend.model.model import Gene
 from protrend.transform import GeneDTO
-from protrend.transform.annotation import annotate_genes
+from protrend.annotation import annotate_genes
 from protrend.transform.processors import apply_processors, rstrip, lstrip
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.utils import SetList
