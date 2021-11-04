@@ -1,16 +1,14 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Union, List, Type, Callable, Dict, Sequence
+from typing import Union, List, Type, Callable, Dict
 
 import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.transform.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
-from protrend.utils import SetList
-from protrend.utils import Settings
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, Settings, is_null, WriteStack, DefaultProperty
 
 
 class AbstractTransformer(metaclass=ABCMeta):
@@ -70,13 +68,34 @@ class Transformer(AbstractTransformer):
     This Transformer object has implemented several utilities for the hard-working de facto transformers to be created
     for each data source and node
     """
-    default_transform_stack: Dict[str, str] = {}
-    default_source: str = ''
-    default_version: str = '0.0.0'
-    default_node: Type[Node] = Node
-    default_order: int = 0
-    columns: Sequence[str] = SetList()
-    read_columns: Sequence[str] = SetList()
+    source = DefaultProperty('')
+    version = DefaultProperty('')
+    node = DefaultProperty(Node)
+    order = DefaultProperty(0)
+
+    default_transform_stack = {}
+    columns = SetList()
+    read_columns = SetList()
+
+    def __init_subclass__(cls, **kwargs):
+
+        source = kwargs.get('source')
+        cls.source.set_default(source)
+
+        version = kwargs.get('version')
+        cls.version.set_default(source)
+
+        node = kwargs.get('node')
+        cls.node.set_default(node)
+
+        order = kwargs.get('order')
+        cls.order.set_default(order)
+
+        register = kwargs.pop('register', False)
+
+        if register:
+            from protrend.pipeline import Pipeline
+            Pipeline.register_transformer(cls, **kwargs)
 
     def __init__(self,
                  transform_stack: Dict[str, str] = None,
@@ -115,10 +134,10 @@ class Transformer(AbstractTransformer):
 
         self._transform_stack = {}
         self._write_stack = []
-        self._source = source
-        self._version = version
-        self._node = node
-        self._order = order
+        self.source = source
+        self.version = version
+        self.node = node
+        self.order = order
 
         self.load_transform_stack(transform_stack)
 
@@ -146,40 +165,12 @@ class Transformer(AbstractTransformer):
     # Static properties
     # --------------------------------------------------------
     @property
-    def source(self) -> str:
-        if not self._source:
-            return self.default_source
-
-        return self._source
-
-    @property
-    def version(self) -> str:
-        if not self._version:
-            return self.default_version
-
-        return self._version
-
-    @property
-    def node(self) -> Type[Node]:
-        if not self._node:
-            return self.default_node
-
-        return self._node
-
-    @property
     def node_factors(self) -> Dict[str, Callable]:
         return self.node.node_factors
 
     @property
     def node_factors_keys(self) -> List[str]:
         return list(self.node.node_factors.keys())
-
-    @property
-    def order(self) -> int:
-        if self._order is None:
-            return self.default_order
-
-        return self._order
 
     @property
     def transform_stack(self) -> Dict[str, str]:
@@ -337,6 +328,15 @@ class Transformer(AbstractTransformer):
     # ----------------------------------------
     # Utilities
     # ----------------------------------------
+    @classmethod
+    def infer_write_stack(cls) -> WriteStack:
+        node_name = cls.node.default.node_name()
+        write_stack = WriteStack(transformed=f'transformed_{node_name}',
+                                 integrated=f'integrated_{node_name}',
+                                 nodes=f'nodes_{node_name}',
+                                 connected=None)
+        return write_stack
+
     def empty_frame(self) -> pd.DataFrame:
         cols = [col for col in self.columns if col != 'protrend_id']
         return pd.DataFrame(columns=cols)

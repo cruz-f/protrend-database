@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node
-from protrend.utils import Settings
+from protrend.utils import Settings, WriteStack, DefaultProperty
 
 
 class AbstractConnector(metaclass=ABCMeta):
@@ -51,11 +51,27 @@ class Connector(AbstractConnector):
 
     A connector starts with data from the data lake and ends with structured relationships.
     """
+    source = DefaultProperty('')
+    version = DefaultProperty('')
+
+    from_node = DefaultProperty(Node)
+    to_node = DefaultProperty(Node)
+
     default_connect_stack: Dict[str, str] = {}
-    default_source: str = ''
-    default_version: str = '0.0.0'
-    default_from_node: Type[Node] = Node
-    default_to_node: Type[Node] = Node
+
+    def __init_subclass__(cls, **kwargs):
+
+        source = kwargs.get('source')
+        cls.source.set_default(source)
+
+        version = kwargs.get('version')
+        cls.version.set_default(source)
+
+        register = kwargs.pop('register', False)
+
+        if register:
+            from protrend.pipeline import Pipeline
+            Pipeline.register_connector(cls, **kwargs)
 
     def __init__(self,
                  connect_stack: Dict[str, str] = None,
@@ -92,10 +108,10 @@ class Connector(AbstractConnector):
         """
         self._connect_stack = {}
         self._write_stack = []
-        self._source = source
-        self._version = version
-        self._from_node = from_node
-        self._to_node = to_node
+        self.source = source
+        self.version = version
+        self.from_node = from_node
+        self.to_node = to_node
 
         self.load_connect_stack(connect_stack)
 
@@ -114,34 +130,6 @@ class Connector(AbstractConnector):
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
-    @property
-    def source(self) -> str:
-        if not self._source:
-            return self.default_source
-
-        return self._source
-
-    @property
-    def version(self) -> str:
-        if not self._version:
-            return self.default_version
-
-        return self._version
-
-    @property
-    def from_node(self) -> Type[Node]:
-        if not self._from_node:
-            return self.default_from_node
-
-        return self._from_node
-
-    @property
-    def to_node(self) -> Type[Node]:
-        if not self._to_node:
-            return self.default_to_node
-
-        return self._to_node
-
     @property
     def connect_stack(self) -> Dict[str, str]:
         return self._connect_stack
@@ -212,6 +200,15 @@ class Connector(AbstractConnector):
     # ----------------------------------------
     # Utilities
     # ----------------------------------------
+    @classmethod
+    def infer_write_stack(cls) -> WriteStack:
+        file_name = f'connected_{cls.from_node.default.node_name()}_{cls.to_node.default.node_name()}'
+        write_stack = WriteStack(transformed=None,
+                                 integrated=None,
+                                 nodes=None,
+                                 connected=file_name)
+        return write_stack
+
     def stack_json(self, df: pd.DataFrame):
         name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}'
         df = df.copy(deep=True)
