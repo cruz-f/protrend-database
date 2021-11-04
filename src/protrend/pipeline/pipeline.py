@@ -1,4 +1,5 @@
-from typing import List
+from collections import defaultdict
+from typing import List, Dict, Tuple
 
 from protrend.extract import Extractor
 from protrend.load import Loader
@@ -12,6 +13,26 @@ def sort_by_order(transformer: Transformer):
 
 
 class Pipeline:
+    default_extractors: Dict[Tuple[str, str], List[Extractor]] = defaultdict(list)
+    default_transformers: Dict[Tuple[str, str], List[Transformer]] = defaultdict(list)
+    default_connectors: Dict[Tuple[str, str], List[Connector]] = defaultdict(list)
+    default_loaders: Dict[Tuple[str, str], List[Loader]] = defaultdict(list)
+
+    @classmethod
+    def register_extractor(cls, extractor: Extractor, source: str, version: str):
+        cls.default_extractors[(source, version)].append(extractor)
+
+    @classmethod
+    def register_transformer(cls, transformer: Transformer, source: str, version: str):
+        cls.default_transformers[(source, version)].append(transformer)
+
+    @classmethod
+    def register_connector(cls, connector: Connector, source: str, version: str):
+        cls.default_connectors[(source, version)].append(connector)
+
+    @classmethod
+    def register_loader(cls, loader: Loader, source: str, version: str):
+        cls.default_loaders[(source, version)].append(loader)
 
     def __init__(self,
                  extractors: List[Extractor] = None,
@@ -80,7 +101,7 @@ class Pipeline:
         :return:
         """
 
-        extractors_info = ' '.join([extractor.spider for extractor in self.extractors])
+        extractors_info = ' '.join([extractor.source for extractor in self.extractors])
         ProtrendLogger.log.info(f'Pipeline call for extract using the spiders: {extractors_info}')
 
         for extractor in self.extractors:
@@ -91,7 +112,7 @@ class Pipeline:
 
                 extractor.extract()
 
-                ProtrendLogger.log.info(f'Finishing transformer: {extractor.spider}')
+                ProtrendLogger.log.info(f'Finishing transformer: {extractor.source}')
 
             except:
                 ProtrendLogger.log.exception(f'Exception occurred in extractor {extractor}')
