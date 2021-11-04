@@ -502,10 +502,10 @@ class Transformer(AbstractTransformer):
 
     def regulatory_interaction_hash(self, df: pd.DataFrame) -> pd.DataFrame:
         # filter by effector + regulator + operon + regulatory effect
-        to_filter = apply_processors(df, regulator_effector=to_list_nan, regulator=to_list_nan,
-                                     operon=to_list_nan, regulatory_effect=to_list_nan)
+        df_f = apply_processors(df, regulator_effector=to_list_nan, regulator=to_list_nan,
+                                operon=to_list_nan, regulatory_effect=to_list_nan)
 
-        _hash = to_filter['regulator_effector'] + to_filter['regulator'] + to_filter['operon'] + to_filter['regulatory_effect']
+        _hash = df_f['regulator_effector'] + df_f['regulator'] + df_f['operon'] + df_f['regulatory_effect']
         df['regulatory_interaction_hash'] = _hash
         df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
         df = self.drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True, preserve_nan=True)
