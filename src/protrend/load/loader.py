@@ -4,16 +4,29 @@ from typing import List
 import pandas as pd
 from neomodel import AttemptedCardinalityViolation
 
-from protrend.io.json import read_json_frame
+from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
-from protrend.utils import Settings
+from protrend.utils import Settings, DefaultProperty
 
 
 class Loader:
-    default_load_stack: List[str] = []
-    default_source: str = ''
-    default_version: str = '0.0.0'
+    source = DefaultProperty('')
+    version = DefaultProperty('')
+
+    def __init_subclass__(cls, **kwargs):
+
+        source = kwargs.get('source')
+        cls.source.set_default(source)
+
+        version = kwargs.get('version')
+        cls.version.set_default(source)
+
+        register = kwargs.pop('register', False)
+
+        if register:
+            from protrend.pipeline import Pipeline
+            Pipeline.register_loader(cls, **kwargs)
 
     def __init__(self,
                  load_stack: List[str] = None,
@@ -33,17 +46,34 @@ class Loader:
         :param version: The version of the data source in the data lake (e.g. 0.0.0, 0.0.1, etc)
         """
         self._load_stack = []
-        self._source = source
-        self._version = version
+        self.source = source
+        self.version = version
 
-        self.load_transform_stack(load_stack)
+        self.build_load_stack(load_stack)
 
-    def load_transform_stack(self, load_stack: List[str] = None):
+    def get_load_stack_from_source_version(self) -> List[str]:
+        load_stack = []
+
+        from protrend.pipeline import Pipeline
+        transformers = Pipeline.default_transformers.get((self.source, self.version), [])
+        connectors = Pipeline.default_connectors.get((self.source, self.version), [])
+
+        for transformer in transformers:
+            write_stack = transformer.infer_write_stack()
+            load_stack.append(write_stack.nodes)
+
+        for connector in connectors:
+            write_stack = connector.infer_write_stack()
+            load_stack.append(write_stack.connected)
+
+        return load_stack
+
+    def build_load_stack(self, load_stack: List[str] = None):
 
         self._load_stack = []
 
         if not load_stack:
-            load_stack = self.default_load_stack
+            load_stack = self.get_load_stack_from_source_version()
 
         for file in load_stack:
 
@@ -55,20 +85,6 @@ class Loader:
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
-    @property
-    def source(self) -> str:
-        if not self._source:
-            return self.default_source
-
-        return self._source
-
-    @property
-    def version(self) -> str:
-        if not self._version:
-            return self.default_version
-
-        return self._version
-
     @property
     def load_stack(self) -> List[str]:
         return self._load_stack
