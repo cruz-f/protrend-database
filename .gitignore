@@ -1,7 +1,8 @@
 # Internal
-./useless
-./src/protrend/extract/staging_area
-src/protrend/bioapis/settings.py
+/useless
+/src/protrend/extract/staging_area
+/src/protrend/bioapis/settings.py
+/src/protrend/transform/data_lake
 
 # PyCharm
 .idea

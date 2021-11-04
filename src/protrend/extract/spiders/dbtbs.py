@@ -254,8 +254,11 @@ class DBTBSSpider(Spider):
                 tfbs_loader.add_xpath("identifier", absolute_position_xpath)
                 tfbs_loader.add_xpath("absolute_position", absolute_position_xpath)
 
-                sequence_xpath = ".//td[5]/tt/text()"
-                tfbs_loader.add_xpath("sequence", sequence_xpath)
+                sequence_selector = bs.xpath('.//td[5]/tt')
+                if sequence_selector:
+                    sequence = sequence_selector.xpath("string()").extract()
+                    if sequence:
+                        tfbs_loader.add_value('sequence', sequence)
 
                 pubmed_xpath = ".//td[6]/a/@href"
                 tfbs_loader.add_xpath("pubmed", pubmed_xpath)

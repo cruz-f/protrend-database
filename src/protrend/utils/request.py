@@ -4,7 +4,7 @@ import time
 import pandas as pd
 import requests
 
-from .settings import REQUEST_RETRIES, REQUEST_TIMEOUT
+from .settings import Settings
 
 
 def _request(url: str,
@@ -17,7 +17,7 @@ def _request(url: str,
                            cookies=None,
                            files=None,
                            auth=None,
-                           timeout=REQUEST_TIMEOUT,
+                           timeout=Settings.REQUEST_TIMEOUT,
                            allow_redirects=True,
                            proxies=None,
                            hooks=None,
@@ -49,8 +49,6 @@ def _request(url: str,
 
     if response is None:
 
-        print(f'Failed connect to {url} with {params}')
-
         response = requests.Response()
         response.status_code = 404
 
@@ -60,14 +58,12 @@ def _request(url: str,
 def request(url: str,
             method: str = 'get',
             params: dict = None,
-            retries: int = REQUEST_RETRIES,
+            retries: int = Settings.REQUEST_RETRIES,
             **kwargs) -> requests.Response:
 
     if retries > 0:
 
         for i in range(retries):
-
-            print(f'Attempt request {i} to {url} for params {params if params else {}}')
 
             response = _request(url=url,
                                 method=method,
@@ -87,20 +83,18 @@ def request(url: str,
 
     else:
 
-        print(f'Request to {url} for params {params if params else {}}')
-
         return _request(url=url,
                         method=method,
                         params=params,
                         **kwargs)
 
 
-def read_response(response: requests.Response, **kwargs):
+def read_response(response: requests.Response, **kwargs) -> pd.DataFrame:
     data = response.content
-    buffer = io.StringIO(data.decode('utf-8'))
-    return pd.read_csv(buffer, **kwargs)
 
+    if data:
 
-def write_response(response: requests.Response, io):
-    with open(io, 'w', encoding='utf-8') as file:
-        file.write(response.content)
+        buffer = io.StringIO(data.decode('utf-8'))
+        return pd.read_csv(buffer, **kwargs)
+
+    return pd.DataFrame()

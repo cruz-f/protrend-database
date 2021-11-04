@@ -2,32 +2,26 @@ from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary
 
 
-class Publication(BioAPI):
-
-    def __init__(self, pmid: str = None):
-
-        super().__init__()
-
-        self._pmid = pmid
+class PubMedPublication(BioAPI):
 
     @property
-    def pmid(self):
-        return self._pmid
+    def pmid(self) -> str:
+        return self.identifier
 
     @property
-    def doi(self):
+    def doi(self) -> str:
         return self.record.get('DOI')
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self.record.get('Title')
 
     @property
-    def author(self):
+    def author(self) -> str:
         return self.record.get('LastAuthor')
 
     @property
-    def year(self):
+    def year(self) -> str:
 
         pub_date = self.record.get('PubDate')
 
@@ -35,9 +29,10 @@ class Publication(BioAPI):
             year = ''.join(char for char in pub_date if char.isdigit())
 
             if year:
-                return year
+                return year[:4]
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
 
         if self.pmid:
-            self.record = entrez_summary(db='pubmed', identifier=self.pmid)
+            record = entrez_summary(db='pubmed', identifier=self.pmid)
+            self.record = record

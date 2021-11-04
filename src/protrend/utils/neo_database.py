@@ -4,15 +4,15 @@ from neomodel import config
 from neomodel import db, clear_neo4j_database, install_all_labels, install_labels
 
 
-class DBSettings:
+class NeoDatabase:
 
     def __init__(self,
                  user_name: str,
                  password: str,
                  ip: str,
                  port: str,
-                 db_name: str,
-                 dbms: str):
+                 db_name: str = '',
+                 dbms: str = ''):
 
         self.user_name: str = user_name
         self.password: str = password

@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -5,21 +7,47 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search, entrez_fetch
 from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
+from protrend.transform.processors import to_int_str, to_str, apply_processors, lower_case, split_str
+from protrend.utils.miscellaneous import is_null
 
 
 class NCBIProtein(BioAPI):
 
     def __init__(self,
-                 protein: str = None,
-                 refseq_accession: str = None,
-                 genbank_accession: str = None,
-                 taxonomy: str = None,
-                 locus_tag: str = None,
-                 name: str = None):
+                 identifier: str = '',
+                 refseq_accession: str = '',
+                 genbank_accession: str = '',
+                 taxonomy: str = '',
+                 locus_tag: str = '',
+                 name: str = ''):
 
-        super().__init__()
+        super().__init__(identifier)
 
-        self._protein = protein
+        if is_null(refseq_accession):
+            refseq_accession = ''
+
+        refseq_accession = str(refseq_accession)
+
+        if is_null(genbank_accession):
+            genbank_accession = ''
+
+        genbank_accession = str(genbank_accession)
+
+        if is_null(taxonomy):
+            taxonomy = ''
+
+        taxonomy = str(taxonomy)
+
+        if is_null(locus_tag):
+            locus_tag = ''
+
+        locus_tag = str(locus_tag)
+
+        if is_null(name):
+            name = ''
+
+        name = str(name)
+
         self._refseq_accession = refseq_accession
         self._genbank_accession = genbank_accession
         self._taxonomy = taxonomy
@@ -27,7 +55,11 @@ class NCBIProtein(BioAPI):
         self._name = name
         self._seq_record = SeqRecord(seq=Seq(''))
 
-    def is_refseq(self):
+    @property
+    def identifier(self) -> str:
+        return self.record.get('Id', self._identifier)
+
+    def is_refseq(self) -> bool:
         additional = self.record.get('Extra', '')
         extra_info = additional.split('|')
 
@@ -37,7 +69,15 @@ class NCBIProtein(BioAPI):
 
         return False
 
-    def is_genbank(self):
+    @property
+    def refseq_accession(self) -> str:
+
+        if self.is_refseq():
+            return self.record.get('AccessionVersion', self._refseq_accession)
+
+        return ''
+
+    def is_genbank(self) -> bool:
         additional = self.record.get('Extra', '')
         extra_info = additional.split('|')
 
@@ -48,31 +88,19 @@ class NCBIProtein(BioAPI):
         return False
 
     @property
-    def protein(self):
-        return self.record.get('Id', self._protein)
-
-    @property
-    def refseq_accession(self):
-
-        if self.is_refseq():
-            return self.record.get('AccessionVersion', self._refseq_accession)
-
-        return
-
-    @property
-    def genbank_accession(self):
+    def genbank_accession(self) -> str:
 
         if self.is_genbank():
             return self.record.get('AccessionVersion', self._genbank_accession)
 
-        return
+        return ''
 
     @property
-    def taxonomy(self):
-        return self.record.get('TaxId', self._taxonomy)
+    def taxonomy(self) -> str:
+        return str(self.record.get('TaxId', self._taxonomy))
 
     @property
-    def locus_tag(self):
+    def locus_tag(self) -> str:
 
         if self.seq_record:
             for feature in self.seq_record.features:
@@ -86,10 +114,6 @@ class NCBIProtein(BioAPI):
         return self._locus_tag
 
     @property
-    def name(self):
-        return self.record.get('Caption', self._name)
-
-    @property
     def seq_record(self) -> SeqRecord:
         return self._seq_record
 
@@ -99,9 +123,15 @@ class NCBIProtein(BioAPI):
             self._seq_record = value
 
     @property
-    def synonyms(self):
+    def synonyms(self) -> List[str]:
 
         synonyms = []
+
+        if self._locus_tag:
+            synonyms.append(self._locus_tag)
+
+        if self._name:
+            synonyms.append(self._name)
 
         if self.locus_tag:
             synonyms.append(self.locus_tag)
@@ -117,16 +147,13 @@ class NCBIProtein(BioAPI):
 
                         break
 
-        if self.name:
-            synonyms.append(self.name)
-
         return synonyms
 
     @property
-    def sequence(self):
+    def sequence(self) -> str:
         return str(self.seq_record.seq)
 
-    def build_term(self):
+    def build_term(self) -> str:
 
         if self._locus_tag and self._taxonomy:
 
@@ -145,10 +172,10 @@ class NCBIProtein(BioAPI):
 
         return term
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
 
-        if self._protein:
-            identifier = self._protein
+        if self._identifier:
+            identifier = self._identifier
 
         elif self._genbank_accession:
             identifier = self._genbank_accession
@@ -170,32 +197,49 @@ class NCBIProtein(BioAPI):
                     identifier = id_list[0]
 
         if identifier:
-            self.record = entrez_summary(db='protein', identifier=identifier)
-            self.seq_record = entrez_fetch(db='protein', identifier=identifier)
+            record = entrez_summary(db='protein', identifier=identifier)
+            self.record = record
+
+            record = entrez_fetch(db='protein', identifier=identifier)
+            self.seq_record = record
 
 
 class UniProtProtein(BioAPI):
 
     def __init__(self,
-                 accession: str = None,
-                 taxonomy: str = None,
-                 locus_tag: str = None,
-                 name: str = None):
+                 identifier: str = '',
+                 taxonomy: str = '',
+                 locus_tag: str = '',
+                 name: str = ''):
 
-        super().__init__()
+        super().__init__(identifier)
 
-        self._accession = accession
+        if is_null(taxonomy):
+            taxonomy = ''
+
+        taxonomy = str(taxonomy)
+
+        if is_null(locus_tag):
+            locus_tag = ''
+
+        locus_tag = str(locus_tag)
+
+        if is_null(name):
+            name = ''
+
+        name = str(name)
+
         self._taxonomy = taxonomy
         self._locus_tag = locus_tag
         self._name = name
 
     @property
-    def accession(self):
-        return getattr(self.record, 'id', self._accession)
+    def identifier(self) -> str:
+        return getattr(self.record, 'id', self._identifier)
 
     @property
-    def taxonomy(self):
-        dbxrefs = getattr(self.record, 'dbxrefs')
+    def taxonomy(self) -> str:
+        dbxrefs = getattr(self.record, 'dbxrefs', None)
 
         if dbxrefs:
             for ref in dbxrefs:
@@ -205,7 +249,7 @@ class UniProtProtein(BioAPI):
         return self._taxonomy
 
     @property
-    def locus_tag(self):
+    def locus_tag(self) -> str:
 
         annotations = getattr(self.record, 'annotations', {})
 
@@ -218,11 +262,12 @@ class UniProtProtein(BioAPI):
         return self._locus_tag
 
     @property
-    def name(self):
-        annotations = getattr(self.record, 'annotations', {})
+    def name(self) -> str:
 
-        if annotations:
-            return annotations.get('gene_name_primary', self._name)
+        if hasattr(self.record, 'annotations'):
+
+            if 'gene_name_primary' in self.record.annotations:
+                return self.record.annotations['gene_name_primary']
 
         if self.locus_tag:
             return self.locus_tag
@@ -230,7 +275,7 @@ class UniProtProtein(BioAPI):
         return self._name
 
     @property
-    def function(self):
+    def function(self) -> str:
         annotations = getattr(self.record, 'annotations', {})
 
         if annotations:
@@ -239,10 +284,10 @@ class UniProtProtein(BioAPI):
             for func in funcs:
                 return func
 
-        return
+        return ''
 
     @property
-    def description(self):
+    def description(self) -> str:
         annotations = getattr(self.record, 'annotations', {})
 
         if annotations:
@@ -251,12 +296,18 @@ class UniProtProtein(BioAPI):
             for func in funcs:
                 return func
 
-        return
+        return ''
 
     @property
-    def synonyms(self):
+    def synonyms(self) -> List[str]:
 
         synonyms = []
+
+        if self._locus_tag:
+            synonyms.append(self._locus_tag)
+
+        if self._name:
+            synonyms.append(self._name)
 
         if self.locus_tag:
             synonyms.append(self.locus_tag)
@@ -273,95 +324,103 @@ class UniProtProtein(BioAPI):
         return synonyms
 
     @property
-    def sequence(self):
+    def sequence(self) -> str:
         return str(getattr(self.record, 'seq', ''))
+
+    def _filter_by_taxonomy(self, query: pd.DataFrame) -> pd.DataFrame:
+
+        if self._taxonomy:
+            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False)
+
+            if tax_mask.any():
+                query = query[tax_mask]
+
+        return query
+
+    def _filter_by_locus_tag(self, query: pd.DataFrame) -> pd.DataFrame:
+
+        def loci_filter(row):
+
+            if is_null(row):
+                return False
+
+            return self._locus_tag.lower() in row
+
+        if self._locus_tag:
+            loci_mask = query['Gene names'].map(loci_filter)
+
+            if loci_mask.any():
+                query = query[loci_mask]
+
+        return query
+
+    def _filter_by_name(self, query: pd.DataFrame) -> pd.DataFrame:
+
+        def name_filter(row):
+
+            if is_null(row):
+                return False
+
+            return self._name.lower() in row
+
+        if self._name:
+            name_mask = query['Gene names  (primary )'].map(name_filter)
+
+            if name_mask.any():
+                query = query[name_mask]
+
+        return query
 
     def parse_uniprot_query(self, query: pd.DataFrame):
 
-        if self._taxonomy:
-            tax_mask = query.loc[:, 'Organism ID'] == self._taxonomy
+        processors = {'Organism ID': to_int_str,
+                      'Gene names': [to_str, lower_case, split_str],
+                      'Gene names  (primary )': [to_str, lower_case, split_str]}
+        query = apply_processors(query, **processors)
 
-            query = query[tax_mask]
+        query = self._filter_by_taxonomy(query=query)
+        query = self._filter_by_locus_tag(query=query)
+        query = self._filter_by_name(query=query)
 
-        if self._locus_tag:
+        if query['Entry'].size == 1:
+            return query['Entry'].iloc[0]
 
-            loci = query.loc[:, 'Gene names']
-            loci_mask = []
+        return ''
 
-            for value in loci:
+    def build_query(self) -> dict:
 
-                mask_value = False
+        if self._locus_tag and self._taxonomy:
 
-                values = value.split()
+            return {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
 
-                for text in values:
-                    text = ''.join(letter for letter in text if letter.isalnum())
+        elif self._locus_tag and not self._taxonomy:
 
-                    if self._locus_tag.lower() in text.lower() or text.lower() in self._locus_tag.lower():
-                        mask_value = True
-                        break
+            return {'gene': self._locus_tag}
 
-                loci_mask.append(mask_value)
+        elif self._name and self._taxonomy:
 
-            accessions = query.loc[loci_mask, 'Entry']
+            return {'gene': self._name, 'taxonomy': self._taxonomy}
 
-            if accessions.size == 1:
-                self._accession = accessions[0]
+        return {}
 
-            else:
-                self._accession = None
+    def fetch(self, *args, **kwargs):
 
+        if self._identifier:
+            identifier = self._identifier
+
+        else:
+
+            query = self.build_query()
+            uniprot_query = query_uniprot(query=query)
+            identifier = self.parse_uniprot_query(uniprot_query)
+
+        if identifier:
+            self._identifier = identifier
+
+        else:
             return
 
-        if self._name:
-
-            loci = query.loc[:, 'Gene names  (primary )']
-            loci_mask = []
-
-            for value in loci:
-
-                if self._name.lower() in value.lower() or value.lower() in self._name.lower():
-                    loci_mask.append(True)
-
-                else:
-                    loci_mask.append(False)
-
-            accessions = query.loc[loci_mask, 'Entry']
-
-            if accessions.size == 1:
-                self._accession = accessions[0]
-
-            else:
-                self._accession = None
-
-            return
-
-    def fetch(self):
-
-        if not self._accession:
-
-            if self._locus_tag and self._taxonomy:
-
-                query = {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
-
-            elif self._locus_tag and not self._taxonomy:
-
-                query = {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
-
-            elif self._name and self._taxonomy:
-
-                query = {'gene': self._name, 'taxonomy': self._taxonomy}
-
-            else:
-                query = {}
-
-            if query:
-                uniprot_query = query_uniprot(query=query)
-
-                # it sets up the uniprot accession
-                self.parse_uniprot_query(uniprot_query)
-
-        if not self._accession:
-            return
-
-        self.record = fetch_uniprot_record(self._accession, 'xml')
+        record = fetch_uniprot_record(self._identifier)
+        if record.id == '<unknown id>':
+            record = {}
+        self.record = record

@@ -1,10 +1,24 @@
+from protrend.utils.miscellaneous import is_null
+
+
 class BioAPI:
 
-    def __init__(self):
+    def __init__(self, identifier: str):
+
+        if is_null(identifier):
+            identifier = ''
+
+        identifier = str(identifier)
+
+        self._identifier = identifier
         self._record = {}
 
     @property
-    def record(self):
+    def identifier(self) -> str:
+        return self._identifier
+
+    @property
+    def record(self) -> dict:
         return self._record
 
     @record.setter
@@ -12,10 +26,10 @@ class BioAPI:
         if value:
             self._record = value
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         if self.record:
             return True
         return False
 
-    def fetch(self):
+    def fetch(self, *args, **kwargs):
         pass
