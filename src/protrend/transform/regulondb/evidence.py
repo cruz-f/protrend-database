@@ -4,7 +4,7 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
 from protrend.model.model import Evidence, Promoter, Regulator, TFBS, Operon, Gene, RegulatoryInteraction
-from protrend.transform.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan
+from protrend.utils.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer

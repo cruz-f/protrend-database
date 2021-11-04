@@ -8,8 +8,8 @@ from protrend.model.model import Operon, Gene, TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, flatten_set_list, to_list,
-                                           to_set_list, operon_hash, to_list_nan)
+from protrend.utils.processors import (apply_processors, flatten_set_list, to_list,
+                                       to_set_list, operon_hash, to_list_nan)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

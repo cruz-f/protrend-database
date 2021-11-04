@@ -6,7 +6,7 @@ from protrend.model.model import Regulator
 from protrend.transform import GeneDTO
 from protrend.annotation import annotate_genes
 from protrend.transform.literature.base import LiteratureTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip
+from protrend.utils.processors import apply_processors, rstrip, lstrip
 from protrend.utils import SetList
 
 

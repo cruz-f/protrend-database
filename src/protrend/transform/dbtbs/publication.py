@@ -10,7 +10,7 @@ from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.operon import OperonTransformer
 from protrend.transform.dbtbs.regulator import RegulatorTransformer
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
-from protrend.transform.processors import apply_processors, to_int_str, to_list
+from protrend.utils.processors import apply_processors, to_int_str, to_list
 from protrend.utils import SetList
 
 

@@ -6,7 +6,7 @@ from protrend.transform.collectf.base import CollectfTransformer, CollectfConnec
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip, to_list
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list
 from protrend.utils import SetList
 
 

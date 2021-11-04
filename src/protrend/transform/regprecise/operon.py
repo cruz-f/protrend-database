@@ -5,8 +5,8 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import Operon, Source, Organism, Regulator, Gene, TFBS
-from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
-                                           to_int_str, to_set_list, operon_hash)
+from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
+                                       to_int_str, to_set_list, operon_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer

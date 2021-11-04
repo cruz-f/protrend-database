@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.transform.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
+from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
 from protrend.utils import SetList, Settings, is_null, WriteStack, DefaultProperty
 
 

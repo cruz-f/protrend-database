@@ -8,7 +8,7 @@ from protrend.transform.coryneregnet.operon import OperonTransformer
 from protrend.transform.coryneregnet.regulator import RegulatorTransformer
 from protrend.transform.coryneregnet.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.coryneregnet.tfbs import TFBSTransformer
-from protrend.transform.processors import apply_processors, to_set_list, to_int_str
+from protrend.utils.processors import apply_processors, to_set_list, to_int_str
 from protrend.utils import SetList
 
 

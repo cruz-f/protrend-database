@@ -7,7 +7,7 @@ from protrend.transform.literature.base import LiteratureTransformer, Literature
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.operon import OperonTransformer
 from protrend.transform.literature.regulator import RegulatorTransformer
-from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_literature, to_set_list)
+from protrend.utils.processors import (apply_processors, to_list, regulatory_effect_literature, to_set_list)
 from protrend.utils import SetList
 
 

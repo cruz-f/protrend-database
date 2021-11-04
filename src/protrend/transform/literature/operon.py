@@ -7,8 +7,8 @@ from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import Operon, Gene
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.gene import GeneTransformer
-from protrend.transform.processors import (apply_processors, operon_name, to_list, operon_hash, to_str, to_set_list,
-                                           flatten_set_list, take_first)
+from protrend.utils.processors import (apply_processors, operon_name, to_list, operon_hash, to_set_list,
+                                       flatten_set_list, take_first)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

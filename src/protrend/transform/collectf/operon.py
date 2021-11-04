@@ -9,8 +9,8 @@ from protrend.model.model import Operon, Gene, TFBS
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
-                                           to_set_list, operon_hash)
+from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
+                                       to_set_list, operon_hash)
 from protrend.utils import build_graph, find_connected_nodes, SetList
 from protrend.utils.miscellaneous import is_null
 

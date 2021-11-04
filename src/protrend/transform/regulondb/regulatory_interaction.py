@@ -3,8 +3,8 @@ import pandas as pd
 from protrend.io.json import read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryInteraction, Regulator, TFBS, Gene, Operon, Effector
-from protrend.transform.processors import (apply_processors, to_list_nan, regulatory_effect_regulondb, to_list,
-                                           to_set_list)
+from protrend.utils.processors import (apply_processors, to_list_nan, regulatory_effect_regulondb, to_list,
+                                       to_set_list)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer

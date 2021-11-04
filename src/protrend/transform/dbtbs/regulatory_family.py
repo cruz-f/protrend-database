@@ -4,7 +4,7 @@ from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import RegulatoryFamily, Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.regulator import RegulatorTransformer
-from protrend.transform.processors import (apply_processors, rstrip, lstrip, take_first)
+from protrend.utils.processors import (apply_processors, rstrip, lstrip, take_first)
 from protrend.utils import SetList
 
 

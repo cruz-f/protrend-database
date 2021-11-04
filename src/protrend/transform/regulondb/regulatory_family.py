@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
 from protrend.model.model import RegulatoryFamily, Regulator
-from protrend.transform.processors import (apply_processors, rstrip, lstrip)
+from protrend.utils.processors import (apply_processors, rstrip, lstrip)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.utils import SetList

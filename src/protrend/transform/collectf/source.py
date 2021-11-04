@@ -11,7 +11,7 @@ from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_family import RegulatoryFamilyTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import apply_processors, to_list
+from protrend.utils.processors import apply_processors, to_list
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

@@ -5,8 +5,8 @@ from protrend.io.utils import read_from_stack
 from protrend.model.model import TFBS
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.processors import (apply_processors, to_list, flatten_set_list,
-                                           take_last, to_str, to_set_list, operon_hash, site_hash)
+from protrend.utils.processors import (apply_processors, to_list, flatten_set_list,
+                                       take_last, to_str, to_set_list, operon_hash, site_hash)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

@@ -3,9 +3,9 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import RegulatoryFamily, Source, Publication, Regulator
-from protrend.transform.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
-                                           rstrip, lstrip, remove_pubmed, apply_processors, to_set_list, to_list_nan,
-                                           to_int_str, to_nan, to_list)
+from protrend.utils.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
+                                       rstrip, lstrip, remove_pubmed, apply_processors, to_set_list, to_list_nan,
+                                       to_int_str, to_nan, to_list)
 from protrend.transform.regprecise import PublicationTransformer
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer

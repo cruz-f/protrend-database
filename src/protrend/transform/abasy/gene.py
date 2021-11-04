@@ -6,7 +6,7 @@ from protrend.model.model import Gene
 from protrend.transform import GeneDTO
 from protrend.transform.abasy.base import AbasyTransformer
 from protrend.annotation import annotate_genes
-from protrend.transform.processors import apply_processors, rstrip, lstrip, to_int_str
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str
 from protrend.utils import SetList
 
 

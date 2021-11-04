@@ -7,7 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search, entrez_fetch
 from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
-from protrend.transform.processors import to_int_str, to_str, apply_processors, lower_case, split_str
+from protrend.utils.processors import to_int_str, to_str, apply_processors, lower_case, split_str
 from protrend.utils.miscellaneous import is_null
 
 

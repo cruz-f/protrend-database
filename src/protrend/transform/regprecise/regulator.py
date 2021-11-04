@@ -7,7 +7,7 @@ from protrend.io.utils import read_from_stack
 from protrend.model.model import Regulator, Source, Organism
 from protrend.annotation import annotate_genes
 from protrend.annotation.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
+from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.regprecise.source import SourceTransformer

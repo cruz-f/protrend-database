@@ -9,8 +9,8 @@ import pandas as pd
 from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import TFBS, Source, Organism
-from protrend.transform.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
-                                           take_last, to_int_str, to_str, to_set_list, operon_hash, site_hash)
+from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
+                                       take_last, to_int_str, to_str, to_set_list, operon_hash, site_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer

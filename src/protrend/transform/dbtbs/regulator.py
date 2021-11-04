@@ -11,7 +11,7 @@ from protrend.model.model import Regulator
 from protrend.annotation import annotate_genes
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.annotation.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors
+from protrend.utils.processors import rstrip, lstrip, apply_processors
 from protrend.utils import SetList
 
 

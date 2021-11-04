@@ -9,7 +9,7 @@ from protrend.transform.literature.operon import OperonTransformer
 from protrend.transform.literature.organism import OrganismTransformer
 from protrend.transform.literature.regulator import RegulatorTransformer
 from protrend.transform.literature.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.processors import apply_processors, to_int_str
+from protrend.utils.processors import apply_processors, to_int_str
 from protrend.utils import SetList
 
 

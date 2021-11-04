@@ -6,8 +6,8 @@ from protrend.model.model import Operon, Gene, TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
-                                           to_set_list, operon_hash, take_first, to_list_nan)
+from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
+                                       to_set_list, operon_hash, take_first, to_list_nan)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

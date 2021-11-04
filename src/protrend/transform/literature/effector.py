@@ -6,7 +6,7 @@ from protrend.model.model import Effector
 from protrend.annotation import annotate_effectors
 from protrend.annotation.dto import EffectorDTO
 from protrend.transform.literature.base import LiteratureTransformer
-from protrend.transform.processors import apply_processors, to_set_list
+from protrend.utils.processors import apply_processors, to_set_list
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

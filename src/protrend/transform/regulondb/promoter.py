@@ -3,7 +3,7 @@ import pandas as pd
 from protrend.io import read_txt, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import Promoter
-from protrend.transform.processors import (apply_processors, to_list, to_str, operon_hash, upper_case, promoter_hash)
+from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, upper_case, promoter_hash)
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.utils import SetList

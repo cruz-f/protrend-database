@@ -4,8 +4,8 @@ from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.transform.processors import (apply_processors, remove_white_space, rstrip, lstrip,
-                                           remove_multiple_white_space, parse_collectf_description, to_list)
+from protrend.utils.processors import (apply_processors, remove_white_space, rstrip, lstrip,
+                                       remove_multiple_white_space, parse_collectf_description, to_list)
 from protrend.utils import SetList
 
 

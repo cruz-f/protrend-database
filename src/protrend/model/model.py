@@ -8,7 +8,7 @@ from neomodel import (StringProperty,
                       OneOrMore)
 
 from protrend.model.node import Node
-from protrend.transform.processors import to_str, rstrip, lstrip, lower_case, to_int_str, to_nan
+from protrend.utils.processors import to_str, rstrip, lstrip, lower_case, to_int_str, to_nan
 
 # the main relationship type
 REL_TYPE = 'HAS'

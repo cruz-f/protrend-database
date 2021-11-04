@@ -6,8 +6,8 @@ from protrend.io.utils import read_from_stack
 from protrend.model.model import TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
 from protrend.transform.coryneregnet.gene import GeneTransformer
-from protrend.transform.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
-                                           take_first)
+from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
+                                       take_first)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

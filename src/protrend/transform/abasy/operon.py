@@ -4,7 +4,7 @@ from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import Operon, Gene
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip, to_list, operon_hash
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list, operon_hash
 from protrend.utils import SetList
 
 

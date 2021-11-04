@@ -6,7 +6,7 @@ from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene,
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.operon import OperonTransformer
 from protrend.transform.coryneregnet.regulator import RegulatorTransformer
-from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_coryneregnet)
+from protrend.utils.processors import (apply_processors, to_list, regulatory_effect_coryneregnet)
 from protrend.utils import SetList
 
 

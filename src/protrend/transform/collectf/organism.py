@@ -9,8 +9,8 @@ from protrend.transform import OrganismDTO
 from protrend.annotation import annotate_organisms
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.processors import (apply_processors, rstrip, lstrip, to_int_str, take_last,
-                                           flatten_set_list, to_list)
+from protrend.utils.processors import (apply_processors, rstrip, lstrip, to_int_str, take_last,
+                                       flatten_set_list, to_list)
 from protrend.utils import SetList
 from protrend.utils.miscellaneous import is_null
 

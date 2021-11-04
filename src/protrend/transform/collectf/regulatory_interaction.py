@@ -7,8 +7,8 @@ from protrend.transform.collectf.base import CollectfTransformer, CollectfConnec
 from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_collectf, to_set_list,
-                                           flatten_set_list, take_first, to_list_nan)
+from protrend.utils.processors import (apply_processors, to_list, regulatory_effect_collectf, to_set_list,
+                                       flatten_set_list, take_first, to_list_nan)
 from protrend.utils import SetList
 
 

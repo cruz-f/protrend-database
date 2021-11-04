@@ -12,7 +12,7 @@ from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.transform.processors import apply_processors, to_int_str, to_list
+from protrend.utils.processors import apply_processors, to_int_str, to_list
 from protrend.utils import SetList
 
 

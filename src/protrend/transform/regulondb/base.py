@@ -5,7 +5,7 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_txt
 from protrend.transform import Transformer, Connector
-from protrend.transform.processors import to_set_list
+from protrend.utils.processors import to_set_list
 from protrend.utils import SetList, Settings
 
 

@@ -4,7 +4,7 @@ from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model.model import Evidence, Operon
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.operon import OperonTransformer
-from protrend.transform.processors import apply_processors
+from protrend.utils.processors import apply_processors
 from protrend.utils import SetList
 
 

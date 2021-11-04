@@ -9,7 +9,7 @@ from protrend.model.model import Regulator
 from protrend.transform import GeneDTO
 from protrend.annotation import annotate_genes
 from protrend.transform.collectf.base import CollectfTransformer
-from protrend.transform.processors import take_first, flatten_set_list, apply_processors, to_list_nan
+from protrend.utils.processors import take_first, flatten_set_list, apply_processors, to_list_nan
 from protrend.utils import SetList
 
 

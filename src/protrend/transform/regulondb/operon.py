@@ -5,8 +5,8 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame, read_txt
 from protrend.model.model import Operon, Gene, TFBS, Promoter
-from protrend.transform.processors import (apply_processors, operon_name, flatten_set_list, to_list,
-                                           to_set_list, operon_hash)
+from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
+                                       to_set_list, operon_hash)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.promoter import PromoterTransformer
