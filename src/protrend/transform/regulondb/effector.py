@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io import read_txt, read_from_stack
 from protrend.model.model import Effector
 from protrend.annotation import annotate_effectors
-from protrend.transform.dto import EffectorDTO
+from protrend.annotation.dto import EffectorDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, remove_html_tags, \
     parse_effector_name_regulondb
 from protrend.transform.regulondb.base import RegulondbTransformer

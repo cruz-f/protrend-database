@@ -4,7 +4,7 @@ import pandas as pd
 
 from protrend.model.model import Effector
 from protrend.annotation import annotate_effectors
-from protrend.transform.dto import EffectorDTO
+from protrend.annotation.dto import EffectorDTO
 from protrend.transform.literature.base import LiteratureTransformer
 from protrend.transform.processors import apply_processors, to_set_list
 from protrend.utils import SetList

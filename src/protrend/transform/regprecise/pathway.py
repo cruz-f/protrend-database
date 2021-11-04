@@ -6,7 +6,7 @@ from protrend.io.json import read_json_lines, read_json_frame
 from protrend.io.utils import read_from_stack
 from protrend.model.model import Pathway, Source, Regulator, Gene
 from protrend.annotation import annotate_pathways
-from protrend.transform.dto import PathwayDTO
+from protrend.annotation.dto import PathwayDTO
 from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer

@@ -6,7 +6,7 @@ from protrend.io.json import read_json_lines
 from protrend.io.utils import read_from_stack
 from protrend.model.model import Publication
 from protrend.annotation import annotate_publications
-from protrend.transform.dto import PublicationDTO
+from protrend.annotation.dto import PublicationDTO
 from protrend.transform.processors import apply_processors, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.utils import SetList
