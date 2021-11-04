@@ -10,22 +10,24 @@ from protrend.transform.processors import (apply_processors, to_list, regulatory
 from protrend.utils import SetList
 
 
-class RegulatoryInteractionTransformer(AbasyTransformer):
-    default_node = RegulatoryInteraction
+class RegulatoryInteractionTransformer(AbasyTransformer,
+                                       source='abasy',
+                                       version='0.0.0',
+                                       node=RegulatoryInteraction,
+                                       order=80,
+                                       register=True):
     default_transform_stack = {'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json'}
-    default_order = 80
     columns = SetList(['regulator_effector', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
                        'regulatory_interaction_hash', 'protrend_id',
-                       'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'source_target_taxonomy'
-                       ])
+                       'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'source_target_taxonomy'])
 
     def _transform_networks(self, networks: pd.DataFrame) -> pd.DataFrame:
         networks = networks.dropna(subset=['source', 'target', 'taxonomy', 'Effect'])
-        networks.loc[:, 'source_target_taxonomy'] = networks['source'] + networks['target'] + networks['Effect'] + networks['taxonomy']
+        net_src_t_tax = networks['source'] + networks['target'] + networks['Effect'] + networks['taxonomy']
+        networks.loc[:, 'source_target_taxonomy'] = net_src_t_tax
 
-        networks = self.drop_duplicates(df=networks, subset=['source_target_taxonomy'],
-                                        perfect_match=True, preserve_nan=True)
+        networks = self.drop_duplicates(df=networks, subset=['source_target_taxonomy'], perfect_match=True)
         networks = networks.dropna(subset=['source_target_taxonomy'])
 
         networks = apply_processors(networks,
@@ -74,9 +76,13 @@ class RegulatoryInteractionTransformer(AbasyTransformer):
         return regulatory_interaction
 
 
-class RegulatoryInteractionToRegulatorConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
+class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
+                                                source='abasy',
+                                                version='0.0.0',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=False):
+
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -92,9 +98,13 @@ class RegulatoryInteractionToRegulatorConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
+class RegulatoryInteractionToOperonConnector(AbasyConnector,
+                                             source='abasy',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Operon,
+                                             register=False):
+
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -110,9 +120,13 @@ class RegulatoryInteractionToOperonConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
+class RegulatoryInteractionToGeneConnector(AbasyConnector,
+                                           source='abasy',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=False):
+
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -135,9 +149,13 @@ class RegulatoryInteractionToGeneConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class RegulatorToOperonConnector(AbasyConnector):
-    default_from_node = Regulator
-    default_to_node = Operon
+class RegulatorToOperonConnector(AbasyConnector,
+                                 source='abasy',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Operon,
+                                 register=False):
+
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -153,9 +171,13 @@ class RegulatorToOperonConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(AbasyConnector):
-    default_from_node = Regulator
-    default_to_node = Gene
+class RegulatorToGeneConnector(AbasyConnector,
+                               source='abasy',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=False):
+
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):

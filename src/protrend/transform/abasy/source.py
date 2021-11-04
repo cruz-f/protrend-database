@@ -11,7 +11,12 @@ from protrend.transform.abasy.regulatory_interaction import RegulatoryInteractio
 from protrend.utils import SetList
 
 
-class SourceTransformer(AbasyTransformer):
+class SourceTransformer(AbasyTransformer,
+                        source='abasy',
+                        version='0.0.0',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = 'abasy'
     type = 'database'
     url = 'https://abasy.ccg.unam.mx'
@@ -19,8 +24,6 @@ class SourceTransformer(AbasyTransformer):
     authors = ['Juan M. Escorcia-Rodríguez, AndreasTauch, Julio A. Freyre-Gonzáleza']
     description = 'Abasy Atlas v2.2: The most comprehensive and up-to-date inventory of meta-curated, historical, bacterial regulatory networks, their completeness and system-level characterization'
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
@@ -38,9 +41,12 @@ class SourceTransformer(AbasyTransformer):
         return df
 
 
-class OrganismToSourceConnector(AbasyConnector):
-    default_from_node = Organism
-    default_to_node = Source
+class OrganismToSourceConnector(AbasyConnector,
+                                source='abasy',
+                                version='0.0.0',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=False):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -61,9 +67,12 @@ class OrganismToSourceConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(AbasyConnector):
-    default_from_node = Regulator
-    default_to_node = Source
+class RegulatorToSourceConnector(AbasyConnector,
+                                 source='abasy',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=False):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -84,9 +93,12 @@ class RegulatorToSourceConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class OperonToSourceConnector(AbasyConnector):
-    default_from_node = Operon
-    default_to_node = Source
+class OperonToSourceConnector(AbasyConnector,
+                              source='abasy',
+                              version='0.0.0',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=False):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -107,9 +119,12 @@ class OperonToSourceConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class GeneToSourceConnector(AbasyConnector):
-    default_from_node = Gene
-    default_to_node = Source
+class GeneToSourceConnector(AbasyConnector,
+                            source='abasy',
+                            version='0.0.0',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=False):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -130,9 +145,13 @@ class GeneToSourceConnector(AbasyConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
+class RegulatoryInteractionToSourceConnector(AbasyConnector,
+                                             source='abasy',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Source,
+                                             register=False):
+
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'source': 'integrated_source.json'}
 

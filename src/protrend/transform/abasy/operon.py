@@ -8,10 +8,14 @@ from protrend.transform.processors import apply_processors, rstrip, lstrip, to_l
 from protrend.utils import SetList
 
 
-class OperonTransformer(AbasyTransformer):
-    default_node = Operon
+class OperonTransformer(AbasyTransformer,
+                        source='abasy',
+                        version='0.0.0',
+                        node=Operon,
+                        order=90,
+                        register=True):
+
     default_transform_stack = {'gene': 'integrated_gene.json'}
-    default_order = 90
     columns = SetList(['protrend_id', 'name', 'genes', 'strand', 'start', 'stop', 'operon_hash',
                        'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'target_taxonomy'])
 
@@ -19,8 +23,7 @@ class OperonTransformer(AbasyTransformer):
         networks = networks.dropna(subset=['target', 'taxonomy'])
         networks['target_taxonomy'] = networks['target'] + networks['taxonomy']
 
-        networks = self.drop_duplicates(df=networks, subset=['target_taxonomy'],
-                                        perfect_match=True, preserve_nan=True)
+        networks = self.drop_duplicates(df=networks, subset=['target_taxonomy'], perfect_match=True)
         networks = networks.dropna(subset=['target_taxonomy'])
 
         networks = apply_processors(networks,
@@ -45,8 +48,7 @@ class OperonTransformer(AbasyTransformer):
         df['tfbss'] = None
         df['operon_hash'] = df['genes']
         df = apply_processors(df, operon_hash=[to_list, operon_hash])
-        df = self.drop_duplicates(df=df, subset=['operon_hash'],
-                                  perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True)
         df = df.dropna(subset=['operon_hash'])
 
         self._stack_transformed_nodes(df)
@@ -54,9 +56,13 @@ class OperonTransformer(AbasyTransformer):
         return df
 
 
-class OperonToGeneConnector(AbasyConnector):
-    default_from_node = Operon
-    default_to_node = Gene
+class OperonToGeneConnector(AbasyConnector,
+                            source='abasy',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=False):
+
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):

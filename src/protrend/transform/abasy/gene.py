@@ -10,9 +10,13 @@ from protrend.transform.processors import apply_processors, rstrip, lstrip, to_i
 from protrend.utils import SetList
 
 
-class GeneTransformer(AbasyTransformer):
-    default_node = Gene
-    default_order = 100
+class GeneTransformer(AbasyTransformer,
+                      source='abasy',
+                      version='0.0.0',
+                      node=Gene,
+                      order=100,
+                      register=True):
+
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
@@ -21,7 +25,7 @@ class GeneTransformer(AbasyTransformer):
 
     def _transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
         gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'],
-                                    perfect_match=True, preserve_nan=True)
+                                    perfect_match=True)
         gene = gene.dropna(subset=['Gene_name', 'taxonomy'])
 
         gene['gene_name_taxonomy'] = gene['Gene_name'] + gene['taxonomy']

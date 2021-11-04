@@ -20,14 +20,12 @@ def read_abasy_network(file_path: str) -> pd.DataFrame:
     return network_df
 
 
-class AbasyTransformer(Transformer):
+class AbasyTransformer(Transformer, source='abasy', version='0.0.0', register=False):
 
     @abstractmethod
     def transform(self):
         pass
 
-    default_source = 'abasy'
-    default_version = '0.0.0'
     default_network_stack = {'bsub': 'bsub_network.json',
                              'cglu': 'cglu_network.json',
                              'ecol': 'ecol_network.json',
@@ -153,11 +151,8 @@ class AbasyTransformer(Transformer):
         return pd.concat(dfs, axis=0)
 
 
-class AbasyConnector(Connector):
+class AbasyConnector(Connector, source='abasy', version='0.0.0', register=False):
 
     @abstractmethod
     def connect(self):
         pass
-
-    default_source = 'abasy'
-    default_version = '0.0.0'
