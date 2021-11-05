@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.operon import OperonTransformer
@@ -12,7 +12,12 @@ from protrend.utils.processors import apply_processors, to_set_list, to_int_str
 from protrend.utils import SetList
 
 
-class OrganismTransformer(CoryneRegNetTransformer):
+class OrganismTransformer(CoryneRegNetTransformer,
+                          source='coryneregnet',
+                          version='0.0.0',
+                          node=Organism,
+                          order=100,
+                          register=True):
     species = ('Bacillus subtilis',
                'Escherichia coli',
                'Corynebacterium glutamicum',
@@ -63,8 +68,6 @@ class OrganismTransformer(CoryneRegNetTransformer):
             'Corynebacterium glutamicum ATCC 13032',
             'Mycobacterium tuberculosis H37Rv')
 
-    default_node = Organism
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
 
@@ -87,9 +90,12 @@ class OrganismTransformer(CoryneRegNetTransformer):
         return df
 
 
-class RegulatorToOrganismConnector(CoryneRegNetConnector):
-    default_from_node = Regulator
-    default_to_node = Organism
+class RegulatorToOrganismConnector(CoryneRegNetConnector,
+                                   source='coryneregnet',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Organism,
+                                   register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -110,9 +116,12 @@ class RegulatorToOrganismConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class OperonToOrganismConnector(CoryneRegNetConnector):
-    default_from_node = Operon
-    default_to_node = Organism
+class OperonToOrganismConnector(CoryneRegNetConnector,
+                                source='coryneregnet',
+                                version='0.0.0',
+                                from_node=Operon,
+                                to_node=Organism,
+                                register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'gene': 'integrated_gene.json',
                              'organism': 'integrated_organism.json'}
 
@@ -146,9 +155,12 @@ class OperonToOrganismConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class GeneToOrganismConnector(CoryneRegNetConnector):
-    default_from_node = Gene
-    default_to_node = Organism
+class GeneToOrganismConnector(CoryneRegNetConnector,
+                              source='coryneregnet',
+                              version='0.0.0',
+                              from_node=Gene,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -171,9 +183,12 @@ class GeneToOrganismConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class TFBSToOrganismConnector(CoryneRegNetConnector):
-    default_from_node = TFBS
-    default_to_node = Organism
+class TFBSToOrganismConnector(CoryneRegNetConnector,
+                              source='coryneregnet',
+                              version='0.0.0',
+                              from_node=TFBS,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -196,9 +211,12 @@ class TFBSToOrganismConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOrganismConnector(CoryneRegNetConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Organism
+class RegulatoryInteractionToOrganismConnector(CoryneRegNetConnector,
+                                               source='coryneregnet',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Organism,
+                                               register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):

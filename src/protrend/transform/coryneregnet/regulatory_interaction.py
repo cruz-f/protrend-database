@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
+from protrend.io import read_json_frame, read_from_stack
+from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.operon import OperonTransformer
 from protrend.transform.coryneregnet.regulator import RegulatorTransformer
@@ -10,11 +9,14 @@ from protrend.utils.processors import (apply_processors, to_list, regulatory_eff
 from protrend.utils import SetList
 
 
-class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
-    default_node = RegulatoryInteraction
+class RegulatoryInteractionTransformer(CoryneRegNetTransformer,
+                                       source='coryneregnet',
+                                       version='0.0.0',
+                                       node=RegulatoryInteraction,
+                                       order=70,
+                                       register=True):
     default_transform_stack = {'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json'}
-    default_order = 70
     columns = SetList(['regulator_effector', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
                        'regulatory_interaction_hash', 'protrend_id',
                        'Operon', 'Orientation', 'Genes', 'TF_locusTag', 'TG_locusTag',
@@ -77,7 +79,12 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer):
         return regulatory_interaction
 
 
-class RegulatoryInteractionToRegulatorConnector(CoryneRegNetConnector):
+class RegulatoryInteractionToRegulatorConnector(CoryneRegNetConnector,
+                                                source='coryneregnet',
+                                                version='0.0.0',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
     default_from_node = RegulatoryInteraction
     default_to_node = Regulator
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
@@ -95,7 +102,12 @@ class RegulatoryInteractionToRegulatorConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(CoryneRegNetConnector):
+class RegulatoryInteractionToOperonConnector(CoryneRegNetConnector,
+                                             source='coryneregnet',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Operon,
+                                             register=True):
     default_from_node = RegulatoryInteraction
     default_to_node = Operon
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
@@ -113,7 +125,12 @@ class RegulatoryInteractionToOperonConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(CoryneRegNetConnector):
+class RegulatoryInteractionToGeneConnector(CoryneRegNetConnector,
+                                           source='coryneregnet',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
     default_from_node = RegulatoryInteraction
     default_to_node = Gene
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
@@ -138,7 +155,12 @@ class RegulatoryInteractionToGeneConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(CoryneRegNetConnector):
+class RegulatoryInteractionToTFBSConnector(CoryneRegNetConnector,
+                                           source='coryneregnet',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=TFBS,
+                                           register=True):
     default_from_node = RegulatoryInteraction
     default_to_node = TFBS
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
@@ -163,7 +185,12 @@ class RegulatoryInteractionToTFBSConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatorToOperonConnector(CoryneRegNetConnector):
+class RegulatorToOperonConnector(CoryneRegNetConnector,
+                                 source='coryneregnet',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Operon,
+                                 register=True):
     default_from_node = Regulator
     default_to_node = Operon
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
@@ -181,7 +208,12 @@ class RegulatorToOperonConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(CoryneRegNetConnector):
+class RegulatorToGeneConnector(CoryneRegNetConnector,
+                               source='coryneregnet',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
     default_from_node = Regulator
     default_to_node = Gene
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
@@ -204,7 +236,12 @@ class RegulatorToGeneConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatorToTFBSConnector(CoryneRegNetConnector):
+class RegulatorToTFBSConnector(CoryneRegNetConnector,
+                               source='coryneregnet',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=TFBS,
+                               register=True):
     default_from_node = Regulator
     default_to_node = TFBS
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}

@@ -12,7 +12,12 @@ from protrend.transform.coryneregnet.tfbs import TFBSTransformer
 from protrend.utils import SetList
 
 
-class SourceTransformer(CoryneRegNetTransformer):
+class SourceTransformer(CoryneRegNetTransformer,
+                        source='coryneregnet',
+                        version='0.0.0',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = 'coryneregnet'
     type = 'database'
     url = 'https://www.exbio.wzw.tum.de/coryneregnet/'
@@ -21,8 +26,6 @@ class SourceTransformer(CoryneRegNetTransformer):
                'Josch Konstantin Pauling', 'Andreas Tauch', 'Vasco Ariston de Carvalho Azevedo', 'Jan Baumbach']
     description = 'CoryneRegNet 7, the reference database and analysis platform for corynebacterial gene regulatory networks'
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
@@ -40,7 +43,12 @@ class SourceTransformer(CoryneRegNetTransformer):
         return df
 
 
-class OrganismToSourceConnector(CoryneRegNetConnector):
+class OrganismToSourceConnector(CoryneRegNetConnector,
+                                source='coryneregnet',
+                                version='0.0.0',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=True):
     default_from_node = Organism
     default_to_node = Source
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
@@ -63,7 +71,12 @@ class OrganismToSourceConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(CoryneRegNetConnector):
+class RegulatorToSourceConnector(CoryneRegNetConnector,
+                                 source='coryneregnet',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=True):
     default_from_node = Regulator
     default_to_node = Source
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
@@ -86,7 +99,12 @@ class RegulatorToSourceConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class OperonToSourceConnector(CoryneRegNetConnector):
+class OperonToSourceConnector(CoryneRegNetConnector,
+                              source='coryneregnet',
+                              version='0.0.0',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=True):
     default_from_node = Operon
     default_to_node = Source
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
@@ -109,7 +127,12 @@ class OperonToSourceConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class GeneToSourceConnector(CoryneRegNetConnector):
+class GeneToSourceConnector(CoryneRegNetConnector,
+                            source='coryneregnet',
+                            version='0.0.0',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=True):
     default_from_node = Gene
     default_to_node = Source
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
@@ -132,7 +155,12 @@ class GeneToSourceConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class TFBSToSourceConnector(CoryneRegNetConnector):
+class TFBSToSourceConnector(CoryneRegNetConnector,
+                            source='coryneregnet',
+                            version='0.0.0',
+                            from_node=TFBS,
+                            to_node=Source,
+                            register=True):
     default_from_node = TFBS
     default_to_node = Source
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
@@ -156,7 +184,12 @@ class TFBSToSourceConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(CoryneRegNetConnector):
+class RegulatoryInteractionToSourceConnector(CoryneRegNetConnector,
+                                             source='coryneregnet',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Source,
+                                             register=True):
     default_from_node = RegulatoryInteraction
     default_to_node = Source
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',

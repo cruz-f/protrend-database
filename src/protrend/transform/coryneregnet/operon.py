@@ -2,20 +2,22 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Operon, Gene, TFBS
+from protrend.model import Operon, Gene, TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.tfbs import TFBSTransformer
 from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
                                        to_set_list, operon_hash, take_first, to_list_nan)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class OperonTransformer(CoryneRegNetTransformer):
-    default_node = Operon
+class OperonTransformer(CoryneRegNetTransformer,
+                        source='coryneregnet',
+                        version='0.0.0',
+                        node=Gene,
+                        order=80,
+                        register=True):
     default_transform_stack = {'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
-    default_order = 80
     columns = SetList(['name', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
                        'Operon', 'Orientation', 'Genes', 'taxonomy', 'tfbs_operon', 'gene_protrend_id',
                        'gene_locus_tag', 'gene_name', 'gene_TG_locusTag', 'gene_strand', 'gene_start', 'gene_stop'])
@@ -162,7 +164,12 @@ class OperonTransformer(CoryneRegNetTransformer):
         return operon_tfbs_gene
 
 
-class OperonToGeneConnector(CoryneRegNetConnector):
+class OperonToGeneConnector(CoryneRegNetConnector,
+                            source='coryneregnet',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=True):
     default_from_node = Operon
     default_to_node = Gene
     default_connect_stack = {'operon': 'integrated_operon.json'}
@@ -186,7 +193,12 @@ class OperonToGeneConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class OperonToTFBSConnector(CoryneRegNetConnector):
+class OperonToTFBSConnector(CoryneRegNetConnector,
+                            source='coryneregnet',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=TFBS,
+                            register=True):
     default_from_node = Operon
     default_to_node = TFBS
     default_connect_stack = {'operon': 'integrated_operon.json'}
@@ -210,7 +222,12 @@ class OperonToTFBSConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(CoryneRegNetConnector):
+class GeneToTFBSConnector(CoryneRegNetConnector,
+                          source='coryneregnet',
+                          version='0.0.0',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
     default_from_node = Gene
     default_to_node = TFBS
     default_connect_stack = {'operon': 'integrated_operon.json'}

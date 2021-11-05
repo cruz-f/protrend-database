@@ -2,21 +2,23 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.model.model import Regulator
-from protrend.transform import GeneDTO
-from protrend.annotation import annotate_genes
+from protrend.model import Regulator
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 from protrend.utils import SetList
 
 
-class RegulatorTransformer(CoryneRegNetTransformer):
-    default_node = Regulator
+class RegulatorTransformer(CoryneRegNetTransformer,
+                           source='coryneregnet',
+                           version='0.0.0',
+                           node=Regulator,
+                           order=100,
+                           register=True):
     default_transform_stack = {'bsub': 'bsub_regulation.csv',
                                'cglu': 'cglu_regulation.csv',
                                'ecol': 'ecol_regulation.csv',
                                'mtub': 'mtub_regulation.csv'}
-    default_order = 100
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
                        'strand', 'start', 'stop', 'mechanism',

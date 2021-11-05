@@ -1,25 +1,26 @@
 import numpy as np
 import pandas as pd
 
-from protrend.io import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import TFBS
+from protrend.io import read_json_frame, read_from_stack
+from protrend.model import TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
                                        take_first)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class TFBSTransformer(CoryneRegNetTransformer):
-    default_node = TFBS
+class TFBSTransformer(CoryneRegNetTransformer,
+                      source='coryneregnet',
+                      version='0.0.0',
+                      node=TFBS,
+                      order=90,
+                      register=True):
     default_transform_stack = {'bsub': 'bsub_regulation.csv',
                                'cglu': 'cglu_regulation.csv',
                                'ecol': 'ecol_regulation.csv',
                                'mtub': 'mtub_regulation.csv',
                                'gene': 'integrated_gene.json'}
-    default_order = 90
     columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role', 'TG_locusTag', 'TG_altLocusTag',
                        'TG_name', 'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',

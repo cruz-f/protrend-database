@@ -3,9 +3,8 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Publication, Regulator, Organism, Operon, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import PublicationDTO
-from protrend.annotation import annotate_publications
+from protrend.model import Publication, Regulator, Organism, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.operon import OperonTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer
@@ -15,13 +14,16 @@ from protrend.utils.processors import apply_processors, to_int_str, to_set_list,
 from protrend.utils import SetList
 
 
-class PublicationTransformer(CoryneRegNetTransformer):
-    default_node = Publication
+class PublicationTransformer(CoryneRegNetTransformer,
+                             source='coryneregnet',
+                             version='0.0.0',
+                             node=Publication,
+                             order=100,
+                             register=True):
     default_transform_stack = {'bsub': 'bsub_regulation.csv',
                                'cglu': 'cglu_regulation.csv',
                                'ecol': 'ecol_regulation.csv',
                                'mtub': 'mtub_regulation.csv'}
-    default_order = 100
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
@@ -77,7 +79,12 @@ class PublicationTransformer(CoryneRegNetTransformer):
         return df
 
 
-class PublicationToOrganismConnector(CoryneRegNetConnector):
+class PublicationToOrganismConnector(CoryneRegNetConnector,
+                                     source='coryneregnet',
+                                     version='0.0.0',
+                                     from_node=Publication,
+                                     to_node=Organism,
+                                     register=True):
     default_from_node = Publication
     default_to_node = Organism
     default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
@@ -103,7 +110,12 @@ class PublicationToOrganismConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class PublicationToRegulatorConnector(CoryneRegNetConnector):
+class PublicationToRegulatorConnector(CoryneRegNetConnector,
+                                      source='coryneregnet',
+                                      version='0.0.0',
+                                      from_node=Publication,
+                                      to_node=Regulator,
+                                      register=True):
     default_from_node = Publication
     default_to_node = Regulator
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
@@ -126,7 +138,12 @@ class PublicationToRegulatorConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class PublicationToOperonConnector(CoryneRegNetConnector):
+class PublicationToOperonConnector(CoryneRegNetConnector,
+                                   source='coryneregnet',
+                                   version='0.0.0',
+                                   from_node=Publication,
+                                   to_node=Operon,
+                                   register=True):
     default_from_node = Publication
     default_to_node = Operon
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
@@ -155,7 +172,12 @@ class PublicationToOperonConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class PublicationToGeneConnector(CoryneRegNetConnector):
+class PublicationToGeneConnector(CoryneRegNetConnector,
+                                 source='coryneregnet',
+                                 version='0.0.0',
+                                 from_node=Publication,
+                                 to_node=Gene,
+                                 register=True):
     default_from_node = Publication
     default_to_node = Gene
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
@@ -189,7 +211,12 @@ class PublicationToGeneConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class PublicationToTFBSConnector(CoryneRegNetConnector):
+class PublicationToTFBSConnector(CoryneRegNetConnector,
+                                 source='coryneregnet',
+                                 version='0.0.0',
+                                 from_node=Publication,
+                                 to_node=TFBS,
+                                 register=True):
     default_from_node = Publication
     default_to_node = TFBS
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
@@ -223,7 +250,12 @@ class PublicationToTFBSConnector(CoryneRegNetConnector):
         self.stack_json(df)
 
 
-class PublicationToRegulatoryInteractionConnector(CoryneRegNetConnector):
+class PublicationToRegulatoryInteractionConnector(CoryneRegNetConnector,
+                                                  source='coryneregnet',
+                                                  version='0.0.0',
+                                                  from_node=Publication,
+                                                  to_node=RegulatoryInteraction,
+                                                  register=True):
     default_from_node = Publication
     default_to_node = RegulatoryInteraction
     default_connect_stack = {'publication': 'integrated_publication.json',

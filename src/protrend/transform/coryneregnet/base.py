@@ -1,4 +1,5 @@
 import os
+from abc import abstractmethod
 from typing import Dict
 
 import pandas as pd
@@ -9,9 +10,7 @@ from protrend.utils.processors import take_first, to_set_list
 from protrend.utils import SetList, Settings
 
 
-class CoryneRegNetTransformer(Transformer):
-    default_source = 'coryneregnet'
-    default_version = '0.0.0'
+class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0', register=False):
     default_regulation_stack = {'bsub': 'bsub_regulation.csv',
                                 'cglu': 'cglu_regulation.csv',
                                 'ecol': 'ecol_regulation.csv',
@@ -144,7 +143,13 @@ class CoryneRegNetTransformer(Transformer):
 
         return pd.concat(dfs, axis=0)
 
+    @abstractmethod
+    def transform(self):
+        pass
 
-class CoryneRegNetConnector(Connector):
-    default_source = 'coryneregnet'
-    default_version = '0.0.0'
+
+class CoryneRegNetConnector(Connector, source='coryneregnet', version='0.0.0', register=False):
+
+    @abstractmethod
+    def connect(self):
+        pass
