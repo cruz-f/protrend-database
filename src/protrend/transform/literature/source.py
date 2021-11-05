@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Source, Organism, Regulator, Operon, Gene, RegulatoryInteraction, Effector
+from protrend.model import Source, Organism, Regulator, Operon, Gene, RegulatoryInteraction, Effector
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.gene import GeneTransformer
@@ -13,7 +13,12 @@ from protrend.utils.processors import apply_processors, to_int_str
 from protrend.utils import SetList
 
 
-class SourceTransformer(LiteratureTransformer):
+class SourceTransformer(LiteratureTransformer,
+                        source='literature',
+                        version='0.0.0',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = ('bsub_faria_et_al_2017', 'ecol_fang_et_al_2017', 'mtub_turkarslan_et_al_2015', 'paer_vasquez_et_al_2011')
     type = ('literature', 'literature', 'literature', 'literature')
     url = ('https://www.frontiersin.org/articles/10.3389/fmicb.2016.00275',
@@ -29,15 +34,14 @@ class SourceTransformer(LiteratureTransformer):
                ['Xin Fang', 'Anand Sastry', 'Nathan Mih', 'Donghyuk Kim', 'Justin Tan', 'James T. Yurkovich',
                 'Colton J. Lloyd', 'Ye Gao', 'Laurence Yang', 'Bernhard O. Palsson'],
                ['Serdar Turkarslan', 'Eliza J R Peterson', 'Tige R Rustad', 'Kyle J Minch', 'David J Reiss',
-               'Robert Morrison', 'Shuyi Ma', 'Nathan D Price', 'David R Sherman', 'Nitin S Baliga'],
+                'Robert Morrison', 'Shuyi Ma', 'Nathan D Price', 'David R Sherman', 'Nitin S Baliga'],
                ['Edgardo Galán-Vásquez', 'Beatriz Luna', 'Agustino Martínez-Antonio'])
-    description = ('Reconstruction of the Regulatory Network for Bacillus subtilis and Reconciliation with Gene Expression Data',
-                   'Global transcriptional regulatory network for Escherichia coli robustly connects gene expression to transcription factor activities',
-                   'A comprehensive map of genome-wide gene regulation in Mycobacterium tuberculosis',
-                   'The Regulatory Network of Pseudomonas aeruginosa')
+    description = (
+        'Reconstruction of the Regulatory Network for Bacillus subtilis and Reconciliation with Gene Expression Data',
+        'Global transcriptional regulatory network for Escherichia coli robustly connects gene expression to transcription factor activities',
+        'A comprehensive map of genome-wide gene regulation in Mycobacterium tuberculosis',
+        'The Regulatory Network of Pseudomonas aeruginosa')
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
@@ -55,9 +59,12 @@ class SourceTransformer(LiteratureTransformer):
         return df
 
 
-class OrganismToSourceConnector(LiteratureConnector):
-    default_from_node = Organism
-    default_to_node = Source
+class OrganismToSourceConnector(LiteratureConnector,
+                                source='literature',
+                                version='0.0.0',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -95,9 +102,12 @@ class OrganismToSourceConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(LiteratureConnector):
-    default_from_node = Regulator
-    default_to_node = Source
+class RegulatorToSourceConnector(LiteratureConnector,
+                                 source='literature',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -117,9 +127,12 @@ class RegulatorToSourceConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class OperonToSourceConnector(LiteratureConnector):
-    default_from_node = Operon
-    default_to_node = Source
+class OperonToSourceConnector(LiteratureConnector,
+                              source='literature',
+                              version='0.0.0',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -139,9 +152,12 @@ class OperonToSourceConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class GeneToSourceConnector(LiteratureConnector):
-    default_from_node = Gene
-    default_to_node = Source
+class GeneToSourceConnector(LiteratureConnector,
+                            source='literature',
+                            version='0.0.0',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -161,14 +177,17 @@ class GeneToSourceConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class EffectorToSourceConnector(LiteratureConnector):
-    default_from_node = Effector
-    default_to_node = Source
+class EffectorToSourceConnector(LiteratureConnector,
+                                source='literature',
+                                version='0.0.0',
+                                from_node=Effector,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'effector': 'integrated_effector.json', 'source': 'integrated_source.json'}
 
     def connect(self):
         effector = read_from_stack(stack=self._connect_stack, file='effector',
-                               default_columns=EffectorTransformer.columns, reader=read_json_frame)
+                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
         source = read_from_stack(stack=self._connect_stack, file='source',
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
 
@@ -183,9 +202,12 @@ class EffectorToSourceConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(LiteratureConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
+class RegulatoryInteractionToSourceConnector(LiteratureConnector,
+                                             source='literature',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Source,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'source': 'integrated_source.json'}
 

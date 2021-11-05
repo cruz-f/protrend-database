@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Effector, Regulator, Operon, Gene
+from protrend.io import read_json_frame, read_from_stack
+from protrend.model import RegulatoryInteraction, Effector, Regulator, Operon, Gene
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.operon import OperonTransformer
@@ -11,12 +10,15 @@ from protrend.utils.processors import (apply_processors, to_list, regulatory_eff
 from protrend.utils import SetList
 
 
-class RegulatoryInteractionTransformer(LiteratureTransformer):
-    default_node = RegulatoryInteraction
+class RegulatoryInteractionTransformer(LiteratureTransformer,
+                                       source='literature',
+                                       version='0.0.0',
+                                       node=RegulatoryInteraction,
+                                       order=80,
+                                       register=True):
     default_transform_stack = {'effector': 'integrated_effector.json',
                                'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json'}
-    default_order = 80
     columns = SetList(['regulator_effector', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
                        'regulatory_interaction_hash', 'protrend_id',
                        'regulator_locus_tag', 'operon', 'genes_locus_tag',
@@ -87,9 +89,12 @@ class RegulatoryInteractionTransformer(LiteratureTransformer):
         return regulatory_interaction
 
 
-class RegulatoryInteractionToEffectorConnector(LiteratureConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Effector
+class RegulatoryInteractionToEffectorConnector(LiteratureConnector,
+                                               source='literature',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Effector,
+                                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -108,9 +113,12 @@ class RegulatoryInteractionToEffectorConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToRegulatorConnector(LiteratureConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
+class RegulatoryInteractionToRegulatorConnector(LiteratureConnector,
+                                                source='literature',
+                                                version='0.0.0',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -126,9 +134,12 @@ class RegulatoryInteractionToRegulatorConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(LiteratureConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
+class RegulatoryInteractionToOperonConnector(LiteratureConnector,
+                                             source='literature',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Operon,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -144,9 +155,12 @@ class RegulatoryInteractionToOperonConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(LiteratureConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
+class RegulatoryInteractionToGeneConnector(LiteratureConnector,
+                                           source='literature',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -169,9 +183,12 @@ class RegulatoryInteractionToGeneConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatorToEffectorConnector(LiteratureConnector):
-    default_from_node = Regulator
-    default_to_node = Effector
+class RegulatorToEffectorConnector(LiteratureConnector,
+                                   source='literature',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Effector,
+                                   register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -192,9 +209,12 @@ class RegulatorToEffectorConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatorToOperonConnector(LiteratureConnector):
-    default_from_node = Regulator
-    default_to_node = Operon
+class RegulatorToOperonConnector(LiteratureConnector,
+                                 source='literature',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Operon,
+                                 register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -210,9 +230,12 @@ class RegulatorToOperonConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(LiteratureConnector):
-    default_from_node = Regulator
-    default_to_node = Gene
+class RegulatorToGeneConnector(LiteratureConnector,
+                               source='literature',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):

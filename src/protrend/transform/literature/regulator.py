@@ -2,17 +2,19 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.model.model import Regulator
-from protrend.transform import GeneDTO
-from protrend.annotation import annotate_genes
+from protrend.model import Regulator
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.transform.literature.base import LiteratureTransformer
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 from protrend.utils import SetList
 
 
-class RegulatorTransformer(LiteratureTransformer):
-    default_node = Regulator
-    default_order = 100
+class RegulatorTransformer(LiteratureTransformer,
+                           source='literature',
+                           version='0.0.0',
+                           node=Regulator,
+                           order=100,
+                           register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
                        'strand', 'start', 'stop', 'mechanism',

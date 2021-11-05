@@ -4,25 +4,27 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Operon, Gene
+from protrend.model import Operon, Gene
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.gene import GeneTransformer
 from protrend.utils.processors import (apply_processors, operon_name, to_list, operon_hash, to_set_list,
                                        flatten_set_list, take_first)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class OperonTransformer(LiteratureTransformer):
-    default_node = Operon
+class OperonTransformer(LiteratureTransformer,
+                        source='literature',
+                        version='0.0.0',
+                        node=Operon,
+                        order=90,
+                        register=True):
     default_transform_stack = {'gene': 'integrated_gene.json'}
-    default_order = 90
     columns = SetList(['name', 'genes', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
                        'regulator_locus_tag', 'operon', 'genes_locus_tag', 'regulatory_effect', 'evidence',
                        'effector', 'mechanism', 'publication', 'taxonomy', 'source', 'operon_id', 'network_id'])
 
     def _transform_operon_by_gene(self, network: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-        network = self.drop_duplicates(df=network, subset=['operon', 'taxonomy'], perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['operon', 'taxonomy'], perfect_match=True)
         network = network.dropna(subset=['operon'])
 
         network['operon_id'] = network['operon'] + network['taxonomy']
@@ -40,8 +42,7 @@ class OperonTransformer(LiteratureTransformer):
 
         operon_gene = apply_processors(operon_gene, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
 
-        operon_gene = self.drop_duplicates(df=operon_gene, subset=['operon_hash'],
-                                           perfect_match=True, preserve_nan=True)
+        operon_gene = self.drop_duplicates(df=operon_gene, subset=['operon_hash'], perfect_match=True)
         operon_gene = operon_gene.dropna(subset=['operon_hash'])
 
         return operon_gene
@@ -129,9 +130,12 @@ class OperonTransformer(LiteratureTransformer):
         return operon
 
 
-class OperonToGeneConnector(LiteratureConnector):
-    default_from_node = Operon
-    default_to_node = Gene
+class OperonToGeneConnector(LiteratureConnector,
+                            source='literature',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):

@@ -7,8 +7,7 @@ import pandas as pd
 from protrend.io import read_from_stack
 from protrend.transform import Transformer, Connector
 from protrend.utils.processors import apply_processors, to_set_list, to_int_str, to_str
-from protrend.utils import SetList, Settings
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, Settings, is_null
 
 
 def read_ecol_fang_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
@@ -31,9 +30,7 @@ def read_regulators_bsub_faria_et_al_2017(file_path: str, **kwargs) -> pd.DataFr
     return pd.read_excel(file_path, sheet_name='S2 Regulators', skiprows=7, **kwargs)
 
 
-class LiteratureTransformer(Transformer):
-    default_source = 'literature'
-    default_version = '0.0.0'
+class LiteratureTransformer(Transformer, source='literature', version='0.0.0', register=False):
     default_network_stack = {'bsub': 'faria_2016.xlsx',
                              'ecol': 'fang_2017.xlsx',
                              'mtub': 'turkarslan_2015.xls',
@@ -389,9 +386,7 @@ class LiteratureTransformer(Transformer):
         pass
 
 
-class LiteratureConnector(Connector):
-    default_source = 'literature'
-    default_version = '0.0.0'
+class LiteratureConnector(Connector, source='literature', version='0.0.0', register=False):
 
     @abstractmethod
     def connect(self):

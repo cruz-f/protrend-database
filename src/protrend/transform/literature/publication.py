@@ -3,9 +3,8 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Publication, Organism, Regulator, Operon, Gene, RegulatoryInteraction
-from protrend.transform import PublicationDTO
-from protrend.annotation import annotate_publications
+from protrend.model import Publication, Organism, Regulator, Operon, Gene, RegulatoryInteraction
+from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.operon import OperonTransformer
 from protrend.transform.literature.organism import OrganismTransformer
@@ -15,9 +14,12 @@ from protrend.utils.processors import apply_processors, to_int_str, to_set_list
 from protrend.utils import SetList
 
 
-class PublicationTransformer(LiteratureTransformer):
-    default_node = Publication
-    default_order = 100
+class PublicationTransformer(LiteratureTransformer,
+                             source='literature',
+                             version='0.0.0',
+                             node=Publication,
+                             order=100,
+                             register=True):
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'regulator_locus_tag', 'operon', 'genes_locus_tag',
                        'regulatory_effect', 'evidence', 'effector', 'mechanism',
@@ -63,9 +65,12 @@ class PublicationTransformer(LiteratureTransformer):
         return df
 
 
-class PublicationToOrganismConnector(LiteratureConnector):
-    default_from_node = Publication
-    default_to_node = Organism
+class PublicationToOrganismConnector(LiteratureConnector,
+                                     source='literature',
+                                     version='0.0.0',
+                                     from_node=Publication,
+                                     to_node=Organism,
+                                     register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -89,9 +94,12 @@ class PublicationToOrganismConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class PublicationToRegulatorConnector(LiteratureConnector):
-    default_from_node = Publication
-    default_to_node = Regulator
+class PublicationToRegulatorConnector(LiteratureConnector,
+                                      source='literature',
+                                      version='0.0.0',
+                                      from_node=Publication,
+                                      to_node=Regulator,
+                                      register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -112,9 +120,12 @@ class PublicationToRegulatorConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class PublicationToOperonConnector(LiteratureConnector):
-    default_from_node = Publication
-    default_to_node = Operon
+class PublicationToOperonConnector(LiteratureConnector,
+                                   source='literature',
+                                   version='0.0.0',
+                                   from_node=Publication,
+                                   to_node=Operon,
+                                   register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -135,9 +146,12 @@ class PublicationToOperonConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class PublicationToGeneConnector(LiteratureConnector):
-    default_from_node = Publication
-    default_to_node = Gene
+class PublicationToGeneConnector(LiteratureConnector,
+                                 source='literature',
+                                 version='0.0.0',
+                                 from_node=Publication,
+                                 to_node=Gene,
+                                 register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -159,9 +173,12 @@ class PublicationToGeneConnector(LiteratureConnector):
         self.stack_json(df)
 
 
-class PublicationToRegulatoryInteractionConnector(LiteratureConnector):
-    default_from_node = Publication
-    default_to_node = RegulatoryInteraction
+class PublicationToRegulatoryInteractionConnector(LiteratureConnector,
+                                                  source='literature',
+                                                  version='0.0.0',
+                                                  from_node=Publication,
+                                                  to_node=RegulatoryInteraction,
+                                                  register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'rin': 'integrated_regulatoryinteraction.json'}
 

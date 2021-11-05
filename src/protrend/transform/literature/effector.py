@@ -2,18 +2,19 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.model.model import Effector
-from protrend.annotation import annotate_effectors
-from protrend.annotation.dto import EffectorDTO
+from protrend.model import Effector
+from protrend.annotation import annotate_effectors, EffectorDTO
 from protrend.transform.literature.base import LiteratureTransformer
 from protrend.utils.processors import apply_processors, to_set_list
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class EffectorTransformer(LiteratureTransformer):
-    default_node = Effector
-    default_order = 100
+class EffectorTransformer(LiteratureTransformer,
+                          source='literature',
+                          version='0.0.0',
+                          node=Effector,
+                          order=100,
+                          register=True):
     columns = SetList(['name', 'mechanism', 'kegg_compounds', 'protrend_id',
                        'regulator_locus_tag', 'operon', 'genes_locus_tag',
                        'regulatory_effect', 'evidence', 'effector', 'mechanism',
@@ -23,7 +24,7 @@ class EffectorTransformer(LiteratureTransformer):
         network = apply_processors(network, effector=to_set_list)
         network = network.explode(column='effector')
 
-        network = self.drop_duplicates(df=network, subset=['effector'], perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['effector'], perfect_match=True)
         network = network.dropna(subset=['effector'])
 
         def _filter_map_nan(item: str) -> Union[str, None]:
@@ -68,7 +69,7 @@ class EffectorTransformer(LiteratureTransformer):
         network = apply_processors(network, effector=split_effectors)
         network = network.explode(column='effector')
 
-        network = self.drop_duplicates(df=network, subset=['effector'], perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['effector'], perfect_match=True)
         network = network.dropna(subset=['effector'])
 
         network['name'] = network['effector']
