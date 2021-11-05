@@ -1,21 +1,22 @@
 import pandas as pd
 
-from protrend.io import read_txt, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import TFBS
+from protrend.io import read_txt, read_json_frame, read_from_stack
+from protrend.model import TFBS
 from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
                                        take_first)
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class TFBSTransformer(RegulondbTransformer):
-    default_node = TFBS
+class TFBSTransformer(RegulondbTransformer,
+                      source='regulondb',
+                      version='0.0.0',
+                      node=TFBS,
+                      order=90,
+                      register=True):
     default_transform_stack = {'site': 'site.txt',
                                'gene': 'integrated_gene.json'}
-    default_order = 90
     columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
                        'site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                        'site_internal_comment', 'key_id_org', 'site_length'])

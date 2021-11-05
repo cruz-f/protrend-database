@@ -3,7 +3,7 @@ from typing import Union
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
-from protrend.model.model import Evidence, Promoter, Regulator, TFBS, Operon, Gene, RegulatoryInteraction
+from protrend.model import Evidence, Promoter, Regulator, TFBS, Operon, Gene, RegulatoryInteraction
 from protrend.utils.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
@@ -15,10 +15,13 @@ from protrend.transform.regulondb.regulatory_interaction import RegulatoryIntera
 from protrend.utils import SetList
 
 
-class EvidenceTransformer(RegulondbTransformer):
-    default_node = Evidence
+class EvidenceTransformer(RegulondbTransformer,
+                          source='regulondb',
+                          version='0.0.0',
+                          node=Evidence,
+                          order=100,
+                          register=True):
     default_transform_stack = {'evidence': 'evidence.txt'}
-    default_order = 100
     columns = SetList(['protrend_id',
                        'name', 'description',
                        'evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
@@ -56,9 +59,12 @@ class EvidenceTransformer(RegulondbTransformer):
         return evidence
 
 
-class EvidenceToRegulatorConnector(RegulondbConnector):
-    default_from_node = Evidence
-    default_to_node = Regulator
+class EvidenceToRegulatorConnector(RegulondbConnector,
+                                   source='regulondb',
+                                   version='0.0.0',
+                                   from_node=Evidence,
+                                   to_node=Regulator,
+                                   register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'regulator': 'integrated_regulator.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -102,9 +108,12 @@ class EvidenceToRegulatorConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EvidenceToTFBSConnector(RegulondbConnector):
-    default_from_node = Evidence
-    default_to_node = TFBS
+class EvidenceToTFBSConnector(RegulondbConnector,
+                              source='regulondb',
+                              version='0.0.0',
+                              from_node=Evidence,
+                              to_node=TFBS,
+                              register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'tfbs': 'integrated_tfbs.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -139,9 +148,12 @@ class EvidenceToTFBSConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EvidenceToPromoterConnector(RegulondbConnector):
-    default_from_node = Evidence
-    default_to_node = Promoter
+class EvidenceToPromoterConnector(RegulondbConnector,
+                                  source='regulondb',
+                                  version='0.0.0',
+                                  from_node=Evidence,
+                                  to_node=Promoter,
+                                  register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'promoter': 'integrated_promoter.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -176,9 +188,12 @@ class EvidenceToPromoterConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EvidenceToOperonConnector(RegulondbConnector):
-    default_from_node = Evidence
-    default_to_node = Operon
+class EvidenceToOperonConnector(RegulondbConnector,
+                                source='regulondb',
+                                version='0.0.0',
+                                from_node=Evidence,
+                                to_node=Operon,
+                                register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'operon': 'integrated_operon.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -213,9 +228,12 @@ class EvidenceToOperonConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EvidenceToGeneConnector(RegulondbConnector):
-    default_from_node = Evidence
-    default_to_node = Gene
+class EvidenceToGeneConnector(RegulondbConnector,
+                              source='regulondb',
+                              version='0.0.0',
+                              from_node=Evidence,
+                              to_node=Gene,
+                              register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'gene': 'integrated_gene.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -250,9 +268,12 @@ class EvidenceToGeneConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EvidenceToRegulatoryInteractionConnector(RegulondbConnector):
-    default_from_node = Evidence
-    default_to_node = RegulatoryInteraction
+class EvidenceToRegulatoryInteractionConnector(RegulondbConnector,
+                                               source='regulondb',
+                                               version='0.0.0',
+                                               from_node=Evidence,
+                                               to_node=RegulatoryInteraction,
+                                               register=True):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'rin': 'integrated_regulatoryinteraction.json'}
 

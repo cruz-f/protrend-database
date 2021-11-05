@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Regulator, Organism, Operon, Promoter, Gene, TFBS, Effector, RegulatoryInteraction
+from protrend.model import Regulator, Organism, Operon, Promoter, Gene, TFBS, Effector, RegulatoryInteraction
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
@@ -12,7 +12,12 @@ from protrend.transform.regulondb.tfbs import TFBSTransformer
 from protrend.utils import SetList
 
 
-class OrganismTransformer(RegulondbTransformer):
+class OrganismTransformer(RegulondbTransformer,
+                          source='regulondb',
+                          version='0.0.0',
+                          node=Organism,
+                          order=100,
+                          register=True):
     species = 'Escherichia coli'
     strain = 'str. K-12 substr. MG1655'
     ncbi_taxonomy = 511145
@@ -24,8 +29,6 @@ class OrganismTransformer(RegulondbTransformer):
     assembly_accession = 'ASM584v2'
     name = 'Escherichia coli str. K-12 substr. MG1655'
 
-    default_node = Organism
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
 
@@ -48,9 +51,12 @@ class OrganismTransformer(RegulondbTransformer):
         return df
 
 
-class RegulatorToOrganismConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = Organism
+class RegulatorToOrganismConnector(RegulondbConnector,
+                                   source='regulondb',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Organism,
+                                   register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -71,9 +77,12 @@ class RegulatorToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class OperonToOrganismConnector(RegulondbConnector):
-    default_from_node = Operon
-    default_to_node = Organism
+class OperonToOrganismConnector(RegulondbConnector,
+                                source='regulondb',
+                                version='0.0.0',
+                                from_node=Operon,
+                                to_node=Organism,
+                                register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -94,9 +103,12 @@ class OperonToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PromoterToOrganismConnector(RegulondbConnector):
-    default_from_node = Promoter
-    default_to_node = Organism
+class PromoterToOrganismConnector(RegulondbConnector,
+                                  source='regulondb',
+                                  version='0.0.0',
+                                  from_node=Promoter,
+                                  to_node=Organism,
+                                  register=True):
     default_connect_stack = {'promoter': 'integrated_promoter.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -117,9 +129,12 @@ class PromoterToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class GeneToOrganismConnector(RegulondbConnector):
-    default_from_node = Gene
-    default_to_node = Organism
+class GeneToOrganismConnector(RegulondbConnector,
+                              source='regulondb',
+                              version='0.0.0',
+                              from_node=Gene,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -140,9 +155,12 @@ class GeneToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class TFBSToOrganismConnector(RegulondbConnector):
-    default_from_node = TFBS
-    default_to_node = Organism
+class TFBSToOrganismConnector(RegulondbConnector,
+                              source='regulondb',
+                              version='0.0.0',
+                              from_node=TFBS,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -163,9 +181,12 @@ class TFBSToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EffectorToOrganismConnector(RegulondbConnector):
-    default_from_node = Effector
-    default_to_node = Organism
+class EffectorToOrganismConnector(RegulondbConnector,
+                                  source='regulondb',
+                                  version='0.0.0',
+                                  from_node=Effector,
+                                  to_node=Organism,
+                                  register=True):
     default_connect_stack = {'effector': 'integrated_effector.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -186,9 +207,12 @@ class EffectorToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOrganismConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Organism
+class RegulatoryInteractionToOrganismConnector(RegulondbConnector,
+                                               source='regulondb',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Organism,
+                                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'organism': 'integrated_organism.json'}
 

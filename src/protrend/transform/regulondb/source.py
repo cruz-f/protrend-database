@@ -1,10 +1,10 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, Promoter, Effector, \
-    RegulatoryInteraction
-from protrend.transform.regulondb import EffectorTransformer
+from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, Promoter, Effector,
+                            RegulatoryInteraction)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
+from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
 from protrend.transform.regulondb.organism import OrganismTransformer
@@ -13,11 +13,15 @@ from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.transform.regulondb.regulatory_family import RegulatoryFamilyTransformer
 from protrend.transform.regulondb.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class SourceTransformer(RegulondbTransformer):
+class SourceTransformer(RegulondbTransformer,
+                        source='regulondb',
+                        version='0.0.0',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = 'regulondb'
     type = 'database'
     url = 'http://regulondb.ccg.unam.mx/'
@@ -29,17 +33,15 @@ class SourceTransformer(RegulondbTransformer):
                'César Bonavides-Martínez', 'Carlos-Francisco Méndez-Cruz', 'James Galagan', 'Julio Collado-Vides']
     description = 'RegulonDB v 10.5: tackling challenges to unify classic and high throughput knowledge of gene regulation in E. coli K-12'
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
         db = dict(name=[self.name],
-                        type=[self.type],
-                        url=[self.url],
-                        doi=[self.doi],
-                        authors=[self.authors],
-                        description=[self.description])
+                  type=[self.type],
+                  url=[self.url],
+                  doi=[self.doi],
+                  authors=[self.authors],
+                  description=[self.description])
 
         df = pd.DataFrame(db, index=[0])
 
@@ -48,9 +50,12 @@ class SourceTransformer(RegulondbTransformer):
         return df
 
 
-class OrganismToSourceConnector(RegulondbConnector):
-    default_from_node = Organism
-    default_to_node = Source
+class OrganismToSourceConnector(RegulondbConnector,
+                                source='regulondb',
+                                version='0.0.0',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -76,9 +81,12 @@ class OrganismToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToSourceConnector(RegulondbConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Source
+class RegulatoryFamilyToSourceConnector(RegulondbConnector,
+                                        source='regulondb',
+                                        version='0.0.0',
+                                        from_node=RegulatoryFamily,
+                                        to_node=Source,
+                                        register=True):
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'source': 'integrated_source.json'}
 
@@ -116,9 +124,12 @@ class RegulatoryFamilyToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = Source
+class RegulatorToSourceConnector(RegulondbConnector,
+                                 source='regulondb',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -171,9 +182,12 @@ class RegulatorToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class OperonToSourceConnector(RegulondbConnector):
-    default_from_node = Operon
-    default_to_node = Source
+class OperonToSourceConnector(RegulondbConnector,
+                              source='regulondb',
+                              version='0.0.0',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -210,9 +224,12 @@ class OperonToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PromoterToSourceConnector(RegulondbConnector):
-    default_from_node = Promoter
-    default_to_node = Source
+class PromoterToSourceConnector(RegulondbConnector,
+                                source='regulondb',
+                                version='0.0.0',
+                                from_node=Promoter,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'promoter': 'integrated_promoter.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -249,9 +266,12 @@ class PromoterToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class GeneToSourceConnector(RegulondbConnector):
-    default_from_node = Gene
-    default_to_node = Source
+class GeneToSourceConnector(RegulondbConnector,
+                            source='regulondb',
+                            version='0.0.0',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -288,9 +308,12 @@ class GeneToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class TFBSToSourceConnector(RegulondbConnector):
-    default_from_node = TFBS
-    default_to_node = Source
+class TFBSToSourceConnector(RegulondbConnector,
+                            source='regulondb',
+                            version='0.0.0',
+                            from_node=TFBS,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -327,9 +350,12 @@ class TFBSToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class EffectorToSourceConnector(RegulondbConnector):
-    default_from_node = Effector
-    default_to_node = Source
+class EffectorToSourceConnector(RegulondbConnector,
+                                source='regulondb',
+                                version='0.0.0',
+                                from_node=Effector,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'effector': 'integrated_effector.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -366,9 +392,12 @@ class EffectorToSourceConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
+class RegulatoryInteractionToSourceConnector(RegulondbConnector,
+                                             source='regulondb',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Source,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'source': 'integrated_source.json'}
 

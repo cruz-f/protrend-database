@@ -7,17 +7,19 @@ from Bio.SeqRecord import SeqRecord
 
 from protrend.io import read_from_stack, read_txt
 from protrend.model.model import Gene
-from protrend.transform import GeneDTO
-from protrend.annotation import annotate_genes
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.utils import SetList
 
 
-class GeneTransformer(RegulondbTransformer):
-    default_node = Gene
+class GeneTransformer(RegulondbTransformer,
+                      source='regulondb',
+                      version='0.0.0',
+                      node=Gene,
+                      order=100,
+                      register=True):
     default_transform_stack = {'gene': 'gene.txt', 'sequence': 'sequence.gb'}
-    default_order = 100
     columns = SetList(['locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop',

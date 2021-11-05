@@ -3,19 +3,21 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_txt, read_from_stack
-from protrend.model.model import Effector
-from protrend.annotation import annotate_effectors
-from protrend.annotation.dto import EffectorDTO
-from protrend.utils.processors import rstrip, lstrip, apply_processors, remove_html_tags, \
-    parse_effector_name_regulondb
+from protrend.model import Effector
+from protrend.annotation import annotate_effectors, EffectorDTO
+from protrend.utils.processors import (rstrip, lstrip, apply_processors, remove_html_tags,
+                                       parse_effector_name_regulondb)
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.utils import SetList
 
 
-class EffectorTransformer(RegulondbTransformer):
-    default_node = Effector
+class EffectorTransformer(RegulondbTransformer,
+                          source='regulondb',
+                          version='0.0.0',
+                          node=Effector,
+                          order=100,
+                          register=True):
     default_transform_stack = {'effector': 'effector.txt'}
-    default_order = 100
     columns = SetList(['protrend_id',
                        'name', 'synonyms', 'mechanism', 'kegg_compounds',
                        'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',

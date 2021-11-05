@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Regulator, TFBS, Gene, Operon, Effector
+from protrend.io import read_json_frame, read_from_stack
+from protrend.model import RegulatoryInteraction, Regulator, TFBS, Gene, Operon, Effector
 from protrend.utils.processors import (apply_processors, to_list_nan, regulatory_effect_regulondb, to_list,
                                        to_set_list)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
@@ -13,13 +12,16 @@ from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.utils import SetList
 
 
-class RegulatoryInteractionTransformer(RegulondbTransformer):
-    default_node = RegulatoryInteraction
+class RegulatoryInteractionTransformer(RegulondbTransformer,
+                                       source='regulondb',
+                                       version='0.0.0',
+                                       node=RegulatoryInteraction,
+                                       order=70,
+                                       register=True):
     default_transform_stack = {'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json',
                                'effector': 'integrated_effector.json',
                                'gene': 'integrated_gene.json'}
-    default_order = 70
     columns = SetList(['regulator', 'operon', 'genes', 'tfbss', 'regulator_effector', 'regulatory_effect',
                        'regulatory_interaction_hash', 'protrend_id',
                        'gene_id', 'effector_id', 'transcription_factor_id', 'srna_gene_id', 'sigma_id', 'operon_id',
@@ -81,7 +83,7 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
         # 'sigma_id', 'regulator']
         regulatory_interaction = pd.concat([regulatory_interaction_tf,
                                             regulatory_interaction_srna,
-                                            regulatory_interaction_sigma], axis=0)
+                                            regulatory_interaction_sigma])
 
         # add effectors
         regulatory_interaction = pd.merge(regulatory_interaction, effector, how='left', on='regulator_id')
@@ -101,9 +103,12 @@ class RegulatoryInteractionTransformer(RegulondbTransformer):
         return regulatory_interaction
 
 
-class RegulatoryInteractionToEffectorConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Effector
+class RegulatoryInteractionToEffectorConnector(RegulondbConnector,
+                                               source='regulondb',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Effector,
+                                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -121,9 +126,12 @@ class RegulatoryInteractionToEffectorConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToRegulatorConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
+class RegulatoryInteractionToRegulatorConnector(RegulondbConnector,
+                                                source='regulondb',
+                                                version='0.0.0',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -139,9 +147,12 @@ class RegulatoryInteractionToRegulatorConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
+class RegulatoryInteractionToOperonConnector(RegulondbConnector,
+                                             source='regulondb',
+                                             version='0.0.0',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Operon,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -157,9 +168,12 @@ class RegulatoryInteractionToOperonConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
+class RegulatoryInteractionToGeneConnector(RegulondbConnector,
+                                           source='regulondb',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -182,9 +196,12 @@ class RegulatoryInteractionToGeneConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(RegulondbConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = TFBS
+class RegulatoryInteractionToTFBSConnector(RegulondbConnector,
+                                           source='regulondb',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=TFBS,
+                                           register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -207,9 +224,12 @@ class RegulatoryInteractionToTFBSConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatorToEffectorConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = Effector
+class RegulatorToEffectorConnector(RegulondbConnector,
+                                   source='regulondb',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Effector,
+                                   register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -228,9 +248,12 @@ class RegulatorToEffectorConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatorToOperonConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = Operon
+class RegulatorToOperonConnector(RegulondbConnector,
+                                 source='regulondb',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Operon,
+                                 register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -246,9 +269,12 @@ class RegulatorToOperonConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = Gene
+class RegulatorToGeneConnector(RegulondbConnector,
+                               source='regulondb',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -269,9 +295,12 @@ class RegulatorToGeneConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class RegulatorToTFBSConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = TFBS
+class RegulatorToTFBSConnector(RegulondbConnector,
+                               source='regulondb',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=TFBS,
+                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):

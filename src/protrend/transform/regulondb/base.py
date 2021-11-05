@@ -1,4 +1,5 @@
 import os
+from abc import abstractmethod
 from typing import List, Dict
 
 import pandas as pd
@@ -9,9 +10,7 @@ from protrend.utils.processors import to_set_list
 from protrend.utils import SetList, Settings
 
 
-class RegulondbTransformer(Transformer):
-    default_source = 'regulondb'
-    default_version = '0.0.0'
+class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', register=False):
 
     default_regulondb_stack = {'site': 'site.txt',
                                'ri': 'regulatory_interaction.txt',
@@ -276,7 +275,7 @@ class RegulondbTransformer(Transformer):
         sigma_gen_net = sigma_gen_net.drop(columns=['sigma_id', 'regulator_id'])
         sigma_gen_net = sigma_gen_net.rename(columns={'sigma_gene_id': 'regulator_id'})
 
-        gen_net = pd.concat([tf_gen_net, sigma_gen_net], axis=0)
+        gen_net = pd.concat([tf_gen_net, sigma_gen_net])
         gen_net = pd.merge(gen_net, gene, left_on='regulated_id', right_on='gene_id')
         gen_net = gen_net.drop(columns=['regulated_id'])
 
@@ -306,7 +305,7 @@ class RegulondbTransformer(Transformer):
                                     'srna_gene_regulated_id': 'gene_id',
                                     'srna_function': 'ri_function'})
 
-        regulatory_interaction = pd.concat([gen_net, ri, interaction, srna], axis=0)
+        regulatory_interaction = pd.concat([gen_net, ri, interaction, srna])
 
         # columns = ['regulator_id', 'gene_id', 'site_id', 'ri_function', 'evidence']
         return regulatory_interaction
@@ -322,7 +321,7 @@ class RegulondbTransformer(Transformer):
         tf_gen_net = pd.merge(gen_net, tf, left_on='regulator_id', right_on='transcription_factor_id')
         sigma_gen_net = pd.merge(gen_net, sigma, left_on='regulator_id', right_on='sigma_id')
 
-        gen_net = pd.concat([tf_gen_net, sigma_gen_net], axis=0)
+        gen_net = pd.concat([tf_gen_net, sigma_gen_net])
         gen_net = pd.merge(gen_net, gene, left_on='regulated_id', right_on='gene_id')
         gen_net = self.select_columns(gen_net, 'regulator_id', 'regulated_id')
         gen_net = gen_net.rename(columns={'regulated_id': 'gene_id'})
@@ -349,9 +348,8 @@ class RegulondbTransformer(Transformer):
         srna = self.select_columns(srna, 'srna_gene_id', 'srna_gene_regulated_id')
         srna = srna.rename(columns={'srna_gene_id': 'regulator_id', 'srna_gene_regulated_id': 'gene_id'})
 
-        regulator_gene = pd.concat([gen_net, ri, interaction, srna], axis=0)
-        regulator_gene = self.drop_duplicates(regulator_gene, subset=['regulator_id', 'gene_id'],
-                                              perfect_match=True, preserve_nan=True)
+        regulator_gene = pd.concat([gen_net, ri, interaction, srna])
+        regulator_gene = self.drop_duplicates(regulator_gene, subset=['regulator_id', 'gene_id'], perfect_match=True)
         regulator_gene = regulator_gene.dropna(subset=['regulator_id', 'gene_id'])
 
         return regulator_gene
@@ -388,7 +386,7 @@ class RegulondbTransformer(Transformer):
         interaction = self.select_columns(interaction, 'transcription_factor_id', 'site_id')
         interaction = interaction.rename(columns={'transcription_factor_id': 'regulator_id'})
 
-        regulator_tfbs = pd.concat([ri, interaction], axis=0)
+        regulator_tfbs = pd.concat([ri, interaction])
 
         return self._build(df=regulator_tfbs, selection=['regulator_id', 'site_id'],
                            duplicates=['regulator_id', 'site_id'], nan=['regulator_id', 'site_id'])
@@ -429,7 +427,7 @@ class RegulondbTransformer(Transformer):
         interaction = interaction.rename(columns={'transcription_factor_id': 'regulator_id',
                                                   'ri_first_gene_id': 'gene_id'})
 
-        regulator_tfbs_gene = pd.concat([ri, interaction], axis=0)
+        regulator_tfbs_gene = pd.concat([ri, interaction])
 
         operon = self._build_operon()
         operon_by_gene = operon.explode(column='gene_id')
@@ -464,14 +462,12 @@ class RegulondbTransformer(Transformer):
         return self._build(df=gene_tfbs, selection=['gene_id', 'site_id'],
                            duplicates=['gene_id', 'site_id'], nan=['gene_id', 'site_id'])
 
+    @abstractmethod
+    def transform(self):
+        pass
 
-class RegulondbConnector(Connector):
-    default_source: str = 'regulondb'
-    default_version: str = '0.0.0'
 
-    def __init__(self, **kwargs):
-
-        super().__init__(**kwargs)
+class RegulondbConnector(Connector, source='regulondb', version='0.0.0', register=False):
 
     def load_connect_stack(self, connect_stack: Dict[str, str] = None):
 
@@ -491,3 +487,7 @@ class RegulondbConnector(Connector):
             else:
 
                 self._connect_stack[key] = dl_file
+
+    @abstractmethod
+    def connect(self):
+        pass

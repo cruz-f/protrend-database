@@ -1,17 +1,20 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
-from protrend.model.model import RegulatoryFamily, Regulator
+from protrend.model import RegulatoryFamily, Regulator
 from protrend.utils.processors import (apply_processors, rstrip, lstrip)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.utils import SetList
 
 
-class RegulatoryFamilyTransformer(RegulondbTransformer):
-    default_node = RegulatoryFamily
+class RegulatoryFamilyTransformer(RegulondbTransformer,
+                                  source='regulondb',
+                                  version='0.0.0',
+                                  node=RegulatoryFamily,
+                                  order=100,
+                                  register=True):
     default_transform_stack = {'tf': 'transcription_factor.txt'}
-    default_order = 100
     columns = SetList(['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
                        'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
                        'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence',
@@ -40,9 +43,12 @@ class RegulatoryFamilyTransformer(RegulondbTransformer):
         return tf
 
 
-class RegulatorToRegulatoryFamilyConnector(RegulondbConnector):
-    default_from_node = Regulator
-    default_to_node = RegulatoryFamily
+class RegulatorToRegulatoryFamilyConnector(RegulondbConnector,
+                                           source='regulondb',
+                                           version='0.0.0',
+                                           from_node=Regulator,
+                                           to_node=RegulatoryFamily,
+                                           register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):

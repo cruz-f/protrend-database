@@ -4,23 +4,25 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame, read_txt
-from protrend.model.model import Operon, Gene, TFBS, Promoter
+from protrend.model import Operon, Gene, TFBS, Promoter
 from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
                                        to_set_list, operon_hash)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class OperonTransformer(RegulondbTransformer):
-    default_node = Operon
+class OperonTransformer(RegulondbTransformer,
+                        source='regulondb',
+                        version='0.0.0',
+                        node=Operon,
+                        order=80,
+                        register=True):
     default_transform_stack = {'tu': 'transcription_unit.txt', 'tu_gene': 'tu_gene_link.txt',
                                'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json',
                                'promoter': 'integrated_promoter.json'}
-    default_order = 80
     columns = SetList(['name', 'promoters', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
                        'transcription_unit_id', 'promoter_id', 'operon_id', 'gene_id',
                        'gene_name', 'gene_strand', 'gene_start', 'gene_stop'])
@@ -187,9 +189,12 @@ class OperonTransformer(RegulondbTransformer):
         return operon
 
 
-class OperonToGeneConnector(RegulondbConnector):
-    default_from_node = Operon
-    default_to_node = Gene
+class OperonToGeneConnector(RegulondbConnector,
+                            source='regulondb',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -211,9 +216,12 @@ class OperonToGeneConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class OperonToPromoterConnector(RegulondbConnector):
-    default_from_node = Operon
-    default_to_node = Promoter
+class OperonToPromoterConnector(RegulondbConnector,
+                                source='regulondb',
+                                version='0.0.0',
+                                from_node=Operon,
+                                to_node=Promoter,
+                                register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -235,9 +243,12 @@ class OperonToPromoterConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class OperonToTFBSConnector(RegulondbConnector):
-    default_from_node = Operon
-    default_to_node = TFBS
+class OperonToTFBSConnector(RegulondbConnector,
+                            source='regulondb',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=TFBS,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -259,9 +270,12 @@ class OperonToTFBSConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(RegulondbConnector):
-    default_from_node = Gene
-    default_to_node = TFBS
+class GeneToTFBSConnector(RegulondbConnector,
+                          source='regulondb',
+                          version='0.0.0',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -286,9 +300,12 @@ class GeneToTFBSConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class GeneToPromoterConnector(RegulondbConnector):
-    default_from_node = Gene
-    default_to_node = Promoter
+class GeneToPromoterConnector(RegulondbConnector,
+                              source='regulondb',
+                              version='0.0.0',
+                              from_node=Gene,
+                              to_node=Promoter,
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):

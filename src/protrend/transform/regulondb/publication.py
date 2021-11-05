@@ -3,9 +3,8 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
-from protrend.model.model import Publication, Regulator, TFBS, Promoter, Operon, Gene, Organism
-from protrend.transform import PublicationDTO
-from protrend.annotation import annotate_publications
+from protrend.model import Publication, Regulator, TFBS, Promoter, Operon, Gene, Organism
+from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.utils.processors import apply_processors, to_int_str
 from protrend.transform.regulondb import OrganismTransformer
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
@@ -17,10 +16,13 @@ from protrend.transform.regulondb.tfbs import TFBSTransformer
 from protrend.utils import SetList
 
 
-class PublicationTransformer(RegulondbTransformer):
-    default_node = Publication
+class PublicationTransformer(RegulondbTransformer,
+                             source='regulondb',
+                             version='0.0.0',
+                             node=Publication,
+                             order=100,
+                             register=True):
     default_transform_stack = {'publication': 'publication.txt'}
-    default_order = 100
     columns = SetList(['pmid', 'doi', 'title', 'author', 'year',
                        'publication_id', 'reference_id', 'external_db_id', 'source',
                        'publication_note', 'publication_internal_comment', 'protrend_id'])
@@ -69,9 +71,12 @@ class PublicationTransformer(RegulondbTransformer):
         return df
 
 
-class PublicationToOrganismConnector(RegulondbConnector):
-    default_from_node = Publication
-    default_to_node = Organism
+class PublicationToOrganismConnector(RegulondbConnector,
+                                     source='regulondb',
+                                     version='0.0.0',
+                                     from_node=Publication,
+                                     to_node=Organism,
+                                     register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -93,9 +98,12 @@ class PublicationToOrganismConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PublicationToRegulatorConnector(RegulondbConnector):
-    default_from_node = Publication
-    default_to_node = Regulator
+class PublicationToRegulatorConnector(RegulondbConnector,
+                                      source='regulondb',
+                                      version='0.0.0',
+                                      from_node=Publication,
+                                      to_node=Regulator,
+                                      register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'regulator': 'integrated_regulator.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -139,9 +147,12 @@ class PublicationToRegulatorConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PublicationToTFBSConnector(RegulondbConnector):
-    default_from_node = Publication
-    default_to_node = TFBS
+class PublicationToTFBSConnector(RegulondbConnector,
+                                 source='regulondb',
+                                 version='0.0.0',
+                                 from_node=Publication,
+                                 to_node=TFBS,
+                                 register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'tfbs': 'integrated_tfbs.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -176,9 +187,12 @@ class PublicationToTFBSConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PublicationToPromoterConnector(RegulondbConnector):
-    default_from_node = Publication
-    default_to_node = Promoter
+class PublicationToPromoterConnector(RegulondbConnector,
+                                     source='regulondb',
+                                     version='0.0.0',
+                                     from_node=Publication,
+                                     to_node=Promoter,
+                                     register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'promoter': 'integrated_promoter.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -213,9 +227,12 @@ class PublicationToPromoterConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PublicationToOperonConnector(RegulondbConnector):
-    default_from_node = Publication
-    default_to_node = Operon
+class PublicationToOperonConnector(RegulondbConnector,
+                                   source='regulondb',
+                                   version='0.0.0',
+                                   from_node=Publication,
+                                   to_node=Operon,
+                                   register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'operon': 'integrated_operon.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
@@ -250,9 +267,12 @@ class PublicationToOperonConnector(RegulondbConnector):
         self.stack_json(df)
 
 
-class PublicationToGeneConnector(RegulondbConnector):
-    default_from_node = Publication
-    default_to_node = Gene
+class PublicationToGeneConnector(RegulondbConnector,
+                                 source='regulondb',
+                                 version='0.0.0',
+                                 from_node=Publication,
+                                 to_node=Gene,
+                                 register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'gene': 'integrated_gene.json',
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}

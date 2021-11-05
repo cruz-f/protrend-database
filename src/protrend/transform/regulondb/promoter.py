@@ -1,20 +1,21 @@
 import pandas as pd
 
-from protrend.io import read_txt, read_json_frame
-from protrend.io.utils import read_from_stack
+from protrend.io import read_txt, read_json_frame, read_from_stack
 from protrend.model.model import Promoter
 from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, upper_case, promoter_hash)
 from protrend.transform.regulondb.base import RegulondbTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class PromoterTransformer(RegulondbTransformer):
-    default_node = Promoter
+class PromoterTransformer(RegulondbTransformer,
+                          source='regulondb',
+                          version='0.0.0',
+                          node=Promoter,
+                          order=90,
+                          register=True):
     default_transform_stack = {'promoter': 'promoter.txt',
                                'gene': 'integrated_gene.json'}
-    default_order = 90
     columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'promoter_hash', 'protrend_id',
                        'promoter_id', 'promoter_name', 'promoter_strand', 'pos_1', 'sigma_factor',
                        'basal_trans_val', 'equilibrium_const', 'kinetic_const', 'strength_seq',
