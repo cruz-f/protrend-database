@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Type
 
 from protrend.extract import Extractor
 from protrend.load import Loader
@@ -13,25 +13,25 @@ def sort_by_order(transformer: Transformer):
 
 
 class Pipeline:
-    default_extractors: Dict[Tuple[str, str], List[Extractor]] = defaultdict(list)
-    default_transformers: Dict[Tuple[str, str], List[Transformer]] = defaultdict(list)
-    default_connectors: Dict[Tuple[str, str], List[Connector]] = defaultdict(list)
-    default_loaders: Dict[Tuple[str, str], List[Loader]] = defaultdict(list)
+    default_extractors: Dict[Tuple[str, str], List[Type[Extractor]]] = defaultdict(list)
+    default_transformers: Dict[Tuple[str, str], List[Type[Transformer]]] = defaultdict(list)
+    default_connectors: Dict[Tuple[str, str], List[Type[Connector]]] = defaultdict(list)
+    default_loaders: Dict[Tuple[str, str], List[Type[Loader]]] = defaultdict(list)
 
     @classmethod
-    def register_extractor(cls, extractor: Extractor, source: str, version: str):
+    def register_extractor(cls, extractor: Type[Extractor], source: str, version: str):
         cls.default_extractors[(source, version)].append(extractor)
 
     @classmethod
-    def register_transformer(cls, transformer: Transformer, source: str, version: str):
+    def register_transformer(cls, transformer: Type[Transformer], source: str, version: str):
         cls.default_transformers[(source, version)].append(transformer)
 
     @classmethod
-    def register_connector(cls, connector: Connector, source: str, version: str):
+    def register_connector(cls, connector: Type[Connector], source: str, version: str):
         cls.default_connectors[(source, version)].append(connector)
 
     @classmethod
-    def register_loader(cls, loader: Loader, source: str, version: str):
+    def register_loader(cls, loader: Type[Loader], source: str, version: str):
         cls.default_loaders[(source, version)].append(loader)
 
     def __init__(self,
@@ -195,3 +195,69 @@ class Pipeline:
 
             except:
                 ProtrendLogger.log.exception(f'Exception occurred in loader {loader.__class__.__name__}')
+
+    @classmethod
+    def for_extraction(cls, source: str, version: str) -> 'Pipeline':
+        extractors_types = cls.default_extractors.get((source, version), [])
+        extractors = [extractor_type() for extractor_type in extractors_types]
+
+        return cls(extractors=extractors)
+
+    @classmethod
+    def for_transformation(cls, source: str, version: str) -> 'Pipeline':
+        transformers_types = cls.default_transformers.get((source, version), [])
+        transformers = [transformer_type() for transformer_type in transformers_types]
+
+        return cls(transformers=transformers)
+
+    @classmethod
+    def for_connection(cls, source: str, version: str) -> 'Pipeline':
+        connectors_types = cls.default_connectors.get((source, version), [])
+        connectors = [connector_type() for connector_type in connectors_types]
+
+        return cls(connectors=connectors)
+
+    @classmethod
+    def for_loading(cls, source: str, version: str) -> 'Pipeline':
+        loaders_types = cls.default_loaders.get((source, version), [])
+        loaders = [loader_type() for loader_type in loaders_types]
+
+        return cls(loaders=loaders)
+
+    @classmethod
+    def _for_tc(cls, source: str, version: str):
+        transformers_types = cls.default_transformers.get((source, version), [])
+        transformers = [transformer_type() for transformer_type in transformers_types]
+
+        connectors_types = cls.default_connectors.get((source, version), [])
+        connectors = [connector_type() for connector_type in connectors_types]
+
+        return transformers, connectors
+
+    @classmethod
+    def _for_tcl(cls, source: str, version: str):
+        transformers, connectors = cls._for_tc(source=source, version=version)
+
+        loaders_types = cls.default_loaders.get((source, version), [])
+        loaders = [loader_type() for loader_type in loaders_types]
+
+        return transformers, connectors, loaders
+
+    @classmethod
+    def for_tc(cls, source: str, version: str) -> 'Pipeline':
+        transformers, connectors, loaders = cls._for_tcl(source=source, version=version)
+        return cls(transformers=transformers, connectors=connectors)
+
+    @classmethod
+    def for_tcl(cls, source: str, version: str) -> 'Pipeline':
+        transformers, connectors, loaders = cls._for_tcl(source=source, version=version)
+        return cls(transformers=transformers, connectors=connectors, loaders=loaders)
+
+    @classmethod
+    def for_etcl(cls, source: str, version: str) -> 'Pipeline':
+        extractors_types = cls.default_extractors.get((source, version), [])
+        extractors = [extractor_type() for extractor_type in extractors_types]
+
+        transformers, connectors, loaders = cls._for_tcl(source=source, version=version)
+
+        return cls(extractors=extractors, transformers=transformers, connectors=connectors, loaders=loaders)
