@@ -20,7 +20,7 @@ class Loader:
         cls.source.set_default(source)
 
         version = kwargs.get('version')
-        cls.version.set_default(source)
+        cls.version.set_default(version)
 
         register = kwargs.pop('register', False)
 

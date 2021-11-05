@@ -83,7 +83,7 @@ class Transformer(AbstractTransformer):
         cls.source.set_default(source)
 
         version = kwargs.get('version')
-        cls.version.set_default(source)
+        cls.version.set_default(version)
 
         node = kwargs.get('node')
         cls.node.set_default(node)
