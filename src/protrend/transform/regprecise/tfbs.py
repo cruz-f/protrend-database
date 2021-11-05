@@ -6,25 +6,26 @@ from typing import List, Union
 import numpy as np
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import TFBS, Source, Organism
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import TFBS, Source, Organism
 from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
                                        take_last, to_int_str, to_str, to_set_list, operon_hash, site_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 
-class TFBSTransformer(RegPreciseTransformer):
-    default_node = TFBS
+class TFBSTransformer(RegPreciseTransformer,
+                      source='regprecise',
+                      version='0.0.0',
+                      node=TFBS,
+                      order=70,
+                      register=True):
     default_transform_stack = {'tfbs': 'TFBS.json', 'gene': 'integrated_gene.json'}
-    default_order = 70
     columns = SetList(['position', 'score', 'sequence', 'tfbs_id_old', 'tfbs_id', 'url',
                        'regulon', 'operon', 'gene', 'gene_protrend_id', 'gene_strand',
                        'gene_start', 'gene_old_locus_tag', 'length', 'strand', 'start', 'stop',
@@ -245,9 +246,12 @@ class TFBSTransformer(RegPreciseTransformer):
         return df
 
 
-class TFBSToSourceConnector(RegPreciseConnector):
-    default_from_node = TFBS
-    default_to_node = Source
+class TFBSToSourceConnector(RegPreciseConnector,
+                            source='regprecise',
+                            version='0.0.0',
+                            from_node=TFBS,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -273,9 +277,12 @@ class TFBSToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class TFBSToOrganismConnector(RegPreciseConnector):
-    default_from_node = TFBS
-    default_to_node = Organism
+class TFBSToOrganismConnector(RegPreciseConnector,
+                              source='regprecise',
+                              version='0.0.0',
+                              from_node=TFBS,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):

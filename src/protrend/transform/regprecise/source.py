@@ -5,7 +5,12 @@ from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.utils import SetList
 
 
-class SourceTransformer(RegPreciseTransformer):
+class SourceTransformer(RegPreciseTransformer,
+                        source='regprecise',
+                        version='0.0.0',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = 'regprecise'
     type = 'database'
     url = 'https://regprecise.lbl.gov/'
@@ -15,8 +20,6 @@ class SourceTransformer(RegPreciseTransformer):
                'Inna Dubchak', 'Dmitry A Rodionov']
     description = 'RegPrecise 3.0: A resource for genome-scale exploration of transcriptional regulation in bacteria'
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['name', 'type', 'url', 'doi', 'authors', 'description', 'protrend_id'])
 
     def transform(self):

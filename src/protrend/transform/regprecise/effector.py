@@ -2,11 +2,9 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Effector, Source, Organism, Regulator
-from protrend.annotation import annotate_effectors
-from protrend.annotation.dto import EffectorDTO
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import Effector, Source, Organism, Regulator
+from protrend.annotation import annotate_effectors, EffectorDTO
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
@@ -14,10 +12,13 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
 
 
-class EffectorTransformer(RegPreciseTransformer):
-    default_node = Effector
+class EffectorTransformer(RegPreciseTransformer,
+                          source='regprecise',
+                          version='0.0.0',
+                          node=Effector,
+                          order=100,
+                          register=True):
     default_transform_stack = {'effector': 'Effector.json'}
-    default_order = 100
     columns = SetList(['synonyms', 'mechanism', 'kegg_compounds', 'effector_id', 'url',
                        'regulog', 'name', 'protrend_id'])
     read_columns = SetList(['effector_id', 'name', 'url', 'regulog'])
@@ -58,9 +59,12 @@ class EffectorTransformer(RegPreciseTransformer):
         return df
 
 
-class EffectorToSourceConnector(RegPreciseConnector):
-    default_from_node = Effector
-    default_to_node = Source
+class EffectorToSourceConnector(RegPreciseConnector,
+                                source='regprecise',
+                                version='0.0.0',
+                                from_node=Effector,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'effector': 'integrated_effector.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -86,9 +90,12 @@ class EffectorToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class EffectorToOrganismConnector(RegPreciseConnector):
-    default_from_node = Effector
-    default_to_node = Organism
+class EffectorToOrganismConnector(RegPreciseConnector,
+                                  source='regprecise',
+                                  version='0.0.0',
+                                  from_node=Effector,
+                                  to_node=Organism,
+                                  register=True):
     default_connect_stack = {'effector': 'integrated_effector.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -115,9 +122,12 @@ class EffectorToOrganismConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class EffectorToRegulatorConnector(RegPreciseConnector):
-    default_from_node = Effector
-    default_to_node = Regulator
+class EffectorToRegulatorConnector(RegPreciseConnector,
+                                   source='regprecise',
+                                   version='0.0.0',
+                                   from_node=Effector,
+                                   to_node=Regulator,
+                                   register=True):
     default_connect_stack = {'effector': 'integrated_effector.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):

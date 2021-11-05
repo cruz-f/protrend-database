@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Operon, Source, Organism, Regulator, Gene, TFBS
+from protrend.model import Operon, Source, Organism, Regulator, Gene, TFBS
 from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
                                        to_int_str, to_set_list, operon_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
@@ -12,14 +12,16 @@ from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
-from protrend.utils import build_graph, find_connected_nodes, SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import build_graph, find_connected_nodes, SetList, is_null
 
 
-class OperonTransformer(RegPreciseTransformer):
-    default_node = Operon
+class OperonTransformer(RegPreciseTransformer,
+                        source='regprecise',
+                        version='0.0.0',
+                        node=Operon,
+                        order=60,
+                        register=True):
     default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
-    default_order = 60
     columns = SetList(['operon_id_new', 'gene', 'operon_id_old', 'url', 'regulon', 'tfbs',
                        'tfbss', 'genes', 'gene_locus_tag', 'gene_name', 'gene_old_locus_tag',
                        'gene_strand', 'gene_start', 'gene_stop', 'name', 'strand',
@@ -201,9 +203,12 @@ class OperonTransformer(RegPreciseTransformer):
         return df
 
 
-class OperonToSourceConnector(RegPreciseConnector):
-    default_from_node = Operon
-    default_to_node = Source
+class OperonToSourceConnector(RegPreciseConnector,
+                              source='regprecise',
+                              version='0.0.0',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -231,9 +236,12 @@ class OperonToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class OperonToOrganismConnector(RegPreciseConnector):
-    default_from_node = Operon
-    default_to_node = Organism
+class OperonToOrganismConnector(RegPreciseConnector,
+                                source='regprecise',
+                                version='0.0.0',
+                                from_node=Operon,
+                                to_node=Organism,
+                                register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -258,9 +266,12 @@ class OperonToOrganismConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class OperonToRegulatorConnector(RegPreciseConnector):
-    default_from_node = Operon
-    default_to_node = Regulator
+class OperonToRegulatorConnector(RegPreciseConnector,
+                                 source='regprecise',
+                                 version='0.0.0',
+                                 from_node=Operon,
+                                 to_node=Regulator,
+                                 register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -288,9 +299,12 @@ class OperonToRegulatorConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class OperonToGeneConnector(RegPreciseConnector):
-    default_from_node = Operon
-    default_to_node = Gene
+class OperonToGeneConnector(RegPreciseConnector,
+                            source='regprecise',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -312,9 +326,12 @@ class OperonToGeneConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class OperonToTFBSConnector(RegPreciseConnector):
-    default_from_node = Operon
-    default_to_node = TFBS
+class OperonToTFBSConnector(RegPreciseConnector,
+                            source='regprecise',
+                            version='0.0.0',
+                            from_node=Operon,
+                            to_node=TFBS,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -336,9 +353,12 @@ class OperonToTFBSConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(RegPreciseConnector):
-    default_from_node = Gene
-    default_to_node = TFBS
+class GeneToTFBSConnector(RegPreciseConnector,
+                          source='regprecise',
+                          version='0.0.0',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -363,9 +383,12 @@ class GeneToTFBSConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class GeneToRegulatorConnector(RegPreciseConnector):
-    default_from_node = Gene
-    default_to_node = Regulator
+class GeneToRegulatorConnector(RegPreciseConnector,
+                               source='regprecise',
+                               version='0.0.0',
+                               from_node=Gene,
+                               to_node=Regulator,
+                               register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -399,9 +422,12 @@ class GeneToRegulatorConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class TFBSToRegulatorConnector(RegPreciseConnector):
-    default_from_node = TFBS
-    default_to_node = Regulator
+class TFBSToRegulatorConnector(RegPreciseConnector,
+                               source='regprecise',
+                               version='0.0.0',
+                               from_node=TFBS,
+                               to_node=Regulator,
+                               register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):

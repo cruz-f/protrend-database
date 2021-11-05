@@ -2,22 +2,23 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Publication
-from protrend.annotation import annotate_publications
-from protrend.annotation.dto import PublicationDTO
+from protrend.io import read_json_lines, read_from_stack
+from protrend.model import Publication
+from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.utils.processors import apply_processors, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.utils import SetList
 
 
-class PublicationTransformer(RegPreciseTransformer):
-    default_node = Publication
+class PublicationTransformer(RegPreciseTransformer,
+                             source='regprecise',
+                             version='0.0.0',
+                             node=Publication,
+                             order=100,
+                             register=True):
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
                                'tf': 'TranscriptionFactor.json',
                                'rna': 'RNAFamily.json'}
-    default_order = 100
     columns = SetList(['pmid', 'doi', 'title', 'author', 'year', 'protrend_id'])
     tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])

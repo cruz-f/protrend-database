@@ -2,11 +2,9 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Gene, Source, Organism
-from protrend.annotation import annotate_genes
-from protrend.annotation.dto import GeneDTO
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import Gene, Source, Organism
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.utils.processors import (rstrip, lstrip, apply_processors, take_last,
                                        flatten_set_list, to_list, to_int_str)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
@@ -15,10 +13,13 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
 
 
-class GeneTransformer(RegPreciseTransformer):
-    default_node = Gene
+class GeneTransformer(RegPreciseTransformer,
+                      source='regprecise',
+                      version='0.0.0',
+                      node=Gene,
+                      order=80,
+                      register=True):
     default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
-    default_order = 80
     columns = SetList(['synonyms', 'description', 'ncbi_gene', 'ncbi_protein',
                        'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'url', 'regulon', 'operon',
@@ -107,9 +108,12 @@ class GeneTransformer(RegPreciseTransformer):
         return df
 
 
-class GeneToSourceConnector(RegPreciseConnector):
-    default_from_node = Gene
-    default_to_node = Source
+class GeneToSourceConnector(RegPreciseConnector,
+                            source='regprecise',
+                            version='0.0.0',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -137,9 +141,12 @@ class GeneToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class GeneToOrganismConnector(RegPreciseConnector):
-    default_from_node = Gene
-    default_to_node = Organism
+class GeneToOrganismConnector(RegPreciseConnector,
+                              source='regprecise',
+                              version='0.0.0',
+                              from_node=Gene,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'gene': 'integrated_gene.json'}
 
     def connect(self):

@@ -3,19 +3,21 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
-from protrend.model.model import Organism, Source
-from protrend.transform import OrganismDTO
-from protrend.annotation import annotate_organisms
+from protrend.model import Organism, Source
+from protrend.annotation import annotate_organisms, OrganismDTO
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
 
 
-class OrganismTransformer(RegPreciseTransformer):
-    default_node = Organism
+class OrganismTransformer(RegPreciseTransformer,
+                          source='regprecise',
+                          version='0.0.0',
+                          node=Organism,
+                          order=100,
+                          register=True):
     default_transform_stack = {'genome': 'Genome.json'}
-    default_order = 100
     columns = SetList(['species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly',
                        'assembly_accession', 'genome_id', 'taxonomy', 'url', 'regulon', 'name',
@@ -71,9 +73,12 @@ class OrganismTransformer(RegPreciseTransformer):
         return df
 
 
-class OrganismToSourceConnector(RegPreciseConnector):
-    default_from_node = Organism
-    default_to_node = Source
+class OrganismToSourceConnector(RegPreciseConnector,
+                                source='regprecise',
+                                version='0.0.0',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):

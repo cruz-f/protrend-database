@@ -2,11 +2,9 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Regulator, Source, Organism
-from protrend.annotation import annotate_genes
-from protrend.annotation.dto import GeneDTO
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import Regulator, Source, Organism
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.organism import OrganismTransformer
@@ -14,11 +12,14 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
 
 
-class RegulatorTransformer(RegPreciseTransformer):
-    default_node = Regulator
+class RegulatorTransformer(RegPreciseTransformer,
+                           source='regprecise',
+                           version='0.0.0',
+                           node=Regulator,
+                           order=90,
+                           register=True):
     default_transform_stack = {'regulon': 'Regulon.json',
                                'organism': 'integrated_organism.json'}
-    default_order = 90
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
@@ -163,9 +164,12 @@ class RegulatorTransformer(RegPreciseTransformer):
         return df
 
 
-class RegulatorToSourceConnector(RegPreciseConnector):
-    default_from_node = Regulator
-    default_to_node = Source
+class RegulatorToSourceConnector(RegPreciseConnector,
+                                 source='regprecise',
+                                 version='0.0.0',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -191,9 +195,12 @@ class RegulatorToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class RegulatorToOrganismConnector(RegPreciseConnector):
-    default_from_node = Regulator
-    default_to_node = Organism
+class RegulatorToOrganismConnector(RegPreciseConnector,
+                                   source='regprecise',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Organism,
+                                   register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json'}
 
     def connect(self):

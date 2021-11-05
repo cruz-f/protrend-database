@@ -2,11 +2,9 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Pathway, Source, Regulator, Gene
-from protrend.annotation import annotate_pathways
-from protrend.annotation.dto import PathwayDTO
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import Pathway, Source, Regulator, Gene
+from protrend.annotation import annotate_pathways, PathwayDTO
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
@@ -15,10 +13,13 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
 
 
-class PathwayTransformer(RegPreciseTransformer):
-    default_node = Pathway
+class PathwayTransformer(RegPreciseTransformer,
+                         source='regprecise',
+                         version='0.0.0',
+                         node=Pathway,
+                         order=100,
+                         register=True):
     default_transform_stack = {'pathway': 'Pathway.json'}
-    default_order = 100
     columns = SetList(['synonyms', 'kegg_pathways', 'pathway_id', 'url', 'regulog', 'name',
                        'protrend_id'])
     read_columns = SetList(['pathway_id', 'name', 'url', 'regulog'])
@@ -61,9 +62,12 @@ class PathwayTransformer(RegPreciseTransformer):
         return df
 
 
-class PathwayToSourceConnector(RegPreciseConnector):
-    default_from_node = Pathway
-    default_to_node = Source
+class PathwayToSourceConnector(RegPreciseConnector,
+                               source='regprecise',
+                               version='0.0.0',
+                               from_node=Pathway,
+                               to_node=Source,
+                               register=True):
     default_connect_stack = {'pathway': 'integrated_pathway.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -89,9 +93,12 @@ class PathwayToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class PathwayToRegulatorConnector(RegPreciseConnector):
-    default_from_node = Pathway
-    default_to_node = Regulator
+class PathwayToRegulatorConnector(RegPreciseConnector,
+                                  source='regprecise',
+                                  version='0.0.0',
+                                  from_node=Pathway,
+                                  to_node=Regulator,
+                                  register=True):
     default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
@@ -119,9 +126,12 @@ class PathwayToRegulatorConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class PathwayToGeneConnector(RegPreciseConnector):
-    default_from_node = Pathway
-    default_to_node = Gene
+class PathwayToGeneConnector(RegPreciseConnector,
+                             source='regprecise',
+                             version='0.0.0',
+                             from_node=Pathway,
+                             to_node=Gene,
+                             register=True):
     default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json',
                              'gene': 'integrated_gene.json'}
 

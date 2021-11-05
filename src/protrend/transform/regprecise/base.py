@@ -1,11 +1,17 @@
+from abc import abstractmethod
+
 from protrend.transform import Transformer, Connector
 
 
-class RegPreciseTransformer(Transformer):
-    default_source: str = 'regprecise'
-    default_version: str = '0.0.0'
+class RegPreciseTransformer(Transformer, source='regprecise', version='0.0.0', register=False):
+
+    @abstractmethod
+    def transform(self):
+        pass
 
 
-class RegPreciseConnector(Connector):
-    default_source: str = 'regprecise'
-    default_version: str = '0.0.0'
+class RegPreciseConnector(Connector, source='regprecise', version='0.0.0', register=False):
+
+    @abstractmethod
+    def connect(self):
+        pass

@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryFamily, Source, Publication, Regulator
+from protrend.io.json import read_json_lines, read_json_frame, read_from_stack
+from protrend.model import RegulatoryFamily, Source, Publication, Regulator
 from protrend.utils.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                        rstrip, lstrip, remove_pubmed, apply_processors, to_set_list, to_list_nan,
                                        to_int_str, to_nan, to_list)
@@ -13,12 +12,15 @@ from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
 
 
-class RegulatoryFamilyTransformer(RegPreciseTransformer):
-    default_node = RegulatoryFamily
+class RegulatoryFamilyTransformer(RegPreciseTransformer,
+                                  source='regprecise',
+                                  version='0.0.0',
+                                  node=RegulatoryFamily,
+                                  order=100,
+                                  register=True):
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
                                'tf': 'TranscriptionFactor.json',
                                'rna': 'RNAFamily.json'}
-    default_order = 100
     columns = SetList(['tffamily_id', 'name', 'url_tf_family', 'collection_id', 'url_tf',
                        'mechanism', 'description', 'pubmed', 'regulog', 'riboswitch_id',
                        'url_rna', 'rfam', 'protrend_id'])
@@ -111,9 +113,12 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer):
         return df
 
 
-class RegulatoryFamilyToSourceConnector(RegPreciseConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Source
+class RegulatoryFamilyToSourceConnector(RegPreciseConnector,
+                                        source='regprecise',
+                                        version='0.0.0',
+                                        from_node=RegulatoryFamily,
+                                        to_node=Source,
+                                        register=True):
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'source': 'integrated_source.json'}
 
@@ -154,9 +159,12 @@ class RegulatoryFamilyToSourceConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToPublicationConnector(RegPreciseConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Publication
+class RegulatoryFamilyToPublicationConnector(RegPreciseConnector,
+                                             source='regprecise',
+                                             version='0.0.0',
+                                             from_node=RegulatoryFamily,
+                                             to_node=Publication,
+                                             register=True):
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'publication': 'integrated_publication.json'}
 
@@ -187,9 +195,12 @@ class RegulatoryFamilyToPublicationConnector(RegPreciseConnector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Regulator
+class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector,
+                                           source='regprecise',
+                                           version='0.0.0',
+                                           from_node=RegulatoryFamily,
+                                           to_node=Regulator,
+                                           register=True):
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'regulator': 'integrated_regulator.json'}
 
