@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.operon import OperonTransformer
@@ -11,7 +11,12 @@ from protrend.transform.dbtbs.tfbs import TFBSTransformer
 from protrend.utils import SetList
 
 
-class OrganismTransformer(DBTBSTransformer):
+class OrganismTransformer(DBTBSTransformer,
+                          source='dbtbs',
+                          version='0.0.3',
+                          node=Organism,
+                          order=100,
+                          register=True):
     species = 'Bacillus subtilis'
     strain = 'subsp. subtilis str. 168'
     ncbi_taxonomy = 224308
@@ -23,8 +28,6 @@ class OrganismTransformer(DBTBSTransformer):
     assembly_accession = 'ASM904v1'
     name = 'Bacillus subtilis subsp. subtilis str. 168'
 
-    default_node = Organism
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
 
@@ -47,9 +50,12 @@ class OrganismTransformer(DBTBSTransformer):
         return df
 
 
-class RegulatorToOrganismConnector(DBTBSConnector):
-    default_from_node = Regulator
-    default_to_node = Organism
+class RegulatorToOrganismConnector(DBTBSConnector,
+                                   source='dbtbs',
+                                   version='0.0.3',
+                                   from_node=Regulator,
+                                   to_node=Organism,
+                                   register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -70,9 +76,12 @@ class RegulatorToOrganismConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class OperonToOrganismConnector(DBTBSConnector):
-    default_from_node = Operon
-    default_to_node = Organism
+class OperonToOrganismConnector(DBTBSConnector,
+                                source='dbtbs',
+                                version='0.0.3',
+                                from_node=Operon,
+                                to_node=Organism,
+                                register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -93,9 +102,12 @@ class OperonToOrganismConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class GeneToOrganismConnector(DBTBSConnector):
-    default_from_node = Gene
-    default_to_node = Organism
+class GeneToOrganismConnector(DBTBSConnector,
+                              source='dbtbs',
+                              version='0.0.3',
+                              from_node=Gene,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -116,9 +128,12 @@ class GeneToOrganismConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class TFBSToOrganismConnector(DBTBSConnector):
-    default_from_node = TFBS
-    default_to_node = Organism
+class TFBSToOrganismConnector(DBTBSConnector,
+                              source='dbtbs',
+                              version='0.0.3',
+                              from_node=TFBS,
+                              to_node=Organism,
+                              register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -139,9 +154,12 @@ class TFBSToOrganismConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOrganismConnector(DBTBSConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Organism
+class RegulatoryInteractionToOrganismConnector(DBTBSConnector,
+                                               source='dbtbs',
+                                               version='0.0.3',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Organism,
+                                               register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'organism': 'integrated_organism.json'}
 

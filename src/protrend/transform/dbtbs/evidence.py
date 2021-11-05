@@ -8,10 +8,13 @@ from protrend.utils.processors import apply_processors
 from protrend.utils import SetList
 
 
-class EvidenceTransformer(DBTBSTransformer):
-    default_node = Evidence
+class EvidenceTransformer(DBTBSTransformer,
+                          source='dbtbs',
+                          version='0.0.3',
+                          node=Evidence,
+                          order=100,
+                          register=True):
     default_transform_stack = {'operon': 'Operon.json'}
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'description',
                        'operon', 'tf', 'url', 'evidence', 'pubmed', 'comment', 'gene', 'tfbs'])
     read_columns = SetList(['name', 'tf', 'url', 'evidence', 'pubmed', 'comment', 'gene', 'tfbs'])
@@ -46,9 +49,12 @@ class EvidenceTransformer(DBTBSTransformer):
         return evidence
 
 
-class EvidenceToOperonConnector(DBTBSConnector):
-    default_from_node = Evidence
-    default_to_node = Operon
+class EvidenceToOperonConnector(DBTBSConnector,
+                                source='dbtbs',
+                                version='0.0.3',
+                                from_node=Evidence,
+                                to_node=Operon,
+                                register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'evidence': 'integrated_evidence.json'}
 
     def connect(self):

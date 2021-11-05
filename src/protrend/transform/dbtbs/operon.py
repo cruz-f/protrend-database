@@ -4,20 +4,22 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Operon, Gene, TFBS
+from protrend.model import Operon, Gene, TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
 from protrend.utils.processors import (apply_processors, flatten_set_list, to_list,
                                        to_set_list, operon_hash, to_list_nan)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class OperonTransformer(DBTBSTransformer):
-    default_node = Operon
+class OperonTransformer(DBTBSTransformer,
+                        source='dbtbs',
+                        version='0.0.3',
+                        node=Operon,
+                        order=80,
+                        register=True):
     default_transform_stack = {'operon': 'Operon.json', 'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
-    default_order = 80
     columns = SetList(['name', 'promoters', 'genes', 'tfbss', 'strand', 'start', 'stop', 'operon_hash', 'protrend_id',
                        'tf', 'url', 'evidence', 'pubmed', 'comment', 'gene', 'tfbs'])
     read_columns = SetList(['name', 'tf', 'url', 'evidence', 'pubmed', 'comment', 'gene', 'tfbs'])
@@ -170,9 +172,12 @@ class OperonTransformer(DBTBSTransformer):
         return df
 
 
-class OperonToGeneConnector(DBTBSConnector):
-    default_from_node = Operon
-    default_to_node = Gene
+class OperonToGeneConnector(DBTBSConnector,
+                            source='dbtbs',
+                            version='0.0.3',
+                            from_node=Operon,
+                            to_node=Gene,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -194,9 +199,12 @@ class OperonToGeneConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class OperonToTFBSConnector(DBTBSConnector):
-    default_from_node = Operon
-    default_to_node = TFBS
+class OperonToTFBSConnector(DBTBSConnector,
+                            source='dbtbs',
+                            version='0.0.3',
+                            from_node=Operon,
+                            to_node=TFBS,
+                            register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -218,9 +226,12 @@ class OperonToTFBSConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(DBTBSConnector):
-    default_from_node = Gene
-    default_to_node = TFBS
+class GeneToTFBSConnector(DBTBSConnector,
+                          source='dbtbs',
+                          version='0.0.3',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):

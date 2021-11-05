@@ -1,8 +1,8 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, \
-    RegulatoryInteraction
+from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS,
+                            RegulatoryInteraction)
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.operon import OperonTransformer
@@ -11,11 +11,15 @@ from protrend.transform.dbtbs.regulator import RegulatorTransformer
 from protrend.transform.dbtbs.regulatory_family import RegulatoryFamilyTransformer
 from protrend.transform.dbtbs.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class SourceTransformer(DBTBSTransformer):
+class SourceTransformer(DBTBSTransformer,
+                        source='dbtbs',
+                        version='0.0.3',
+                        node=Source,
+                        order=100,
+                        register=True):
     name = 'dbtbs'
     type = 'database'
     url = 'https://dbtbs.hgc.jp/'
@@ -23,8 +27,6 @@ class SourceTransformer(DBTBSTransformer):
     authors = ['Nicolas Sierro', 'Yuko Makita', 'Michiel de Hoon', 'Kenta Nakai']
     description = 'DBTBS: a database of transcriptional regulation in Bacillus subtilis containing upstream intergenic conservation information'
 
-    default_node = Source
-    default_order = 100
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
@@ -42,9 +44,12 @@ class SourceTransformer(DBTBSTransformer):
         return df
 
 
-class OrganismToSourceConnector(DBTBSConnector):
-    default_from_node = Organism
-    default_to_node = Source
+class OrganismToSourceConnector(DBTBSConnector,
+                                source='dbtbs',
+                                version='0.0.3',
+                                from_node=Organism,
+                                to_node=Source,
+                                register=True):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -68,9 +73,12 @@ class OrganismToSourceConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatoryFamilyToSourceConnector(DBTBSConnector):
-    default_from_node = RegulatoryFamily
-    default_to_node = Source
+class RegulatoryFamilyToSourceConnector(DBTBSConnector,
+                                        source='dbtbs',
+                                        version='0.0.3',
+                                        from_node=RegulatoryFamily,
+                                        to_node=Source,
+                                        register=True):
     default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
                              'source': 'integrated_source.json'}
 
@@ -110,9 +118,12 @@ class RegulatoryFamilyToSourceConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(DBTBSConnector):
-    default_from_node = Regulator
-    default_to_node = Source
+class RegulatorToSourceConnector(DBTBSConnector,
+                                 source='dbtbs',
+                                 version='0.0.3',
+                                 from_node=Regulator,
+                                 to_node=Source,
+                                 register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -152,9 +163,12 @@ class RegulatorToSourceConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class OperonToSourceConnector(DBTBSConnector):
-    default_from_node = Operon
-    default_to_node = Source
+class OperonToSourceConnector(DBTBSConnector,
+                              source='dbtbs',
+                              version='0.0.3',
+                              from_node=Operon,
+                              to_node=Source,
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -194,9 +208,12 @@ class OperonToSourceConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class GeneToSourceConnector(DBTBSConnector):
-    default_from_node = Gene
-    default_to_node = Source
+class GeneToSourceConnector(DBTBSConnector,
+                            source='dbtbs',
+                            version='0.0.3',
+                            from_node=Gene,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -236,9 +253,12 @@ class GeneToSourceConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class TFBSToSourceConnector(DBTBSConnector):
-    default_from_node = TFBS
-    default_to_node = Source
+class TFBSToSourceConnector(DBTBSConnector,
+                            source='dbtbs',
+                            version='0.0.3',
+                            from_node=TFBS,
+                            to_node=Source,
+                            register=True):
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -280,9 +300,12 @@ class TFBSToSourceConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(DBTBSConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
+class RegulatoryInteractionToSourceConnector(DBTBSConnector,
+                                             source='dbtbs',
+                                             version='0.0.3',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Source,
+                                             register=True):
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'source': 'integrated_source.json'}
 

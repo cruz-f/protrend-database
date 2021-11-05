@@ -1,11 +1,17 @@
+from abc import abstractmethod
+
 from protrend.transform import Transformer, Connector
 
 
-class DBTBSTransformer(Transformer):
-    default_source = 'dbtbs'
-    default_version = '0.0.3'
+class DBTBSTransformer(Transformer, source='dbtbs', version='0.0.3', register=False):
+
+    @abstractmethod
+    def transform(self):
+        pass
 
 
-class DBTBSConnector(Connector):
-    default_source: str = 'dbtbs'
-    default_version: str = '0.0.3'
+class DBTBSConnector(Connector, source='dbtbs', version='0.0.3', register=False):
+
+    @abstractmethod
+    def connect(self):
+        pass

@@ -3,9 +3,8 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import Publication, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import PublicationDTO
-from protrend.annotation import annotate_publications
+from protrend.model import Publication, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.operon import OperonTransformer
 from protrend.transform.dbtbs.regulator import RegulatorTransformer
@@ -14,10 +13,13 @@ from protrend.utils.processors import apply_processors, to_int_str, to_list
 from protrend.utils import SetList
 
 
-class PublicationTransformer(DBTBSTransformer):
-    default_node = Publication
+class PublicationTransformer(DBTBSTransformer,
+                             source='dbtbs',
+                             version='0.0.3',
+                             node=Publication,
+                             order=100,
+                             register=True):
     default_transform_stack = {'operon': 'Operon.json', 'tfbs': 'TFBS.json'}
-    default_order = 100
     columns = SetList(['protrend_id', 'operon', 'tfbs', 'pubmed',
                        'pmid', 'doi', 'title', 'author', 'year'])
 
@@ -79,9 +81,12 @@ class PublicationTransformer(DBTBSTransformer):
         return df
 
 
-class PublicationToRegulatorConnector(DBTBSConnector):
-    default_from_node = Publication
-    default_to_node = Regulator
+class PublicationToRegulatorConnector(DBTBSConnector,
+                                      source='dbtbs',
+                                      version='0.0.3',
+                                      from_node=Publication,
+                                      to_node=Regulator,
+                                      register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json',
                              'tfbs': 'integrated_tfbs.json'}
 
@@ -115,9 +120,12 @@ class PublicationToRegulatorConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class PublicationToOperonConnector(DBTBSConnector):
-    default_from_node = Publication
-    default_to_node = Operon
+class PublicationToOperonConnector(DBTBSConnector,
+                                   source='dbtbs',
+                                   version='0.0.3',
+                                   from_node=Publication,
+                                   to_node=Operon,
+                                   register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -138,9 +146,12 @@ class PublicationToOperonConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class PublicationToGeneConnector(DBTBSConnector):
-    default_from_node = Publication
-    default_to_node = Gene
+class PublicationToGeneConnector(DBTBSConnector,
+                                 source='dbtbs',
+                                 version='0.0.3',
+                                 from_node=Publication,
+                                 to_node=Gene,
+                                 register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
@@ -164,9 +175,12 @@ class PublicationToGeneConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class PublicationToTFBSConnector(DBTBSConnector):
-    default_from_node = Publication
-    default_to_node = TFBS
+class PublicationToTFBSConnector(DBTBSConnector,
+                                 source='dbtbs',
+                                 version='0.0.3',
+                                 from_node=Publication,
+                                 to_node=TFBS,
+                                 register=True):
     default_connect_stack = {'publication': 'integrated_publication.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
@@ -187,9 +201,12 @@ class PublicationToTFBSConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class PublicationToRegulatoryInteractionConnector(DBTBSConnector):
-    default_from_node = Publication
-    default_to_node = RegulatoryInteraction
+class PublicationToRegulatoryInteractionConnector(DBTBSConnector,
+                                                  source='dbtbs',
+                                                  version='0.0.3',
+                                                  from_node=Publication,
+                                                  to_node=RegulatoryInteraction,
+                                                  register=True):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'rin': 'integrated_regulatoryinteraction.json'}
 

@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
+from protrend.io import read_json_frame, read_from_stack
+from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.operon import OperonTransformer
 from protrend.transform.dbtbs.regulator import RegulatorTransformer
@@ -11,12 +10,15 @@ from protrend.utils.processors import (apply_processors, take_first, regulatory_
 from protrend.utils import SetList
 
 
-class RegulatoryInteractionTransformer(DBTBSTransformer):
-    default_node = RegulatoryInteraction
+class RegulatoryInteractionTransformer(DBTBSTransformer,
+                                       source='dbtbs',
+                                       version='0.0.3',
+                                       node=RegulatoryInteraction,
+                                       order=80,
+                                       register=True):
     default_transform_stack = {'regulator': 'integrated_regulator.json',
                                'operon': 'integrated_operon.json',
                                'tfbs': 'integrated_tfbs.json'}
-    default_order = 80
     columns = SetList(['identifier', 'url', 'pubmed', 'operon_name',
                        'regulator', 'operon', 'genes', 'tfbss', 'regulator_effector', 'regulatory_effect'])
 
@@ -70,11 +72,14 @@ class RegulatoryInteractionTransformer(DBTBSTransformer):
         self._stack_transformed_nodes(regulatory_interaction)
 
         return regulatory_interaction
-    
 
-class RegulatoryInteractionToRegulatorConnector(DBTBSConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
+
+class RegulatoryInteractionToRegulatorConnector(DBTBSConnector,
+                                                source='dbtbs',
+                                                version='0.0.3',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -90,9 +95,12 @@ class RegulatoryInteractionToRegulatorConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToOperonConnector(DBTBSConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
+class RegulatoryInteractionToOperonConnector(DBTBSConnector,
+                                             source='dbtbs',
+                                             version='0.0.3',
+                                             from_node=RegulatoryInteraction,
+                                             to_node=Operon,
+                                             register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -108,9 +116,12 @@ class RegulatoryInteractionToOperonConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(DBTBSConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
+class RegulatoryInteractionToGeneConnector(DBTBSConnector,
+                                           source='dbtbs',
+                                           version='0.0.3',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -133,9 +144,12 @@ class RegulatoryInteractionToGeneConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(DBTBSConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = TFBS
+class RegulatoryInteractionToTFBSConnector(DBTBSConnector,
+                                           source='dbtbs',
+                                           version='0.0.3',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=TFBS,
+                                           register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -158,9 +172,12 @@ class RegulatoryInteractionToTFBSConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatorToOperonConnector(DBTBSConnector):
-    default_from_node = Regulator
-    default_to_node = Operon
+class RegulatorToOperonConnector(DBTBSConnector,
+                                 source='dbtbs',
+                                 version='0.0.3',
+                                 from_node=Regulator,
+                                 to_node=Operon,
+                                 register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -176,9 +193,12 @@ class RegulatorToOperonConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(DBTBSConnector):
-    default_from_node = Regulator
-    default_to_node = Gene
+class RegulatorToGeneConnector(DBTBSConnector,
+                               source='dbtbs',
+                               version='0.0.3',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
@@ -199,9 +219,12 @@ class RegulatorToGeneConnector(DBTBSConnector):
         self.stack_json(df)
 
 
-class RegulatorToTFBSConnector(DBTBSConnector):
-    default_from_node = Regulator
-    default_to_node = TFBS
+class RegulatorToTFBSConnector(DBTBSConnector,
+                               source='dbtbs',
+                               version='0.0.3',
+                               from_node=Regulator,
+                               to_node=TFBS,
+                               register=True):
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):

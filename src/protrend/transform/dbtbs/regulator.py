@@ -5,20 +5,21 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
-from protrend.io.json import read_json_lines
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Regulator
-from protrend.annotation import annotate_genes
+from protrend.io import read_json_lines, read_from_stack
+from protrend.model import Regulator
+from protrend.annotation import annotate_genes, GeneDTO
 from protrend.transform.dbtbs.base import DBTBSTransformer
-from protrend.annotation.dto import GeneDTO
 from protrend.utils.processors import rstrip, lstrip, apply_processors
 from protrend.utils import SetList
 
 
-class RegulatorTransformer(DBTBSTransformer):
-    default_node = Regulator
+class RegulatorTransformer(DBTBSTransformer,
+                           source='dbtbs',
+                           version='0.0.3',
+                           node=Regulator,
+                           order=100,
+                           register=True):
     default_transform_stack = {'tf': 'TranscriptionFactor.json', 'sequence': 'sequence.gb'}
-    default_order = 100
     columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession',
                        'uniprot_accession', 'sequence', 'strand', 'start', 'stop', 'mechanism', 'protrend_id',

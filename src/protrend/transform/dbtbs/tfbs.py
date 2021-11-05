@@ -1,21 +1,22 @@
 import pandas as pd
 
-from protrend.io import read_json_frame, read_json_lines
-from protrend.io.utils import read_from_stack
-from protrend.model.model import TFBS
+from protrend.io import read_json_frame, read_json_lines, read_from_stack
+from protrend.model import TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
                                        take_first, upper_case, flatten_set_list)
-from protrend.utils import SetList
-from protrend.utils.miscellaneous import is_null
+from protrend.utils import SetList, is_null
 
 
-class TFBSTransformer(DBTBSTransformer):
-    default_node = TFBS
+class TFBSTransformer(DBTBSTransformer,
+                      source='dbtbs',
+                      version='0.0.3',
+                      node=TFBS,
+                      order=90,
+                      register=True):
     default_transform_stack = {'tfbs': 'TFBS.json',
                                'gene': 'integrated_gene.json'}
-    default_order = 90
     columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
                        'identifier', 'url', 'regulation', 'pubmed', 'tf', 'operon', 'gene',
                        'location', 'absolute_position'])
@@ -27,15 +28,14 @@ class TFBSTransformer(DBTBSTransformer):
         tfbs = tfbs.dropna(subset=['identifier', 'sequence'])
 
         # filter by id
-        tfbs = self.drop_duplicates(df=tfbs, subset=['identifier'], perfect_match=True, preserve_nan=True)
+        tfbs = self.drop_duplicates(df=tfbs, subset=['identifier'], perfect_match=True)
 
         # processing
         tfbs = tfbs.explode(column='sequence')
         tfbs = apply_processors(tfbs, sequence=upper_case, location=take_first, absolute_position=take_first)
 
         # filter by coordinates
-        tfbs = self.drop_duplicates(df=tfbs, subset=['sequence', 'location', 'absolute_position'],
-                                    perfect_match=True, preserve_nan=True)
+        tfbs = self.drop_duplicates(df=tfbs, subset=['sequence', 'location', 'absolute_position'], perfect_match=True)
 
         return tfbs
 

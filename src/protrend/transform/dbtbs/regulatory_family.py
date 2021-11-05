@@ -1,17 +1,20 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model.model import RegulatoryFamily, Regulator
+from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.regulator import RegulatorTransformer
 from protrend.utils.processors import (apply_processors, rstrip, lstrip, take_first)
 from protrend.utils import SetList
 
 
-class RegulatoryFamilyTransformer(DBTBSTransformer):
-    default_node = RegulatoryFamily
+class RegulatoryFamilyTransformer(DBTBSTransformer,
+                                  source='dbtbs',
+                                  version='0.0.3',
+                                  node=RegulatoryFamily,
+                                  order=100,
+                                  register=True):
     default_transform_stack = {'tf': 'TranscriptionFactor.json'}
-    default_order = 100
     columns = SetList(['mechanism', 'name', 'description', 'rfam', 'protrend_id', 'tf', 'family'])
     read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',
                             'type', 'comment', 'operon', 'subti_list', 'consensus_sequence'])
@@ -56,9 +59,12 @@ class RegulatoryFamilyTransformer(DBTBSTransformer):
         return tf
 
 
-class RegulatorToRegulatoryFamilyConnector(DBTBSConnector):
-    default_from_node = Regulator
-    default_to_node = RegulatoryFamily
+class RegulatorToRegulatoryFamilyConnector(DBTBSConnector,
+                                           source='dbtbs',
+                                           version='0.0.3',
+                                           from_node=Regulator,
+                                           to_node=RegulatoryFamily,
+                                           register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
