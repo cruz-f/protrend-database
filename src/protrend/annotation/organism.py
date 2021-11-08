@@ -1,9 +1,12 @@
-from typing import List, Type
+from typing import List, Type, TYPE_CHECKING
 
 from protrend.bioapis import NCBITaxonomyOrganism
 from protrend.log import ProtrendLogger
-from protrend.transform import OrganismDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
+
+
+if TYPE_CHECKING:
+    from .dto import OrganismDTO
 
 
 def _fetch_organisms(identifiers: List[str],
@@ -19,7 +22,7 @@ def _fetch_organisms(identifiers: List[str],
     return organisms
 
 
-def _annotate_organism(ncbi_taxonomy: NCBITaxonomyOrganism, organism_dto: OrganismDTO):
+def _annotate_organism(ncbi_taxonomy: NCBITaxonomyOrganism, organism_dto: 'OrganismDTO'):
     if ncbi_taxonomy.identifier:
         organism_dto.name.append(ncbi_taxonomy.name)
         organism_dto.species.append(ncbi_taxonomy.species)
@@ -33,9 +36,9 @@ def _annotate_organism(ncbi_taxonomy: NCBITaxonomyOrganism, organism_dto: Organi
         organism_dto.assembly_accession.append(ncbi_taxonomy.assembly_name)
 
 
-def annotate_organisms(dtos: List[OrganismDTO],
+def annotate_organisms(dtos: List['OrganismDTO'],
                        identifiers: List[str] = None,
-                       names: List[str] = None) -> List[OrganismDTO]:
+                       names: List[str] = None) -> List['OrganismDTO']:
     """
     A common method to annotate a given organism with relevant information from NCBI Taxonomy.
 
@@ -48,15 +51,15 @@ def annotate_organisms(dtos: List[OrganismDTO],
             - retrieve the NCBI assembly record for the organism
             - retrieve organism relevant attributes from taxonomy and assembly records
 
-    :type dtos: List[OrganismDTO]
+    :type dtos: List['OrganismDTO']
     :type identifiers: List[str]
     :type names: List[str]
 
-    :param dtos: list of OrganismDTO. Each publication DTO will be annotated with information from NCBI PubMed
+    :param dtos: list of 'OrganismDTO'. Each publication DTO will be annotated with information from NCBI PubMed
     :param identifiers: list of identifiers to assist with the annotation
     :param names: list of names to assist with the annotation
 
-    :return: list of annotated OrganismDTO. This function returns the same list object for convenience
+    :return: list of annotated 'OrganismDTO'. This function returns the same list object for convenience
     """
     dtos_size = len(dtos)
 
@@ -75,8 +78,6 @@ def annotate_organisms(dtos: List[OrganismDTO],
     ProtrendLogger.log.info(f'Finishing fetch organisms')
 
     for organism_dto, ncbi_taxonomy in zip(dtos, ncbi_taxonomys):
-
-        ProtrendLogger.log.info(f'Starting annotate organism: {ncbi_taxonomy.name}')
         _annotate_organism(ncbi_taxonomy, organism_dto)
 
     return dtos

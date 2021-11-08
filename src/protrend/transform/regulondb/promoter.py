@@ -27,7 +27,7 @@ class PromoterTransformer(RegulondbTransformer,
 
     def _transform_promoter(self, promoter: pd.DataFrame) -> pd.DataFrame:
         # filter by id
-        promoter = self.drop_duplicates(df=promoter, subset=['promoter_id'], perfect_match=True, preserve_nan=True)
+        promoter = self.drop_duplicates(df=promoter, subset=['promoter_id'], perfect_match=True)
 
         # filter by nan
         promoter = promoter.dropna(subset=['promoter_id', 'promoter_sequence'])
@@ -35,9 +35,8 @@ class PromoterTransformer(RegulondbTransformer,
         promoter = apply_processors(promoter, promoter_sequence=upper_case)
 
         # filter by coordinates
-        promoter = self.drop_duplicates(df=promoter,
-                                        subset=['promoter_sequence', 'promoter_strand', 'pos_1'],
-                                        perfect_match=True, preserve_nan=True)
+        promoter = self.drop_duplicates(df=promoter, subset=['promoter_sequence', 'promoter_strand', 'pos_1'],
+                                        perfect_match=True)
 
         promoter['sequence'] = promoter['promoter_sequence']
 
@@ -105,8 +104,7 @@ class PromoterTransformer(RegulondbTransformer,
         promoter['promoter_hash'] = _hash
         promoter = apply_processors(promoter, promoter_hash=promoter_hash)
 
-        promoter = self.drop_duplicates(df=promoter, subset=['promoter_hash'],
-                                        perfect_match=True, preserve_nan=True)
+        promoter = self.drop_duplicates(df=promoter, subset=['promoter_hash'], perfect_match=True)
         promoter = promoter.dropna(subset=['promoter_hash'])
 
         self._stack_transformed_nodes(promoter)

@@ -61,7 +61,7 @@ class OperonToGeneConnector(AbasyConnector,
                             version='0.0.0',
                             from_node=Operon,
                             to_node=Gene,
-                            register=False):
+                            register=True):
 
     default_connect_stack = {'operon': 'integrated_operon.json'}
 

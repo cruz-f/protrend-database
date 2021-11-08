@@ -156,7 +156,7 @@ class RegulatorTransformer(RegPreciseTransformer,
         rna['locus_tag'] = rna['organism_protrend_id'] + '_' + rna['rfam']
 
         # --------------------- concat DFs --------------------------------------
-        df = pd.concat([tf, rna], axis=0)
+        df = pd.concat([tf, rna])
 
         df = apply_processors(df, genome_id=to_int_str, ncbi_taxonomy=to_int_str, genome=to_int_str, regulog=to_int_str)
 

@@ -29,7 +29,7 @@ class PublicationTransformer(LiteratureTransformer,
         network = apply_processors(network, publication=[to_set_list])
         network = network.explode(column='publication')
 
-        network = self.drop_duplicates(df=network, subset=['publication'], perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['publication'], perfect_match=True)
         network = network.dropna(subset=['publication'])
 
         network = self.create_input_value(network, col='publication')

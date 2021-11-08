@@ -80,7 +80,7 @@ class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
                                                 version='0.0.0',
                                                 from_node=RegulatoryInteraction,
                                                 to_node=Regulator,
-                                                register=False):
+                                                register=True):
 
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
@@ -102,7 +102,7 @@ class RegulatoryInteractionToOperonConnector(AbasyConnector,
                                              version='0.0.0',
                                              from_node=RegulatoryInteraction,
                                              to_node=Operon,
-                                             register=False):
+                                             register=True):
 
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
@@ -124,7 +124,7 @@ class RegulatoryInteractionToGeneConnector(AbasyConnector,
                                            version='0.0.0',
                                            from_node=RegulatoryInteraction,
                                            to_node=Gene,
-                                           register=False):
+                                           register=True):
 
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
@@ -153,7 +153,7 @@ class RegulatorToOperonConnector(AbasyConnector,
                                  version='0.0.0',
                                  from_node=Regulator,
                                  to_node=Operon,
-                                 register=False):
+                                 register=True):
 
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
@@ -175,7 +175,7 @@ class RegulatorToGeneConnector(AbasyConnector,
                                version='0.0.0',
                                from_node=Regulator,
                                to_node=Gene,
-                               register=False):
+                               register=True):
 
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 

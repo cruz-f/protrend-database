@@ -1,9 +1,12 @@
-from typing import List, Type
+from typing import List, Type, TYPE_CHECKING
 
 from protrend.bioapis import PubMedPublication
 from protrend.log import ProtrendLogger
-from protrend.transform import PublicationDTO
 from protrend.utils.miscellaneous import args_length
+
+
+if TYPE_CHECKING:
+    from .dto import PublicationDTO
 
 
 def _fetch_publications(identifiers: List[str],
@@ -18,8 +21,7 @@ def _fetch_publications(identifiers: List[str],
     return publications
 
 
-def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto: PublicationDTO):
-
+def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto: 'PublicationDTO'):
     if pubmed_publication.identifier:
         publication_dto.pmid.append(pubmed_publication.pmid)
         publication_dto.doi.append(pubmed_publication.doi)
@@ -28,8 +30,8 @@ def _annotate_publication(pubmed_publication: PubMedPublication, publication_dto
         publication_dto.year.append(pubmed_publication.year)
 
 
-def annotate_publications(dtos: List[PublicationDTO],
-                          identifiers: List[str] = None) -> List[PublicationDTO]:
+def annotate_publications(dtos: List['PublicationDTO'],
+                          identifiers: List[str] = None) -> List['PublicationDTO']:
     """
     A common method to annotate a given publication with relevant information from NCBI PubMed.
 
@@ -39,15 +41,15 @@ def annotate_publications(dtos: List[PublicationDTO],
             - query pubmed identifiers (pmid) to NCBI PubMed database
             - retrieve publication relevant attributes
 
-    :type dtos: List[PublicationDTO]
+    :type dtos: List['PublicationDTO']
     :type identifiers: List[str]
 
-    :rtype: List[PublicationDTO]
+    :rtype: List['PublicationDTO']
 
-    :param dtos: list of PublicationDTO. Each publication DTO will be annotated with information from NCBI PubMed
+    :param dtos: list of 'PublicationDTO'. Each publication DTO will be annotated with information from NCBI PubMed
     :param identifiers: list of identifiers to assist with the annotation
 
-    :return: list of annotated PublicationDTO. This function returns the same list object for convenience
+    :return: list of annotated 'PublicationDTO'. This function returns the same list object for convenience
     """
     dtos_size = len(dtos)
 
@@ -62,7 +64,6 @@ def annotate_publications(dtos: List[PublicationDTO],
     ProtrendLogger.log.info(f'Finishing fetch publications')
 
     for publication_dto, pubmed_publication in zip(dtos, pubmed_publications):
-        ProtrendLogger.log.info(f'Starting annotate publication: {pubmed_publication.pmid}')
         _annotate_publication(pubmed_publication, publication_dto)
 
     return dtos

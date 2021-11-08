@@ -35,8 +35,7 @@ class GeneTransformer(CollectfTransformer,
         gene = gene.explode('regulon')
 
         gene = pd.merge(gene, regulator, left_on='regulon', right_on='regulator_uniprot_accession')
-        gene = self.drop_duplicates(df=gene, subset=['locus_tag', 'organism_protrend_id'],
-                                    perfect_match=True, preserve_nan=True)
+        gene = self.drop_duplicates(df=gene, subset=['locus_tag', 'organism_protrend_id'], perfect_match=True)
 
         aggregation = {'regulon': to_set_list,
                        'regulator_uniprot_accession': to_set_list,

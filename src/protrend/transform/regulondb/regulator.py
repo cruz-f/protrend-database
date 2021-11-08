@@ -36,7 +36,7 @@ class RegulatorTransformer(RegulondbTransformer,
     def _transform_tf(self, tf: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         tf = apply_processors(tf, transcription_factor_name=[rstrip, lstrip])
         tf = tf.dropna(subset=['transcription_factor_name'])
-        tf = self.drop_duplicates(df=tf, subset=['transcription_factor_name'], perfect_match=True, preserve_nan=True)
+        tf = self.drop_duplicates(df=tf, subset=['transcription_factor_name'], perfect_match=True)
 
         tf['mechanism'] = 'transcription factor'
         tf['gene_name_lower'] = tf['transcription_factor_name'].str.lower()
@@ -48,7 +48,7 @@ class RegulatorTransformer(RegulondbTransformer,
     def _transform_srna(self, srna: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         srna = apply_processors(srna, srna_gene_id=[rstrip, lstrip])
         srna = srna.dropna(subset=['srna_gene_id'])
-        srna = self.drop_duplicates(df=srna, subset=['srna_gene_id'], perfect_match=True, preserve_nan=True)
+        srna = self.drop_duplicates(df=srna, subset=['srna_gene_id'], perfect_match=True)
 
         srna['mechanism'] = 'small RNA (sRNA)'
 
@@ -59,7 +59,7 @@ class RegulatorTransformer(RegulondbTransformer,
     def _transform_sigma(self, sigma: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         sigma = apply_processors(sigma, sigma_gene_id=[rstrip, lstrip])
         sigma = sigma.dropna(subset=['sigma_gene_id'])
-        sigma = self.drop_duplicates(df=sigma, subset=['sigma_gene_id'], perfect_match=True, preserve_nan=True)
+        sigma = self.drop_duplicates(df=sigma, subset=['sigma_gene_id'], perfect_match=True)
 
         sigma['mechanism'] = 'sigma factor'
 
@@ -99,6 +99,6 @@ class RegulatorTransformer(RegulondbTransformer,
         sigma = sigma.drop(columns=['sigma_synonyms', 'sigma_coregulators', 'sigma_notes',
                                     'sigma_sigmulon_genes', 'key_id_org'])
 
-        df = pd.concat([tf, srna, sigma], axis=0)
+        df = pd.concat([tf, srna, sigma])
         self._stack_transformed_nodes(df)
         return df

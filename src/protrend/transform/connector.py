@@ -51,21 +51,27 @@ class Connector(AbstractConnector):
 
     A connector starts with data from the data lake and ends with structured relationships.
     """
-    source = DefaultProperty('')
-    version = DefaultProperty('')
+    source = DefaultProperty()
+    version = DefaultProperty()
 
-    from_node = DefaultProperty(Node)
-    to_node = DefaultProperty(Node)
+    from_node = DefaultProperty()
+    to_node = DefaultProperty()
 
     default_connect_stack: Dict[str, str] = {}
 
     def __init_subclass__(cls, **kwargs):
 
         source = kwargs.get('source')
-        cls.source.set_default(source)
+        cls.source.set_default(cls, source)
 
         version = kwargs.get('version')
-        cls.version.set_default(version)
+        cls.version.set_default(cls, version)
+
+        from_node = kwargs.pop('from_node', None)
+        cls.from_node.set_default(cls, from_node)
+
+        to_node = kwargs.pop('to_node', None)
+        cls.to_node.set_default(cls, to_node)
 
         register = kwargs.pop('register', False)
 
@@ -123,7 +129,7 @@ class Connector(AbstractConnector):
             connect_stack = self.default_connect_stack
 
         for key, file in connect_stack.items():
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             self._connect_stack[key] = dl_file
 
@@ -136,7 +142,7 @@ class Connector(AbstractConnector):
 
     @property
     def write_path(self) -> str:
-        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.data_lake, self.source, self.version)
 
     # --------------------------------------------------------
     # Python API
@@ -202,7 +208,7 @@ class Connector(AbstractConnector):
     # ----------------------------------------
     @classmethod
     def infer_write_stack(cls) -> WriteStack:
-        file_name = f'connected_{cls.from_node.default.node_name()}_{cls.to_node.default.node_name()}'
+        file_name = f'connected_{cls.from_node.get_default(cls).node_name()}_{cls.to_node.get_default(cls).node_name()}'
         write_stack = WriteStack(transformed=None,
                                  integrated=None,
                                  nodes=None,
@@ -211,7 +217,7 @@ class Connector(AbstractConnector):
 
     def stack_json(self, df: pd.DataFrame):
         name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}'
-        df = df.copy(deep=True)
+        df = df.copy()
         df = df.reset_index(drop=True)
         fp = os.path.join(self.write_path, f'{name}.json')
         json_partial = partial(write_json_frame, file_path=fp, df=df)

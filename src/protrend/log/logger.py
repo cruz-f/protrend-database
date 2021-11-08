@@ -1,32 +1,19 @@
 import logging.config
 from datetime import datetime
 
-from protrend.utils import Settings
-
-CONFIG_FILE = Settings.ROOT_PATH.joinpath('log', 'log.conf')
-CURRENT_TIME = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-LOG_PATH = Settings.ROOT_PATH.joinpath('log', f'protrendTL_{CURRENT_TIME}.log')
-LOG_FILE = LOG_PATH.as_posix()
+from protrend.utils import Settings, singleton
 
 
-def _singleton(cls):
-    instances = {}
-
-    def get_instance():
-        if cls not in instances:
-            instances[cls] = cls()
-        return instances[cls]
-
-    return get_instance()
-
-
-@_singleton
+@singleton
 class ProtrendLogger:
 
     def __init__(self):
-        self._config = CONFIG_FILE
+        self._config = Settings.log_conf_file
         self._disable_existing_loggers = False
-        self._log_file = LOG_FILE
+
+        now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+        self._log_file = Settings.log_working_directory.joinpath(f'protrendTL_{now}.log').as_posix()
+
         self._log = None
         self._started = False
 

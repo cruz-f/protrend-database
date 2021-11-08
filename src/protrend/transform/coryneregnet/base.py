@@ -49,8 +49,8 @@ class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0
 
         for key, file in regulation_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -69,8 +69,8 @@ class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0
 
         for key, file in operon_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -102,7 +102,7 @@ class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0
             df['taxonomy'] = self.taxa_to_organism_code[file]
             dfs.append(df)
 
-        return pd.concat(dfs, axis=0)
+        return pd.concat(dfs)
 
     def _read_operon(self, stack, file):
         fixed_names = ['Operon', 'Orientation']
@@ -141,7 +141,7 @@ class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0
             df['taxonomy'] = self.taxa_to_organism_code[file]
             dfs.append(df)
 
-        return pd.concat(dfs, axis=0)
+        return pd.concat(dfs)
 
     @abstractmethod
     def transform(self):

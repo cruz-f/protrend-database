@@ -26,7 +26,7 @@ class RegulatoryInteractionTransformer(DBTBSTransformer,
         tfbs = self.select_columns(tfbs, 'identifier', 'url', 'regulation', 'pubmed', 'tf', 'operon')
         tfbs = tfbs.explode(column='tf')
         tfbs = tfbs.explode(column='operon')
-        tfbs = self.drop_duplicates(df=tfbs, subset=['tf', 'operon'], perfect_match=True, preserve_nan=True)
+        tfbs = self.drop_duplicates(df=tfbs, subset=['tf', 'operon'], perfect_match=True)
         tfbs = tfbs.dropna(subset=['tf', 'operon'])
         return tfbs
 

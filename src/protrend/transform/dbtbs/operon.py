@@ -26,7 +26,7 @@ class OperonTransformer(DBTBSTransformer,
 
     def _transform_operon(self, operon: pd.DataFrame) -> pd.DataFrame:
         operon = operon.explode(column='name')
-        operon = self.drop_duplicates(df=operon, subset=['name'], perfect_match=True, preserve_nan=True)
+        operon = self.drop_duplicates(df=operon, subset=['name'], perfect_match=True)
         operon = operon.dropna(subset=['name'])
         operon = apply_processors(operon, tf=to_list_nan, url=to_list_nan, evidence=to_list_nan, pubmed=to_list_nan,
                                   comment=to_list_nan, gene=to_list_nan, tfbs=to_list_nan)
@@ -72,7 +72,7 @@ class OperonTransformer(DBTBSTransformer,
 
         df = apply_processors(df, operon_hash=[to_list, operon_hash])
         df = df.dropna(subset=['operon_hash'])
-        df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True)
 
         return df
 

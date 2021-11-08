@@ -142,7 +142,7 @@ class RegulatorToOrganismConnector(AbasyConnector,
                                    version='0.0.0',
                                    from_node=Regulator,
                                    to_node=Organism,
-                                   register=False):
+                                   register=True):
 
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
@@ -172,7 +172,7 @@ class OperonToOrganismConnector(AbasyConnector,
                                 version='0.0.0',
                                 from_node=Operon,
                                 to_node=Organism,
-                                register=False):
+                                register=True):
 
     default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
 
@@ -202,7 +202,7 @@ class GeneToOrganismConnector(AbasyConnector,
                               version='0.0.0',
                               from_node=Gene,
                               to_node=Organism,
-                              register=False):
+                              register=True):
 
     default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
 
@@ -231,7 +231,7 @@ class RegulatoryInteractionToOrganismConnector(AbasyConnector,
                                                version='0.0.0',
                                                from_node=RegulatoryInteraction,
                                                to_node=Organism,
-                                               register=False):
+                                               register=True):
 
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json', 'organism': 'integrated_organism.json'}
 

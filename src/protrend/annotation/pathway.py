@@ -1,11 +1,13 @@
-from typing import List, Type
+from typing import List, Type, TYPE_CHECKING
 
 import whoosh.index as w_index
 
 from protrend.bioapis import KEGGPathway, indexing_kegg_list, fetch_kegg_list, KEGG_PATH
 from protrend.log import ProtrendLogger
-from protrend.transform import PathwayDTO
 from protrend.utils.miscellaneous import args_length
+
+if TYPE_CHECKING:
+    from .dto import PathwayDTO
 
 
 def _fetch_pathways(names: List[str],
@@ -21,7 +23,7 @@ def _fetch_pathways(names: List[str],
     return pathways
 
 
-def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: PathwayDTO):
+def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: 'PathwayDTO'):
     pathway_dto.name.append(kegg_pathway.name)
 
     if kegg_pathway.identifier:
@@ -29,8 +31,8 @@ def _annotate_pathway(kegg_pathway: KEGGPathway, pathway_dto: PathwayDTO):
         pathway_dto.synonyms.extend(kegg_pathway.kegg_names)
 
 
-def annotate_pathways(dtos: List[PathwayDTO],
-                      names: List[str] = None) -> List[PathwayDTO]:
+def annotate_pathways(dtos: List['PathwayDTO'],
+                      names: List[str] = None) -> List['PathwayDTO']:
     """
     A common method to annotate a given pathway with relevant information from KEGG Pathway.
 
@@ -44,15 +46,15 @@ def annotate_pathways(dtos: List[PathwayDTO],
             - query names to KEGG Pathway index
             - retrieve KEGG Pathway identifiers
 
-    :type dtos: List[PathwayDTO]
+    :type dtos: List['PathwayDTO']
     :type names: List[str]
 
-    :rtype: List[PathwayDTO]
+    :rtype: List['PathwayDTO']
 
-    :param dtos: list of PathwayDTO. Each pathway DTO will be annotated with information from KEGG
+    :param dtos: list of 'PathwayDTO'. Each pathway DTO will be annotated with information from KEGG
     :param names: list of names to assist with the annotation
 
-    :return: list of annotated PathwayDTO. This function returns the same list object for convenience
+    :return: list of annotated 'PathwayDTO'. This function returns the same list object for convenience
     """
     dtos_size = len(dtos)
 
@@ -69,7 +71,7 @@ def annotate_pathways(dtos: List[PathwayDTO],
     except ValueError:
 
         ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
-                         f'Downloading kegg list and indexing ...')
+                                 f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)
         index = indexing_kegg_list(db=db, df_kegg_list=df_kegg_list)
@@ -79,7 +81,6 @@ def annotate_pathways(dtos: List[PathwayDTO],
     ProtrendLogger.log.info(f'Finishing fetch pathways')
 
     for pathway_dto, kegg_pathway in zip(dtos, kegg_pathways):
-        ProtrendLogger.log.info(f'Starting annotate pathway: {kegg_pathway.name}')
         _annotate_pathway(kegg_pathway, pathway_dto)
 
     return dtos

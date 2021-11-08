@@ -150,9 +150,9 @@ class RegulatorToSourceConnector(RegulondbConnector,
         keys = []
         for _, reg in regulator.iterrows():
 
-            tf_id = reg.get('transcription_factor_id', None)
-            srna_id = reg.get('srna_gene_id', None)
-            sigma_id = reg.get('sigma_gene_id', None)
+            tf_id = reg.get('transcription_factor_id')
+            srna_id = reg.get('srna_gene_id')
+            sigma_id = reg.get('sigma_gene_id')
 
             if not is_null(tf_id):
                 url.append(f'http://regulondb.ccg.unam.mx/search?term={tf_id}&organism=ECK12&type=All')

@@ -31,20 +31,20 @@ class PublicationTransformer(DBTBSTransformer,
         operon = operon.explode(column='name')
         operon = operon.dropna(subset=['pubmed'])
         operon = operon.explode(column='pubmed')
-        operon = self.drop_duplicates(df=operon, subset=['pubmed'], perfect_match=True, preserve_nan=True)
+        operon = self.drop_duplicates(df=operon, subset=['pubmed'], perfect_match=True)
         operon = operon.rename(columns={'name': 'operon'})
         operon = self.select_columns(operon, 'operon', 'pubmed')
 
         tfbs = tfbs.dropna(subset=['pubmed'])
         tfbs = tfbs.explode(column='pubmed')
-        tfbs = self.drop_duplicates(df=tfbs, subset=['pubmed'], perfect_match=True, preserve_nan=True)
+        tfbs = self.drop_duplicates(df=tfbs, subset=['pubmed'], perfect_match=True)
         tfbs = tfbs.rename(columns={'identifier': 'tfbs'})
         tfbs = self.select_columns(tfbs, 'tfbs', 'pubmed')
 
-        publication = pd.concat([operon, tfbs], axis=0)
+        publication = pd.concat([operon, tfbs])
         publication = apply_processors(df=publication, pubmed=to_int_str)
 
-        publication = self.drop_duplicates(df=publication, subset=['pubmed'], perfect_match=True, preserve_nan=True)
+        publication = self.drop_duplicates(df=publication, subset=['pubmed'], perfect_match=True)
         publication = self.create_input_value(publication, col='pubmed')
 
         return publication

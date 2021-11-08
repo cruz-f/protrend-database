@@ -1,12 +1,14 @@
-from typing import List, Type
+from typing import List, Type, TYPE_CHECKING
 
 import whoosh.index as w_index
 
 from protrend.bioapis import KEGGCompound
 from protrend.bioapis import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
 from protrend.log import ProtrendLogger
-from protrend.transform import EffectorDTO
 from protrend.utils.miscellaneous import args_length
+
+if TYPE_CHECKING:
+    from .dto import EffectorDTO
 
 
 def _fetch_compounds(names: List[str],
@@ -22,7 +24,7 @@ def _fetch_compounds(names: List[str],
     return compounds
 
 
-def _annotate_compound(kegg_compound: KEGGCompound, effector_dto: EffectorDTO):
+def _annotate_compound(kegg_compound: KEGGCompound, effector_dto: 'EffectorDTO'):
     effector_dto.name.append(kegg_compound.name)
 
     if kegg_compound.identifier:
@@ -30,8 +32,8 @@ def _annotate_compound(kegg_compound: KEGGCompound, effector_dto: EffectorDTO):
         effector_dto.synonyms.extend(kegg_compound.kegg_names)
 
 
-def annotate_effectors(dtos: List[EffectorDTO],
-                       names: List[str] = None) -> List[EffectorDTO]:
+def annotate_effectors(dtos: List['EffectorDTO'],
+                       names: List[str] = None) -> List['EffectorDTO']:
     """
     A common method to annotate a given effector with relevant information from KEGG Compound.
 
@@ -70,7 +72,7 @@ def annotate_effectors(dtos: List[EffectorDTO],
     except ValueError:
 
         ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
-                         f'Downloading kegg list and indexing ...')
+                                 f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)
         index = indexing_kegg_list(db=db, df_kegg_list=df_kegg_list)
@@ -80,7 +82,6 @@ def annotate_effectors(dtos: List[EffectorDTO],
     ProtrendLogger.log.info(f'Finishing fetch compounds')
 
     for effector_dto, kegg_compound in zip(dtos, kegg_compounds):
-        ProtrendLogger.log.info(f'Starting annotate compound: {kegg_compound.name}')
         _annotate_compound(kegg_compound, effector_dto)
 
     return dtos

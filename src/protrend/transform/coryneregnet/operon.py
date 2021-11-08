@@ -14,7 +14,7 @@ from protrend.utils import SetList, is_null
 class OperonTransformer(CoryneRegNetTransformer,
                         source='coryneregnet',
                         version='0.0.0',
-                        node=Gene,
+                        node=Operon,
                         order=80,
                         register=True):
     default_transform_stack = {'gene': 'integrated_gene.json', 'tfbs': 'integrated_tfbs.json'}
@@ -49,8 +49,7 @@ class OperonTransformer(CoryneRegNetTransformer,
 
         operon_gene = apply_processors(operon_gene, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
 
-        operon_gene = self.drop_duplicates(df=operon_gene, subset=['operon_hash'],
-                                           perfect_match=True, preserve_nan=True)
+        operon_gene = self.drop_duplicates(df=operon_gene, subset=['operon_hash'], perfect_match=True)
         operon_gene = operon_gene.dropna(subset=['operon_hash'])
 
         return operon_gene

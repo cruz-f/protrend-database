@@ -32,8 +32,7 @@ class EvidenceTransformer(RegulondbTransformer,
                             'example'])
 
     def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=evidence, subset=['evidence_id', 'evidence_name'],
-                                  perfect_match=False, preserve_nan=True)
+        df = self.drop_duplicates(df=evidence, subset=['evidence_id', 'evidence_name'])
 
         def remove_evidence_note(item: str) -> Union[None, str]:
             item = item.replace('EVIDENCE_NOTE', '')
@@ -94,7 +93,7 @@ class EvidenceToRegulatorConnector(RegulondbConnector,
         regulator_srna = regulator.dropna(subset=['srna_id'])
         obj_srna = pd.merge(obj_ev_pub, regulator_srna, left_on='object_id', right_on='srna_id')
 
-        obj_reg = pd.concat([obj_tf, obj_sigma, obj_srna], axis=0)
+        obj_reg = pd.concat([obj_tf, obj_sigma, obj_srna])
 
         reg_ev = pd.merge(obj_reg, evidence, on='evidence_id')
         reg_ev = reg_ev.drop_duplicates(subset=['evidence_protrend_id', 'regulator_protrend_id'])

@@ -132,7 +132,7 @@ class TFBSTransformer(RegPreciseTransformer,
                 'gene_old_locus_tag': to_set_list,
                 'regulon': flatten_set_list,
                 'operon': flatten_set_list}
-        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_last)
+        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr)
 
         # filter by regulon, sequence and position
         tfbs = apply_processors(tfbs, regulon=to_list)
@@ -221,8 +221,7 @@ class TFBSTransformer(RegPreciseTransformer,
         gene = gene.rename(columns={'strand': 'gene_strand', 'start': 'gene_start',
                                     'locus_tag_old': 'gene_old_locus_tag', 'protrend_id': 'gene_protrend_id'})
         gene = gene.dropna(subset=['gene_old_locus_tag', 'gene_protrend_id'])
-        gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag', 'gene_protrend_id'],
-                                    perfect_match=False, preserve_nan=False)
+        gene = self.drop_duplicates(df=gene, subset=['gene_old_locus_tag', 'gene_protrend_id'], preserve_nan=False)
 
         df = self._transform_tfbs(tfbs=tfbs, gene=gene)
         df = self._tfbs_coordinates(df)
@@ -238,7 +237,7 @@ class TFBSTransformer(RegPreciseTransformer,
         df['site_hash'] = df2['sequence'] + df2['length'] + df2['strand'] + df2['start'] + df2['gene_protrend_id']
         df = apply_processors(df, site_hash=site_hash)
 
-        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True)
         df = df.dropna(subset=['site_hash'])
 
         self._stack_transformed_nodes(df)

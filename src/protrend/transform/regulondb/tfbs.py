@@ -26,7 +26,7 @@ class TFBSTransformer(RegulondbTransformer,
 
     def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
         # filter by id
-        tfbs = self.drop_duplicates(df=tfbs, subset=['site_id'], perfect_match=True, preserve_nan=True)
+        tfbs = self.drop_duplicates(df=tfbs, subset=['site_id'], perfect_match=True)
 
         # filter by nan
         tfbs = tfbs.dropna(subset=['site_id', 'site_sequence'])
@@ -48,7 +48,7 @@ class TFBSTransformer(RegulondbTransformer,
 
         # filter by coordinates
         tfbs = self.drop_duplicates(df=tfbs, subset=['site_sequence', 'site_posleft', 'site_posright'],
-                                    perfect_match=True, preserve_nan=True)
+                                    perfect_match=True)
 
         tfbs['sequence'] = tfbs['site_sequence']
 
@@ -102,7 +102,7 @@ class TFBSTransformer(RegulondbTransformer,
         gene_tfbs['site_hash'] = df['sequence'] + df['length'] + df['strand'] + df['start'] + df['gene_protrend_id']
         gene_tfbs = apply_processors(gene_tfbs, site_hash=site_hash)
 
-        gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True, preserve_nan=True)
+        gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True)
         gene_tfbs = gene_tfbs.dropna(subset=['site_hash'])
 
         self._stack_transformed_nodes(gene_tfbs)

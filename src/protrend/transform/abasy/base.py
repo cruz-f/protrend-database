@@ -78,8 +78,8 @@ class AbasyTransformer(Transformer, source='abasy', version='0.0.0', register=Fa
 
         for key, file in network_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -98,8 +98,8 @@ class AbasyTransformer(Transformer, source='abasy', version='0.0.0', register=Fa
 
         for key, file in gene_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -131,7 +131,7 @@ class AbasyTransformer(Transformer, source='abasy', version='0.0.0', register=Fa
             df['taxonomy'] = self.taxa_to_organism_code[file]
             dfs.append(df)
 
-        return pd.concat(dfs, axis=0)
+        return pd.concat(dfs)
 
     def _build_genes(self, gene_stack: Dict[str, str] = None) -> pd.DataFrame:
 
@@ -148,7 +148,7 @@ class AbasyTransformer(Transformer, source='abasy', version='0.0.0', register=Fa
             df['taxonomy'] = self.taxa_to_organism_code[file]
             dfs.append(df)
 
-        return pd.concat(dfs, axis=0)
+        return pd.concat(dfs)
 
 
 class AbasyConnector(Connector, source='abasy', version='0.0.0', register=False):

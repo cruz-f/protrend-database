@@ -152,7 +152,7 @@ class TFBSTransformer(DBTBSTransformer,
         gene_tfbs['site_hash'] = df['sequence'] + df['length'] + df['strand'] + df['start'] + df['gene_protrend_id']
         gene_tfbs = apply_processors(gene_tfbs, site_hash=site_hash)
 
-        gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True, preserve_nan=True)
+        gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True)
         gene_tfbs = gene_tfbs.dropna(subset=['site_hash'])
 
         self._stack_transformed_nodes(gene_tfbs)

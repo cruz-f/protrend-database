@@ -68,10 +68,10 @@ class Transformer(AbstractTransformer):
     This Transformer object has implemented several utilities for the hard-working de facto transformers to be created
     for each data source and node
     """
-    source = DefaultProperty('')
-    version = DefaultProperty('')
-    node = DefaultProperty(Node)
-    order = DefaultProperty(0)
+    source = DefaultProperty()
+    version = DefaultProperty()
+    node = DefaultProperty()
+    order = DefaultProperty()
 
     default_transform_stack = {}
     columns = SetList()
@@ -80,16 +80,16 @@ class Transformer(AbstractTransformer):
     def __init_subclass__(cls, **kwargs):
 
         source = kwargs.get('source')
-        cls.source.set_default(source)
+        cls.source.set_default(cls, source)
 
         version = kwargs.get('version')
-        cls.version.set_default(version)
+        cls.version.set_default(cls, version)
 
-        node = kwargs.get('node')
-        cls.node.set_default(node)
+        node = kwargs.pop('node', None)
+        cls.node.set_default(cls, node)
 
-        order = kwargs.get('order')
-        cls.order.set_default(order)
+        order = kwargs.pop('order', None)
+        cls.order.set_default(cls, order)
 
         register = kwargs.pop('register', False)
 
@@ -150,8 +150,8 @@ class Transformer(AbstractTransformer):
 
         for key, file in transform_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -178,7 +178,7 @@ class Transformer(AbstractTransformer):
 
     @property
     def write_path(self) -> str:
-        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.data_lake, self.source, self.version)
 
     # --------------------------------------------------------
     # Python API
@@ -288,12 +288,11 @@ class Transformer(AbstractTransformer):
         :return: it creates a new pandas DataFrame of the integrated data
         """
         # ensure uniqueness
-        df = self.drop_duplicates(df=df, subset=self.node_factors_keys, perfect_match=False, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=self.node_factors_keys)
 
         # take a db snapshot for the current node and ensure uniqueness
         snapshot = self.node_view()
-        snapshot = self.drop_duplicates(df=snapshot, subset=self.node_factors_keys,
-                                        perfect_match=False, preserve_nan=True)
+        snapshot = self.drop_duplicates(df=snapshot, subset=self.node_factors_keys)
 
         # ensure persistence
         standardized_nodes = self.standardize_factors(df=df)
@@ -330,7 +329,7 @@ class Transformer(AbstractTransformer):
     # ----------------------------------------
     @classmethod
     def infer_write_stack(cls) -> WriteStack:
-        node_name = cls.node.default.node_name()
+        node_name = cls.node.get_default(cls).node_name()
         write_stack = WriteStack(transformed=f'transformed_{node_name}',
                                  integrated=f'integrated_{node_name}',
                                  nodes=f'nodes_{node_name}',
@@ -342,7 +341,7 @@ class Transformer(AbstractTransformer):
         return pd.DataFrame(columns=cols)
 
     def stack_json(self, name: str, df: pd.DataFrame):
-        df = df.copy(deep=True)
+        df = df.copy()
         df = df.reset_index(drop=True)
         fp = os.path.join(self.write_path, f'{name}.json')
         json_partial = partial(write_json_frame, file_path=fp, df=df)
@@ -508,7 +507,7 @@ class Transformer(AbstractTransformer):
         _hash = df_f['regulator_effector'] + df_f['regulator'] + df_f['operon'] + df_f['regulatory_effect']
         df['regulatory_interaction_hash'] = _hash
         df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
-        df = self.drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True)
         df = df.dropna(subset=['regulatory_interaction_hash'])
 
         return df

@@ -68,8 +68,7 @@ class GeneTransformer(LiteratureTransformer,
         network = network.explode(column='genes_locus_tag')
 
         network = apply_processors(network, genes_locus_tag=[rstrip, lstrip])
-        network = self.drop_duplicates(df=network, subset=['genes_locus_tag', 'taxonomy'],
-                                       perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['genes_locus_tag', 'taxonomy'], perfect_match=True)
         network = network.dropna(subset=['genes_locus_tag'])
 
         filtered_networks = [self._filter_ecol_locus_genes(network),
@@ -77,7 +76,7 @@ class GeneTransformer(LiteratureTransformer,
                              self._filter_paer_locus_genes(network),
                              self._filter_paer_names_genes(network),
                              self._filter_bsub_locus_genes(network)]
-        network = pd.concat(filtered_networks, axis=0)
+        network = pd.concat(filtered_networks)
         network = network.reset_index(drop=True)
 
         network['gene_network_id'] = network['genes_locus_tag'] + network['taxonomy']

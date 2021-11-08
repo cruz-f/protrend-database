@@ -31,7 +31,7 @@ class EvidenceTransformer(DBTBSTransformer,
         df = apply_processors(df, evidence=split_dbtbs_evidence)
         df = df.explode(column='evidence')
 
-        df = self.drop_duplicates(df=df, subset=['evidence'], perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df=df, subset=['evidence'], perfect_match=True)
 
         df = df.rename(columns={'name': 'operon'})
 

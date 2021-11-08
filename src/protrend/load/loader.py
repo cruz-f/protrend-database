@@ -11,16 +11,16 @@ from protrend.utils import Settings, DefaultProperty
 
 
 class Loader:
-    source = DefaultProperty('')
-    version = DefaultProperty('')
+    source = DefaultProperty()
+    version = DefaultProperty()
 
     def __init_subclass__(cls, **kwargs):
 
         source = kwargs.get('source')
-        cls.source.set_default(source)
+        cls.source.set_default(cls, source)
 
         version = kwargs.get('version')
-        cls.version.set_default(version)
+        cls.version.set_default(cls, version)
 
         register = kwargs.pop('register', False)
 
@@ -77,7 +77,7 @@ class Loader:
 
         for file in load_stack:
 
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(dl_file):
                 self._load_stack.append(dl_file)
@@ -91,7 +91,7 @@ class Loader:
 
     @property
     def read_path(self) -> str:
-        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.data_lake, self.source, self.version)
 
     # --------------------------------------------------------
     # Transformer API

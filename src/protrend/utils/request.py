@@ -17,7 +17,7 @@ def _request(url: str,
                            cookies=None,
                            files=None,
                            auth=None,
-                           timeout=Settings.REQUEST_TIMEOUT,
+                           timeout=Settings.request_timeout,
                            allow_redirects=True,
                            proxies=None,
                            hooks=None,
@@ -29,8 +29,6 @@ def _request(url: str,
     for key, val in kwargs.items():
         requests_kwargs[key] = val
 
-    response = None
-
     try:
 
         response = requests.request(method=method,
@@ -41,10 +39,10 @@ def _request(url: str,
         try:
             response.raise_for_status()
 
-        except requests.exceptions.HTTPError as exception:
+        except requests.exceptions.HTTPError:
             response = None
 
-    except requests.exceptions.RequestException as exception:
+    except requests.exceptions.RequestException:
         response = None
 
     if response is None:
@@ -58,7 +56,7 @@ def _request(url: str,
 def request(url: str,
             method: str = 'get',
             params: dict = None,
-            retries: int = Settings.REQUEST_RETRIES,
+            retries: int = Settings.request_retries,
             **kwargs) -> requests.Response:
 
     if retries > 0:

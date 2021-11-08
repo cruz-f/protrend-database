@@ -22,7 +22,7 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
         tf = tf.dropna(subset=['family'])
         tf = apply_processors(tf, family=[take_first, rstrip, lstrip])
-        tf = self.drop_duplicates(df=tf, subset=['family'], perfect_match=True, preserve_nan=True)
+        tf = self.drop_duplicates(df=tf, subset=['family'], perfect_match=True)
 
         # drop not assigned
         tf_not_assigned_mask = tf['family'] == 'Not assigned'

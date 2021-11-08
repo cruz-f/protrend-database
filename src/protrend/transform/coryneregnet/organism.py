@@ -143,7 +143,7 @@ class OperonToOrganismConnector(CoryneRegNetConnector,
         df = pd.merge(organism, operon_gene, left_on='ncbi_taxonomy', right_on='taxonomy_gene')
 
         df = OrganismTransformer.drop_duplicates(df=df, subset=['protrend_id', 'protrend_id_operon'],
-                                                 perfect_match=True, preserve_nan=True)
+                                                 perfect_match=True)
         df = df.dropna(subset=['protrend_id', 'protrend_id_operon'])
 
         from_identifiers = df['protrend_id_operon'].tolist()

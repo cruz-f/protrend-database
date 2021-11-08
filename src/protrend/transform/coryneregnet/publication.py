@@ -31,7 +31,7 @@ class PublicationTransformer(CoryneRegNetTransformer,
                        'coryneregnet_pmid'])
 
     def _transform_publication(self, regulation: pd.DataFrame) -> pd.DataFrame:
-        regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True, preserve_nan=True)
+        regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True)
         regulation = regulation.dropna(subset=['PMID'])
 
         regulation['coryneregnet_pmid'] = regulation['PMID']
@@ -43,7 +43,7 @@ class PublicationTransformer(CoryneRegNetTransformer,
         regulation = apply_processors(regulation, PMID=[to_str, split_pmid])
 
         regulation = regulation.explode(column='PMID')
-        regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True, preserve_nan=True)
+        regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True)
 
         regulation = self.create_input_value(regulation, col='PMID')
 
@@ -160,7 +160,7 @@ class PublicationToOperonConnector(CoryneRegNetConnector,
         df = pd.merge(publication, operon, left_on='TG_locusTag', right_on='Genes',
                       suffixes=('_publication', '_operon'))
         df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'protrend_id_operon'],
-                                                    perfect_match=True, preserve_nan=True)
+                                                    perfect_match=True)
         df = df.dropna(subset=['protrend_id_publication', 'protrend_id_operon'])
 
         from_identifiers = df['protrend_id_publication'].tolist()
@@ -194,12 +194,12 @@ class PublicationToGeneConnector(CoryneRegNetConnector,
         df = pd.merge(publication, operon, left_on='TG_locusTag', right_on='Genes',
                       suffixes=('_publication', '_operon'))
         df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'protrend_id_operon'],
-                                                    perfect_match=True, preserve_nan=True)
+                                                    perfect_match=True)
         df = df.dropna(subset=['protrend_id_publication', 'protrend_id_operon'])
 
         df = df.explode(column='genes')
         df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'genes'],
-                                                    perfect_match=True, preserve_nan=True)
+                                                    perfect_match=True)
         df = df.dropna(subset=['protrend_id_publication', 'genes'])
 
         from_identifiers = df['protrend_id_publication'].tolist()
@@ -233,12 +233,12 @@ class PublicationToTFBSConnector(CoryneRegNetConnector,
         df = pd.merge(publication, operon, left_on='TG_locusTag', right_on='Genes',
                       suffixes=('_publication', '_operon'))
         df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'protrend_id_operon'],
-                                                    perfect_match=True, preserve_nan=True)
+                                                    perfect_match=True)
         df = df.dropna(subset=['protrend_id_publication', 'protrend_id_operon'])
 
         df = df.explode(column='tfbss')
         df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'tfbss'],
-                                                    perfect_match=True, preserve_nan=True)
+                                                    perfect_match=True)
         df = df.dropna(subset=['protrend_id_publication', 'tfbss'])
 
         from_identifiers = df['protrend_id_publication'].tolist()

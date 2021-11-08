@@ -142,8 +142,8 @@ class RegulatorToSourceConnector(DBTBSConnector,
         external_identifier = []
         for _, reg in regulator.iterrows():
 
-            reg_id = reg.get('name_dbtbs', None)
-            reg_url = reg.get('url', None)
+            reg_id = reg.get('name_dbtbs')
+            reg_url = reg.get('url')
 
             if not is_null(reg_id) and not is_null(reg_url):
                 url.append(reg_url)
@@ -187,8 +187,8 @@ class OperonToSourceConnector(DBTBSConnector,
         external_identifier = []
         for _, op in operon.iterrows():
 
-            op_id = op.get('name', None)
-            op_url = op.get('url', None)
+            op_id = op.get('name')
+            op_url = op.get('url')
 
             if not is_null(op_id) and not is_null(op_url):
                 url.append(op_url)
@@ -232,8 +232,8 @@ class GeneToSourceConnector(DBTBSConnector,
         external_identifier = []
         for _, ge in gene.iterrows():
 
-            ge_id = ge.get('name_dbtbs', None)
-            ge_url = ge.get('url', None)
+            ge_id = ge.get('name_dbtbs')
+            ge_url = ge.get('url')
 
             if not is_null(ge_id) and not is_null(ge_url):
                 url.append(ge_url)
@@ -279,8 +279,8 @@ class TFBSToSourceConnector(DBTBSConnector,
         external_identifier = []
         for _, bs in tfbs.iterrows():
 
-            bs_id = bs.get('operon', None)
-            bs_url = bs.get('url', None)
+            bs_id = bs.get('operon')
+            bs_url = bs.get('url')
 
             if not is_null(bs_id) and not is_null(bs_url):
                 url.append(bs_url)
@@ -325,8 +325,8 @@ class RegulatoryInteractionToSourceConnector(DBTBSConnector,
         external_identifier = []
         for _, ri in rin.iterrows():
 
-            ri_id = ri.get('operon_name', None)
-            ri_url = ri.get('url', None)
+            ri_id = ri.get('operon_name')
+            ri_url = ri.get('url')
 
             if not is_null(ri_id) and not is_null(ri_url):
                 url.append(ri_url)

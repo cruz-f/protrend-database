@@ -37,8 +37,7 @@ class TFBSTransformer(CoryneRegNetTransformer,
         regulation = regulation.explode(column='Binding_site')
 
         # filter by duplicated target gene - sequences
-        regulation = self.drop_duplicates(df=regulation, subset=['TG_locusTag', 'Binding_site'],
-                                          perfect_match=True, preserve_nan=True)
+        regulation = self.drop_duplicates(df=regulation, subset=['TG_locusTag', 'Binding_site'], perfect_match=True)
 
         # filter by nan
         regulation = regulation.dropna(subset=['TG_locusTag', 'Binding_site'])
@@ -174,8 +173,7 @@ class TFBSTransformer(CoryneRegNetTransformer,
             'gene_protrend_id']
         operon_gene_tfbs = apply_processors(operon_gene_tfbs, site_hash=site_hash)
 
-        operon_gene_tfbs = self.drop_duplicates(df=operon_gene_tfbs, subset=['site_hash'],
-                                                perfect_match=True, preserve_nan=True)
+        operon_gene_tfbs = self.drop_duplicates(df=operon_gene_tfbs, subset=['site_hash'], perfect_match=True)
         operon_gene_tfbs = operon_gene_tfbs.dropna(subset=['site_hash'])
 
         self._stack_transformed_nodes(operon_gene_tfbs)

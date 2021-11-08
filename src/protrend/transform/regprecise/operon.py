@@ -84,7 +84,7 @@ class OperonTransformer(RegPreciseTransformer,
 
         operon = apply_processors(operon, operon_hash=[to_list, operon_hash], name=[to_list, operon_name])
         operon = operon.dropna(subset=['operon_hash'])
-        operon = self.drop_duplicates(df=operon, subset=['operon_hash'], perfect_match=True, preserve_nan=True)
+        operon = self.drop_duplicates(df=operon, subset=['operon_hash'], perfect_match=True)
 
         return operon
 
@@ -167,7 +167,7 @@ class OperonTransformer(RegPreciseTransformer,
         operon = operon.drop(columns=['name'])
 
         operon = operon.explode('regulon')
-        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True, preserve_nan=True)
+        operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True)
 
         gene = read_from_stack(stack=self.transform_stack, file='gene',
                                default_columns=GeneTransformer.columns, reader=read_json_frame)

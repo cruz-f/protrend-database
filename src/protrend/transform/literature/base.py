@@ -72,8 +72,8 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
 
         for key, file in network_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -293,7 +293,7 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
         df_regulator_mask = df_regulator['Regulator number'] != ''
         df_regulator = df_regulator[df_regulator_mask]
 
-        df = pd.concat([df_regulator, df_sigma], axis=0)
+        df = pd.concat([df_regulator, df_sigma])
         df = apply_processors(df, **{'Regulator number': to_int_str})
 
         df_regulators = read_from_stack(stack=self.network_stack,
@@ -362,7 +362,7 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
     def _build_network(self) -> pd.DataFrame:
         dfs = [self._build_ecol_fang_et_al_2017(), self._build_mtub_turkarslan_et_al_2015(),
                self._build_paer_vasquez_et_al_2011(), self._build_bsub_faria_et_al_2017()]
-        df = pd.concat(dfs, axis=0)
+        df = pd.concat(dfs)
         df = df.reset_index(drop=True)
         df = df.dropna(subset=['regulator_locus_tag', 'operon'])
 
@@ -373,7 +373,7 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
                         self._filter_paer_locus_regulator(df),
                         self._filter_paer_names_regulator(df),
                         self._filter_bsub_locus_regulator(df)]
-        df = pd.concat(filtered_dfs, axis=0)
+        df = pd.concat(filtered_dfs)
         df = df.reset_index(drop=True)
 
         network_id = df['regulator_locus_tag'] + df['operon'] + df['taxonomy'] + df['source']

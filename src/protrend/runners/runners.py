@@ -1,15 +1,6 @@
-# ----------------------------------------------------
-# SET LOCAL STAGING AREA AND DATA LAKE PATH
-# ----------------------------------------------------
 from pathlib import Path
-from protrend.utils import Settings
 
-Settings.STAGING_AREA_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\staging_area')
-Settings.DATA_LAKE_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\data_lake')
-Settings.DATA_LAKE_BIOAPI_PATH = Path(r'C:\Users\BiSBII\Desktop\protrend\data_lake\bioapi_cache')
-
-
-from protrend.utils import log_file_from_name
+from protrend.utils import Settings, log_file_from_name
 from protrend.log import ProtrendLogger
 from protrend.pipeline import Pipeline
 from protrend.utils import NeoDatabase
@@ -107,6 +98,12 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
+    # -------------------------------------------------------------
+    # SET WORKING DIRECTORY FOR STAGING AREA AND DATA LAKE PATH
+    # -------------------------------------------------------------
+    working_directory = Path(r'C:\Users\BiSBII\Desktop\protrend')
+    Settings.start_settings(working_directory=working_directory)
+
     run_logger('tcl_logger')
     run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
 

@@ -26,7 +26,7 @@ class RegulatoryFamilyTransformer(RegulondbTransformer,
     def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
         tf = apply_processors(tf, transcription_factor_family=[rstrip, lstrip])
         tf = tf.dropna(subset=['transcription_factor_family'])
-        tf = self.drop_duplicates(df=tf, subset=['transcription_factor_family'], perfect_match=True, preserve_nan=True)
+        tf = self.drop_duplicates(df=tf, subset=['transcription_factor_family'], perfect_match=True)
 
         tf['name'] = tf['transcription_factor_family']
         tf['mechanism'] = 'transcription factor'

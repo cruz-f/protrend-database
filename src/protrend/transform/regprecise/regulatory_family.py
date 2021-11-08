@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame, read_from_stack
+from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import RegulatoryFamily, Source, Publication, Regulator
 from protrend.utils.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
                                        rstrip, lstrip, remove_pubmed, apply_processors, to_set_list, to_list_nan,
@@ -154,7 +154,7 @@ class RegulatoryFamilyToSourceConnector(RegPreciseConnector,
 
             dfs.append(df)
 
-        df = pd.concat(dfs, axis=0)
+        df = pd.concat(dfs)
 
         self.stack_json(df)
 

@@ -20,8 +20,8 @@ from .regulatory_interaction import (RegulatorToEffectorConnector, RegulatorToGe
                                      RegulatoryInteractionToGeneConnector, RegulatoryInteractionToOperonConnector,
                                      RegulatoryInteractionToRegulatorConnector, RegulatoryInteractionToTFBSConnector,
                                      RegulatoryInteractionTransformer)
-from .source import  (EffectorToSourceConnector, GeneToSourceConnector, OperonToSourceConnector,
-                      OrganismToSourceConnector, PromoterToSourceConnector, RegulatorToSourceConnector,
-                      RegulatoryFamilyToSourceConnector, RegulatoryInteractionToSourceConnector, SourceTransformer,
-                      TFBSToSourceConnector)
+from .source import (EffectorToSourceConnector, GeneToSourceConnector, OperonToSourceConnector,
+                     OrganismToSourceConnector, PromoterToSourceConnector, RegulatorToSourceConnector,
+                     RegulatoryFamilyToSourceConnector, RegulatoryInteractionToSourceConnector, SourceTransformer,
+                     TFBSToSourceConnector)
 from .tfbs import TFBSTransformer

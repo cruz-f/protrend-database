@@ -32,7 +32,7 @@ class PublicationTransformer(RegulondbTransformer,
     def _transform_publication(self, publication: pd.DataFrame) -> pd.DataFrame:
         publication = apply_processors(df=publication, reference_id=to_int_str)
         publication = publication.dropna(subset=['reference_id'])
-        publication = self.drop_duplicates(publication, subset=['reference_id'], perfect_match=True, preserve_nan=True)
+        publication = self.drop_duplicates(publication, subset=['reference_id'], perfect_match=True)
 
         publication = self.create_input_value(publication, col='reference_id')
 
@@ -133,7 +133,7 @@ class PublicationToRegulatorConnector(RegulondbConnector,
         regulator_srna = regulator.dropna(subset=['srna_id'])
         obj_srna = pd.merge(obj_ev_pub, regulator_srna, left_on='object_id', right_on='srna_id')
 
-        obj_reg = pd.concat([obj_tf, obj_sigma, obj_srna], axis=0)
+        obj_reg = pd.concat([obj_tf, obj_sigma, obj_srna])
 
         reg_pub = pd.merge(obj_reg, publication, on='publication_id')
         reg_pub = reg_pub.drop_duplicates(subset=['publication_protrend_id', 'regulator_protrend_id'])

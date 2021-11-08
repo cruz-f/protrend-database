@@ -1,8 +1,9 @@
 import sys
 from abc import ABCMeta, abstractmethod
 
-from protrend.utils import Settings
+from protrend.extract import run_spider
 from protrend.utils import DefaultProperty
+from protrend.utils import Settings
 
 
 class AbstractExtractor(metaclass=ABCMeta):
@@ -32,21 +33,21 @@ class Extractor(AbstractExtractor):
     """
     A Extractor is responsible for extracting data sources.
     """
-    source = DefaultProperty('')
-    version = DefaultProperty('')
+    source = DefaultProperty()
+    version = DefaultProperty()
 
     def __init_subclass__(cls, **kwargs):
 
         source = kwargs.get('source')
-        cls.source.set_default(source)
+        cls.source.set_default(cls, source)
 
         version = kwargs.get('version')
-        cls.version.set_default(version)
+        cls.version.set_default(cls, version)
 
         register = kwargs.pop('register', False)
 
         if register:
-            from protrend.pipeline import Pipeline
+            from protrend.pipeline.pipeline import Pipeline
             Pipeline.register_extractor(cls, **kwargs)
 
     def __init__(self,
@@ -66,7 +67,7 @@ class Extractor(AbstractExtractor):
         self.version = version
 
     def extract(self):
-        src_path = Settings.ROOT_PATH.parent
+        src_path = Settings.source.parent
         sys.path.insert(0, str(src_path))
-        from .run_spider import run_spider
-        return run_spider(spider=self.source, staging_area=Settings.STAGING_AREA_PATH, version=self.version)
+        staging_area = str(Settings.staging_area)
+        return run_spider(spider=self.source, staging_area=staging_area, version=self.version)

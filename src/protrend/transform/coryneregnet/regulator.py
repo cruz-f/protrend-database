@@ -27,7 +27,7 @@ class RegulatorTransformer(CoryneRegNetTransformer,
                        'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy'])
 
     def _transform_regulation(self, regulation: pd.DataFrame) -> pd.DataFrame:
-        regulation = self.drop_duplicates(df=regulation, subset=['TF_locusTag'], perfect_match=True, preserve_nan=True)
+        regulation = self.drop_duplicates(df=regulation, subset=['TF_locusTag'], perfect_match=True)
         regulation = regulation.dropna(subset=['TF_locusTag'])
 
         regulation = apply_processors(regulation, TF_locusTag=[rstrip, lstrip], TF_name=[rstrip, lstrip])

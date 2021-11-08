@@ -26,7 +26,7 @@ class EvidenceTransformer(LiteratureTransformer,
         network = apply_processors(network, evidence=to_set_list)
         network = network.explode(column='evidence')
 
-        network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True)
         network = network.dropna(subset=['evidence'])
 
         def split_evidence(item: str) -> SetList:
@@ -45,7 +45,7 @@ class EvidenceTransformer(LiteratureTransformer,
         network = apply_processors(network, evidence=split_evidence)
         network = network.explode(column='evidence')
 
-        network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True, preserve_nan=True)
+        network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True)
         network = network.dropna(subset=['evidence'])
 
         network['name'] = network['evidence']

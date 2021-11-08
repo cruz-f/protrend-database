@@ -46,7 +46,7 @@ class OrganismToSourceConnector(AbasyConnector,
                                 version='0.0.0',
                                 from_node=Organism,
                                 to_node=Source,
-                                register=False):
+                                register=True):
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -72,7 +72,7 @@ class RegulatorToSourceConnector(AbasyConnector,
                                  version='0.0.0',
                                  from_node=Regulator,
                                  to_node=Source,
-                                 register=False):
+                                 register=True):
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -98,7 +98,7 @@ class OperonToSourceConnector(AbasyConnector,
                               version='0.0.0',
                               from_node=Operon,
                               to_node=Source,
-                              register=False):
+                              register=True):
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -124,7 +124,7 @@ class GeneToSourceConnector(AbasyConnector,
                             version='0.0.0',
                             from_node=Gene,
                             to_node=Source,
-                            register=False):
+                            register=True):
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
@@ -150,7 +150,7 @@ class RegulatoryInteractionToSourceConnector(AbasyConnector,
                                              version='0.0.0',
                                              from_node=RegulatoryInteraction,
                                              to_node=Source,
-                                             register=False):
+                                             register=True):
 
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
                              'source': 'integrated_source.json'}

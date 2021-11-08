@@ -102,7 +102,7 @@ class GeneTransformer(RegulondbTransformer,
     def _transform_gene(self, gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
         gene = apply_processors(gene, gene_name=[rstrip, lstrip])
         gene = gene.dropna(subset=['gene_name'])
-        gene = self.drop_duplicates(df=gene, subset=['gene_name'], perfect_match=True, preserve_nan=True)
+        gene = self.drop_duplicates(df=gene, subset=['gene_name'], perfect_match=True)
 
         gene['gene_name_lower'] = gene['gene_name'].str.lower()
 

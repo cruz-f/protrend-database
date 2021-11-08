@@ -193,6 +193,8 @@ class Node(StructuredNode):
 
                 for key, val in node.items():
 
+                    key: str
+
                     if key in node_keys:
 
                         last_val = getattr(structured_node, key, None)
@@ -210,7 +212,7 @@ class Node(StructuredNode):
 
     @classmethod
     def node_to_df(cls) -> pd.DataFrame:
-        return pd.DataFrame.from_dict(cls.node_to_dict(to='dict'))
+        return pd.DataFrame.from_dict(cls.node_to_dict())
 
     # -------------------------------------
     # Instance methods
@@ -254,7 +256,7 @@ def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]) -> s
     return f'{header}.{entity}.{integer:07}'
 
 
-def protrend_id_decoder(protrend_id: str) -> int:
+def protrend_id_decoder(protrend_id: Union[str, StringProperty]) -> int:
     prt, entity, integer = protrend_id.split('.')
 
     return int(integer)

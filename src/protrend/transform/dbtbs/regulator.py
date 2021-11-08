@@ -102,7 +102,7 @@ class RegulatorTransformer(DBTBSTransformer,
         tf = tf.drop(columns=['description'])
 
         # filter nan and duplicates
-        tf = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=True)
+        tf = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True)
         tf = tf.dropna(subset=['name'])
 
         tf['mechanism'] = 'transcription factor'

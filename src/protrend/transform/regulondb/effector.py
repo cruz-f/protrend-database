@@ -27,7 +27,7 @@ class EffectorTransformer(RegulondbTransformer,
 
     def _transform_effector(self, effector: pd.DataFrame):
         effector['name'] = effector['effector_name']
-        effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=True)
+        effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True)
         effector = effector.dropna(subset=['name'])
 
         effector = apply_processors(effector, effector_id=[rstrip, lstrip],

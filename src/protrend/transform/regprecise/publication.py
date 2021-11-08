@@ -68,10 +68,10 @@ class PublicationTransformer(RegPreciseTransformer,
                               default_columns=self.rna_columns, reader=read_json_lines)
         rna = self._transform_rna(rna)
 
-        df = pd.concat([tf_family, tf, rna], axis=0)
+        df = pd.concat([tf_family, tf, rna])
         df = df.explode('pubmed')
         df = df.dropna(subset=['pubmed'])
-        df = self.drop_duplicates(df=df, subset=['pubmed'], perfect_match=False, preserve_nan=False)
+        df = self.drop_duplicates(df=df, subset=['pubmed'], preserve_nan=False)
 
         pmids = df['pubmed'].tolist()
         df = self._transform_publications(pmids)

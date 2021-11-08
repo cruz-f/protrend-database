@@ -103,7 +103,7 @@ class GeneTransformer(DBTBSTransformer,
         gene = gene.explode(column='name')
 
         # filter nan and duplicates
-        gene = self.drop_duplicates(df=gene, subset=['name'], perfect_match=True, preserve_nan=True)
+        gene = self.drop_duplicates(df=gene, subset=['name'], perfect_match=True)
         gene = gene.dropna(subset=['name'])
 
         gene = apply_processors(gene, name=[rstrip, lstrip])

@@ -1,11 +1,13 @@
-from typing import List, Union, Type
+from typing import List, Union, Type, TYPE_CHECKING
 
 import pandas as pd
 
 from protrend.bioapis import NCBIGene, UniProtProtein, NCBIProtein, map_uniprot_identifiers
 from protrend.log import ProtrendLogger
-from protrend.transform import GeneDTO
 from protrend.utils.miscellaneous import args_length, scale_arg
+
+if TYPE_CHECKING:
+    from .dto import GeneDTO
 
 
 def _find_in_mapping(acc: str, mapping: pd.DataFrame):
@@ -27,12 +29,9 @@ def _fetch_genes(identifiers: List[str],
     if identifiers[0] is None:
 
         for taxonomy, locus_tag, name in zip(taxa, loci, names):
-            ProtrendLogger.log.info(f'Starting fetch gene: {locus_tag}')
-
             gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
             gene.fetch()
             genes.append(gene)
-            ProtrendLogger.log.info(f'Ending fetch gene: {locus_tag}')
 
     else:
 
@@ -53,7 +52,7 @@ def _fetch_genes(identifiers: List[str],
     return genes
 
 
-def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
+def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: 'GeneDTO'):
     if uniprot_protein.identifier:
         gene_dto.uniprot_accession.append(uniprot_protein.identifier)
         gene_dto.locus_tag.append(uniprot_protein.locus_tag)
@@ -68,7 +67,7 @@ def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
     return ''
 
 
-def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
+def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: 'GeneDTO'):
     if ncbi_protein.identifier:
 
         gene_dto.ncbi_protein.append(ncbi_protein.identifier)
@@ -82,7 +81,7 @@ def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: GeneDTO):
             gene_dto.genbank_accession.append(ncbi_protein.genbank_accession)
 
 
-def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
+def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: 'GeneDTO'):
     if ncbi_gene.identifier:
         gene_dto.ncbi_gene.append(ncbi_gene.identifier)
         gene_dto.locus_tag.append(ncbi_gene.locus_tag)
@@ -105,13 +104,13 @@ def _annotate_ncbi_gene(ncbi_gene: NCBIGene, gene_dto: GeneDTO):
     return ''
 
 
-def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: GeneDTO):
+def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: 'GeneDTO'):
     gene_dto.locus_tag.append(uniprot_protein.locus_tag)
     gene_dto.name.append(uniprot_protein.name)
     gene_dto.synonyms.extend(uniprot_protein.synonyms)
 
 
-def annotate_genes(dtos: List[GeneDTO],
+def annotate_genes(dtos: List['GeneDTO'],
                    loci: List[str] = None,
                    names: List[str] = None,
                    taxa: List[str] = None,
@@ -119,7 +118,7 @@ def annotate_genes(dtos: List[GeneDTO],
                    ncbi_proteins: List[str] = None,
                    ncbi_genbanks: List[str] = None,
                    ncbi_refseqs: List[str] = None,
-                   ncbi_genes: List[str] = None) -> List[GeneDTO]:
+                   ncbi_genes: List[str] = None) -> List['GeneDTO']:
     """
     A common method to annotate a given gene with relevant information from UniProt or NCBI.
 
@@ -141,10 +140,10 @@ def annotate_genes(dtos: List[GeneDTO],
             - map all genes to NCBI protein, GenBank and RefSeq identifiers
 
         - 4º Step:
-            - merge data into a GeneDTO
+            - merge data into a 'GeneDTO'
 
 
-    :type dtos: List[GeneDTO]
+    :type dtos: List['GeneDTO']
     :type loci: List[str]
     :type names: List[str]
     :type taxa: List[str]
@@ -154,9 +153,9 @@ def annotate_genes(dtos: List[GeneDTO],
     :type ncbi_refseqs: List[str]
     :type ncbi_genes: List[str]
 
-    :rtype: List[GeneDTO]
+    :rtype: List['GeneDTO']
     
-    :param dtos: list of GeneDTO. Each gene DTO will be annotated with information from NCBI and UniProt
+    :param dtos: list of 'GeneDTO'. Each gene DTO will be annotated with information from NCBI and UniProt
     :param loci: list of locus tag identifiers to assist with the annotation
     :param names: list of names to assist with the annotation
     :param taxa: list of taxonomy identifiers to assist with the annotation
@@ -166,7 +165,7 @@ def annotate_genes(dtos: List[GeneDTO],
     :param ncbi_refseqs: list of NCBI RefSeq accessions to assist with the annotation
     :param ncbi_genes: list of NCBI Gene identifiers to assist with the annotation
 
-    :return: list of annotated GeneDTO. This function returns the same list object for convenience
+    :return: list of annotated 'GeneDTO'. This function returns the same list object for convenience
     """
 
     dtos_size = len(dtos)
@@ -243,8 +242,6 @@ def annotate_genes(dtos: List[GeneDTO],
     uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):
-        ProtrendLogger.log.info(f'Starting annotate gene: {uniprot_protein.name}')
-
         uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
         _annotate_ncbi_protein(ncbi_protein, gene_dto)
         _annotate_ncbi_gene(ncbi_gene, gene_dto)

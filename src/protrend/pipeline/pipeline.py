@@ -1,44 +1,46 @@
 from collections import defaultdict
-from typing import List, Dict, Tuple, Type
+from typing import List, Dict, Tuple, Type, TYPE_CHECKING
 
-from protrend.extract import Extractor
-from protrend.load import Loader
 from protrend.log import ProtrendLogger
-from protrend.transform.connector import Connector
-from protrend.transform.transformer import Transformer
+
+if TYPE_CHECKING:
+    from protrend.extract import Extractor
+    from protrend.transform import Transformer
+    from protrend.transform import Connector
+    from protrend.load import Loader
 
 
-def sort_by_order(transformer: Transformer):
+def sort_by_order(transformer: 'Transformer'):
     return transformer.order
 
 
 class Pipeline:
-    default_extractors: Dict[Tuple[str, str], List[Type[Extractor]]] = defaultdict(list)
-    default_transformers: Dict[Tuple[str, str], List[Type[Transformer]]] = defaultdict(list)
-    default_connectors: Dict[Tuple[str, str], List[Type[Connector]]] = defaultdict(list)
-    default_loaders: Dict[Tuple[str, str], List[Type[Loader]]] = defaultdict(list)
+    default_extractors: Dict[Tuple[str, str], List[Type['Extractor']]] = defaultdict(list)
+    default_transformers: Dict[Tuple[str, str], List[Type['Transformer']]] = defaultdict(list)
+    default_connectors: Dict[Tuple[str, str], List[Type['Connector']]] = defaultdict(list)
+    default_loaders: Dict[Tuple[str, str], List[Type['Loader']]] = defaultdict(list)
 
     @classmethod
-    def register_extractor(cls, extractor: Type[Extractor], source: str, version: str):
+    def register_extractor(cls, extractor: Type['Extractor'], source: str, version: str):
         cls.default_extractors[(source, version)].append(extractor)
 
     @classmethod
-    def register_transformer(cls, transformer: Type[Transformer], source: str, version: str):
+    def register_transformer(cls, transformer: Type['Transformer'], source: str, version: str):
         cls.default_transformers[(source, version)].append(transformer)
 
     @classmethod
-    def register_connector(cls, connector: Type[Connector], source: str, version: str):
+    def register_connector(cls, connector: Type['Connector'], source: str, version: str):
         cls.default_connectors[(source, version)].append(connector)
 
     @classmethod
-    def register_loader(cls, loader: Type[Loader], source: str, version: str):
+    def register_loader(cls, loader: Type['Loader'], source: str, version: str):
         cls.default_loaders[(source, version)].append(loader)
 
     def __init__(self,
-                 extractors: List[Extractor] = None,
-                 transformers: List[Transformer] = None,
-                 connectors: List[Connector] = None,
-                 loaders: List[Loader] = None):
+                 extractors: List['Extractor'] = None,
+                 transformers: List['Transformer'] = None,
+                 connectors: List['Connector'] = None,
+                 loaders: List['Loader'] = None):
 
         """
         Pipeline is responsible for managing transformers, connectors and loaders.
@@ -48,16 +50,16 @@ class Pipeline:
         The director is also responsible for sending instructions to the loaders on how to load the transformed nodes
         into the database.
 
-        :type extractors: List[Extractor]
+        :type extractors: List['Extractor']
         :param extractors: extractors to scrap data sources
 
-        :type transformers: List[Transformer]
+        :type transformers: List['Transformer']
         :param transformers: transformers for processing staging area files into nodes
 
-        :type connectors: List[Connector]
+        :type connectors: List['Connector']
         :param connectors: connectors for processing staging area files into relationships
 
-        :type loaders: List[Loader]
+        :type loaders: List['Loader']
         :param loaders: loaders for converting data lake files into nodes and relationships
         """
 
@@ -79,19 +81,19 @@ class Pipeline:
         self._loaders = list(loaders)
 
     @property
-    def extractors(self) -> List[Extractor]:
+    def extractors(self) -> List['Extractor']:
         return self._extractors
 
     @property
-    def transformers(self) -> List[Transformer]:
+    def transformers(self) -> List['Transformer']:
         return sorted(self._transformers, key=sort_by_order, reverse=True)
 
     @property
-    def connectors(self) -> List[Connector]:
+    def connectors(self) -> List['Connector']:
         return self._connectors
 
     @property
-    def loaders(self) -> List[Loader]:
+    def loaders(self) -> List['Loader']:
         return self._loaders
 
     def extract(self):

@@ -116,7 +116,7 @@ class OrganismTransformer(LiteratureTransformer,
         organisms = self._transform_organisms(identifiers=tax_ids, names=names)
         organisms = organisms.drop(columns=['input_value'])
 
-        df = pd.concat([annotated_organisms_df, organisms], axis=0)
+        df = pd.concat([annotated_organisms_df, organisms])
 
         self._stack_transformed_nodes(df)
 

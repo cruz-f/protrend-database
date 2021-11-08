@@ -91,8 +91,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
 
         for key, file in regulondb_stack.items():
 
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
@@ -108,7 +108,7 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
 
     def _build(self, df: pd.DataFrame, selection: List[str], duplicates: List[str], nan: List[str]) -> pd.DataFrame:
         df = self.select_columns(df, *selection)
-        df = self.drop_duplicates(df, subset=duplicates, perfect_match=True, preserve_nan=True)
+        df = self.drop_duplicates(df, subset=duplicates, perfect_match=True)
         df = df.dropna(subset=nan)
         return df
 
@@ -477,8 +477,8 @@ class RegulondbConnector(Connector, source='regulondb', version='0.0.0', registe
             connect_stack = self.default_connect_stack
 
         for key, file in connect_stack.items():
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
+            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
+            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
 
