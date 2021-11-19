@@ -1,6 +1,8 @@
+import os.path
+from datetime import datetime
 from pathlib import Path
 
-from protrend.utils import Settings, log_file_from_name
+from protrend.utils import Settings
 from protrend.log import ProtrendLogger
 from protrend.pipeline import Pipeline
 from protrend.utils import NeoDatabase
@@ -29,7 +31,14 @@ def run_database(install_labels: bool = False,
 
 
 def run_logger(name: str):
-    log_file = log_file_from_name(name)
+    log_working_dir = Settings.log_working_directory
+    if not os.path.exists(log_working_dir):
+        os.makedirs(log_working_dir)
+
+    now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    log_path = log_working_dir.joinpath(f'{name}_{now}.log')
+    log_file = log_path.as_posix()
+
     ProtrendLogger.log_file = log_file
     ProtrendLogger.start_logger()
     return

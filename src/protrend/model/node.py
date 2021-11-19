@@ -6,6 +6,7 @@ import pandas as pd
 import pytz
 from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager)
 from neomodel.relationship import StructuredRel
+from tqdm import tqdm
 
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
 
@@ -158,7 +159,7 @@ class Node(StructuredNode):
         structured_nodes = []
         node_keys = list(cls.node_keys())
 
-        for _, node in nodes.iterrows():
+        for _, node in tqdm(nodes.iterrows()):
 
             node_kwargs = {key: val for key, val in node.items()
                            if key in node_keys and not is_null(val)}
@@ -183,7 +184,7 @@ class Node(StructuredNode):
         node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
         all_nodes = cls.node_to_dict(to='node')
 
-        for _, node in nodes.iterrows():
+        for _, node in tqdm(nodes.iterrows()):
 
             identifier = node.get(cls.identifying_property, '')
 

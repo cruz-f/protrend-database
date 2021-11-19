@@ -3,6 +3,7 @@ from typing import List
 
 import pandas as pd
 from neomodel import AttemptedCardinalityViolation
+from tqdm import tqdm
 
 from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
@@ -164,7 +165,7 @@ class Loader:
 
         from_rels, to_rels = get_nodes_relationships(from_node=from_node, to_node=to_node)
 
-        for _, relationship in df.iterrows():
+        for _, relationship in tqdm(df.iterrows()):
 
             relationship = relationship.to_dict()
 

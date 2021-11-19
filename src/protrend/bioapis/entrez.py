@@ -15,35 +15,26 @@ Entrez.tool = ENTREZ_TOOL
 
 
 def _init_entrez_search() -> Cache:
-    directory = Settings.entrez_search
+    if not os.path.exists(Settings.entrez_search):
+        os.makedirs(Settings.entrez_search)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory, disk=JSONDisk)
-
+    cache = Cache(directory=Settings.entrez_search, disk=JSONDisk)
     return cache
 
 
 def _init_entrez_summary() -> Cache:
-    directory = Settings.entrez_summary
+    if not os.path.exists(Settings.entrez_summary):
+        os.makedirs(Settings.entrez_summary)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory, disk=JSONDisk)
-
+    cache = Cache(directory=Settings.entrez_summary, disk=JSONDisk)
     return cache
 
 
 def _init_entrez_fetch() -> Cache:
-    directory = Settings.entrez_fetch
+    if not os.path.exists(Settings.entrez_fetch):
+        os.makedirs(Settings.entrez_fetch)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.entrez_fetch)
     return cache
 
 

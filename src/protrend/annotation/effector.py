@@ -1,11 +1,13 @@
 from typing import List, Type, TYPE_CHECKING
 
 import whoosh.index as w_index
+from tqdm import tqdm
 
 from protrend.bioapis import KEGGCompound
-from protrend.bioapis import indexing_kegg_list, fetch_kegg_list, KEGG_PATH
+from protrend.bioapis import indexing_kegg_list, fetch_kegg_list
 from protrend.log import ProtrendLogger
 from protrend.utils.miscellaneous import args_length
+from ..utils import Settings
 
 if TYPE_CHECKING:
     from .dto import EffectorDTO
@@ -16,7 +18,7 @@ def _fetch_compounds(names: List[str],
                      index: w_index.FileIndex = None) -> List[KEGGCompound]:
     compounds = []
 
-    for name in names:
+    for name in tqdm(names):
         compound = cls(name=name)
         compound.fetch(index)
         compounds.append(compound)
@@ -71,7 +73,7 @@ def annotate_effectors(dtos: List['EffectorDTO'],
 
     except ValueError:
 
-        ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
+        ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {Settings.kegg}. '
                                  f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)

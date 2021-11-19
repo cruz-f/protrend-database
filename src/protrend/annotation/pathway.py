@@ -1,10 +1,12 @@
 from typing import List, Type, TYPE_CHECKING
 
 import whoosh.index as w_index
+from tqdm import tqdm
 
-from protrend.bioapis import KEGGPathway, indexing_kegg_list, fetch_kegg_list, KEGG_PATH
+from protrend.bioapis import KEGGPathway, indexing_kegg_list, fetch_kegg_list
 from protrend.log import ProtrendLogger
 from protrend.utils.miscellaneous import args_length
+from ..utils import Settings
 
 if TYPE_CHECKING:
     from .dto import PathwayDTO
@@ -15,7 +17,7 @@ def _fetch_pathways(names: List[str],
                     index: w_index.FileIndex = None) -> List[KEGGPathway]:
     pathways = []
 
-    for name in names:
+    for name in tqdm(names):
         pathway = cls(name=name)
         pathway.fetch(index)
         pathways.append(pathway)
@@ -70,7 +72,7 @@ def annotate_pathways(dtos: List['PathwayDTO'],
 
     except ValueError:
 
-        ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {KEGG_PATH}. '
+        ProtrendLogger.log.debug(f'Index for kegg database {db} was not found in path {Settings.kegg}. '
                                  f'Downloading kegg list and indexing ...')
 
         df_kegg_list = fetch_kegg_list(db=db, cache=cache)

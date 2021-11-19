@@ -1,5 +1,7 @@
 from typing import List, Type, TYPE_CHECKING
 
+from tqdm import tqdm
+
 from protrend.bioapis import NCBITaxonomyOrganism
 from protrend.log import ProtrendLogger
 from protrend.utils.miscellaneous import args_length, scale_arg
@@ -14,7 +16,7 @@ def _fetch_organisms(identifiers: List[str],
                      cls: Type[NCBITaxonomyOrganism]) -> List[NCBITaxonomyOrganism]:
     organisms = []
 
-    for identifier, name in zip(identifiers, names):
+    for identifier, name in tqdm(zip(identifiers, names)):
         organism = cls(identifier=identifier, name=name)
         organism.fetch()
         organisms.append(organism)

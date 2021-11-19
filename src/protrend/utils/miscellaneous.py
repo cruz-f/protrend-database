@@ -83,8 +83,3 @@ def is_null(obj: Any) -> bool:
 
     return False
 
-
-def log_file_from_name(name: str) -> str:
-    now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    log_path = Settings.log_working_directory.joinpath(f'{name}_{now}.log')
-    return log_path.as_posix()

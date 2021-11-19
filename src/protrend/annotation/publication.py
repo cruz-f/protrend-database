@@ -1,5 +1,7 @@
 from typing import List, Type, TYPE_CHECKING
 
+from tqdm import tqdm
+
 from protrend.bioapis import PubMedPublication
 from protrend.log import ProtrendLogger
 from protrend.utils.miscellaneous import args_length
@@ -13,7 +15,7 @@ def _fetch_publications(identifiers: List[str],
                         cls: Type[PubMedPublication]) -> List[PubMedPublication]:
     publications = []
 
-    for identifier in identifiers:
+    for identifier in tqdm(identifiers):
         publication = cls(identifier=identifier)
         publication.fetch()
         publications.append(publication)

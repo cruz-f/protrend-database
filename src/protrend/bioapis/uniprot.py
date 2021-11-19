@@ -13,35 +13,26 @@ from protrend.utils import Settings, request, read_response
 
 
 def _init_uniprot_record() -> Cache:
-    directory = Settings.uniprot_record
+    if not os.path.exists(Settings.uniprot_record):
+        os.makedirs(Settings.uniprot_record)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.uniprot_record)
     return cache
 
 
 def _init_uniprot_query() -> Cache:
-    directory = Settings.uniprot_query
+    if not os.path.exists(Settings.uniprot_query):
+        os.makedirs(Settings.uniprot_query)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.uniprot_query)
     return cache
 
 
 def _init_uniprot_mapping() -> Cache:
-    directory = Settings.uniprot_mapping
+    if not os.path.exists(Settings.uniprot_mapping):
+        os.makedirs(Settings.uniprot_mapping)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.uniprot_mapping)
     return cache
 
 
