@@ -16,7 +16,7 @@ def _fetch_organisms(identifiers: List[str],
                      cls: Type[NCBITaxonomyOrganism]) -> List[NCBITaxonomyOrganism]:
     organisms = []
 
-    for identifier, name in tqdm(zip(identifiers, names)):
+    for identifier, name in tqdm(zip(identifiers, names), desc='organism', total=len(identifiers)):
         organism = cls(identifier=identifier, name=name)
         organism.fetch()
         organisms.append(organism)

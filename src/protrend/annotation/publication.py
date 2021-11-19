@@ -15,7 +15,7 @@ def _fetch_publications(identifiers: List[str],
                         cls: Type[PubMedPublication]) -> List[PubMedPublication]:
     publications = []
 
-    for identifier in tqdm(identifiers):
+    for identifier in tqdm(identifiers, desc='publication'):
         publication = cls(identifier=identifier)
         publication.fetch()
         publications.append(publication)

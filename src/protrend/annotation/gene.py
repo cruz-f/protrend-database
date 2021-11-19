@@ -29,14 +29,14 @@ def _fetch_genes(identifiers: List[str],
 
     if identifiers[0] is None:
 
-        for taxonomy, locus_tag, name in tqdm(zip(taxa, loci, names)):
+        for taxonomy, locus_tag, name in tqdm(zip(taxa, loci, names), desc='gene', total=len(taxa)):
             gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
             gene.fetch()
             genes.append(gene)
 
     else:
 
-        for identifier in tqdm(identifiers):
+        for identifier in tqdm(identifiers, desc='gene'):
 
             if is_refseq:
                 gene = cls(refseq_accession=identifier)

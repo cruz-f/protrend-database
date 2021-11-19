@@ -17,7 +17,7 @@ def _fetch_pathways(names: List[str],
                     index: w_index.FileIndex = None) -> List[KEGGPathway]:
     pathways = []
 
-    for name in tqdm(names):
+    for name in tqdm(names, desc='pathway'):
         pathway = cls(name=name)
         pathway.fetch(index)
         pathways.append(pathway)

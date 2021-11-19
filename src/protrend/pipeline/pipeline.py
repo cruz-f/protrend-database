@@ -133,7 +133,7 @@ class Pipeline:
         transformers_info = ' '.join([transformer.node.node_name() for transformer in self.transformers])
         ProtrendLogger.log.info(f'Pipeline call for transform in the following transformers: {transformers_info}')
 
-        for transformer in tqdm(self.transformers):
+        for transformer in self.transformers:
 
             try:
 
@@ -160,7 +160,7 @@ class Pipeline:
                                     for connector in self.connectors])
         ProtrendLogger.log.info(f'Pipeline call for connect in the following connectors: \n {connectors_info}')
 
-        for connector in tqdm(self.connectors):
+        for connector in self.connectors:
 
             try:
 
@@ -187,7 +187,7 @@ class Pipeline:
         loaders = ' '.join([f'{loader.__class__.__name__}' for loader in self.loaders])
         ProtrendLogger.log.info(f'Pipeline call for load in the following loaders: {loaders}')
 
-        for loader in tqdm(self.loaders):
+        for loader in self.loaders:
             try:
                 ProtrendLogger.log.info(f'Starting loader: {loader.__class__.__name__} with the following files:')
                 for file_path in loader.load_stack:

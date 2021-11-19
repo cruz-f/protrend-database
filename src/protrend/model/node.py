@@ -159,7 +159,7 @@ class Node(StructuredNode):
         structured_nodes = []
         node_keys = list(cls.node_keys())
 
-        for _, node in tqdm(nodes.iterrows()):
+        for _, node in tqdm(nodes.iterrows(), desc='node_creation', total=nodes.shape[0]):
 
             node_kwargs = {key: val for key, val in node.items()
                            if key in node_keys and not is_null(val)}
@@ -184,7 +184,7 @@ class Node(StructuredNode):
         node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
         all_nodes = cls.node_to_dict(to='node')
 
-        for _, node in tqdm(nodes.iterrows()):
+        for _, node in tqdm(nodes.iterrows(), desc='node_update', total=nodes.shape[0]):
 
             identifier = node.get(cls.identifying_property, '')
 

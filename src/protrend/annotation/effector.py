@@ -18,7 +18,7 @@ def _fetch_compounds(names: List[str],
                      index: w_index.FileIndex = None) -> List[KEGGCompound]:
     compounds = []
 
-    for name in tqdm(names):
+    for name in tqdm(names, desc='compound'):
         compound = cls(name=name)
         compound.fetch(index)
         compounds.append(compound)

@@ -165,7 +165,7 @@ class Loader:
 
         from_rels, to_rels = get_nodes_relationships(from_node=from_node, to_node=to_node)
 
-        for _, relationship in tqdm(df.iterrows()):
+        for _, relationship in tqdm(df.iterrows(), desc='relationship', total=df.shape[0]):
 
             relationship = relationship.to_dict()
 
