@@ -1,6 +1,5 @@
 import os.path
 from datetime import datetime
-from pathlib import Path
 
 from protrend.utils import Settings
 from protrend.log import ProtrendLogger
@@ -107,12 +106,6 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
-    # -------------------------------------------------------------
-    # SET WORKING DIRECTORY FOR STAGING AREA AND DATA LAKE PATH
-    # -------------------------------------------------------------
-    working_directory = Path(r'C:\Users\BiSBII\Desktop\protrend')
-    Settings.start_settings(working_directory=working_directory)
-
     run_logger('tcl_logger')
     run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
 

@@ -1,4 +1,5 @@
 import os
+from configparser import ConfigParser
 from pathlib import Path
 from typing import Union
 
@@ -10,11 +11,14 @@ class Settings:
 
     def __init__(self):
         self._source = Path(os.path.dirname(__file__)).parent
-        self._working_directory = Path(os.path.dirname(__file__)).parent
 
-        self._request_sleep = 0.25
-        self._request_timeout = 30
-        self._request_retries = 3
+        config = ConfigParser()
+        config.read(self._source.joinpath('etl.conf'))
+
+        self._working_directory = Path(config.get('etl-configuration', 'working_directory'))
+        self._request_sleep = config.get('etl-configuration', 'request_sleep')
+        self._request_timeout = config.get('etl-configuration', 'request_timeout')
+        self._request_retries = config.get('etl-configuration', 'request_retries')
 
         self._started = False
 
