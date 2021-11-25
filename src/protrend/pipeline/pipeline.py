@@ -1,8 +1,6 @@
 from collections import defaultdict
 from typing import List, Dict, Tuple, Type, TYPE_CHECKING
 
-from tqdm import tqdm
-
 from protrend.log import ProtrendLogger
 
 if TYPE_CHECKING:

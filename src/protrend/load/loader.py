@@ -78,6 +78,8 @@ class Loader:
 
         for file in load_stack:
 
+            file = f'{file}.json'
+
             dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(dl_file):
