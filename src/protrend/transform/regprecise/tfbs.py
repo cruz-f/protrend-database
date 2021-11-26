@@ -8,13 +8,13 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import TFBS, Source, Organism
-from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
-                                       take_last, to_int_str, to_str, to_set_list, operon_hash, site_hash)
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList, is_null
+from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
+                                       to_int_str, to_str, to_set_list, operon_hash, site_hash)
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
@@ -36,8 +36,7 @@ class TFBSTransformer(RegPreciseTransformer,
     def _reduce_sequence(position, sequence):
 
         all_subgroups: List[Union[re.Match, None]] = list(re.finditer(regprecise_tfbs_pattern, sequence))
-
-        all_subgroups: List[Union[re.Match, None]] = all_subgroups + [None]
+        all_subgroups += [None]
 
         sequences = []
         last_pos = position

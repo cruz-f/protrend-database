@@ -48,7 +48,12 @@ def run_pipeline(source: str,
                  extract: bool = False,
                  transform: bool = True,
                  connect: bool = True,
-                 load: bool = True):
+                 load: bool = True,
+                 verbose: bool = True):
+
+    if verbose:
+        print('\n', f'Starting {source}-{version} pipeline', '\n')
+
     if extract and transform and connect and load:
         ProtrendLogger.log.info(f'Starting pipeline with {source} and {version} for ETCL')
 
@@ -109,6 +114,20 @@ if __name__ == "__main__":
     run_logger('tcl_logger')
     run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
 
+    # ORDER MATTERS
+
+    # ----------------------------------------------------
+    # CollecTF
+    # ----------------------------------------------------
+    # run_logger('collectf_logger')
+    run_pipeline(source='collectf', version='0.0.1')
+
+    # ----------------------------------------------------
+    # RegPrecise
+    # ----------------------------------------------------
+    # run_logger('regprecise_logger')
+    run_pipeline(source='regprecise', version='0.0.0')
+
     # ----------------------------------------------------
     # Abasy
     # ----------------------------------------------------
@@ -116,10 +135,10 @@ if __name__ == "__main__":
     run_pipeline(source='abasy', version='0.0.0')
 
     # ----------------------------------------------------
-    # CollecTF
+    # Literature
     # ----------------------------------------------------
-    # run_logger('collectf_logger')
-    run_pipeline(source='collectf', version='0.0.1')
+    # run_logger('literature_logger')
+    run_pipeline(source='literature', version='0.0.0')
 
     # ----------------------------------------------------
     # CoryneRegNet
@@ -132,18 +151,6 @@ if __name__ == "__main__":
     # ----------------------------------------------------
     # run_logger('dbtbs_logger')
     run_pipeline(source='dbtbs', version='0.0.3')
-
-    # ----------------------------------------------------
-    # Literature
-    # ----------------------------------------------------
-    # run_logger('literature_logger')
-    run_pipeline(source='literature', version='0.0.0')
-
-    # ----------------------------------------------------
-    # RegPrecise
-    # ----------------------------------------------------
-    # run_logger('regprecise_logger')
-    run_pipeline(source='regprecise', version='0.0.0')
 
     # ----------------------------------------------------
     # RegulonDB

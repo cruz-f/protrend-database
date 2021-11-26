@@ -158,8 +158,9 @@ class Node(StructuredNode):
 
         structured_nodes = []
         node_keys = list(cls.node_keys())
+        node_name = cls.node_name()
 
-        for _, node in tqdm(nodes.iterrows(), desc='node_creation', total=nodes.shape[0]):
+        for _, node in tqdm(nodes.iterrows(), desc=f'{node_name} - node_creation', total=nodes.shape[0]):
 
             node_kwargs = {key: val for key, val in node.items()
                            if key in node_keys and not is_null(val)}
@@ -183,8 +184,9 @@ class Node(StructuredNode):
         structured_nodes = []
         node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
         all_nodes = cls.node_to_dict(to='node')
+        node_name = cls.node_name()
 
-        for _, node in tqdm(nodes.iterrows(), desc='node_update', total=nodes.shape[0]):
+        for _, node in tqdm(nodes.iterrows(), desc=f'{node_name} - node_update', total=nodes.shape[0]):
 
             identifier = node.get(cls.identifying_property, '')
 
@@ -271,7 +273,7 @@ def _find_to_node(relationship: RelationshipManager) -> Type[Node]:
     return relationship.definition['node_class']
 
 
-def get_nodes_relationships(from_node: Type[Node], to_node: Type[Node], default=None) -> Tuple[List[str], List[str]]:
+def get_nodes_relationships(from_node: Type[Node], to_node: Type[Node]) -> Tuple[List[str], List[str]]:
     from_node_rels = from_node.node_relationships()
     from_node_matches = []
     for attr, relationship in from_node_rels.items():

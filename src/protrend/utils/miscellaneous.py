@@ -1,15 +1,10 @@
 import re
 from collections import namedtuple
-from datetime import datetime
 from types import GeneratorType
-
 from typing import Any
 
 import numpy as np
 import pandas as pd
-
-from protrend.utils import Settings
-
 
 WriteStack = namedtuple('WriteStack',
                         ['transformed', 'integrated', 'nodes', 'connected'],

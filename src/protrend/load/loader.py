@@ -52,7 +52,7 @@ class Loader:
 
         self.build_load_stack(load_stack)
 
-    def get_load_stack_from_source_version(self) -> List[str]:
+    def load_stack_from_source_version(self) -> List[str]:
         load_stack = []
 
         from protrend.pipeline import Pipeline
@@ -74,16 +74,12 @@ class Loader:
         self._load_stack = []
 
         if not load_stack:
-            load_stack = self.get_load_stack_from_source_version()
+            load_stack = self.load_stack_from_source_version()
 
         for file in load_stack:
 
-            file = f'{file}.json'
-
-            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
-
-            if os.path.exists(dl_file):
-                self._load_stack.append(dl_file)
+            file = os.path.join(Settings.data_lake, self.source, self.version, f'{file}.json')
+            self._load_stack.append(file)
 
     # --------------------------------------------------------
     # Static properties
@@ -109,16 +105,18 @@ class Loader:
         """
 
         for file_path in self.load_stack:
-            df = read_json_frame(file_path)
 
-            # update nodes
-            self._nodes_to_update(df=df)
+            if os.path.exists(file_path):
+                df = read_json_frame(file_path)
 
-            # create nodes
-            self._nodes_to_create(df=df)
+                # update nodes
+                self._nodes_to_update(df=df)
 
-            # create nodes
-            self._relationships_to_create(df=df)
+                # create nodes
+                self._nodes_to_create(df=df)
+
+                # create nodes
+                self._relationships_to_create(df=df)
 
     @staticmethod
     def _nodes_to_update(df: pd.DataFrame):
@@ -157,17 +155,19 @@ class Loader:
         if df.empty:
             return
 
-        from_node = df['from_node'].iloc[0]
-        from_node = get_node_by_name(from_node)
+        from_node_name = df['from_node'].iloc[0]
+        from_node = get_node_by_name(from_node_name)
         from_nodes = from_node.node_to_dict(to='node')
 
-        to_node = df['to_node'].iloc[0]
-        to_node = get_node_by_name(to_node)
+        to_node_name = df['to_node'].iloc[0]
+        to_node = get_node_by_name(to_node_name)
         to_nodes = to_node.node_to_dict(to='node')
 
         from_rels, to_rels = get_nodes_relationships(from_node=from_node, to_node=to_node)
 
-        for _, relationship in tqdm(df.iterrows(), desc='relationship', total=df.shape[0]):
+        for _, relationship in tqdm(df.iterrows(),
+                                    desc=f'relationship: {from_node_name} - {to_node_name}',
+                                    total=df.shape[0]):
 
             relationship = relationship.to_dict()
 
