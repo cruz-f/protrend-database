@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene
-from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
+from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector, read_abasy_network
 from protrend.transform.abasy.operon import OperonTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
 from protrend.utils.processors import apply_processors, to_list, regulatory_effect_coryneregnet, rstrip, lstrip
@@ -52,7 +52,10 @@ class RegulatoryInteractionTransformer(AbasyTransformer,
         return operon
 
     def transform(self) -> pd.DataFrame:
-        networks = self._build_networks()
+        networks = self.contact_stacks(stack=self.network_stack,
+                                       taxa=self.taxa_to_organism_code,
+                                       default_columns=self.default_network_columns,
+                                       reader=read_abasy_network)
         network = self._transform_networks(networks)
 
         regulator = self._transform_regulator()

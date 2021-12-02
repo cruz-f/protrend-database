@@ -2,6 +2,7 @@ from typing import List, Union
 
 import pandas as pd
 
+from protrend.io import read_csv
 from protrend.model import Gene
 from protrend.transform.abasy.base import AbasyTransformer
 from protrend.annotation import annotate_genes, GeneDTO
@@ -15,7 +16,6 @@ class GeneTransformer(AbasyTransformer,
                       node=Gene,
                       order=100,
                       register=True):
-
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
@@ -51,7 +51,6 @@ class GeneTransformer(AbasyTransformer,
                         ncbi_genes: List[str],
                         uniprot_accessions: List[str],
                         taxa: List[str]):
-
         dtos = [GeneDTO(input_value=input_value) for input_value in input_values]
         annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa,
                        uniprot_proteins=uniprot_accessions, ncbi_genes=ncbi_genes)
@@ -80,7 +79,10 @@ class GeneTransformer(AbasyTransformer,
         return genes
 
     def transform(self):
-        genes = self._build_genes()
+        genes = self.contact_stacks(stack=self.gene_stack,
+                                    taxa=self.taxa_to_organism_code,
+                                    default_columns=self.default_gene_columns,
+                                    reader=read_csv)
         gene = self._transform_gene(genes)
 
         input_values = gene['input_value'].tolist()

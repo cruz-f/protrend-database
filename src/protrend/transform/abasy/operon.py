@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model import Operon, Gene
-from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
+from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector, read_abasy_network
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list, operon_hash
 from protrend.utils import SetList
@@ -33,7 +33,10 @@ class OperonTransformer(AbasyTransformer,
         return networks
 
     def transform(self):
-        networks = self._build_networks()
+        networks = self.contact_stacks(stack=self.network_stack,
+                                       taxa=self.taxa_to_organism_code,
+                                       default_columns=self.default_network_columns,
+                                       reader=read_abasy_network)
         genes = self._transform_networks(networks)
 
         gene = read_from_stack(stack=self.transform_stack, file='gene',

@@ -5,6 +5,7 @@ from typing import Union, List, Type, Callable, Dict
 
 import pandas as pd
 
+from protrend.io import read_from_stack
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
@@ -132,34 +133,35 @@ class Transformer(AbstractTransformer):
         Transformers having higher order are executed first.
         """
 
-        self._transform_stack = {}
-        self._write_stack = []
         self.source = source
         self.version = version
         self.node = node
         self.order = order
 
-        self.load_transform_stack(transform_stack)
-
-    def load_transform_stack(self, transform_stack: Dict[str, str] = None):
-
-        self._transform_stack = {}
-
         if not transform_stack:
             transform_stack = self.default_transform_stack
 
-        for key, file in transform_stack.items():
+        self._transform_stack = self.build_stack(transform_stack)
+
+        self._write_stack = []
+
+    def build_stack(self, stack_to_load: Dict[str, str]) -> Dict[str, str]:
+
+        loaded_stack = {}
+
+        for key, file in stack_to_load.items():
 
             sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
-            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
             if os.path.exists(sa_file):
-
-                self._transform_stack[key] = sa_file
+                loaded_stack[key] = sa_file
 
             else:
+                dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
 
-                self._transform_stack[key] = dl_file
+                loaded_stack[key] = dl_file
+
+        return loaded_stack
 
     # --------------------------------------------------------
     # Static properties
@@ -384,6 +386,18 @@ class Transformer(AbstractTransformer):
             df = self.empty_frame()
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
+
+    @staticmethod
+    def contact_stacks(stack: Dict[str, str], taxa: Dict[str, str], **kwargs) -> pd.DataFrame:
+        dfs = []
+        for file in stack:
+            df = read_from_stack(stack=stack,
+                                 file=file,
+                                 **kwargs)
+            df['taxonomy'] = taxa[file]
+            dfs.append(df)
+
+        return pd.concat(dfs)
 
     def standardize_factors(self, df: pd.DataFrame) -> pd.DataFrame:
         df = apply_processors(df, **self.node_factors)
