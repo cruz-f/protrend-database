@@ -84,6 +84,71 @@ class Publication(Node):
     regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
+class Pathway(Node):
+    entity = 'PTH'
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
+
+    # properties
+    name = StringProperty(required=True)
+    kegg_pathways = ArrayProperty(StringProperty())
+
+    # relationships
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    gene = RelationshipTo('Gene', REL_TYPE)
+
+
+class Effector(Node):
+    entity = 'EFC'
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
+
+    # properties
+    name = StringProperty(required=True)
+    kegg_compounds = ArrayProperty(StringProperty())
+
+    # relationships
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
+
+
+class RegulatoryFamily(Node):
+    entity = 'RFAM'
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
+
+    # properties
+    name = StringProperty(required=True)
+    mechanism = StringProperty(required=True)
+    rfam = StringProperty()
+    description = StringProperty()
+
+    # relationships
+    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    regulator = RelationshipTo('Regulator', REL_TYPE)
+
+
+class Operon(Node):
+    entity = 'OPN'
+    node_factors = {'operon_db_id': [to_str, lower_case, rstrip, lstrip, to_nan]}
+
+    # properties
+    operon_db_id = StringProperty(required=True)
+    name = StringProperty()
+    function = StringProperty()
+    genes = ArrayProperty(StringProperty(), required=True)
+    strand = StringProperty()
+    start = IntegerProperty()
+    stop = IntegerProperty()
+
+    # relationships
+    data_source = RelationshipTo(Source, REL_TYPE, cardinality=One, model=SourceRelationship)
+    evidence = RelationshipTo(Evidence, REL_TYPE, cardinality=One)
+    publication = RelationshipTo(Publication, REL_TYPE)
+    organism = RelationshipTo('Organism', REL_TYPE, cardinality=One)
+    gene = RelationshipTo('Gene', REL_TYPE)
+
+
 class Organism(Node):
     entity = 'ORG'
     node_factors = {'ncbi_taxonomy': [to_int_str, lower_case, rstrip, lstrip, to_nan],
@@ -103,41 +168,11 @@ class Organism(Node):
 
     # relationships
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
+    operon = RelationshipTo(Operon, REL_TYPE)
     regulator = RelationshipTo('Regulator', REL_TYPE)
-    operon = RelationshipTo('Operon', REL_TYPE)
     gene = RelationshipTo('Gene', REL_TYPE)
     tfbs = RelationshipTo('TFBS', REL_TYPE)
     regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
-
-
-class Pathway(Node):
-    entity = 'PTH'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
-
-    # properties
-    name = StringProperty(required=True)
-    kegg_pathways = ArrayProperty(StringProperty())
-
-    # relationships
-    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
-    regulator = RelationshipTo('Regulator', REL_TYPE)
-    gene = RelationshipTo('Gene', REL_TYPE)
-
-
-class RegulatoryFamily(Node):
-    entity = 'RFAM'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
-
-    # properties
-    name = StringProperty(required=True)
-    mechanism = StringProperty(required=True)
-    rfam = StringProperty()
-    description = StringProperty()
-
-    # relationships
-    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
-    publication = RelationshipTo(Publication, REL_TYPE)
-    regulator = RelationshipTo('Regulator', REL_TYPE)
 
 
 class Regulator(Node):
@@ -166,34 +201,13 @@ class Regulator(Node):
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
-    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
     pathway = RelationshipTo(Pathway, REL_TYPE)
+    effector = RelationshipTo(Effector, REL_TYPE)
     regulatory_family = RelationshipTo(RegulatoryFamily, REL_TYPE, cardinality=One)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
     gene = RelationshipTo('Gene', REL_TYPE)
     tfbs = RelationshipTo('TFBS', REL_TYPE)
-    effector = RelationshipTo('Effector', REL_TYPE)
     regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
-
-
-class Operon(Node):
-    entity = 'OPN'
-    node_factors = {'operon_db_id': [to_str, lower_case, rstrip, lstrip, to_nan]}
-
-    # properties
-    operon_db_id = StringProperty(required=True)
-    name = StringProperty()
-    function = StringProperty()
-    genes = ArrayProperty(StringProperty(), required=True)
-    strand = StringProperty()
-    start = IntegerProperty()
-    stop = IntegerProperty()
-
-    # relationships
-    data_source = RelationshipTo(Source, REL_TYPE, cardinality=One, model=SourceRelationship)
-    evidence = RelationshipTo(Evidence, REL_TYPE, cardinality=One)
-    publication = RelationshipTo(Publication, REL_TYPE)
-    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
-    gene = RelationshipTo('Gene', REL_TYPE)
 
 
 class Gene(Node):
@@ -221,10 +235,10 @@ class Gene(Node):
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
-    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
     pathway = RelationshipTo(Pathway, REL_TYPE)
-    regulator = RelationshipTo(Regulator, REL_TYPE)
     operon = RelationshipTo(Operon, REL_TYPE, cardinality=One)
+    organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
+    regulator = RelationshipTo(Regulator, REL_TYPE)
     tfbs = RelationshipTo('TFBS', REL_TYPE)
     regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
@@ -252,20 +266,6 @@ class TFBS(Node):
     regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
 
 
-class Effector(Node):
-    entity = 'EFC'
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
-
-    # properties
-    name = StringProperty(required=True)
-    kegg_compounds = ArrayProperty(StringProperty())
-
-    # relationships
-    data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
-    regulator = RelationshipTo(Regulator, REL_TYPE)
-    regulatory_interaction = RelationshipTo('RegulatoryInteraction', REL_TYPE)
-
-
 class RegulatoryInteraction(Node):
     entity = 'RIN'
     node_factors = {'regulatory_interaction_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
@@ -283,8 +283,8 @@ class RegulatoryInteraction(Node):
     data_source = RelationshipTo(Source, REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
+    data_effector = RelationshipTo(Effector, REL_TYPE, cardinality=One)
     data_organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
     data_regulator = RelationshipTo(Regulator, REL_TYPE, cardinality=One)
     data_gene = RelationshipTo(Gene, REL_TYPE, cardinality=One)
     data_tfbs = RelationshipTo(TFBS, REL_TYPE, cardinality=One)
-    data_effector = RelationshipTo(Effector, REL_TYPE, cardinality=One)
