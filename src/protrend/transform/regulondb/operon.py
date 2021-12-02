@@ -4,12 +4,11 @@ import numpy as np
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame, read_txt
-from protrend.model import Operon, Gene, TFBS, Promoter
+from protrend.model import Operon, Gene, TFBS
 from protrend.utils.processors import (apply_processors, operon_name, flatten_set_list, to_list,
                                        to_set_list, operon_hash)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
-from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
 from protrend.utils import SetList, is_null
 
@@ -167,24 +166,16 @@ class OperonTransformer(RegulondbTransformer,
         tfbs = tfbs.dropna(subset=['protrend_id', 'site_id'])
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
-        promoter = read_from_stack(stack=self.transform_stack, file='promoter',
-                                   default_columns=PromoterTransformer.columns, reader=read_json_frame)
-        promoter = self.select_columns(promoter, 'protrend_id', 'promoter_id')
-        promoter = promoter.dropna(subset=['protrend_id', 'promoter_id'])
-        promoter = promoter.rename(columns={'protrend_id': 'promoter_protrend_id'})
-
         # genes
-        # promoters
         # tfbss
         # strand
         # start
         # stop
-        operon = self._transform_operon_by_promoter(operon=operon, promoter=promoter)
         operon = self._transform_operon_by_tfbs(operon=operon, tfbs=tfbs)
         operon = self._transform_operon_by_gene(operon=operon, gene=gene)
         operon = self._operon_coordinates(operon=operon)
 
-        self._stack_transformed_nodes(operon)
+        self.stack_transformed_nodes(operon)
 
         return operon
 
@@ -209,33 +200,6 @@ class OperonToGeneConnector(RegulondbConnector,
 
         from_identifiers = operon['protrend_id'].tolist()
         to_identifiers = operon['genes'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class OperonToPromoterConnector(RegulondbConnector,
-                                source='regulondb',
-                                version='0.0.0',
-                                from_node=Operon,
-                                to_node=Promoter,
-                                register=True):
-    default_connect_stack = {'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-
-        operon = apply_processors(operon, promoters=to_list)
-        operon = operon.explode('promoters')
-
-        operon = operon.dropna(subset=['protrend_id', 'promoters'])
-        operon = operon.drop_duplicates(subset=['protrend_id', 'promoters'])
-
-        from_identifiers = operon['protrend_id'].tolist()
-        to_identifiers = operon['promoters'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)
@@ -291,36 +255,6 @@ class GeneToTFBSConnector(RegulondbConnector,
 
         from_identifiers = operon['genes'].tolist()
         to_identifiers = operon['tfbss'].tolist()
-        kwargs = dict(operon=operon['protrend_id'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class GeneToPromoterConnector(RegulondbConnector,
-                              source='regulondb',
-                              version='0.0.0',
-                              from_node=Gene,
-                              to_node=Promoter,
-                              register=True):
-    default_connect_stack = {'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-
-        operon = apply_processors(operon, genes=to_list, promoters=to_list)
-        operon = operon.explode('promoters')
-        operon = operon.explode('genes')
-
-        operon = operon.dropna(subset=['genes', 'promoters'])
-        operon = operon.drop_duplicates(subset=['genes', 'promoters'])
-
-        from_identifiers = operon['genes'].tolist()
-        to_identifiers = operon['promoters'].tolist()
         kwargs = dict(operon=operon['protrend_id'].tolist())
 
         df = self.make_connection(from_identifiers=from_identifiers,

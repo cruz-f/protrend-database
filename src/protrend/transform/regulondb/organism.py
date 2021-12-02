@@ -1,11 +1,10 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Regulator, Organism, Operon, Promoter, Gene, TFBS, Effector, RegulatoryInteraction
+from protrend.model import Regulator, Organism, Operon, Gene, TFBS, Effector, RegulatoryInteraction
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
-from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.transform.regulondb.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
@@ -46,7 +45,7 @@ class OrganismTransformer(RegulondbTransformer,
 
         df = pd.DataFrame(ecoli, index=[0])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 
@@ -92,32 +91,6 @@ class OperonToOrganismConnector(RegulondbConnector,
                                    default_columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = operon['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = organism['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class PromoterToOrganismConnector(RegulondbConnector,
-                                  source='regulondb',
-                                  version='0.0.0',
-                                  from_node=Promoter,
-                                  to_node=Organism,
-                                  register=True):
-    default_connect_stack = {'promoter': 'integrated_promoter.json', 'organism': 'integrated_organism.json'}
-
-    def connect(self):
-        promoter = read_from_stack(stack=self._connect_stack, file='promoter',
-                                   default_columns=PromoterTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = promoter['protrend_id'].tolist()
         size = len(from_identifiers)
 
         protrend_id = organism['protrend_id'].iloc[0]

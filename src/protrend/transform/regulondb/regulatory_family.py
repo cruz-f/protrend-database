@@ -39,7 +39,7 @@ class RegulatoryFamilyTransformer(RegulondbTransformer,
                              skiprows=38, names=self.read_columns)
         tf = self._transform_tf(tf)
 
-        self._stack_transformed_nodes(tf)
+        self.stack_transformed_nodes(tf)
         return tf
 
 

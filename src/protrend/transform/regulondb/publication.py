@@ -3,14 +3,13 @@ from typing import List
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
-from protrend.model import Publication, Regulator, TFBS, Promoter, Operon, Gene, Organism
+from protrend.model import Publication, Regulator, TFBS, Operon, Gene, Organism
 from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.utils.processors import apply_processors, to_int_str
 from protrend.transform.regulondb import OrganismTransformer
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
-from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
 from protrend.utils import SetList
@@ -66,7 +65,7 @@ class PublicationTransformer(RegulondbTransformer,
 
         df = apply_processors(df, pmid=to_int_str)
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 
@@ -180,46 +179,6 @@ class PublicationToTFBSConnector(RegulondbConnector,
 
         from_identifiers = tfbs_pub['publication_protrend_id'].tolist()
         to_identifiers = tfbs_pub['tfbs_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class PublicationToPromoterConnector(RegulondbConnector,
-                                     source='regulondb',
-                                     version='0.0.0',
-                                     from_node=Publication,
-                                     to_node=Promoter,
-                                     register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'promoter': 'integrated_promoter.json',
-                             'obj_ev_pub': 'object_ev_method_pub_link.txt'}
-
-    def connect(self):
-        publication = read_from_stack(stack=self._connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = publication[['protrend_id', 'publication_id']]
-        publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
-
-        promoter = read_from_stack(stack=self._connect_stack, file='promoter',
-                                   default_columns=PromoterTransformer.columns, reader=read_json_frame)
-        promoter = promoter[['protrend_id', 'promoter_id']]
-        promoter = promoter.rename(columns={'protrend_id': 'promoter_protrend_id'})
-
-        obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
-        obj_ev_pub = read_from_stack(stack=self._connect_stack, file='obj_ev_pub',
-                                     default_columns=obj_ev_pub_cols, reader=read_txt,
-                                     names=obj_ev_pub_cols, skiprows=31)
-
-        obj_promoter = pd.merge(obj_ev_pub, promoter, left_on='object_id', right_on='promoter_id')
-
-        promoter_pub = pd.merge(obj_promoter, publication, on='publication_id')
-        promoter_pub = promoter_pub.drop_duplicates(subset=['publication_protrend_id', 'promoter_protrend_id'])
-
-        from_identifiers = promoter_pub['publication_protrend_id'].tolist()
-        to_identifiers = promoter_pub['promoter_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)

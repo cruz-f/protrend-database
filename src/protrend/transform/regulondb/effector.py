@@ -57,6 +57,6 @@ class EffectorTransformer(RegulondbTransformer,
         df = df.rename(columns={'name_y': 'name'})
         df = df.drop(columns=['input_value', 'name_x'])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

@@ -98,7 +98,7 @@ class RegulatoryInteractionTransformer(RegulondbTransformer,
 
         regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
 
-        self._stack_transformed_nodes(regulatory_interaction)
+        self.stack_transformed_nodes(regulatory_interaction)
 
         return regulatory_interaction
 

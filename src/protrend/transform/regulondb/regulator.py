@@ -100,5 +100,5 @@ class RegulatorTransformer(RegulondbTransformer,
                                     'sigma_sigmulon_genes', 'key_id_org'])
 
         df = pd.concat([tf, srna, sigma])
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
         return df

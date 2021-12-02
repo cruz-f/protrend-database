@@ -3,12 +3,11 @@ from typing import Union
 import pandas as pd
 
 from protrend.io import read_from_stack, read_txt, read_json_frame
-from protrend.model import Evidence, Promoter, Regulator, TFBS, Operon, Gene, RegulatoryInteraction
+from protrend.model import Evidence, Regulator, TFBS, Operon, Gene, RegulatoryInteraction
 from protrend.utils.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
-from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
 from protrend.transform.regulondb.regulatory_interaction import RegulatoryInteractionTransformer
@@ -54,7 +53,7 @@ class EvidenceTransformer(RegulondbTransformer,
                                    reader=read_txt, skiprows=38, names=self.read_columns)
         evidence = self._transform_evidence(evidence)
 
-        self._stack_transformed_nodes(evidence)
+        self.stack_transformed_nodes(evidence)
         return evidence
 
 
@@ -140,46 +139,6 @@ class EvidenceToTFBSConnector(RegulondbConnector,
 
         from_identifiers = tfbs_ev['evidence_protrend_id'].tolist()
         to_identifiers = tfbs_ev['tfbs_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class EvidenceToPromoterConnector(RegulondbConnector,
-                                  source='regulondb',
-                                  version='0.0.0',
-                                  from_node=Evidence,
-                                  to_node=Promoter,
-                                  register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'promoter': 'integrated_promoter.json',
-                             'obj_ev_pub': 'object_ev_method_pub_link.txt'}
-
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
-        evidence = evidence[['protrend_id', 'evidence_id']]
-        evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
-
-        promoter = read_from_stack(stack=self._connect_stack, file='promoter',
-                                   default_columns=PromoterTransformer.columns, reader=read_json_frame)
-        promoter = promoter[['protrend_id', 'promoter_id']]
-        promoter = promoter.rename(columns={'protrend_id': 'promoter_protrend_id'})
-
-        obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
-        obj_ev_pub = read_from_stack(stack=self._connect_stack, file='obj_ev_pub',
-                                     default_columns=obj_ev_pub_cols, reader=read_txt,
-                                     names=obj_ev_pub_cols, skiprows=31)
-
-        obj_promoter = pd.merge(obj_ev_pub, promoter, left_on='object_id', right_on='promoter_id')
-
-        promoter_ev = pd.merge(obj_promoter, evidence, on='evidence_id')
-        promoter_ev = promoter_ev.drop_duplicates(subset=['evidence_protrend_id', 'promoter_protrend_id'])
-
-        from_identifiers = promoter_ev['evidence_protrend_id'].tolist()
-        to_identifiers = promoter_ev['promoter_protrend_id'].tolist()
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers)

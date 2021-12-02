@@ -1,16 +1,12 @@
 from .effector import EffectorTransformer
-from .evidence import (EvidenceToGeneConnector, EvidenceToOperonConnector,
-                       EvidenceToPromoterConnector, EvidenceToRegulatorConnector,
-                       EvidenceToRegulatoryInteractionConnector,
-                       EvidenceToTFBSConnector, EvidenceTransformer)
+from .evidence import (EvidenceToGeneConnector, EvidenceToOperonConnector, EvidenceToRegulatorConnector,
+                       EvidenceToRegulatoryInteractionConnector, EvidenceToTFBSConnector, EvidenceTransformer)
 from .gene import GeneTransformer
-from .operon import (GeneToPromoterConnector, GeneToTFBSConnector, OperonToGeneConnector, OperonToPromoterConnector,
-                     OperonToTFBSConnector, OperonTransformer)
+from .operon import GeneToTFBSConnector, OperonToGeneConnector, OperonToTFBSConnector, OperonTransformer
 from .organism import (EffectorToOrganismConnector, GeneToOrganismConnector, OperonToOrganismConnector,
-                       OrganismTransformer, PromoterToOrganismConnector, RegulatorToOrganismConnector,
+                       OrganismTransformer, RegulatorToOrganismConnector,
                        RegulatoryInteractionToOrganismConnector, TFBSToOrganismConnector)
-from .promoter import PromoterTransformer
-from .publication import (PublicationToGeneConnector, PublicationToOperonConnector, PublicationToPromoterConnector,
+from .publication import (PublicationToGeneConnector, PublicationToOperonConnector,
                           PublicationToRegulatorConnector, PublicationToTFBSConnector, PublicationToOrganismConnector,
                           PublicationTransformer)
 from .regulator import RegulatorTransformer
@@ -21,7 +17,7 @@ from .regulatory_interaction import (RegulatorToEffectorConnector, RegulatorToGe
                                      RegulatoryInteractionToRegulatorConnector, RegulatoryInteractionToTFBSConnector,
                                      RegulatoryInteractionTransformer)
 from .source import (EffectorToSourceConnector, GeneToSourceConnector, OperonToSourceConnector,
-                     OrganismToSourceConnector, PromoterToSourceConnector, RegulatorToSourceConnector,
+                     OrganismToSourceConnector, RegulatorToSourceConnector,
                      RegulatoryFamilyToSourceConnector, RegulatoryInteractionToSourceConnector, SourceTransformer,
                      TFBSToSourceConnector)
 from .tfbs import TFBSTransformer

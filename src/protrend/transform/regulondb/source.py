@@ -1,14 +1,13 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, Promoter, Effector,
+from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, Effector,
                             RegulatoryInteraction)
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.operon import OperonTransformer
 from protrend.transform.regulondb.organism import OrganismTransformer
-from protrend.transform.regulondb.promoter import PromoterTransformer
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.transform.regulondb.regulatory_family import RegulatoryFamilyTransformer
 from protrend.transform.regulondb.regulatory_interaction import RegulatoryInteractionTransformer
@@ -45,7 +44,7 @@ class SourceTransformer(RegulondbTransformer,
 
         df = pd.DataFrame(db, index=[0])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 
@@ -216,48 +215,6 @@ class OperonToSourceConnector(RegulondbConnector,
         kwargs = dict(url=url,
                       external_identifier=external_identifier,
                       key=['operon_id'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class PromoterToSourceConnector(RegulondbConnector,
-                                source='regulondb',
-                                version='0.0.0',
-                                from_node=Promoter,
-                                to_node=Source,
-                                register=True):
-    default_connect_stack = {'promoter': 'integrated_promoter.json', 'source': 'integrated_source.json'}
-
-    def connect(self):
-        promoter = read_from_stack(stack=self._connect_stack, file='promoter',
-                                   default_columns=PromoterTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = promoter['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        # http://regulondb.ccg.unam.mx/search?term=ECK120011190&organism=ECK12&type=All
-        url = []
-        external_identifier = []
-        for promoter_id in promoter['promoter_id']:
-            if not is_null(promoter_id):
-                url.append(f'http://regulondb.ccg.unam.mx/search?term={promoter_id}&organism=ECK12&type=All')
-                external_identifier.append(promoter_id)
-            else:
-                url.append(None)
-                external_identifier.append(None)
-
-        kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['promoter_id'] * size)
 
         df = self.make_connection(from_identifiers=from_identifiers,
                                   to_identifiers=to_identifiers,
