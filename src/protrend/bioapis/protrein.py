@@ -219,6 +219,10 @@ class UniProtProtein(BioAPI):
 
         taxonomy = str(taxonomy)
 
+        # E. coli taxonomy identifier for uniprot is 83333 rather than 511145
+        if taxonomy == '511145':
+            taxonomy = '83333'
+
         if is_null(locus_tag):
             locus_tag = ''
 
