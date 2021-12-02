@@ -5,6 +5,7 @@ from typing import Union, List, Type, Callable, Dict
 
 import pandas as pd
 
+from protrend import GeneDTO, annotate_genes
 from protrend.io import read_from_stack
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
@@ -313,8 +314,8 @@ class Transformer(AbstractTransformer):
         # concat both dataframes
         df = pd.concat([create_nodes, update_nodes])
 
-        self._stack_integrated_nodes(df)
-        self._stack_nodes(df)
+        self.stack_integrated_nodes(df)
+        self.stack_nodes(df)
 
     def write(self):
 
@@ -325,6 +326,51 @@ class Transformer(AbstractTransformer):
             json_partial()
 
         self._write_stack = []
+
+    # ----------------------------------------
+    # Annotations
+    # ----------------------------------------
+    @staticmethod
+    def annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
+
+        def get_values(col):
+            series = df.get(col)
+
+            if series is None:
+                return
+
+            return series.to_list()
+
+        input_values = get_values('input_values')
+        loci = get_values('locus_tag')
+        names = get_values('name')
+        taxa = get_values('taxonomy')
+        uniprot_proteins = get_values('uniprot_accession')
+        ncbi_proteins = get_values('ncbi_protein')
+        ncbi_genbanks = get_values('genbank_accession')
+        ncbi_refseqs = get_values('refseq_accession')
+        ncbi_genes = get_values('ncbi_gene')
+
+        genes = [GeneDTO(input_value=input_value) for input_value in input_values]
+
+        annotate_genes(dtos=genes,
+                       loci=loci,
+                       names=names,
+                       taxa=taxa,
+                       uniprot_proteins=uniprot_proteins,
+                       ncbi_proteins=ncbi_proteins,
+                       ncbi_genbanks=ncbi_genbanks,
+                       ncbi_refseqs=ncbi_refseqs,
+                       ncbi_genes=ncbi_genes)
+
+        genes_dict = [dto.to_dict() for dto in genes]
+
+        genes_df = pd.DataFrame(genes_dict)
+
+        strand_mask = (genes_df['strand'] != 'reverse') & (genes_df['strand'] != 'forward')
+        genes_df.loc[strand_mask, 'strand'] = None
+
+        return genes_df
 
     # ----------------------------------------
     # Utilities
@@ -349,7 +395,7 @@ class Transformer(AbstractTransformer):
         json_partial = partial(write_json_frame, file_path=fp, df=df)
         self._write_stack.append(json_partial)
 
-    def _stack_nodes(self, df: pd.DataFrame):
+    def stack_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
             df['protrend_id'] = None
@@ -367,7 +413,7 @@ class Transformer(AbstractTransformer):
         df_name = f'nodes_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
-    def _stack_integrated_nodes(self, df: pd.DataFrame):
+    def stack_integrated_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
             df['protrend_id'] = None
@@ -381,7 +427,7 @@ class Transformer(AbstractTransformer):
         df_name = f'integrated_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
-    def _stack_transformed_nodes(self, df: pd.DataFrame):
+    def stack_transformed_nodes(self, df: pd.DataFrame):
         if df.empty:
             df = self.empty_frame()
         df_name = f'transformed_{self.node.node_name()}'
@@ -402,6 +448,12 @@ class Transformer(AbstractTransformer):
     def standardize_factors(self, df: pd.DataFrame) -> pd.DataFrame:
         df = apply_processors(df, **self.node_factors)
         return df
+
+    @staticmethod
+    def drop_empty_string(df: pd.DataFrame, col: str) -> pd.DataFrame:
+        mask = df[col] == ''
+        new_df = df.loc[mask, :].copy()
+        return new_df
 
     @staticmethod
     def create_input_value(df: pd.DataFrame, col: str) -> pd.DataFrame:

@@ -155,6 +155,6 @@ class TFBSTransformer(DBTBSTransformer,
         gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True)
         gene_tfbs = gene_tfbs.dropna(subset=['site_hash'])
 
-        self._stack_transformed_nodes(gene_tfbs)
+        self.stack_transformed_nodes(gene_tfbs)
 
         return gene_tfbs

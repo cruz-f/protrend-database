@@ -54,7 +54,7 @@ class OperonTransformer(AbasyTransformer,
         df = self.drop_duplicates(df=df, subset=['operon_hash'], perfect_match=True)
         df = df.dropna(subset=['operon_hash'])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

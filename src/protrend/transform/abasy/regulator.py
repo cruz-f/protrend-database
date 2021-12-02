@@ -51,6 +51,6 @@ class RegulatorTransformer(AbasyTransformer,
 
         df = pd.merge(regulator, gene, left_on='source_taxonomy', right_on='gene_name_taxonomy')
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

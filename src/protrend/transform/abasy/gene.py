@@ -1,13 +1,10 @@
-from typing import List, Union
-
 import pandas as pd
 
 from protrend.io import read_csv
 from protrend.model import Gene
 from protrend.transform.abasy.base import AbasyTransformer
-from protrend.annotation import annotate_genes, GeneDTO
-from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str
 
 
 class GeneTransformer(AbasyTransformer,
@@ -22,10 +19,10 @@ class GeneTransformer(AbasyTransformer,
                        'Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
                        'Product_function', 'NDA_component', 'taxonomy', 'gene_name_taxonomy'])
 
-    def _transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'],
-                                    perfect_match=True)
+    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
+        gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
         gene = gene.dropna(subset=['Gene_name', 'taxonomy'])
+        gene = self.drop_empty_string(gene, col='Gene_name')
 
         gene['gene_name_taxonomy'] = gene['Gene_name'] + gene['taxonomy']
 
@@ -44,72 +41,37 @@ class GeneTransformer(AbasyTransformer,
         gene = self.create_input_value(df=gene, col='gene_name_taxonomy')
         return gene
 
-    @staticmethod
-    def _annotate_genes(input_values: List[Union[None, str]],
-                        loci: List[Union[None, str]],
-                        names: List[str],
-                        ncbi_genes: List[str],
-                        uniprot_accessions: List[str],
-                        taxa: List[str]):
-        dtos = [GeneDTO(input_value=input_value) for input_value in input_values]
-        annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa,
-                       uniprot_proteins=uniprot_accessions, ncbi_genes=ncbi_genes)
-
-        for dto, name in zip(dtos, names):
-            dto.synonyms.append(name)
-
-        # locus_tag: List[str]
-        # name: List[str]
-        # synonyms: List[str]
-        # function: List[str]
-        # description: List[str]
-        # ncbi_gene: List[str]
-        # ncbi_protein: List[str]
-        # genbank_accession: List[str]
-        # refseq_accession: List[str]
-        # uniprot_accession: List[str]
-        # sequence: List[str]
-        # strand: List[str]
-        # start: List[int]
-        # stop: List[int]
-
-        genes = pd.DataFrame([dto.to_dict() for dto in dtos])
-        strand_mask = (genes['strand'] != 'reverse') & (genes['strand'] != 'forward')
-        genes.loc[strand_mask, 'strand'] = None
-        return genes
-
     def transform(self):
-        genes = self.contact_stacks(stack=self.gene_stack,
-                                    taxa=self.taxa_to_organism_code,
-                                    default_columns=self.default_gene_columns,
-                                    reader=read_csv)
-        gene = self._transform_gene(genes)
+        gene_stack = self.contact_stacks(stack=self.gene_stack,
+                                         taxa=self.taxa_to_organism_code,
+                                         default_columns=self.default_gene_columns,
+                                         reader=read_csv)
 
-        input_values = gene['input_value'].tolist()
-        loci = gene['locus_tag'].tolist()
-        names = gene['name'].tolist()
-        ncbi_genes = gene['ncbi_gene'].tolist()
-        uniprot_accessions = gene['uniprot_accession'].tolist()
-        taxa = gene['taxonomy'].tolist()
+        genes = self.transform_gene(gene_stack)
+        annotated_genes = self.annotate_genes(genes)
 
-        annotated_genes = self._annotate_genes(input_values=input_values, loci=loci, names=names, taxa=taxa,
-                                               ncbi_genes=ncbi_genes, uniprot_accessions=uniprot_accessions)
+        df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_abasy'))
 
-        df = pd.merge(annotated_genes, gene, on='input_value', suffixes=('_annotation', '_abasy'))
-
+        # merge loci
         df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_abasy')
+        df = df.dropna(subset=['locus_tag'])
+        df = self.drop_empty_string(df, col='locus_tag')
+
+        # merge name
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_abasy')
 
+        # merge ncbi_gene
         df = self.merge_columns(df=df, column='ncbi_gene', left='ncbi_gene_annotation', right='ncbi_gene_abasy')
         pseudo_cap_mask = df['ncbi_gene'].str.startswith('PseudoCap')
         pseudo_cap_mask = pseudo_cap_mask.fillna(False)
         df.loc[pseudo_cap_mask, 'ncbi_gene'] = None
 
+        # merge uniprot_accession
         df = self.merge_columns(df=df, column='uniprot_accession', left='uniprot_accession_annotation',
                                 right='uniprot_accession_abasy')
 
         df = df.drop(columns=['input_value'])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

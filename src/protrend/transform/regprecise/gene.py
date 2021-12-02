@@ -103,7 +103,7 @@ class GeneTransformer(RegPreciseTransformer,
 
         df = apply_processors(df, genome_id=to_int_str, ncbi_taxonomy=to_int_str, regulon_id=to_int_str)
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

@@ -143,5 +143,5 @@ class RegulatorTransformer(CollectfTransformer,
 
         tf = tf.drop(columns=['input_value'])
 
-        self._stack_transformed_nodes(tf)
+        self.stack_transformed_nodes(tf)
         return tf

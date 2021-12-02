@@ -105,6 +105,6 @@ class TFBSTransformer(CollectfTransformer,
         df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True)
         df = df.dropna(subset=['site_hash'])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

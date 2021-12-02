@@ -109,7 +109,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
 
         df = apply_processors(df, tffamily_id=to_int_str, riboswitch_id=to_int_str, collection_id=to_int_str)
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
         return df
 
 

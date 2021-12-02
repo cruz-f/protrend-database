@@ -189,6 +189,6 @@ class GeneTransformer(DBTBSTransformer,
 
         df = df.drop(columns=['input_value'])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

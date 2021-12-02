@@ -33,6 +33,6 @@ class SourceTransformer(RegPreciseTransformer,
 
         df = pd.DataFrame(regprecise, index=[0])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

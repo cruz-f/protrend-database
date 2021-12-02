@@ -54,7 +54,7 @@ class SourceTransformer(LiteratureTransformer,
 
         df = pd.DataFrame(db)
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

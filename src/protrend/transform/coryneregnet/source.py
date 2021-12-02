@@ -38,7 +38,7 @@ class SourceTransformer(CoryneRegNetTransformer,
 
         df = pd.DataFrame(db, index=[0])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

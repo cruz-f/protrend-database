@@ -39,7 +39,7 @@ class SourceTransformer(CollectfTransformer,
 
         df = pd.DataFrame(collectf, index=[0])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

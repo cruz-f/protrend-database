@@ -176,6 +176,6 @@ class TFBSTransformer(CoryneRegNetTransformer,
         operon_gene_tfbs = self.drop_duplicates(df=operon_gene_tfbs, subset=['site_hash'], perfect_match=True)
         operon_gene_tfbs = operon_gene_tfbs.dropna(subset=['site_hash'])
 
-        self._stack_transformed_nodes(operon_gene_tfbs)
+        self.stack_transformed_nodes(operon_gene_tfbs)
 
         return operon_gene_tfbs

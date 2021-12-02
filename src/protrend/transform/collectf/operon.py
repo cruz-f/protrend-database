@@ -201,7 +201,7 @@ class OperonTransformer(CollectfTransformer,
         operon = self._transform_operon_by_gene(operon=operon, gene=gene)
         operon = self._operon_coordinates(operon=operon)
 
-        self._stack_transformed_nodes(operon)
+        self.stack_transformed_nodes(operon)
 
         return operon
 

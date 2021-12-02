@@ -56,7 +56,7 @@ class EvidenceTransformer(LiteratureTransformer,
         network = self._build_network()
         evidence = self._transform_evidence(network)
 
-        self._stack_transformed_nodes(evidence)
+        self.stack_transformed_nodes(evidence)
         return evidence
 
 

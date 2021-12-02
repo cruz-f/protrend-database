@@ -158,7 +158,7 @@ class OperonTransformer(CoryneRegNetTransformer,
 
         operon_tfbs_gene = self._operon_coordinates(operon=operon_tfbs_gene)
 
-        self._stack_transformed_nodes(operon_tfbs_gene)
+        self.stack_transformed_nodes(operon_tfbs_gene)
 
         return operon_tfbs_gene
 

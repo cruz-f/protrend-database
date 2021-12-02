@@ -118,7 +118,7 @@ class OrganismTransformer(LiteratureTransformer,
 
         df = pd.concat([annotated_organisms_df, organisms])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

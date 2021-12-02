@@ -178,6 +178,6 @@ class RegulatorTransformer(LiteratureTransformer,
 
         df = df.drop(columns=['input_value', 'regulator_network_id'])
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df

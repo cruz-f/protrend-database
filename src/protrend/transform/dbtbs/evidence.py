@@ -45,7 +45,7 @@ class EvidenceTransformer(DBTBSTransformer,
                                  default_columns=self.read_columns, reader=read_json_lines)
         evidence = self._transform_evidence(operon)
 
-        self._stack_transformed_nodes(evidence)
+        self.stack_transformed_nodes(evidence)
         return evidence
 
 

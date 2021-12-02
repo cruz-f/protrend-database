@@ -85,7 +85,7 @@ class OrganismTransformer(CoryneRegNetTransformer,
 
         df = pd.DataFrame(org)
 
-        self._stack_transformed_nodes(df)
+        self.stack_transformed_nodes(df)
 
         return df
 

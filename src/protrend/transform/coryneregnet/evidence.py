@@ -35,7 +35,7 @@ class EvidenceTransformer(CoryneRegNetTransformer,
         regulation = self._build_regulations()
         evidence = self._transform_evidence(regulation)
 
-        self._stack_transformed_nodes(evidence)
+        self.stack_transformed_nodes(evidence)
         return evidence
 
 
