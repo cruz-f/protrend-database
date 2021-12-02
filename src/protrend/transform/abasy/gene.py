@@ -17,28 +17,28 @@ class GeneTransformer(AbasyTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
-                       'Product_function', 'NDA_component', 'taxonomy', 'gene_name_taxonomy'])
+                       'Product_function', 'NDA_component', 'taxonomy', 'gene_taxonomy'])
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
         gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
         gene = gene.dropna(subset=['Gene_name', 'taxonomy'])
         gene = self.drop_empty_string(gene, col='Gene_name')
 
-        gene['gene_name_taxonomy'] = gene['Gene_name'] + gene['taxonomy']
-
         gene = apply_processors(gene,
-                                gene_name_taxonomy=[rstrip, lstrip],
                                 Gene_name=[rstrip, lstrip],
                                 Locus_tag=[rstrip, lstrip],
                                 NCBI_gene_ID=[to_int_str, rstrip, lstrip],
                                 Uniprot_ID=[rstrip, lstrip])
 
-        gene['locus_tag'] = gene['Locus_tag']
-        gene['name'] = gene['Gene_name']
-        gene['ncbi_gene'] = gene['NCBI_gene_ID']
-        gene['uniprot_accession'] = gene['Uniprot_ID']
+        gene_taxonomy = gene['Gene_name'] + gene['taxonomy']
 
-        gene = self.create_input_value(df=gene, col='gene_name_taxonomy')
+        gene = gene.assign(gene_taxonomy=gene_taxonomy,
+                           locus_tag=gene['Locus_tag'].copy(),
+                           name=gene['Gene_name'].copy(),
+                           ncbi_gene=gene['NCBI_gene_ID'].copy(),
+                           uniprot_accession=gene['Uniprot_ID'].copy())
+
+        gene = self.create_input_value(df=gene, col='gene_taxonomy')
         return gene
 
     def transform(self):
@@ -56,6 +56,7 @@ class GeneTransformer(AbasyTransformer,
         df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_abasy')
         df = df.dropna(subset=['locus_tag'])
         df = self.drop_empty_string(df, col='locus_tag')
+        df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
 
         # merge name
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_abasy')

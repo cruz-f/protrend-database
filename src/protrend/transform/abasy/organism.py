@@ -1,17 +1,13 @@
-from typing import List
-
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Organism, Regulator, Operon, Gene, RegulatoryInteraction
+from protrend.model import Organism, Regulator, Gene, RegulatoryInteraction
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
-from protrend.transform.abasy.operon import OperonTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
 from protrend.transform.abasy.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.annotation import annotate_organisms, OrganismDTO
-from protrend.utils.processors import apply_processors, to_int_str
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_int_str
 
 
 class OrganismTransformer(AbasyTransformer,
@@ -20,7 +16,6 @@ class OrganismTransformer(AbasyTransformer,
                           node=Organism,
                           order=100,
                           register=True):
-
     species = ('Bacillus subtilis',
                'Escherichia coli',
                'Corynebacterium glutamicum',
@@ -84,23 +79,6 @@ class OrganismTransformer(AbasyTransformer,
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
 
-    @staticmethod
-    def _transform_organisms(identifiers: List[str], names: List[str]):
-        dtos = [OrganismDTO(input_value=identifier) for identifier in identifiers]
-        annotate_organisms(dtos=dtos, identifiers=identifiers, names=names)
-
-        # name: List[str]
-        # species: List[str]
-        # strain: List[str]
-        # ncbi_taxonomy: List[int]
-        # refseq_accession: List[str]
-        # refseq_ftp: List[str]
-        # genbank_accession: List[str]
-        # genbank_ftp: List[str]
-        # ncbi_assembly: List[str]
-        # assembly_accession: List[str]
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
-
     def transform(self):
         # 'bsub': '224308',
         #  'cglu': '196627',
@@ -117,23 +95,26 @@ class OrganismTransformer(AbasyTransformer,
                                    genbank_ftp=self.genbank_ftp,
                                    ncbi_assembly=self.ncbi_assembly,
                                    assembly_accession=self.assembly_accession)
-
-        annotated_organisms_df = pd.DataFrame(annotated_organisms)
+        annotated_organisms = pd.DataFrame(annotated_organisms)
 
         # 'saur': '367830',
         # 'scoe': '100226',
         # 'spne': '406558',
         # 'spyo': '186103'
-        tax_ids = ['367830', '100226', '406558', '186103']
-        names = ['Staphylococcus aureus subsp. aureus USA300', 'Streptomyces coelicolor A3(2)',
-                 'Streptococcus pneumoniae SP9-BS68', 'Streptococcus pyogenes MGAS8232']
-        organisms = self._transform_organisms(identifiers=tax_ids, names=names)
+        organisms_to_annotate = dict(input_values=['367830', '100226', '406558', '186103'],
+                                     ncbi_taxonomy=['367830', '100226', '406558', '186103'],
+                                     name=['Staphylococcus aureus subsp. aureus USA300',
+                                           'Streptomyces coelicolor A3(2)',
+                                           'Streptococcus pneumoniae SP9-BS68',
+                                           'Streptococcus pyogenes MGAS8232'])
+        organisms_to_annotate = pd.DataFrame(organisms_to_annotate)
+
+        organisms = self.annotate_organisms(organisms_to_annotate)
         organisms = organisms.drop(columns=['input_value'])
 
-        df = pd.concat([annotated_organisms_df, organisms])
+        df = pd.concat([annotated_organisms, organisms])
 
         self.stack_transformed_nodes(df)
-
         return df
 
 
@@ -143,7 +124,6 @@ class RegulatorToOrganismConnector(AbasyConnector,
                                    from_node=Regulator,
                                    to_node=Organism,
                                    register=True):
-
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -167,43 +147,12 @@ class RegulatorToOrganismConnector(AbasyConnector,
         self.stack_json(df)
 
 
-class OperonToOrganismConnector(AbasyConnector,
-                                source='abasy',
-                                version='0.0.0',
-                                from_node=Operon,
-                                to_node=Organism,
-                                register=True):
-
-    default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
-
-    def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = apply_processors(operon, taxonomy=to_int_str)
-
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
-        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
-
-        df = pd.merge(operon, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
-                      suffixes=('_operon', '_organism'))
-
-        from_identifiers = df['protrend_id_operon'].tolist()
-        to_identifiers = df['protrend_id_organism'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
 class GeneToOrganismConnector(AbasyConnector,
                               source='abasy',
                               version='0.0.0',
                               from_node=Gene,
                               to_node=Organism,
                               register=True):
-
     default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
@@ -232,7 +181,6 @@ class RegulatoryInteractionToOrganismConnector(AbasyConnector,
                                                from_node=RegulatoryInteraction,
                                                to_node=Organism,
                                                register=True):
-
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):

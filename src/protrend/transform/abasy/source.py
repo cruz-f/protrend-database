@@ -1,10 +1,9 @@
 import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Source, Organism, Regulator, Operon, Gene, RegulatoryInteraction
+from protrend.model import Source, Organism, Regulator, Gene, RegulatoryInteraction
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
-from protrend.transform.abasy.operon import OperonTransformer
 from protrend.transform.abasy.organism import OrganismTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
 from protrend.transform.abasy.regulatory_interaction import RegulatoryInteractionTransformer
@@ -82,32 +81,6 @@ class RegulatorToSourceConnector(AbasyConnector,
                                  default_columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class OperonToSourceConnector(AbasyConnector,
-                              source='abasy',
-                              version='0.0.0',
-                              from_node=Operon,
-                              to_node=Source,
-                              register=True):
-    default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
-
-    def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = operon['protrend_id'].tolist()
         size = len(from_identifiers)
 
         protrend_id = source['protrend_id'].iloc[0]

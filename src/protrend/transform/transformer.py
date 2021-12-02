@@ -5,12 +5,21 @@ from typing import Union, List, Type, Callable, Dict
 
 import pandas as pd
 
-from protrend import GeneDTO, annotate_genes
+from protrend import GeneDTO, annotate_genes, OrganismDTO, annotate_organisms
 from protrend.io import read_from_stack
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
 from protrend.utils import SetList, Settings, is_null, WriteStack, DefaultProperty
+
+
+def get_values(df, col):
+    series = df.get(col)
+
+    if series is None:
+        return
+
+    return series.to_list()
 
 
 class AbstractTransformer(metaclass=ABCMeta):
@@ -333,23 +342,15 @@ class Transformer(AbstractTransformer):
     @staticmethod
     def annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
 
-        def get_values(col):
-            series = df.get(col)
-
-            if series is None:
-                return
-
-            return series.to_list()
-
-        input_values = get_values('input_values')
-        loci = get_values('locus_tag')
-        names = get_values('name')
-        taxa = get_values('taxonomy')
-        uniprot_proteins = get_values('uniprot_accession')
-        ncbi_proteins = get_values('ncbi_protein')
-        ncbi_genbanks = get_values('genbank_accession')
-        ncbi_refseqs = get_values('refseq_accession')
-        ncbi_genes = get_values('ncbi_gene')
+        input_values = get_values(df, 'input_values')
+        loci = get_values(df, 'locus_tag')
+        names = get_values(df, 'name')
+        taxa = get_values(df, 'taxonomy')
+        uniprot_proteins = get_values(df, 'uniprot_accession')
+        ncbi_proteins = get_values(df, 'ncbi_protein')
+        ncbi_genbanks = get_values(df, 'genbank_accession')
+        ncbi_refseqs = get_values(df, 'refseq_accession')
+        ncbi_genes = get_values(df, 'ncbi_gene')
 
         genes = [GeneDTO(input_value=input_value) for input_value in input_values]
 
@@ -371,6 +372,22 @@ class Transformer(AbstractTransformer):
         genes_df.loc[strand_mask, 'strand'] = None
 
         return genes_df
+
+    @staticmethod
+    def annotate_organisms(df: pd.DataFrame) -> pd.DataFrame:
+
+        input_values = get_values(df, 'input_values')
+        identifiers = get_values(df, 'ncbi_taxonomy')
+        names = get_values(df, 'name')
+
+        organisms = [OrganismDTO(input_value=input_value) for input_value in input_values]
+
+        annotate_organisms(dtos=organisms, identifiers=identifiers, names=names)
+
+        organisms_dict = [dto.to_dict() for dto in organisms]
+
+        organisms_df = pd.DataFrame(organisms_dict)
+        return organisms_df
 
     # ----------------------------------------
     # Utilities
@@ -565,13 +582,24 @@ class Transformer(AbstractTransformer):
 
         return mask
 
-    def regulatory_interaction_hash(self, df: pd.DataFrame) -> pd.DataFrame:
-        # filter by effector + regulator + operon + regulatory effect
-        df_f = apply_processors(df, regulator_effector=to_list_nan, regulator=to_list_nan,
-                                operon=to_list_nan, regulatory_effect=to_list_nan)
+    def interaction_hash(self, df: pd.DataFrame) -> pd.DataFrame:
+        # filter by organism + regulator + gene + tfbs + effector + regulatory effect
+        df2 = apply_processors(df,
+                               organism=to_list_nan,
+                               regulator=to_list_nan,
+                               gene=to_list_nan,
+                               tfbs=to_list_nan,
+                               effector=to_list_nan,
+                               regulatory_effect=to_list_nan)
 
-        _hash = df_f['regulator_effector'] + df_f['regulator'] + df_f['operon'] + df_f['regulatory_effect']
-        df['regulatory_interaction_hash'] = _hash
+        ri_series_hash = df2['organism'].copy()
+        ri_series_hash += df2['regulator'].copy()
+        ri_series_hash += df2['gene'].copy()
+        ri_series_hash += df2['tfbs'].copy()
+        ri_series_hash += df2['effector'].copy()
+        ri_series_hash += df2['regulatory_effect'].copy()
+
+        df = df.assign(regulatory_interaction_hash=ri_series_hash)
         df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
         df = self.drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True)
         df = df.dropna(subset=['regulatory_interaction_hash'])
