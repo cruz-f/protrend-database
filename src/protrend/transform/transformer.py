@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import Union, List, Type, Callable, Dict
+from typing import List, Type, Callable, Dict
 
 import pandas as pd
 
@@ -9,8 +9,8 @@ from protrend import GeneDTO, annotate_genes, OrganismDTO, annotate_organisms
 from protrend.io import read_from_stack
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
+from protrend.utils import SetList, Settings, WriteStack, DefaultProperty
 from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
-from protrend.utils import SetList, Settings, is_null, WriteStack, DefaultProperty
 
 
 def get_values(df, col):
@@ -242,44 +242,6 @@ class Transformer(AbstractTransformer):
 
         pass
 
-    def _update_nodes(self, df: pd.DataFrame, mask: pd.Series, snapshot: pd.DataFrame) -> pd.DataFrame:
-
-        # nodes to be updated
-        nodes = df[mask]
-
-        if nodes.empty:
-            nodes['protrend_id'] = None
-            nodes['load'] = None
-            nodes['what'] = None
-            return nodes
-
-        # find/set protrend identifiers for update nodes
-        ids_mask = self.find_snapshot(nodes=nodes, snapshot=snapshot, node_factors=self.node_factors_keys)
-        nodes.loc[:, 'protrend_id'] = snapshot.loc[ids_mask, 'protrend_id']
-        nodes.loc[:, 'load'] = 'update'
-        nodes.loc[:, 'what'] = 'nodes'
-
-        return nodes
-
-    def _create_nodes(self, df: pd.DataFrame, mask: pd.Series) -> pd.DataFrame:
-
-        # nodes to be created
-        nodes = df[~mask]
-        if nodes.empty:
-            nodes['protrend_id'] = None
-            nodes['load'] = None
-            nodes['what'] = None
-            return nodes
-
-        # create/set new protrend identifiers
-        create_size, _ = nodes.shape
-        create_identifiers = self.protrend_identifiers_batch(create_size)
-        nodes.loc[:, 'protrend_id'] = create_identifiers
-        nodes.loc[:, 'load'] = 'create'
-        nodes.loc[:, 'what'] = 'nodes'
-
-        return nodes
-
     def integrate(self, df: pd.DataFrame):
 
         """
@@ -299,29 +261,42 @@ class Transformer(AbstractTransformer):
         :param df: transformed pandas DataFrame
         :return: it creates a new pandas DataFrame of the integrated data
         """
+        # take a db snapshot for the current node and ensure uniqueness
+        view = self.node_view()
+        view = self.standardize_factors(df=view)
+        view = self.drop_empty_string(view, *self.node_factors_keys)
+        view = self.drop_duplicates(df=view, subset=self.node_factors_keys)
+
         # ensure uniqueness
+        df = self.standardize_factors(df=df)
+        df = self.drop_empty_string(df, *self.node_factors_keys)
         df = self.drop_duplicates(df=df, subset=self.node_factors_keys)
 
-        # take a db snapshot for the current node and ensure uniqueness
-        snapshot = self.node_view()
-        snapshot = self.drop_duplicates(df=snapshot, subset=self.node_factors_keys)
+        # assign the integration and load columns
+        df = df.assign(protrend_id=None, load=None, what='nodes')
 
-        # ensure persistence
-        standardized_nodes = self.standardize_factors(df=df)
-        standardized_snapshot = self.standardize_factors(df=snapshot)
+        # try to integrate the new nodes by the node factors
+        for factor in self.node_factors_keys:
+            mapper = view.dropna(subset=[factor])
+            mapper = mapper.set_index(factor)
+            mapper = mapper['protrend_id']
+            to_fill = df[factor].map(mapper)
+            filled = df['protrend_id'].fillna(to_fill)
+            df = df.assign(protrend_id=filled)
 
-        # find matching nodes according to several node factors/properties
-        mask = self.find_nodes(nodes=standardized_nodes, snapshot=standardized_snapshot,
-                               node_factors=self.node_factors_keys)
+        # those that mismatch the integration by the node factors (that is, the protrend id is missing) will be assigned
+        # for creation
+        mask = df['protrend_id'].isna()
+        df.loc[mask, 'load'] = 'create'
+        df.loc[~mask, 'load'] = 'update'
 
-        # nodes to be updated
-        update_nodes = self._update_nodes(df=df, mask=mask, snapshot=snapshot)
+        # inferring the batch size, creating the new ids and assign to the df
+        nodes = view['protrend_id'].to_list()
+        last_node_idx = self.last_node_index(nodes)
+        batch_size = mask.sum()
 
-        # nodes to be created
-        create_nodes = self._create_nodes(df=df, mask=mask)
-
-        # concat both dataframes
-        df = pd.concat([create_nodes, update_nodes])
+        batch_ids = self.protrend_identifiers_batch(last_node_idx=last_node_idx, size=batch_size)
+        df.loc[mask, 'protrend_id'] = batch_ids
 
         self.stack_integrated_nodes(df)
         self.stack_nodes(df)
@@ -405,6 +380,11 @@ class Transformer(AbstractTransformer):
         cols = [col for col in self.columns if col != 'protrend_id']
         return pd.DataFrame(columns=cols)
 
+    def integrated_empty_frame(self) -> pd.DataFrame:
+        cols = [col for col in self.columns]
+        cols += ['load', 'what', 'node']
+        return pd.DataFrame(columns=cols)
+
     def stack_json(self, name: str, df: pd.DataFrame):
         df = df.copy()
         df = df.reset_index(drop=True)
@@ -414,16 +394,12 @@ class Transformer(AbstractTransformer):
 
     def stack_nodes(self, df: pd.DataFrame):
         if df.empty:
-            df = self.empty_frame()
-            df['protrend_id'] = None
-            df['load'] = None
-            df['what'] = None
-            df['node'] = self.node.node_name()
+            df = self.integrated_empty_frame()
 
         else:
             df.loc[:, 'node'] = self.node.node_name()
 
-        node_cols = list(self.node.node_keys()) + ['load', 'what', 'node']
+        node_cols = self.node_factors_keys + ['load', 'what', 'node']
         cols_to_drop = [col for col in df.columns if col not in node_cols]
         df = df.drop(columns=cols_to_drop)
 
@@ -432,11 +408,7 @@ class Transformer(AbstractTransformer):
 
     def stack_integrated_nodes(self, df: pd.DataFrame):
         if df.empty:
-            df = self.empty_frame()
-            df['protrend_id'] = None
-            df['load'] = None
-            df['what'] = None
-            df['node'] = self.node.node_name()
+            df = self.integrated_empty_frame()
 
         else:
             df.loc[:, 'node'] = self.node.node_name()
@@ -467,9 +439,18 @@ class Transformer(AbstractTransformer):
         return df
 
     @staticmethod
-    def drop_empty_string(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        mask = df[col] == ''
-        new_df = df.loc[mask, :].copy()
+    def drop_empty_string(df: pd.DataFrame, *cols: str) -> pd.DataFrame:
+        n_rows, _ = df.shape
+
+        mask = pd.Series([False] * n_rows)
+
+        cols_mask = [df[col] != '' for col in cols]
+
+        if cols_mask:
+            mask = pd.concat(cols_mask, axis=1)
+            mask = mask.all(axis=1)
+
+        new_df = df[mask].copy()
         return new_df
 
     @staticmethod
@@ -536,52 +517,6 @@ class Transformer(AbstractTransformer):
 
         return df
 
-    @staticmethod
-    def find_nodes(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: List[str]) -> pd.Series:
-
-        n_rows, _ = nodes.shape
-
-        mask = pd.Series([False] * n_rows)
-
-        factors_masks = []
-        for factor in node_factors:
-
-            if factor in nodes.columns and factor in snapshot.columns:
-                snapshot_values = snapshot[factor]
-                is_in_mask = nodes[factor].isin(snapshot_values)
-                is_not_null_mask = ~ nodes[factor].map(is_null)
-                factor_mask = (is_in_mask & is_not_null_mask)
-                factors_masks.append(factor_mask)
-
-        if factors_masks:
-            mask = pd.concat(factors_masks, axis=1)
-            mask = mask.any(axis=1)
-
-        return mask
-
-    @staticmethod
-    def find_snapshot(nodes: pd.DataFrame, snapshot: pd.DataFrame, node_factors: List[str]) -> pd.Series:
-
-        n_rows, _ = snapshot.shape
-
-        mask = pd.Series([False] * n_rows)
-
-        factors_masks = []
-        for factor in node_factors:
-
-            if factor in nodes.columns and factor in snapshot.columns:
-                node_values = nodes[factor]
-                is_in_mask = snapshot[factor].isin(node_values)
-                is_not_null_mask = ~ snapshot[factor].map(is_null)
-                factor_mask = (is_in_mask & is_not_null_mask)
-                factors_masks.append(factor_mask)
-
-        if factors_masks:
-            mask = pd.concat(factors_masks, axis=1)
-            mask = mask.any(axis=1)
-
-        return mask
-
     def interaction_hash(self, df: pd.DataFrame) -> pd.DataFrame:
         # filter by organism + regulator + gene + tfbs + effector + regulatory effect
         df2 = apply_processors(df,
@@ -606,20 +541,18 @@ class Transformer(AbstractTransformer):
 
         return df
 
-    def protrend_identifiers_batch(self, size):
-
-        last_node = self.node.last_node()
-
-        if last_node is None:
-            integer = 0
-        else:
-            integer = protrend_id_decoder(last_node.protrend_id)
+    def protrend_identifiers_batch(self, last_node_idx: int, size: int) -> List[str]:
 
         return [protrend_id_encoder(self.node.header, self.node.entity, i)
-                for i in range(integer + 1, integer + size + 1)]
+                for i in range(last_node_idx + 1, last_node_idx + size + 1)]
 
-    def last_node(self) -> Union['Node', None]:
-        return self.node.last_node()
+    @staticmethod
+    def last_node_index(nodes: List[str]) -> int:
+        if not nodes:
+            return 0
+
+        sorted_nodes = sorted(nodes, key=protrend_id_decoder, reverse=True)
+        return protrend_id_decoder(sorted_nodes[0])
 
     def node_view(self) -> pd.DataFrame:
         df = self.node.node_to_df()
