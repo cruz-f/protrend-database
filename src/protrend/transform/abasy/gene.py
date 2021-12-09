@@ -22,7 +22,7 @@ class GeneTransformer(AbasyTransformer,
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
         gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
         gene = gene.dropna(subset=['Gene_name', 'taxonomy'])
-        gene = self.drop_empty_string(gene, col='Gene_name')
+        gene = self.drop_empty_string(gene, 'Gene_name')
 
         gene = apply_processors(gene,
                                 Gene_name=[rstrip, lstrip],
@@ -55,7 +55,7 @@ class GeneTransformer(AbasyTransformer,
         # merge loci
         df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_abasy')
         df = df.dropna(subset=['locus_tag'])
-        df = self.drop_empty_string(df, col='locus_tag')
+        df = self.drop_empty_string(df, 'locus_tag')
         df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
 
         # merge name

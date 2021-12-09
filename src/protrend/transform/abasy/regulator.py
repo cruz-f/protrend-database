@@ -23,7 +23,7 @@ class RegulatorTransformer(AbasyTransformer,
     def transform_networks(self, networks: pd.DataFrame) -> pd.DataFrame:
         networks = self.drop_duplicates(df=networks, subset=['source', 'taxonomy'], perfect_match=True)
         networks = networks.dropna(subset=['source', 'taxonomy'])
-        networks = self.drop_empty_string(networks, col='source')
+        networks = self.drop_empty_string(networks, 'source')
 
         networks = apply_processors(networks, source=[rstrip, lstrip])
 
@@ -50,7 +50,7 @@ class RegulatorTransformer(AbasyTransformer,
         df = pd.merge(regulator, gene, left_on='regulator_taxonomy', right_on='gene_taxonomy')
 
         df = df.dropna(subset=['locus_tag'])
-        df = self.drop_empty_string(df, col='locus_tag')
+        df = self.drop_empty_string(df, 'locus_tag')
         df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
 
         self.stack_transformed_nodes(df)
