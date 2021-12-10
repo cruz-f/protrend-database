@@ -1,13 +1,16 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import List, Any, Type, Dict
+from typing import List, Type, Dict, Tuple, Callable
 
 import pandas as pd
 
-from protrend.io.json import write_json_frame
+from protrend.io import read_from_stack
+from protrend.io.json import write_json_frame, read_json_frame
 from protrend.model.node import Node
 from protrend.utils import Settings, WriteStack, DefaultProperty
+from protrend.utils.miscellaneous import build_stack
+from protrend.utils.processors import apply_processors
 
 
 class AbstractConnector(metaclass=ABCMeta):
@@ -112,26 +115,17 @@ class Connector(AbstractConnector):
         :param to_node: The target node type associated with this connector, and thus the end of the relation.
         Note that, it should be created only one connector for each node-node relationship
         """
-        self._connect_stack = {}
-        self._write_stack = []
         self.source = source
         self.version = version
         self.from_node = from_node
         self.to_node = to_node
 
-        self.load_connect_stack(connect_stack)
-
-    def load_connect_stack(self, connect_stack: Dict[str, str] = None):
-
-        self._connect_stack = {}
-
         if not connect_stack:
             connect_stack = self.default_connect_stack
 
-        for key, file in connect_stack.items():
-            dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
+        self._connect_stack = build_stack(source, version, connect_stack)
 
-            self._connect_stack[key] = dl_file
+        self._write_stack = []
 
     # --------------------------------------------------------
     # Static properties
@@ -223,17 +217,66 @@ class Connector(AbstractConnector):
         json_partial = partial(write_json_frame, file_path=fp, df=df)
         self._write_stack.append(json_partial)
 
-    def make_connection(self,
-                        from_identifiers: List[Any],
-                        to_identifiers: List[Any],
-                        kwargs: dict = None) -> pd.DataFrame:
+    def _read_connect_stacks(self,
+                             source: str,
+                             target: str,
+                             source_column: str,
+                             target_column: str,
+                             source_processors: Dict[str, List[Callable]] = None,
+                             target_processors: Dict[str, List[Callable]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-        size = len(from_identifiers)
+        default_source_cols = [source_column]
+        default_target_cols = [target_column]
+
+        if not source_processors:
+            source_processors = {}
+
+        if not target_processors:
+            target_processors = {}
+
+        default_source_cols += list(source_processors.keys())
+        default_target_cols += list(target_processors.keys())
+
+        source_df = read_from_stack(stack=self.connect_stack, file=source,
+                                    default_columns=default_source_cols, reader=read_json_frame)
+        source_df = apply_processors(source_df, **source_processors)
+        source_df = source_df.rename(columns={source_column: 'source_col'})
+
+        target_df = read_from_stack(stack=self.connect_stack, file=target,
+                                    default_columns=default_target_cols, reader=read_json_frame)
+        target_df = apply_processors(target_df, **target_processors)
+        target_df = target_df.rename(columns={target_column: 'target_col'})
+
+        return source_df, target_df
+
+    @staticmethod
+    def _get_source_target_ids(source_df: pd.DataFrame,
+                               target_df: pd.DataFrame,
+                               source_on: str = None,
+                               target_on: str = None) -> Tuple[List[str], List[str]]:
+        if source_on:
+            df = pd.merge(source_df, target_df, left_on=source_on, right_on=target_on)
+
+            source_ids = df['source_col'].to_list()
+            target_ids = df['target_col'].to_list()
+
+        else:
+            source_ids = source_df['source_col'].to_list()
+            target_ids = target_df['target_col'].to_list()
+
+        return source_ids, target_ids
+
+    def _create_connection(self,
+                           source_ids: List[str],
+                           target_ids: List[str],
+                           kwargs: Dict[str, List[str]] = None) -> pd.DataFrame:
+
+        size = len(source_ids)
 
         connection = {'from_node': [self.from_node.node_name()] * size,
                       'to_node': [self.to_node.node_name()] * size,
-                      'from_identifier': from_identifiers.copy(),
-                      'to_identifier': to_identifiers.copy(),
+                      'from_identifier': source_ids.copy(),
+                      'to_identifier': target_ids.copy(),
                       'load': ['create'] * size,
                       'what': ['relationships'] * size}
 
@@ -243,3 +286,30 @@ class Connector(AbstractConnector):
         connection.update(kwargs)
 
         return pd.DataFrame(connection)
+
+    def create_connection(self,
+                          source: str,
+                          target: str,
+                          source_column: str = 'protrend_id',
+                          target_column: str = 'protrend_id',
+                          cardinality: str = 'many_to_many',
+                          source_on: str = None,
+                          target_on: str = None,
+                          source_processors: Dict[str, List[Callable]] = None,
+                          target_processors: Dict[str, List[Callable]] = None) -> pd.DataFrame:
+
+        source_df, target_df = self._read_connect_stacks(source=source,
+                                                         target=target,
+                                                         source_column=source_column,
+                                                         target_column=target_column,
+                                                         source_processors=source_processors,
+                                                         target_processors=target_processors)
+
+        source_ids, target_ids = self._get_source_target_ids(source_df=source_df, target_df=target_df,
+                                                             source_on=source_on, target_on=target_on)
+
+        if cardinality == 'one_to_many':
+            source_ids *= len(target_ids)
+
+        return self._create_connection(source_ids=source_ids,
+                                       target_ids=target_ids)
