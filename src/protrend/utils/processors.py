@@ -236,7 +236,6 @@ def operon_name(items: List[str]) -> str:
 
 
 def operon_hash(items: List[str]) -> Union[None, str]:
-
     if is_null(items):
         return None
 
@@ -338,7 +337,7 @@ def parse_collectf_pubmed(item: List[str]) -> List[str]:
         pmids2 = re.findall(pubmed_pattern2, string)
         pmids = pmids1 + pmids2
         for pmid in pmids:
-            pmid = ''.join(l for l in pmid if l.isdigit())
+            pmid = ''.join(digit for digit in pmid if digit.isdigit())
             if pmid:
                 all_pmids.add(pmid)
 
