@@ -9,6 +9,7 @@ from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
 from protrend.utils import Settings, DefaultProperty
+from protrend.utils.miscellaneous import build_load_stack
 
 
 class Loader:
@@ -50,7 +51,10 @@ class Loader:
         self.source = source
         self.version = version
 
-        self.build_load_stack(load_stack)
+        if not load_stack:
+            load_stack = self.load_stack_from_source_version()
+
+        self._connect_stack = build_load_stack(source, version, load_stack)
 
     def load_stack_from_source_version(self) -> List[str]:
         load_stack = []
@@ -69,18 +73,6 @@ class Loader:
 
         return load_stack
 
-    def build_load_stack(self, load_stack: List[str] = None):
-
-        self._load_stack = []
-
-        if not load_stack:
-            load_stack = self.load_stack_from_source_version()
-
-        for file in load_stack:
-
-            file = os.path.join(Settings.data_lake, self.source, self.version, f'{file}.json')
-            self._load_stack.append(file)
-
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
@@ -88,12 +80,8 @@ class Loader:
     def load_stack(self) -> List[str]:
         return self._load_stack
 
-    @property
-    def read_path(self) -> str:
-        return os.path.join(Settings.data_lake, self.source, self.version)
-
     # --------------------------------------------------------
-    # Transformer API
+    # Loader API
     # --------------------------------------------------------
     def load(self):
 
