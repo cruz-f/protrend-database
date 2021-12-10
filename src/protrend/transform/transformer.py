@@ -10,6 +10,7 @@ from protrend.io import read_from_stack
 from protrend.io.json import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.utils import SetList, Settings, WriteStack, DefaultProperty
+from protrend.utils.miscellaneous import build_stack
 from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
 
 
@@ -151,27 +152,9 @@ class Transformer(AbstractTransformer):
         if not transform_stack:
             transform_stack = self.default_transform_stack
 
-        self._transform_stack = self.build_stack(transform_stack)
+        self._transform_stack = build_stack(source, version, transform_stack)
 
         self._write_stack = []
-
-    def build_stack(self, stack_to_load: Dict[str, str]) -> Dict[str, str]:
-
-        loaded_stack = {}
-
-        for key, file in stack_to_load.items():
-
-            sa_file = os.path.join(Settings.staging_area, self.source, self.version, file)
-
-            if os.path.exists(sa_file):
-                loaded_stack[key] = sa_file
-
-            else:
-                dl_file = os.path.join(Settings.data_lake, self.source, self.version, file)
-
-                loaded_stack[key] = dl_file
-
-        return loaded_stack
 
     # --------------------------------------------------------
     # Static properties
@@ -556,4 +539,29 @@ class Transformer(AbstractTransformer):
 
     def node_view(self) -> pd.DataFrame:
         df = self.node.node_to_df()
+        return df
+
+
+class BaseSourceTransformer(Transformer, register=False):
+    name = ''
+    type = ''
+    url = ''
+    doi = ''
+    authors = []
+    description = ''
+
+    columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
+
+    def transform(self):
+        db = dict(name=[self.name],
+                  type=[self.type],
+                  url=[self.url],
+                  doi=[self.doi],
+                  authors=[self.authors],
+                  description=[self.description])
+
+        df = pd.DataFrame(db, index=[0])
+
+        self.stack_transformed_nodes(df)
+
         return df
