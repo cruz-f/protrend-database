@@ -5,6 +5,7 @@ import pandas as pd
 from protrend.io import read_json
 from protrend.transform import Transformer, Connector
 from protrend.utils import SetList
+from protrend.utils.miscellaneous import build_stack
 
 
 def read_abasy_network(file_path: str) -> pd.DataFrame:
@@ -62,8 +63,10 @@ class AbasyTransformer(Transformer, source='abasy', version='0.0.0', register=Fa
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self._network_stack = self.build_stack(self.default_network_stack)
-        self._gene_stack = self.build_stack(self.default_gene_stack)
+        self._network_stack = build_stack(source=self.source, version=self.version,
+                                          stack_to_load=self.default_network_stack)
+        self._gene_stack = build_stack(source=self.source, version=self.version,
+                                       stack_to_load=self.default_gene_stack)
 
     @property
     def network_stack(self):
