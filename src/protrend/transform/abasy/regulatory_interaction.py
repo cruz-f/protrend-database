@@ -1,5 +1,6 @@
 import pandas as pd
 
+from protrend import Organism
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector, read_abasy_network
@@ -92,6 +93,20 @@ class RegulatoryInteractionTransformer(AbasyTransformer,
         return regulatory_interaction
 
 
+class RegulatoryInteractionToOrganismConnector(AbasyConnector,
+                                               source='abasy',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Organism,
+                                               register=True):
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='organism')
+        self.stack_json(df)
+
+
 class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
                                                 source='abasy',
                                                 version='0.0.0',
@@ -101,36 +116,8 @@ class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class RegulatoryInteractionToOperonConnector(AbasyConnector,
-                                             source='abasy',
-                                             version='0.0.0',
-                                             from_node=RegulatoryInteraction,
-                                             to_node=Operon,
-                                             register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
-
-    def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='regulator')
         self.stack_json(df)
 
 
@@ -143,43 +130,8 @@ class RegulatoryInteractionToGeneConnector(AbasyConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-        rin = rin.dropna(subset=['genes'])
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['genes'].tolist()
-
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class RegulatorToOperonConnector(AbasyConnector,
-                                 source='abasy',
-                                 version='0.0.0',
-                                 from_node=Regulator,
-                                 to_node=Operon,
-                                 register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
-
-    def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='gene')
         self.stack_json(df)
 
 
@@ -192,18 +144,6 @@ class RegulatorToGeneConnector(AbasyConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['genes'].tolist()
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='gene')
         self.stack_json(df)
