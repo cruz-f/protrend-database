@@ -2,14 +2,13 @@ import pandas as pd
 
 from protrend import Organism
 from protrend.io import read_json_frame, read_from_stack
-from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene
+from protrend.model import RegulatoryInteraction, Regulator, Gene
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector, read_abasy_network
-from protrend.transform.abasy.regulator import RegulatorTransformer
-from protrend.transform.abasy.organism import OrganismTransformer
 from protrend.transform.abasy.gene import GeneTransformer
-from protrend.utils.processors import apply_processors, to_list, regulatory_effect_coryneregnet, rstrip, lstrip, \
-    to_int_str, regulatory_effect_abasy
+from protrend.transform.abasy.organism import OrganismTransformer
+from protrend.transform.abasy.regulator import RegulatorTransformer
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, regulatory_effect_abasy
 
 
 class RegulatoryInteractionTransformer(AbasyTransformer,
