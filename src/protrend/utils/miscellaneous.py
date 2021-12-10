@@ -1,14 +1,50 @@
+import os
 import re
 from collections import namedtuple
 from types import GeneratorType
-from typing import Any
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
 
+from protrend.utils import Settings
+
 WriteStack = namedtuple('WriteStack',
                         ['transformed', 'integrated', 'nodes', 'connected'],
                         defaults=[None, None, None, None])
+
+
+def build_stack(source: str,
+                version: str,
+                stack_to_load: Dict[str, str],
+                sa: bool = True,
+                dl: bool = True) -> Dict[str, str]:
+    loaded_stack = {}
+
+    for key, file in stack_to_load.items():
+
+        if sa:
+            file = os.path.join(Settings.staging_area, source, version, file)
+            loaded_stack[key] = file
+
+        if dl:
+            file = os.path.join(Settings.data_lake, source, version, file)
+            loaded_stack[key] = file
+
+    return loaded_stack
+
+
+def build_load_stack(source: str,
+                     version: str,
+                     stack_to_load: List[str]) -> List[str]:
+    loaded_stack = []
+
+    for file in stack_to_load:
+        file = os.path.join(Settings.data_lake, source, version, f'{file}.json')
+        loaded_stack.append(file)
+
+    return loaded_stack
+
 
 # CamelCase to snake_case
 camel_case_pattern = re.compile(r'(?<!^)(?=[A-Z])')
@@ -77,4 +113,3 @@ def is_null(obj: Any) -> bool:
         return True
 
     return False
-
