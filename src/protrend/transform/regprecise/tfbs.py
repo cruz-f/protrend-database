@@ -211,11 +211,11 @@ class TFBSTransformer(RegPreciseTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=self.read_columns, reader=read_json_lines)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=self.read_columns, reader=read_json_lines)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'strand', 'start', 'locus_tag_old')
         gene = gene.rename(columns={'strand': 'gene_strand', 'start': 'gene_start',
                                     'locus_tag_old': 'gene_old_locus_tag', 'protrend_id': 'gene_protrend_id'})
@@ -253,10 +253,10 @@ class TFBSToSourceConnector(RegPreciseConnector,
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = tfbs['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -284,11 +284,11 @@ class TFBSToOrganismConnector(RegPreciseConnector,
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = apply_processors(tfbs, regulon=to_int_str)
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(tfbs, regulator, left_on='regulon', right_on='regulon_id', suffixes=('_tfbs', '_regulator'))

@@ -49,8 +49,8 @@ class PublicationTransformer(CollectfTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=self.read_columns, reader=read_json_lines)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=self.read_columns, reader=read_json_lines)
 
         df = self._transform_tfbs(tfbs)
         df = self.drop_duplicates(df=df, subset=['pubmed'])
@@ -79,14 +79,14 @@ class PublicationToRegulatorConnector(CollectfConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = apply_processors(publication, regulon=to_list)
         publication = publication.explode(column='regulon')
         publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
 
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         df = pd.merge(publication, regulator, left_on='regulon', right_on='uniprot_accession')
@@ -110,14 +110,14 @@ class PublicationToOperonConnector(CollectfConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = apply_processors(publication, operon=to_list)
         publication = publication.explode(column='operon')
         publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
 
-        operon = read_from_stack(stack=self.connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, operon_id_old=to_list)
         operon = operon.explode(column='operon_id_old')
         operon = operon.rename(columns={'protrend_id': 'operon_protrend_id'})
@@ -143,14 +143,14 @@ class PublicationToGeneConnector(CollectfConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = apply_processors(publication, gene=to_list)
         publication = publication.explode(column='gene')
         publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
 
-        gene = read_from_stack(stack=self.connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = apply_processors(gene, locus_tag_old=to_list)
         gene = gene.explode(column='locus_tag_old')
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
@@ -176,12 +176,12 @@ class PublicationToTFBSConnector(CollectfConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
 
-        tfbs = read_from_stack(stack=self.connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
         df = pd.merge(publication, tfbs, on='tfbs_id')
@@ -206,14 +206,14 @@ class PublicationToRegulatoryInteractionConnector(CollectfConnector,
                              'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = apply_processors(publication, regulon=to_list)
         publication = publication.explode(column='regulon')
         publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
 
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = apply_processors(rin, regulon=to_list)
         rin = rin.explode(column='regulon')
         rin = rin.rename(columns={'protrend_id': 'rin_protrend_id'})

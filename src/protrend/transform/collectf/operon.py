@@ -161,8 +161,8 @@ class OperonTransformer(CollectfTransformer,
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=self.read_columns, reader=read_json_lines)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=self.read_columns, reader=read_json_lines)
         non_empty_operon = operon['operon_id'] != ''
         operon = operon[non_empty_operon]
 
@@ -172,8 +172,8 @@ class OperonTransformer(CollectfTransformer,
         aggregation = {'regulon': to_set_list}
         operon = self.group_by(df=operon, column='operon_id', aggregation=aggregation, default=flatten_set_list)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand', 'start', 'stop',
                                    'organism_protrend_id')
 
@@ -186,8 +186,8 @@ class OperonTransformer(CollectfTransformer,
                                     'start': 'gene_start',
                                     'stop': 'gene_stop'})
 
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
         tfbs = tfbs.dropna(subset=['protrend_id'])
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id', 'operon': 'tfbs_operon'})
@@ -215,8 +215,8 @@ class OperonToGeneConnector(CollectfConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
@@ -242,8 +242,8 @@ class OperonToTFBSConnector(CollectfConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
@@ -269,8 +269,8 @@ class GeneToTFBSConnector(CollectfConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list, tfbss=to_list)
         operon = operon.explode('tfbss')

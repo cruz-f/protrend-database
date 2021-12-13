@@ -62,11 +62,11 @@ class PublicationTransformer(DBTBSTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=self.operon_columns, reader=read_json_lines)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=self.operon_columns, reader=read_json_lines)
 
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=self.tfbs_columns, reader=read_json_lines)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=self.tfbs_columns, reader=read_json_lines)
 
         publication = self._transform_publication(operon, tfbs)
 
@@ -91,15 +91,15 @@ class PublicationToRegulatorConnector(DBTBSConnector,
                              'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = apply_processors(publication, pmid=to_int_str)
 
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
-        tfbs = read_from_stack(stack=self.connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.dropna(subset=['pubmed', 'tf'])
         tfbs = apply_processors(tfbs, pubmed=to_list, tf=to_list)
         tfbs = tfbs.explode(column='pubmed')
@@ -129,10 +129,10 @@ class PublicationToOperonConnector(DBTBSConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
-        operon = read_from_stack(stack=self.connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(operon, publication, left_on='name', right_on='operon', suffixes=('_operon', '_publication'))
         df = df.drop_duplicates(subset=['protrend_id_publication', 'protrend_id_operon'])
@@ -155,10 +155,10 @@ class PublicationToGeneConnector(DBTBSConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
-        operon = read_from_stack(stack=self.connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(operon, publication, left_on='name', right_on='operon', suffixes=('_operon', '_publication'))
         df = df.drop_duplicates(subset=['protrend_id_publication', 'protrend_id_operon'])
@@ -184,10 +184,10 @@ class PublicationToTFBSConnector(DBTBSConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
-        tfbs = read_from_stack(stack=self.connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(tfbs, publication, left_on='identifier', right_on='tfbs', suffixes=('_tfbs', '_publication'))
         df = df.drop_duplicates(subset=['protrend_id_publication', 'protrend_id_tfbs'])
@@ -211,10 +211,10 @@ class PublicationToRegulatoryInteractionConnector(DBTBSConnector,
                              'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=TFBSTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(rin, publication, left_on='identifier', right_on='tfbs', suffixes=('_rin', '_publication'))
         df = df.drop_duplicates(subset=['protrend_id_publication', 'protrend_id_rin'])

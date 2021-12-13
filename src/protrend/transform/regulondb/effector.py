@@ -45,7 +45,7 @@ class EffectorTransformer(RegulondbTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        effector = read_from_stack(stack=self.transform_stack, file='effector', default_columns=self.read_columns,
+        effector = read_from_stack(stack=self.transform_stack, key='effector', columns=self.read_columns,
                                    reader=read_txt, skiprows=34, names=self.read_columns)
         effector = self._transform_effector(effector)
 

@@ -71,8 +71,8 @@ class OrganismTransformer(CollectfTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        organism = read_from_stack(stack=self.transform_stack, file='organism',
-                                   default_columns=self.read_columns, reader=read_json_lines)
+        organism = read_from_stack(stack=self.transform_stack, key='organism',
+                                   columns=self.read_columns, reader=read_json_lines)
         organism = self._transform_organism(organism)
 
         names = organism['input_value'].tolist()
@@ -104,8 +104,8 @@ class OrganismToRegulatorConnector(CollectfConnector,
 
     def connect(self):
         from protrend.transform.collectf import RegulatorTransformer
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         regulator = regulator.dropna(subset=['protrend_id', 'organism_protrend_id'])
         regulator = regulator.drop_duplicates(subset=['protrend_id', 'organism_protrend_id'])
@@ -127,8 +127,8 @@ class OrganismToOperonConnector(CollectfConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = rin.drop_duplicates(subset=['organism_protrend_id', 'operon'])
 
         from_identifiers = rin['organism_protrend_id'].tolist()
@@ -148,8 +148,8 @@ class OrganismToGeneConnector(CollectfConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = apply_processors(rin, genes=to_list)
         rin = rin.explode(column='genes')
         rin = rin.drop_duplicates(subset=['organism_protrend_id', 'genes'])
@@ -171,8 +171,8 @@ class OrganismToTFBSConnector(CollectfConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = apply_processors(rin, tfbss=to_list)
         rin = rin.explode(column='tfbss')
         rin = rin.drop_duplicates(subset=['organism_protrend_id', 'tfbss'])
@@ -194,8 +194,8 @@ class OrganismToRegulatoryInteractionConnector(CollectfConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = rin.drop_duplicates(subset=['organism_protrend_id', 'protrend_id'])
 
         from_identifiers = rin['organism_protrend_id'].tolist()

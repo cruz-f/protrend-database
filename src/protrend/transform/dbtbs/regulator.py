@@ -157,8 +157,8 @@ class RegulatorTransformer(DBTBSTransformer,
         return tfs
 
     def transform(self):
-        tf = read_from_stack(stack=self.transform_stack, file='tf',
-                             default_columns=self.read_columns, reader=read_json_lines)
+        tf = read_from_stack(stack=self.transform_stack, key='tf',
+                             columns=self.read_columns, reader=read_json_lines)
 
         gb_file = self.transform_stack['sequence']
         sequence = SeqIO.read(gb_file, "genbank")

@@ -59,10 +59,10 @@ class RegulatorToOrganismConnector(RegulondbConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -85,10 +85,10 @@ class OperonToOrganismConnector(RegulondbConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = operon['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -111,10 +111,10 @@ class GeneToOrganismConnector(RegulondbConnector,
     default_connect_stack = {'gene': 'integrated_gene.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self._connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = gene['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -137,10 +137,10 @@ class TFBSToOrganismConnector(RegulondbConnector,
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = tfbs['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -163,10 +163,10 @@ class EffectorToOrganismConnector(RegulondbConnector,
     default_connect_stack = {'effector': 'integrated_effector.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        effector = read_from_stack(stack=self._connect_stack, file='effector',
-                                   default_columns=TFBSTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        effector = read_from_stack(stack=self._connect_stack, key='effector',
+                                   columns=TFBSTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = effector['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -190,10 +190,10 @@ class RegulatoryInteractionToOrganismConnector(RegulondbConnector,
                              'organism': 'integrated_organism.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['protrend_id'].tolist()
         size = len(from_identifiers)

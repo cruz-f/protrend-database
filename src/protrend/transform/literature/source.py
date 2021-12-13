@@ -68,12 +68,12 @@ class OrganismToSourceConnector(LiteratureConnector,
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         tax_to_source = {'224308': 'bsub_faria_et_al_2017',
                          '511145': 'ecol_fang_et_al_2017',
@@ -111,10 +111,10 @@ class RegulatorToSourceConnector(LiteratureConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(regulator, source, left_on='source', right_on='name', suffixes=('_regulator', '_source'))
 
@@ -136,10 +136,10 @@ class OperonToSourceConnector(LiteratureConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(operon, source, left_on='source', right_on='name', suffixes=('_operon', '_source'))
 
@@ -161,10 +161,10 @@ class GeneToSourceConnector(LiteratureConnector,
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self._connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(gene, source, left_on='source', right_on='name', suffixes=('_gene', '_source'))
 
@@ -186,10 +186,10 @@ class EffectorToSourceConnector(LiteratureConnector,
     default_connect_stack = {'effector': 'integrated_effector.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        effector = read_from_stack(stack=self._connect_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        effector = read_from_stack(stack=self._connect_stack, key='effector',
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(effector, source, left_on='source', right_on='name', suffixes=('_effector', '_source'))
 
@@ -212,10 +212,10 @@ class RegulatoryInteractionToSourceConnector(LiteratureConnector,
                              'source': 'integrated_source.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(rin, source, left_on='source', right_on='name', suffixes=('_rin', '_source'))
 

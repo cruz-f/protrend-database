@@ -113,19 +113,19 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
         return df
 
     def _build_tfbs(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='site', default_columns=self.tfbs_columns,
+        df = read_from_stack(stack=self.regulondb_stack, key='site', columns=self.tfbs_columns,
                              reader=read_txt, skiprows=35, names=self.tfbs_columns)
         return self._build(df=df, selection=['site_id'], duplicates=['site_id'], nan=['site_id'])
 
     def _build_gene(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='gene',
-                             default_columns=self.gene_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='gene',
+                             columns=self.gene_columns, reader=read_txt,
                              skiprows=39, names=self.gene_columns)
         return self._build(df=df, selection=['gene_id', 'gene_name'], duplicates=['gene_id'], nan=['gene_id'])
 
     def _build_tu(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='tu',
-                             default_columns=self.tu_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='tu',
+                             columns=self.tu_columns, reader=read_txt,
                              skiprows=34, names=self.tu_columns)
         return self._build(df=df,
                            selection=['transcription_unit_id', 'promoter_id', 'transcription_unit_name', 'operon_id'],
@@ -135,16 +135,16 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
     def _build_operon(self):
         tu = self._build_tu()
 
-        tu_gene = read_from_stack(stack=self.regulondb_stack, file='tu_gene',
-                                  default_columns=self.tu_gene_columns, reader=read_txt,
+        tu_gene = read_from_stack(stack=self.regulondb_stack, key='tu_gene',
+                                  columns=self.tu_gene_columns, reader=read_txt,
                                   skiprows=29, names=self.tu_gene_columns)
         df = pd.merge(tu, tu_gene, on='transcription_unit_id')
 
         return self.group_by(df, column='operon_id', aggregation={}, default=to_set_list)
 
     def _build_tf(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='tf',
-                             default_columns=self.tf_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='tf',
+                             columns=self.tf_columns, reader=read_txt,
                              skiprows=38, names=self.tf_columns)
         return self._build(df=df,
                            selection=['transcription_factor_id', 'transcription_factor_name'],
@@ -152,8 +152,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['transcription_factor_id'])
 
     def _build_srna(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='srna',
-                             default_columns=self.srna_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='srna',
+                             columns=self.srna_columns, reader=read_txt,
                              skiprows=38, names=self.srna_columns)
         return self._build(df=df,
                            selection=['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
@@ -162,8 +162,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['srna_gene_id', 'srna_gene_regulated_id'])
 
     def _build_sigma(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='sigma',
-                             default_columns=self.sigma_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='sigma',
+                             columns=self.sigma_columns, reader=read_txt,
                              skiprows=36, names=self.sigma_columns)
         return self._build(df=df,
                            selection=['sigma_id', 'sigma_name', 'sigma_gene_id', 'sigma_gene_name'],
@@ -171,7 +171,7 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['sigma_id'])
 
     def _build_effector(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='effector', default_columns=self.effector_columns,
+        df = read_from_stack(stack=self.regulondb_stack, key='effector', columns=self.effector_columns,
                              reader=read_txt, skiprows=34, names=self.effector_columns)
         return self._build(df=df,
                            selection=['effector_id', 'effector_name'],
@@ -179,8 +179,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['effector_id'])
 
     def _build_conformation(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='conformation',
-                             default_columns=self.conformation_columns,
+        df = read_from_stack(stack=self.regulondb_stack, key='conformation',
+                             columns=self.conformation_columns,
                              reader=read_txt, skiprows=36, names=self.conformation_columns)
 
         return self._build(df=df,
@@ -189,8 +189,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['conformation_id'])
 
     def _build_promoter(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='promoter',
-                             default_columns=self.promoter_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='promoter',
+                             columns=self.promoter_columns, reader=read_txt,
                              skiprows=40, names=self.promoter_columns)
         return self._build(df=df,
                            selection=['promoter_id', 'promoter_name', 'promoter_sequence'],
@@ -198,8 +198,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['promoter_id', 'promoter_sequence'])
 
     def _build_conformation_effector(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='conformation_effector',
-                             default_columns=self.conformation_eff_columns,
+        df = read_from_stack(stack=self.regulondb_stack, key='conformation_effector',
+                             columns=self.conformation_eff_columns,
                              reader=read_txt, skiprows=29, names=self.conformation_eff_columns)
         return self._build(df=df,
                            selection=['conformation_id', 'effector_id'],
@@ -225,8 +225,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['regulator_id', 'effector_id'])
 
     def _build_genetic_network(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='genetic_network',
-                             default_columns=self.gen_net_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='genetic_network',
+                             columns=self.gen_net_columns, reader=read_txt,
                              skiprows=35, names=self.gen_net_columns)
         return self._build(df=df,
                            selection=['regulator_id', 'regulator_name', 'regulated_id', 'regulated_name',
@@ -235,7 +235,7 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['regulator_id', 'regulated_id'])
 
     def _build_regulatory_interaction(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='ri', default_columns=self.ri_columns,
+        df = read_from_stack(stack=self.regulondb_stack, key='ri', columns=self.ri_columns,
                              reader=read_txt, skiprows=42, names=self.ri_columns)
         return self._build(df=df,
                            selection=['regulatory_interaction_id', 'conformation_id', 'promoter_id', 'site_id',
@@ -244,8 +244,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
                            nan=['conformation_id', 'ri_first_gene_id'])
 
     def _build_tf_gene_interaction(self):
-        df = read_from_stack(stack=self.regulondb_stack, file='tf_gene_interaction',
-                             default_columns=self.tf_gene_columns, reader=read_txt,
+        df = read_from_stack(stack=self.regulondb_stack, key='tf_gene_interaction',
+                             columns=self.tf_gene_columns, reader=read_txt,
                              skiprows=43, names=self.tf_gene_columns)
         return self._build(df=df,
                            selection=['regulatory_interaction_id', 'conformation_id', 'object_id',
@@ -440,8 +440,8 @@ class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', reg
     def _build_gene_promoter(self):
         tu = self._build_tu()
 
-        tu_gene = read_from_stack(stack=self.regulondb_stack, file='tu_gene',
-                                  default_columns=self.tu_gene_columns, reader=read_txt,
+        tu_gene = read_from_stack(stack=self.regulondb_stack, key='tu_gene',
+                                  columns=self.tu_gene_columns, reader=read_txt,
                                   skiprows=29, names=self.tu_gene_columns)
 
         gene_promoter = pd.merge(tu, tu_gene, on='transcription_unit_id')

@@ -75,12 +75,12 @@ class TFBSTransformer(CollectfTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=self.read_columns, reader=read_json_lines)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=self.read_columns, reader=read_json_lines)
         tfbs = tfbs.rename(columns={'site_start': 'start', 'site_end': 'stop', 'site_strand': 'strand'})
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag_old')
         gene = gene.rename(columns={'locus_tag_old': 'gene_old_locus_tag', 'protrend_id': 'gene_protrend_id'})
         gene = gene.dropna(subset=['gene_old_locus_tag', 'gene_protrend_id'])

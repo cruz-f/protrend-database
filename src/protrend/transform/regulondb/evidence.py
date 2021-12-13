@@ -49,7 +49,7 @@ class EvidenceTransformer(RegulondbTransformer,
         return df
 
     def transform(self):
-        evidence = read_from_stack(stack=self.transform_stack, file='evidence', default_columns=self.read_columns,
+        evidence = read_from_stack(stack=self.transform_stack, key='evidence', columns=self.read_columns,
                                    reader=read_txt, skiprows=38, names=self.read_columns)
         evidence = self._transform_evidence(evidence)
 
@@ -68,19 +68,19 @@ class EvidenceToRegulatorConnector(RegulondbConnector,
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence[['protrend_id', 'evidence_id']]
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator[['protrend_id', 'transcription_factor_id', 'sigma_id', 'srna_id']]
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
-        obj_ev_pub = read_from_stack(stack=self._connect_stack, file='obj_ev_pub',
-                                     default_columns=obj_ev_pub_cols, reader=read_txt,
+        obj_ev_pub = read_from_stack(stack=self._connect_stack, key='obj_ev_pub',
+                                     columns=obj_ev_pub_cols, reader=read_txt,
                                      names=obj_ev_pub_cols, skiprows=31)
 
         regulator_tf = regulator.dropna(subset=['transcription_factor_id'])
@@ -117,19 +117,19 @@ class EvidenceToTFBSConnector(RegulondbConnector,
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence[['protrend_id', 'evidence_id']]
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs[['protrend_id', 'site_id']]
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
 
         obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
-        obj_ev_pub = read_from_stack(stack=self._connect_stack, file='obj_ev_pub',
-                                     default_columns=obj_ev_pub_cols, reader=read_txt,
+        obj_ev_pub = read_from_stack(stack=self._connect_stack, key='obj_ev_pub',
+                                     columns=obj_ev_pub_cols, reader=read_txt,
                                      names=obj_ev_pub_cols, skiprows=31)
 
         obj_site = pd.merge(obj_ev_pub, tfbs, left_on='object_id', right_on='site_id')
@@ -157,19 +157,19 @@ class EvidenceToOperonConnector(RegulondbConnector,
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence[['protrend_id', 'evidence_id']]
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = operon[['protrend_id', 'operon_id']]
         operon = operon.rename(columns={'protrend_id': 'operon_protrend_id'})
 
         obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
-        obj_ev_pub = read_from_stack(stack=self._connect_stack, file='obj_ev_pub',
-                                     default_columns=obj_ev_pub_cols, reader=read_txt,
+        obj_ev_pub = read_from_stack(stack=self._connect_stack, key='obj_ev_pub',
+                                     columns=obj_ev_pub_cols, reader=read_txt,
                                      names=obj_ev_pub_cols, skiprows=31)
 
         obj_operon = pd.merge(obj_ev_pub, operon, left_on='object_id', right_on='operon_id')
@@ -197,19 +197,19 @@ class EvidenceToGeneConnector(RegulondbConnector,
                              'obj_ev_pub': 'object_ev_method_pub_link.txt'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence[['protrend_id', 'evidence_id']]
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self._connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = gene[['protrend_id', 'gene_id']]
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
 
         obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
-        obj_ev_pub = read_from_stack(stack=self._connect_stack, file='obj_ev_pub',
-                                     default_columns=obj_ev_pub_cols, reader=read_txt,
+        obj_ev_pub = read_from_stack(stack=self._connect_stack, key='obj_ev_pub',
+                                     columns=obj_ev_pub_cols, reader=read_txt,
                                      names=obj_ev_pub_cols, skiprows=31)
 
         obj_gene = pd.merge(obj_ev_pub, gene, left_on='object_id', right_on='gene_id')
@@ -236,13 +236,13 @@ class EvidenceToRegulatoryInteractionConnector(RegulondbConnector,
                              'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence[['protrend_id', 'name']]
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = rin[['protrend_id', 'evidence']]
         rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id'})
         rin = apply_processors(rin, evidence=[rstrip, lstrip, split_semi_colon, to_list_nan])

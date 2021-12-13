@@ -161,16 +161,16 @@ class OperonTransformer(RegPreciseTransformer,
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=self.read_columns, reader=read_json_lines)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=self.read_columns, reader=read_json_lines)
 
         operon = operon.drop(columns=['name'])
 
         operon = operon.explode('regulon')
         operon = self.drop_duplicates(df=operon, subset=['operon_id', 'regulon'], perfect_match=True)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'locus_tag_old', 'strand', 'start', 'stop')
 
         gene = gene.dropna(subset=['protrend_id', 'locus_tag_old'])
@@ -182,8 +182,8 @@ class OperonTransformer(RegPreciseTransformer,
                                     'start': 'gene_start',
                                     'stop': 'gene_stop'})
 
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'operon')
 
         tfbs = tfbs.dropna(subset=['protrend_id'])
@@ -212,12 +212,12 @@ class OperonToSourceConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, regulon=to_list)
         operon = operon.explode('regulon')
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = operon['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -245,12 +245,12 @@ class OperonToOrganismConnector(RegPreciseConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, regulon=to_list)
         operon = operon.explode('regulon')
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -275,14 +275,14 @@ class OperonToRegulatorConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, regulon=to_list)
         operon = operon.explode('regulon')
 
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
                           suffixes=('_operon', '_regulator'))
@@ -308,8 +308,8 @@ class OperonToGeneConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
@@ -335,8 +335,8 @@ class OperonToTFBSConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
@@ -362,8 +362,8 @@ class GeneToTFBSConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list, tfbss=to_list)
         operon = operon.explode('tfbss')
@@ -392,14 +392,14 @@ class GeneToRegulatorConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, genes=to_list, regulon=to_list)
         operon = operon.explode('regulon')
         operon = apply_processors(operon, regulon=to_int_str)
 
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',
@@ -431,14 +431,14 @@ class TFBSToRegulatorConnector(RegPreciseConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, tfbss=to_list, regulon=to_list)
         operon = operon.explode('regulon')
         operon = apply_processors(operon, regulon=to_int_str)
 
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, regulon_id=to_int_str)
 
         merged = pd.merge(operon, regulator, left_on='regulon', right_on='regulon_id',

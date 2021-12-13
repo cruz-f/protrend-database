@@ -89,8 +89,8 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
 
     def _build_ecol_fang_et_al_2017(self) -> pd.DataFrame:
         df = read_from_stack(stack=self.network_stack,
-                             file='ecol',
-                             default_columns=self.default_network_columns,
+                             key='ecol',
+                             columns=self.default_network_columns,
                              reader=read_ecol_fang_et_al_2017)
 
         if df.empty:
@@ -131,8 +131,8 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
 
     def _build_mtub_turkarslan_et_al_2015(self) -> pd.DataFrame:
         df = read_from_stack(stack=self.network_stack,
-                             file='mtub',
-                             default_columns=self.default_network_columns,
+                             key='mtub',
+                             columns=self.default_network_columns,
                              reader=read_mtub_turkarslan_et_al_2015)
 
         if df.empty:
@@ -173,8 +173,8 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
 
     def _build_paer_vasquez_et_al_2011(self) -> pd.DataFrame:
         df = read_from_stack(stack=self.network_stack,
-                             file='paer',
-                             default_columns=self.default_network_columns,
+                             key='paer',
+                             columns=self.default_network_columns,
                              reader=read_paer_vasquez_et_al_2011)
 
         if df.empty:
@@ -243,8 +243,8 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
 
     def _build_bsub_faria_et_al_2017(self) -> pd.DataFrame:
         df = read_from_stack(stack=self.network_stack,
-                             file='bsub',
-                             default_columns=self.default_network_columns,
+                             key='bsub',
+                             columns=self.default_network_columns,
                              reader=read_bsub_faria_et_al_2017)
 
         if df.empty:
@@ -297,8 +297,8 @@ class LiteratureTransformer(Transformer, source='literature', version='0.0.0', r
         df = apply_processors(df, **{'Regulator number': to_int_str})
 
         df_regulators = read_from_stack(stack=self.network_stack,
-                                        file='bsub',
-                                        default_columns=self.default_network_columns,
+                                        key='bsub',
+                                        columns=self.default_network_columns,
                                         reader=read_regulators_bsub_faria_et_al_2017)
 
         df_regulators.columns = [col.rstrip().lstrip() for col in df_regulators.columns]

@@ -137,12 +137,12 @@ class OperonTransformer(RegulondbTransformer,
         return operon
 
     def transform(self):
-        tu = read_from_stack(stack=self.transform_stack, file='tu',
-                             default_columns=self.tu_columns, reader=read_txt,
+        tu = read_from_stack(stack=self.transform_stack, key='tu',
+                             columns=self.tu_columns, reader=read_txt,
                              skiprows=34, names=self.tu_columns)
 
-        tu_gene = read_from_stack(stack=self.transform_stack, file='tu_gene',
-                                  default_columns=self.tu_gene_columns, reader=read_txt,
+        tu_gene = read_from_stack(stack=self.transform_stack, key='tu_gene',
+                                  columns=self.tu_gene_columns, reader=read_txt,
                                   skiprows=29, names=self.tu_gene_columns)
 
         tu = pd.merge(tu, tu_gene, on='transcription_unit_id')
@@ -150,8 +150,8 @@ class OperonTransformer(RegulondbTransformer,
 
         operon = self.group_by(tu, column='operon_id', aggregation={}, default=to_set_list)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'name', 'strand', 'start', 'stop', 'gene_id')
         gene = gene.dropna(subset=['protrend_id', 'gene_id'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
@@ -160,8 +160,8 @@ class OperonTransformer(RegulondbTransformer,
                                     'start': 'gene_start',
                                     'stop': 'gene_stop'})
 
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'site_id')
         tfbs = tfbs.dropna(subset=['protrend_id', 'site_id'])
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
@@ -189,8 +189,8 @@ class OperonToGeneConnector(RegulondbConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
@@ -216,8 +216,8 @@ class OperonToTFBSConnector(RegulondbConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
@@ -243,8 +243,8 @@ class GeneToTFBSConnector(RegulondbConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list, tfbss=to_list)
         operon = operon.explode('tfbss')

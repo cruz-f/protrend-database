@@ -43,23 +43,23 @@ class RegulatoryInteractionTransformer(AbasyTransformer,
         return networks
 
     def transform_organism(self) -> pd.DataFrame:
-        organism = read_from_stack(stack=self.transform_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self.transform_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism', 'ncbi_taxonomy': 'taxonomy'})
         organism = apply_processors(organism, taxonomy=to_int_str)
         return organism
 
     def transform_regulator(self) -> pd.DataFrame:
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'regulator_taxonomy')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def transform_gene(self) -> pd.DataFrame:
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'gene_taxonomy')
         gene = gene.rename(columns={'protrend_id': 'gene'})
         return gene

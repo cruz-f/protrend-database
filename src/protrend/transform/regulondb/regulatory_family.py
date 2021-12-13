@@ -34,8 +34,8 @@ class RegulatoryFamilyTransformer(RegulondbTransformer,
         return tf
 
     def transform(self):
-        tf = read_from_stack(stack=self.transform_stack, file='tf',
-                             default_columns=self.read_columns, reader=read_txt,
+        tf = read_from_stack(stack=self.transform_stack, key='tf',
+                             columns=self.read_columns, reader=read_txt,
                              skiprows=38, names=self.read_columns)
         tf = self._transform_tf(tf)
 
@@ -52,13 +52,13 @@ class RegulatorToRegulatoryFamilyConnector(RegulondbConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator[['protrend_id', 'transcription_factor_id']]
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
-        rfam = read_from_stack(stack=self._connect_stack, file='rfam',
-                               default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
+        rfam = read_from_stack(stack=self._connect_stack, key='rfam',
+                               columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
         rfam = rfam[['protrend_id', 'transcription_factor_id']]
         rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
 

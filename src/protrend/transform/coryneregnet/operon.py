@@ -116,8 +116,8 @@ class OperonTransformer(CoryneRegNetTransformer,
         return operon
 
     def _transform_gene(self) -> pd.DataFrame:
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop', 'TG_locusTag')
         gene = gene.dropna(subset=['protrend_id', 'TG_locusTag'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
@@ -130,7 +130,7 @@ class OperonTransformer(CoryneRegNetTransformer,
         return gene
 
     def _transform_tfbs(self) -> pd.DataFrame:
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs', default_columns=TFBSTransformer.columns,
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs', columns=TFBSTransformer.columns,
                                reader=read_json_frame)
         tfbs = self.select_columns(tfbs, 'protrend_id', 'Operon')
         tfbs = tfbs.dropna(subset=['protrend_id', 'Operon'])
@@ -174,8 +174,8 @@ class OperonToGeneConnector(CoryneRegNetConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
@@ -203,8 +203,8 @@ class OperonToTFBSConnector(CoryneRegNetConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
@@ -232,8 +232,8 @@ class GeneToTFBSConnector(CoryneRegNetConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list, tfbss=to_list)
         operon = operon.explode('tfbss')

@@ -53,10 +53,10 @@ class OrganismToSourceConnector(DBTBSConnector,
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = organism['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -83,10 +83,10 @@ class RegulatoryFamilyToSourceConnector(DBTBSConnector,
                              'source': 'integrated_source.json'}
 
     def connect(self):
-        rfam = read_from_stack(stack=self._connect_stack, file='regulatory_family',
-                               default_columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        rfam = read_from_stack(stack=self._connect_stack, key='regulatory_family',
+                               columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rfam['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -127,10 +127,10 @@ class RegulatorToSourceConnector(DBTBSConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -172,10 +172,10 @@ class OperonToSourceConnector(DBTBSConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = operon['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -217,10 +217,10 @@ class GeneToSourceConnector(DBTBSConnector,
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self._connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = gene['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -262,12 +262,12 @@ class TFBSToSourceConnector(DBTBSConnector,
     default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.explode(column='operon')
 
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = tfbs['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -310,10 +310,10 @@ class RegulatoryInteractionToSourceConnector(DBTBSConnector,
                              'source': 'integrated_source.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['protrend_id'].tolist()
         size = len(from_identifiers)

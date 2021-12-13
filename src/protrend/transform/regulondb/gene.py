@@ -153,8 +153,8 @@ class GeneTransformer(RegulondbTransformer,
         return genes
 
     def transform(self):
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=self.read_columns, reader=read_txt,
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=self.read_columns, reader=read_txt,
                                skiprows=39, names=self.read_columns)
 
         gb_file = self.transform_stack['sequence']

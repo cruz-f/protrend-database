@@ -48,11 +48,11 @@ class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(rin, evidence, on='Evidence', suffixes=('_rin', '_evidence'))
 

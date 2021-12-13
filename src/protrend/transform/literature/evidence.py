@@ -69,11 +69,11 @@ class EvidenceToRegulatorConnector(LiteratureConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
 
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(regulator, evidence, on='network_id', suffixes=('_regulator', '_evidence'))
 
@@ -95,11 +95,11 @@ class EvidenceToOperonConnector(LiteratureConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
 
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(operon, evidence, on='network_id', suffixes=('_operon', '_evidence'))
 
@@ -121,11 +121,11 @@ class EvidenceToGeneConnector(LiteratureConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
 
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(operon, evidence, on='network_id', suffixes=('_operon', '_evidence'))
         df = df.explode(column='genes')
@@ -148,11 +148,11 @@ class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
 
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(rin, evidence, on='network_id', suffixes=('_rin', '_evidence'))
 

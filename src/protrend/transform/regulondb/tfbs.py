@@ -74,13 +74,13 @@ class TFBSTransformer(RegulondbTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, file='site', default_columns=self.read_columns,
+        tfbs = read_from_stack(stack=self.transform_stack, key='site', columns=self.read_columns,
                                reader=read_txt, skiprows=35, names=self.read_columns)
 
         tfbs = self._transform_tfbs(tfbs)
         tfbs = self._tfbs_coordinates(tfbs)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene', default_columns=GeneTransformer.columns,
+        gene = read_from_stack(stack=self.transform_stack, key='gene', columns=GeneTransformer.columns,
                                reader=read_json_frame)
         gene = self.select_columns(gene, 'gene_id', 'protrend_id')
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})

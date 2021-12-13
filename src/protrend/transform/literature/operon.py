@@ -104,8 +104,8 @@ class OperonTransformer(LiteratureTransformer,
         return operon
 
     def _transform_gene(self) -> pd.DataFrame:
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'locus_tag', 'name', 'strand', 'start', 'stop', 'network_id')
         gene = gene.dropna(subset=['protrend_id', 'network_id'])
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',
@@ -139,8 +139,8 @@ class OperonToGeneConnector(LiteratureConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')

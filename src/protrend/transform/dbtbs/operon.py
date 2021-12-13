@@ -146,16 +146,16 @@ class OperonTransformer(DBTBSTransformer,
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=self.read_columns, reader=read_json_lines)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=self.read_columns, reader=read_json_lines)
         operon = self._transform_operon(operon)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self._transform_gene(gene)
 
-        tfbs = read_from_stack(stack=self.transform_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = self._transform_tfbs(tfbs)
 
         # genes
@@ -181,8 +181,8 @@ class OperonToGeneConnector(DBTBSConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list)
         operon = operon.explode('genes')
@@ -208,8 +208,8 @@ class OperonToTFBSConnector(DBTBSConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, tfbss=to_list)
         operon = operon.explode('tfbss')
@@ -235,8 +235,8 @@ class GeneToTFBSConnector(DBTBSConnector,
     default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         operon = apply_processors(operon, genes=to_list, tfbss=to_list)
         operon = operon.explode('tfbss')

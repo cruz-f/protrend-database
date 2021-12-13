@@ -75,13 +75,13 @@ class GeneTransformer(CollectfTransformer,
         return genes
 
     def transform(self):
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=self.read_columns, reader=read_json_lines)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=self.read_columns, reader=read_json_lines)
         non_empty_gene = gene['locus_tag'] != ''
         gene = gene[non_empty_gene]
 
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'uniprot_accession',
                                         'ncbi_taxonomy', 'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id',

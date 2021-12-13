@@ -76,11 +76,11 @@ class GeneTransformer(RegPreciseTransformer,
         return genes
 
     def transform(self):
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=self.read_columns, reader=read_json_lines)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=self.read_columns, reader=read_json_lines)
 
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'genome_id', 'ncbi_taxonomy', 'regulon_id',
                                         'organism_protrend_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
@@ -117,12 +117,12 @@ class GeneToSourceConnector(RegPreciseConnector,
     default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self._connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = apply_processors(gene, regulon=to_list)
         gene = gene.explode('regulon')
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = gene['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -150,8 +150,8 @@ class GeneToOrganismConnector(RegPreciseConnector,
     default_connect_stack = {'gene': 'integrated_gene.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self._connect_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
 
         from_identifiers = gene['protrend_id'].tolist()
         to_identifiers = gene['organism_protrend_id'].tolist()

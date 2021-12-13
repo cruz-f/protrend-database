@@ -6,11 +6,9 @@ from typing import List, Type, Callable, Dict
 import pandas as pd
 
 from protrend import GeneDTO, annotate_genes, OrganismDTO, annotate_organisms
-from protrend.io import read_from_stack
-from protrend.io.json import write_json_frame
+from protrend.io import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.utils import SetList, Settings, WriteStack, DefaultProperty
-from protrend.utils.miscellaneous import build_stack
+from protrend.utils import Settings, DefaultProperty, SetList, WriteStack, MultiStack, build_stack, build_multi_stack
 from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
 
 
@@ -152,9 +150,13 @@ class Transformer(AbstractTransformer):
         if not transform_stack:
             transform_stack = self.default_transform_stack
 
-        self._transform_stack = build_stack(source, version, transform_stack)
+        self._transform_stack = self._build_transform_stack(transform_stack, source, version)
 
         self._write_stack = []
+
+    @staticmethod
+    def _build_transform_stack(transform_stack, source, version):
+        return build_stack(source, version, transform_stack)
 
     # --------------------------------------------------------
     # Static properties
@@ -405,18 +407,6 @@ class Transformer(AbstractTransformer):
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
-    @staticmethod
-    def contact_stacks(stack: Dict[str, str], taxa: Dict[str, str], **kwargs) -> pd.DataFrame:
-        dfs = []
-        for file in stack:
-            df = read_from_stack(stack=stack,
-                                 file=file,
-                                 **kwargs)
-            df['taxonomy'] = taxa[file]
-            dfs.append(df)
-
-        return pd.concat(dfs)
-
     def standardize_factors(self, df: pd.DataFrame) -> pd.DataFrame:
         df = apply_processors(df, **self.node_factors)
         return df
@@ -565,3 +555,22 @@ class BaseSourceTransformer(Transformer, register=False):
         self.stack_transformed_nodes(df)
 
         return df
+
+
+class MultiStackTransformer(Transformer, register=False):
+    default_transform_stack: Dict[str, MultiStack] = {}
+
+    def __init__(self, transform_stack: Dict[str, MultiStack], **kwargs):
+        kwargs['transform_stack'] = transform_stack
+        super().__init__(**kwargs)
+        self._transform_stack: Dict[str, MultiStack]
+
+    @staticmethod
+    def _build_transform_stack(transform_stack, source, version):
+        return build_multi_stack(source, version, transform_stack)
+
+    @property
+    def transform_stack(self) -> Dict[str, MultiStack]:
+        self._transform_stack: Dict[str, MultiStack]
+
+        return self._transform_stack

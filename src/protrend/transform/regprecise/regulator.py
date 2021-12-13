@@ -117,13 +117,13 @@ class RegulatorTransformer(RegPreciseTransformer,
         return df
 
     def transform(self):
-        regulon = read_from_stack(stack=self.transform_stack, file='regulon',
-                                  default_columns=self.read_columns, reader=read_json_lines)
+        regulon = read_from_stack(stack=self.transform_stack, key='regulon',
+                                  columns=self.read_columns, reader=read_json_lines)
 
         regulon = apply_processors(regulon, regulon_id=to_int_str, genome=to_int_str)
 
-        organism = read_from_stack(stack=self.transform_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self.transform_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'genome_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
 
@@ -173,10 +173,10 @@ class RegulatorToSourceConnector(RegPreciseConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
         size = len(from_identifiers)
@@ -204,8 +204,8 @@ class RegulatorToOrganismConnector(RegPreciseConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         from_identifiers = regulator['protrend_id'].tolist()
         to_identifiers = regulator['organism_protrend_id'].tolist()

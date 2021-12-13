@@ -132,12 +132,12 @@ class RegulatorToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'regulator': 'integrated_regulator.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, taxonomy=to_int_str)
 
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
         df = pd.merge(regulator, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
@@ -161,12 +161,12 @@ class OperonToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, taxonomy=to_int_str)
 
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
         df = pd.merge(operon, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
@@ -190,12 +190,12 @@ class GeneToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = apply_processors(operon, taxonomy=to_int_str)
 
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
         df = pd.merge(operon, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
@@ -220,12 +220,12 @@ class RegulatoryInteractionToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = apply_processors(rin, taxonomy=to_int_str)
 
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
         df = pd.merge(rin, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
@@ -249,12 +249,12 @@ class EffectorToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'effector': 'integrated_effector.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        effector = read_from_stack(stack=self._connect_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        effector = read_from_stack(stack=self._connect_stack, key='effector',
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = apply_processors(effector, taxonomy=to_int_str)
 
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
         df = pd.merge(effector, organism, left_on='taxonomy', right_on='ncbi_taxonomy',

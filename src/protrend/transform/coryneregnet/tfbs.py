@@ -109,7 +109,7 @@ class TFBSTransformer(CoryneRegNetTransformer,
         return tfbs
 
     def _transform_gene(self) -> pd.DataFrame:
-        gene = read_from_stack(stack=self.transform_stack, file='gene', default_columns=GeneTransformer.columns,
+        gene = read_from_stack(stack=self.transform_stack, key='gene', columns=GeneTransformer.columns,
                                reader=read_json_frame)
         gene = self.select_columns(gene, 'protrend_id', 'start', 'stop', 'TG_locusTag')
         gene = gene.rename(columns={'protrend_id': 'gene_protrend_id',

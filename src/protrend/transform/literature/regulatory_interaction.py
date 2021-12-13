@@ -26,22 +26,22 @@ class RegulatoryInteractionTransformer(LiteratureTransformer,
                        'publication', 'taxonomy', 'source', 'network_id'])
 
     def _transform_effector(self) -> pd.DataFrame:
-        effector = read_from_stack(stack=self.transform_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        effector = read_from_stack(stack=self.transform_stack, key='effector',
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = self.select_columns(effector, 'protrend_id', 'network_id')
         effector = effector.rename(columns={'protrend_id': 'regulator_effector'})
         return effector
 
     def _transform_regulator(self) -> pd.DataFrame:
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'regulator_locus_tag')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def _transform_operon(self) -> pd.DataFrame:
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = self.select_columns(operon, 'protrend_id', 'genes', 'operon_id')
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = apply_processors(operon, genes=to_list)
@@ -98,8 +98,8 @@ class RegulatoryInteractionToEffectorConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, regulator_effector=to_list)
         rin = rin.explode(column='regulator_effector')
@@ -122,8 +122,8 @@ class RegulatoryInteractionToRegulatorConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['regulator'].tolist()
@@ -143,8 +143,8 @@ class RegulatoryInteractionToOperonConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['operon'].tolist()
@@ -164,8 +164,8 @@ class RegulatoryInteractionToGeneConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, genes=to_set_list)
         rin = rin.explode(column='genes')
@@ -192,8 +192,8 @@ class RegulatorToEffectorConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, regulator_effector=to_set_list)
         rin = rin.explode(column='regulator_effector')
@@ -218,8 +218,8 @@ class RegulatorToOperonConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['regulator'].tolist()
         to_identifiers = rin['operon'].tolist()
@@ -239,8 +239,8 @@ class RegulatorToGeneConnector(LiteratureConnector,
     default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, genes=to_list)
         rin = rin.explode(column='genes')

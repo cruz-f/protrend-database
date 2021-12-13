@@ -96,8 +96,8 @@ class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0
         dfs = []
         for file in regulation_stack:
             df = read_from_stack(stack=regulation_stack,
-                                 file=file,
-                                 default_columns=self.default_regulation_columns,
+                                 key=file,
+                                 columns=self.default_regulation_columns,
                                  reader=read_csv)
             df['taxonomy'] = self.taxa_to_organism_code[file]
             dfs.append(df)
@@ -110,8 +110,8 @@ class CoryneRegNetTransformer(Transformer, source='coryneregnet', version='0.0.0
         names = fixed_names + genes_names
 
         df = read_from_stack(stack=stack,
-                             file=file,
-                             default_columns=self.default_operon_columns,
+                             key=file,
+                             columns=self.default_operon_columns,
                              reader=read_csv,
                              names=names,
                              engine='python',

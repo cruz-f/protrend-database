@@ -56,16 +56,16 @@ class PublicationTransformer(RegPreciseTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        tf_family = read_from_stack(stack=self.transform_stack, file='tf_family',
-                                    default_columns=self.tf_family_columns, reader=read_json_lines)
+        tf_family = read_from_stack(stack=self.transform_stack, key='tf_family',
+                                    columns=self.tf_family_columns, reader=read_json_lines)
         tf_family = self._transform_tf_family(tf_family)
 
-        tf = read_from_stack(stack=self.transform_stack, file='tf',
-                             default_columns=self.tf_columns, reader=read_json_lines)
+        tf = read_from_stack(stack=self.transform_stack, key='tf',
+                             columns=self.tf_columns, reader=read_json_lines)
         tf = self._transform_tf(tf)
 
-        rna = read_from_stack(stack=self.transform_stack, file='rna',
-                              default_columns=self.rna_columns, reader=read_json_lines)
+        rna = read_from_stack(stack=self.transform_stack, key='rna',
+                              columns=self.rna_columns, reader=read_json_lines)
         rna = self._transform_rna(rna)
 
         df = pd.concat([tf_family, tf, rna])

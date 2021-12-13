@@ -40,8 +40,8 @@ class RegulatorTransformer(AbasyTransformer,
                                        reader=read_abasy_network)
         regulator = self.transform_networks(networks)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns,
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns,
                                reader=read_json_frame)
         gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                                    'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',

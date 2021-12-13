@@ -112,12 +112,12 @@ class RegulatorTransformer(CollectfTransformer,
         return regulators
 
     def transform(self):
-        regulon = read_from_stack(stack=self.transform_stack, file='regulon',
-                                  default_columns=self.read_columns, reader=read_json_lines)
+        regulon = read_from_stack(stack=self.transform_stack, key='regulon',
+                                  columns=self.read_columns, reader=read_json_lines)
 
         from protrend.transform.collectf import OrganismTransformer
-        organism = read_from_stack(stack=self.transform_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self.transform_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = self.select_columns(organism, 'protrend_id', 'name_collectf', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id',
                                             'name_collectf': 'organism_name_collectf'})

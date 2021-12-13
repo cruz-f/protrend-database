@@ -41,7 +41,7 @@ class EffectorTransformer(RegPreciseTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        effector = read_from_stack(stack=self.transform_stack, file='effector', default_columns=self.read_columns,
+        effector = read_from_stack(stack=self.transform_stack, key='effector', columns=self.read_columns,
                                    reader=read_json_lines)
         effector = self._transform_effector(effector)
 
@@ -68,9 +68,9 @@ class EffectorToSourceConnector(RegPreciseConnector,
     default_connect_stack = {'effector': 'integrated_effector.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        effector = read_from_stack(stack=self._connect_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source', default_columns=SourceTransformer.columns,
+        effector = read_from_stack(stack=self._connect_stack, key='effector',
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source', columns=SourceTransformer.columns,
                                  reader=read_json_frame)
 
         from_identifiers = effector['protrend_id'].tolist()
@@ -99,11 +99,11 @@ class EffectorToOrganismConnector(RegPreciseConnector,
     default_connect_stack = {'effector': 'integrated_effector.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        effector = read_from_stack(stack=self._connect_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        effector = read_from_stack(stack=self._connect_stack, key='effector',
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = apply_processors(effector, effector_id=to_int_str)
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, effector=to_list)
         regulator = regulator.explode('effector')
         regulator = apply_processors(regulator, effector=to_int_str)
@@ -131,11 +131,11 @@ class EffectorToRegulatorConnector(RegPreciseConnector,
     default_connect_stack = {'effector': 'integrated_effector.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        effector = read_from_stack(stack=self._connect_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
+        effector = read_from_stack(stack=self._connect_stack, key='effector',
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
         effector = apply_processors(effector, effector_id=to_int_str)
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = apply_processors(regulator, effector=to_list)
         regulator = regulator.explode('effector')
         regulator = apply_processors(regulator, effector=to_int_str)

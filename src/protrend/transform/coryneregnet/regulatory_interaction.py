@@ -23,15 +23,15 @@ class RegulatoryInteractionTransformer(CoryneRegNetTransformer,
                        'Role', 'Evidence', 'PMID', 'Source', 'taxonomy'])
 
     def _transform_regulator(self) -> pd.DataFrame:
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = self.select_columns(regulator, 'protrend_id', 'TF_locusTag')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def _transform_operon(self) -> pd.DataFrame:
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
         operon = self.select_columns(operon, 'protrend_id', 'genes', 'tfbss', 'Operon', 'Orientation', 'Genes')
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = apply_processors(operon, genes=to_list, tfbss=to_list, Genes=to_list)
@@ -90,8 +90,8 @@ class RegulatoryInteractionToRegulatorConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['regulator'].tolist()
@@ -113,8 +113,8 @@ class RegulatoryInteractionToOperonConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['protrend_id'].tolist()
         to_identifiers = rin['operon'].tolist()
@@ -136,8 +136,8 @@ class RegulatoryInteractionToGeneConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, genes=to_list)
         rin = rin.explode(column='genes')
@@ -166,8 +166,8 @@ class RegulatoryInteractionToTFBSConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, tfbss=to_list)
         rin = rin.explode(column='tfbss')
@@ -196,8 +196,8 @@ class RegulatorToOperonConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         from_identifiers = rin['regulator'].tolist()
         to_identifiers = rin['operon'].tolist()
@@ -219,8 +219,8 @@ class RegulatorToGeneConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, genes=to_list)
         rin = rin.explode(column='genes')
@@ -247,8 +247,8 @@ class RegulatorToTFBSConnector(CoryneRegNetConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         rin = apply_processors(rin, tfbss=to_list)
         rin = rin.explode(column='tfbss')

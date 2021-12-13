@@ -30,8 +30,8 @@ class EvidenceTransformer(CollectfTransformer,
         return df
 
     def transform(self):
-        evidence = read_from_stack(stack=self.transform_stack, file='evidence',
-                                   default_columns=self.read_columns, reader=read_json_lines)
+        evidence = read_from_stack(stack=self.transform_stack, key='evidence',
+                                   columns=self.read_columns, reader=read_json_lines)
         evidence = self._transform_evidence(evidence)
 
         self.stack_transformed_nodes(evidence)
@@ -47,14 +47,14 @@ class EvidenceToRegulatorConnector(CollectfConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
         evidence = apply_processors(evidence, regulon=to_list)
         evidence = evidence.explode(column='regulon')
 
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
         regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
 
         df = pd.merge(evidence, regulator, left_on='regulon', right_on='uniprot_accession')
@@ -79,12 +79,12 @@ class EvidenceToTFBSConnector(CollectfConnector,
                              'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
         tfbs = apply_processors(tfbs, experimental_evidence=to_list)
         tfbs = tfbs.explode(column='experimental_evidence')
@@ -113,18 +113,18 @@ class EvidenceToOperonConnector(CollectfConnector,
                              'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id',
                                   'operon': 'operon_protrend_id'})
         rin = rin.explode(column='tfbss')
 
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
         tfbs = apply_processors(tfbs, experimental_evidence=to_list)
         tfbs = tfbs.explode(column='experimental_evidence')
@@ -156,19 +156,19 @@ class EvidenceToGeneConnector(CollectfConnector,
                              'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id',
                                   'operon': 'operon_protrend_id',
                                   'genes': 'genes_protrend_id'})
         rin = rin.explode(column='tfbss')
 
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
         tfbs = apply_processors(tfbs, experimental_evidence=to_list)
         tfbs = tfbs.explode(column='experimental_evidence')
@@ -202,19 +202,19 @@ class EvidenceToRegulatoryInteractionConnector(CollectfConnector,
                              'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
         evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
 
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self._connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
         rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id',
                                   'operon': 'operon_protrend_id',
                                   'genes': 'genes_protrend_id'})
         rin = rin.explode(column='tfbss')
 
-        tfbs = read_from_stack(stack=self._connect_stack, file='tfbs',
-                               default_columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
         tfbs = apply_processors(tfbs, experimental_evidence=to_list)
         tfbs = tfbs.explode(column='experimental_evidence')

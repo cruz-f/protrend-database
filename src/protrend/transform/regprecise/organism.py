@@ -53,8 +53,8 @@ class OrganismTransformer(RegPreciseTransformer,
         return pd.DataFrame([dto.to_dict() for dto in dtos])
 
     def transform(self):
-        genome = read_from_stack(stack=self.transform_stack, file='genome',
-                                 default_columns=self.read_columns, reader=read_json_lines)
+        genome = read_from_stack(stack=self.transform_stack, key='genome',
+                                 columns=self.read_columns, reader=read_json_lines)
         genome = self._transform_genome(genome)
 
         names = genome['input_value'].tolist()
@@ -82,10 +82,10 @@ class OrganismToSourceConnector(RegPreciseConnector,
     default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
 
     def connect(self):
-        organism = read_from_stack(stack=self._connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self._connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self._connect_stack, key='source',
+                                 columns=SourceTransformer.columns, reader=read_json_frame)
 
         from_identifiers = organism['protrend_id'].tolist()
         size = len(from_identifiers)

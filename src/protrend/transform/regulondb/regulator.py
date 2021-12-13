@@ -68,20 +68,20 @@ class RegulatorTransformer(RegulondbTransformer,
         return sigma
 
     def transform(self):
-        tf = read_from_stack(stack=self.transform_stack, file='tf',
-                             default_columns=self.tf_columns, reader=read_txt,
+        tf = read_from_stack(stack=self.transform_stack, key='tf',
+                             columns=self.tf_columns, reader=read_txt,
                              skiprows=38, names=self.tf_columns)
 
-        srna = read_from_stack(stack=self.transform_stack, file='srna',
-                               default_columns=self.srna_columns, reader=read_txt,
+        srna = read_from_stack(stack=self.transform_stack, key='srna',
+                               columns=self.srna_columns, reader=read_txt,
                                skiprows=38, names=self.srna_columns)
 
-        sigma = read_from_stack(stack=self.transform_stack, file='sigma',
-                                default_columns=self.sigma_columns, reader=read_txt,
+        sigma = read_from_stack(stack=self.transform_stack, key='sigma',
+                                columns=self.sigma_columns, reader=read_txt,
                                 skiprows=36, names=self.sigma_columns)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.columns, reader=read_json_frame)
         gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                                    'ncbi_protein', 'genbank_accession', 'refseq_accession',
                                    'uniprot_accession', 'sequence', 'strand', 'start', 'stop',

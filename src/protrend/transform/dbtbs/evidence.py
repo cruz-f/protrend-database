@@ -41,8 +41,8 @@ class EvidenceTransformer(DBTBSTransformer,
         return df
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=self.read_columns, reader=read_json_lines)
+        operon = read_from_stack(stack=self.transform_stack, key='operon',
+                                 columns=self.read_columns, reader=read_json_lines)
         evidence = self._transform_evidence(operon)
 
         self.stack_transformed_nodes(evidence)
@@ -58,11 +58,11 @@ class EvidenceToOperonConnector(DBTBSConnector,
     default_connect_stack = {'operon': 'integrated_operon.json', 'evidence': 'integrated_evidence.json'}
 
     def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self._connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
-        evidence = read_from_stack(stack=self._connect_stack, file='evidence',
-                                   default_columns=EvidenceTransformer.columns, reader=read_json_frame)
+        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
+                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(evidence, operon, left_on='operon', right_on='name', suffixes=('_evidence', '_operon'))
 

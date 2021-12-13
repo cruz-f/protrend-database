@@ -237,13 +237,13 @@ class Connector(AbstractConnector):
         default_source_cols += list(source_processors.keys())
         default_target_cols += list(target_processors.keys())
 
-        source_df = read_from_stack(stack=self.connect_stack, file=source,
-                                    default_columns=default_source_cols, reader=read_json_frame)
+        source_df = read_from_stack(stack=self.connect_stack, key=source,
+                                    columns=default_source_cols, reader=read_json_frame)
         source_df = apply_processors(source_df, **source_processors)
         source_df = source_df.rename(columns={source_column: 'source_col'})
 
-        target_df = read_from_stack(stack=self.connect_stack, file=target,
-                                    default_columns=default_target_cols, reader=read_json_frame)
+        target_df = read_from_stack(stack=self.connect_stack, key=target,
+                                    columns=default_target_cols, reader=read_json_frame)
         target_df = apply_processors(target_df, **target_processors)
         target_df = target_df.rename(columns={target_column: 'target_col'})
 

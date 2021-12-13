@@ -74,12 +74,12 @@ class PublicationToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
         publication = apply_processors(publication, taxonomy=to_int_str)
 
-        organism = read_from_stack(stack=self.connect_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self.connect_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
 
         df = pd.merge(publication, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
@@ -103,11 +103,11 @@ class PublicationToRegulatorConnector(LiteratureConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
 
-        regulator = read_from_stack(stack=self.connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(publication, regulator, on='network_id', suffixes=('_publication', '_regulator'))
 
@@ -129,11 +129,11 @@ class PublicationToOperonConnector(LiteratureConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
 
-        operon = read_from_stack(stack=self.connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(publication, operon, on='network_id', suffixes=('_publication', '_operon'))
 
@@ -155,11 +155,11 @@ class PublicationToGeneConnector(LiteratureConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
 
-        operon = read_from_stack(stack=self.connect_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
+        operon = read_from_stack(stack=self.connect_stack, key='operon',
+                                 columns=OperonTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(publication, operon, on='network_id', suffixes=('_publication', '_operon'))
         df = df.explode(column='genes')
@@ -183,10 +183,10 @@ class PublicationToRegulatoryInteractionConnector(LiteratureConnector,
                              'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, file='publication',
-                                      default_columns=PublicationTransformer.columns, reader=read_json_frame)
-        rin = read_from_stack(stack=self.connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        publication = read_from_stack(stack=self.connect_stack, key='publication',
+                                      columns=PublicationTransformer.columns, reader=read_json_frame)
+        rin = read_from_stack(stack=self.connect_stack, key='rin',
+                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
 
         df = pd.merge(publication, rin, on='network_id', suffixes=('_publication', '_rin'))
 
