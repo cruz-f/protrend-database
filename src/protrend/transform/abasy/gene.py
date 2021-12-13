@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_csv
+from protrend.io import read_from_multi_stack
 from protrend.model import Gene
 from protrend.transform.abasy.base import AbasyTransformer
 from protrend.utils import SetList
@@ -42,12 +42,9 @@ class GeneTransformer(AbasyTransformer,
         return gene
 
     def transform(self):
-        gene_stack = self.contact_stacks(stack=self.gene_stack,
-                                         taxa=self.taxa_to_organism_code,
-                                         default_columns=self.default_gene_columns,
-                                         reader=read_csv)
+        gene = read_from_multi_stack(stack=self.transform_stack, key='gene', columns=self.default_gene_columns)
 
-        genes = self.transform_gene(gene_stack)
+        genes = self.transform_gene(gene)
         annotated_genes = self.annotate_genes(genes)
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_abasy'))

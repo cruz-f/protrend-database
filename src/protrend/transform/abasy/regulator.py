@@ -1,11 +1,11 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
+from protrend.io import read_from_stack, read_json_frame, read_from_multi_stack
 from protrend.model import Regulator
 from protrend.transform.abasy.base import AbasyTransformer, read_abasy_network
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.utils.processors import apply_processors, rstrip, lstrip
-from protrend.utils import SetList
+from protrend.utils import SetList, build_stack
 
 
 class RegulatorTransformer(AbasyTransformer,
@@ -14,13 +14,12 @@ class RegulatorTransformer(AbasyTransformer,
                            node=Regulator,
                            order=90,
                            register=True):
-    default_transform_stack = {'gene': 'integrated_gene.json'}
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
                        'strand', 'start', 'stop', 'mechanism',
                        'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'regulator_taxonomy'])
 
-    def transform_networks(self, networks: pd.DataFrame) -> pd.DataFrame:
+    def transform_network(self, networks: pd.DataFrame) -> pd.DataFrame:
         networks = self.drop_duplicates(df=networks, subset=['source', 'taxonomy'], perfect_match=True)
         networks = networks.dropna(subset=['source', 'taxonomy'])
         networks = self.drop_empty_string(networks, 'source')
@@ -34,13 +33,14 @@ class RegulatorTransformer(AbasyTransformer,
         return networks
 
     def transform(self):
-        networks = self.contact_stacks(stack=self.network_stack,
-                                       taxa=self.taxa_to_organism_code,
-                                       default_columns=self.default_network_columns,
-                                       reader=read_abasy_network)
-        regulator = self.transform_networks(networks)
+        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        regulator = self.transform_network(network)
 
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
+        gene_stack = build_stack(source=self.source, version=self.version,
+                                 stack_to_load={'gene': 'integrated_gene.json'}, sa=False)
+
+        gene = read_from_stack(stack=gene_stack,
+                               key='gene',
                                columns=GeneTransformer.columns,
                                reader=read_json_frame)
         gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',

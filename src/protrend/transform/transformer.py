@@ -532,6 +532,25 @@ class Transformer(AbstractTransformer):
         return df
 
 
+class MultiStackTransformer(Transformer, register=False):
+    default_transform_stack: Dict[str, MultiStack] = {}
+
+    def __init__(self, transform_stack: Dict[str, MultiStack], **kwargs):
+        kwargs['transform_stack'] = transform_stack
+        super().__init__(**kwargs)
+        self._transform_stack: Dict[str, MultiStack]
+
+    @staticmethod
+    def _build_transform_stack(transform_stack, source, version):
+        return build_multi_stack(source, version, transform_stack)
+
+    @property
+    def transform_stack(self) -> Dict[str, MultiStack]:
+        self._transform_stack: Dict[str, MultiStack]
+
+        return self._transform_stack
+
+
 class BaseSourceTransformer(Transformer, register=False):
     name = ''
     type = ''
@@ -555,22 +574,3 @@ class BaseSourceTransformer(Transformer, register=False):
         self.stack_transformed_nodes(df)
 
         return df
-
-
-class MultiStackTransformer(Transformer, register=False):
-    default_transform_stack: Dict[str, MultiStack] = {}
-
-    def __init__(self, transform_stack: Dict[str, MultiStack], **kwargs):
-        kwargs['transform_stack'] = transform_stack
-        super().__init__(**kwargs)
-        self._transform_stack: Dict[str, MultiStack]
-
-    @staticmethod
-    def _build_transform_stack(transform_stack, source, version):
-        return build_multi_stack(source, version, transform_stack)
-
-    @property
-    def transform_stack(self) -> Dict[str, MultiStack]:
-        self._transform_stack: Dict[str, MultiStack]
-
-        return self._transform_stack
