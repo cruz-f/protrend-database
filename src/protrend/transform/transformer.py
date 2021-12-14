@@ -5,11 +5,12 @@ from typing import List, Type, Callable, Dict
 
 import pandas as pd
 
-from protrend import GeneDTO, annotate_genes, OrganismDTO, annotate_organisms
+from protrend.annotation import (GeneDTO, annotate_genes, OrganismDTO, annotate_organisms,
+                                 PublicationDTO, annotate_publications)
 from protrend.io import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.utils import Settings, DefaultProperty, SetList, WriteStack, MultiStack, build_stack, build_multi_stack
-from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_interaction_hash
+from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_hash
 
 
 def get_values(df, col):
@@ -302,10 +303,10 @@ class Transformer(AbstractTransformer):
     @staticmethod
     def annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
 
-        input_values = get_values(df, 'input_values')
+        input_values = get_values(df, 'input_value')
         loci = get_values(df, 'locus_tag')
         names = get_values(df, 'name')
-        taxa = get_values(df, 'taxonomy')
+        taxa = get_values(df, 'ncbi_taxonomy')
         uniprot_proteins = get_values(df, 'uniprot_accession')
         ncbi_proteins = get_values(df, 'ncbi_protein')
         ncbi_genbanks = get_values(df, 'genbank_accession')
@@ -336,7 +337,7 @@ class Transformer(AbstractTransformer):
     @staticmethod
     def annotate_organisms(df: pd.DataFrame) -> pd.DataFrame:
 
-        input_values = get_values(df, 'input_values')
+        input_values = get_values(df, 'input_value')
         identifiers = get_values(df, 'ncbi_taxonomy')
         names = get_values(df, 'name')
 
@@ -348,6 +349,21 @@ class Transformer(AbstractTransformer):
 
         organisms_df = pd.DataFrame(organisms_dict)
         return organisms_df
+
+    @staticmethod
+    def annotate_publications(df: pd.DataFrame) -> pd.DataFrame:
+
+        input_values = get_values(df, 'input_value')
+        identifiers = get_values(df, 'pmid')
+
+        publications = [PublicationDTO(input_value=input_value) for input_value in input_values]
+
+        annotate_publications(dtos=publications, identifiers=identifiers)
+
+        publications_dict = [dto.to_dict() for dto in publications]
+
+        publications_df = pd.DataFrame(publications_dict)
+        return publications_df
 
     # ----------------------------------------
     # Utilities
@@ -428,8 +444,7 @@ class Transformer(AbstractTransformer):
 
     @staticmethod
     def create_input_value(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        df['input_value'] = df[col]
-        return df
+        return df.assign(input_value=df[col].copy())
 
     @staticmethod
     def select_columns(df: pd.DataFrame, *columns: str) -> pd.DataFrame:
@@ -441,6 +456,15 @@ class Transformer(AbstractTransformer):
     def merge_columns(df: pd.DataFrame, column: str, left: str, right: str) -> pd.DataFrame:
         df[column] = df[left].fillna(df[right])
         df = df.drop(columns=[left, right])
+        return df
+
+    def merge_loci(self, df: pd.DataFrame, left_suffix: str, right_suffix: str) -> pd.DataFrame:
+        # merge loci
+        df = self.merge_columns(df=df, column='locus_tag',
+                                left=f'locus_tag{left_suffix}', right=f'locus_tag{right_suffix}')
+        df = df.dropna(subset=['locus_tag'])
+        df = self.drop_empty_string(df, 'locus_tag')
+        df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
         return df
 
     @staticmethod
@@ -508,9 +532,33 @@ class Transformer(AbstractTransformer):
         ri_series_hash += df2['regulatory_effect'].copy()
 
         df = df.assign(regulatory_interaction_hash=ri_series_hash)
-        df = apply_processors(df, regulatory_interaction_hash=regulatory_interaction_hash)
+        df = apply_processors(df, regulatory_interaction_hash=regulatory_hash)
         df = self.drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True)
         df = df.dropna(subset=['regulatory_interaction_hash'])
+
+        return df
+
+    def site_hash(self, df: pd.DataFrame) -> pd.DataFrame:
+        # filter by organism + sequence + strand + start + stop + length
+        df2 = apply_processors(df,
+                               organism=to_list_nan,
+                               sequence=to_list_nan,
+                               strand=to_list_nan,
+                               start=to_list_nan,
+                               stop=to_list_nan,
+                               length=to_list_nan)
+
+        ri_series_hash = df2['organism'].copy()
+        ri_series_hash += df2['sequence'].copy()
+        ri_series_hash += df2['strand'].copy()
+        ri_series_hash += df2['start'].copy()
+        ri_series_hash += df2['stop'].copy()
+        ri_series_hash += df2['length'].copy()
+
+        df = df.assign(site_hash=ri_series_hash)
+        df = apply_processors(df, site_hash=regulatory_hash)
+        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True)
+        df = df.dropna(subset=['site_hash'])
 
         return df
 
