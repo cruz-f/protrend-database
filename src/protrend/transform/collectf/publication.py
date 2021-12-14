@@ -7,7 +7,6 @@ from protrend.model import Publication, Regulator, Operon, Gene, TFBS, Regulator
 from protrend.annotation import annotate_publications, PublicationDTO
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
@@ -22,51 +21,36 @@ class PublicationTransformer(CollectfTransformer,
                              order=100,
                              register=True):
     default_transform_stack = {'tfbs': 'TFBS.json'}
-    columns = SetList(['pmid', 'doi', 'title', 'author', 'year', 'tfbs_id', 'site_start',
-                       'site_end', 'site_strand', 'mode', 'sequence', 'pubmed', 'organism',
-                       'regulon', 'experimental_evidence', 'operon', 'gene', 'protrend_id'])
+    columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
+                       'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
+                       'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
     read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
                             'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
-    def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        df = apply_processors(df=tfbs, pubmed=to_list)
-        df = df.explode(column='pubmed')
+    def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+        tfbs = apply_processors(df=tfbs, pubmed=to_list)
+        tfbs = tfbs.explode(column='pubmed')
 
-        df = self.create_input_value(df, col='pubmed')
+        tfbs = tfbs.dropna(subset=['pubmed'])
+        tfbs = self.drop_duplicates(df=tfbs, subset=['pubmed'])
 
-        return df
+        tfbs = tfbs.assign(pmid=tfbs['pubmed'].copy())
 
-    @staticmethod
-    def _transform_publications(identifiers: List[str]):
-        dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
-        annotate_publications(dtos=dtos, identifiers=identifiers)
-
-        # pmid: List[str]
-        # doi: List[str]
-        # title: List[str]
-        # author: List[str]
-        # year: List[str]
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        tfbs = self.create_input_value(tfbs, col='pmid')
+        return tfbs
 
     def transform(self):
         tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
                                columns=self.read_columns, reader=read_json_lines)
 
-        df = self._transform_tfbs(tfbs)
-        df = self.drop_duplicates(df=df, subset=['pubmed'])
-        df = df.dropna(subset=['pubmed'])
+        publications = self.transform_tfbs(tfbs)
+        annotated_publications = self.annotate_publications(publications)
 
-        pmids = df['input_value'].tolist()
-        publications = self._transform_publications(pmids)
-
-        df = pd.merge(publications, df, on='input_value', suffixes=('_annotation', '_collectf'))
-
+        df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_collectf'))
+        df = apply_processors(df, pmid=to_int_str)
         df = df.drop(columns=['input_value'])
 
-        df = apply_processors(df, pmid=to_int_str)
-
         self.stack_transformed_nodes(df)
-
         return df
 
 

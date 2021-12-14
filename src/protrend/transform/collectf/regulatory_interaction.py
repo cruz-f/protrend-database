@@ -2,75 +2,85 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
+from protrend.transform import GeneTransformer
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
-from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.utils.processors import (apply_processors, to_list, regulatory_effect_collectf, to_set_list,
-                                       flatten_set_list, take_first, to_list_nan)
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_list, regulatory_effect_collectf, to_list_nan
 
 
 class RegulatoryInteractionTransformer(CollectfTransformer,
                                        source='collectf',
                                        version='0.0.1',
                                        node=RegulatoryInteraction,
-                                       order=50,
+                                       order=70,
                                        register=True):
     default_transform_stack = {'regulator': 'integrated_regulator.json',
-                               'operon': 'integrated_operon.json',
-                               'tfbs': 'TFBS.json'}
-    columns = SetList(['operon', 'regulon', 'operon_id', 'regulatory_effect', 'regulator',
-                       'organism_protrend_id', 'genes', 'tfbss',
-                       'regulatory_interaction_hash', 'protrend_id'])
+                               'gene': 'integrated_gene.json',
+                               'tfbs': 'integrated_tfbs.json',
+                               'rin': 'TFBS.json'}
+    columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
+                       'regulatory_interaction_hash'])
+
+    def transform_rin(self, rin: pd.DataFrame) -> pd.DataFrame:
+        rin = self.select_columns(rin, 'tfbs_id', 'mode', 'regulon', 'gene')
+        rin = apply_processors(rin, regulon=to_list_nan, gene=to_list_nan)
+        rin = rin.explode('regulon')
+        rin = rin.explode('gene')
+        rin = rin.dropna(subset=['regulon', 'gene'])
+        rin = rin.rename(columns={'mode': 'regulatory_effect'})
+        return rin
+
+    def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+        tfbs = self.select_columns(tfbs, 'tfbs_id', 'protrend_id')
+        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
+        return tfbs
+
+    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
+        regulator = self.select_columns(regulator, 'uniprot_accession', 'protrend_id', 'organism_protrend_id')
+        regulator = regulator.rename(columns={'protrend_id': 'regulator', 'organism_protrend_id': 'organism'})
+        return regulator
+
+    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
+        gene = self.select_columns(gene, 'locus_tag_old', 'protrend_id')
+        gene = gene.rename(columns={'protrend_id': 'gene'})
+        return gene
 
     def transform(self) -> pd.DataFrame:
+        rin = read_from_stack(stack=self.transform_stack, key='rin',
+                              columns=TFBSTransformer.read_columns, reader=read_json_lines)
+
         tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=TFBSTransformer.read_columns, reader=read_json_lines)
-        tfbs = self.select_columns(tfbs, 'regulon', 'operon', 'mode')
-        tfbs = apply_processors(tfbs, regulon=to_list_nan, operon=to_list_nan)
-        tfbs = tfbs.explode('regulon')
-        tfbs = tfbs.explode('operon')
-        tfbs = tfbs.dropna(subset=['regulon', 'operon'])
-        tfbs = tfbs.drop_duplicates(subset=['regulon', 'operon'])
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
 
         regulator = read_from_stack(stack=self.transform_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = self.select_columns(regulator, 'protrend_id', 'uniprot_accession', 'organism_protrend_id')
-        regulator = regulator.rename(columns={'protrend_id': 'regulator', 'uniprot_accession': 'regulon'})
+                                    columns=RegulatorTransformer.read_columns, reader=read_json_frame)
 
-        operon = read_from_stack(stack=self.transform_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = self.select_columns(operon, 'protrend_id', 'genes', 'tfbss', 'operon_id_old')
-        operon = operon.rename(columns={'operon_id_old': 'operon', 'protrend_id': 'operon_protrend_id'})
-        operon = apply_processors(operon, genes=to_list_nan, tfbss=to_list_nan, operon=to_list_nan)
-        operon = operon.explode(column='operon')
+        gene = read_from_stack(stack=self.transform_stack, key='gene',
+                               columns=GeneTransformer.read_columns, reader=read_json_frame)
 
-        regulator_tfbs = pd.merge(regulator, tfbs, on='regulon')
+        rin = self.transform_rin(rin)
 
-        regulatory_interaction = pd.merge(regulator_tfbs, operon, on='operon')
+        # by regulator
+        regulator = self.transform_regulator(regulator)
+        rin_regulator = pd.merge(rin, regulator, left_on='regulon', right_on='uniprot_accession')
 
-        regulatory_interaction = regulatory_interaction.rename(columns={'operon': 'operon_id',
-                                                                        'operon_protrend_id': 'operon',
-                                                                        'mode': 'regulatory_effect'})
+        # by gene
+        gene = self.transform_gene(gene)
+        rin_regulator_gene = pd.merge(rin_regulator, gene, left_on='gene', right_on='locus_tag_old')
 
-        # filter by organism
-        aggregation = {'genes': flatten_set_list, 'tfbss': flatten_set_list,
-                       'organism_protrend_id': to_set_list, 'regulator': to_set_list}
-        regulatory_interaction = self.group_by(df=regulatory_interaction, column='operon',
-                                               aggregation=aggregation, default=take_first)
-        mask = regulatory_interaction['organism_protrend_id'].map(len) == 1
-        regulatory_interaction = regulatory_interaction[mask]
-        regulatory_interaction = apply_processors(regulatory_interaction, organism_protrend_id=take_first)
-        regulatory_interaction = regulatory_interaction.explode(column='regulator')
+        # by tfbs
+        tfbs = self.transform_tfbs(tfbs)
+        rin_regulator_gene_tfbs = pd.merge(rin_regulator_gene, tfbs, left_on='tfbs_id', right_on='tfbs_id')
 
-        regulatory_interaction = apply_processors(regulatory_interaction, regulatory_effect=regulatory_effect_collectf)
-        regulatory_interaction['regulator_effector'] = None
+        regulatory_interaction = apply_processors(rin_regulator_gene_tfbs,
+                                                  regulatory_effect=regulatory_effect_collectf)
+        regulatory_interaction = regulatory_interaction.assign(effector=None)
 
-        regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
+        regulatory_interaction = self.interaction_hash(regulatory_interaction)
 
         self.stack_transformed_nodes(regulatory_interaction)
-
         return regulatory_interaction
 
 

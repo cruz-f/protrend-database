@@ -1,20 +1,18 @@
-import pandas as pd
-
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Operon, Gene, TFBS, RegulatoryInteraction)
+from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, RegulatoryInteraction)
+from protrend.transform import BaseSourceTransformer
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.collectf.operon import OperonTransformer
 from protrend.transform.collectf.organism import OrganismTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.regulatory_family import RegulatoryFamilyTransformer
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.utils.processors import apply_processors, to_list
 from protrend.utils import SetList, is_null
+from protrend.utils.processors import apply_processors, to_list
 
 
-class SourceTransformer(CollectfTransformer,
+class SourceTransformer(CollectfTransformer, BaseSourceTransformer,
                         source='collectf',
                         version='0.0.1',
                         node=Source,
@@ -27,21 +25,7 @@ class SourceTransformer(CollectfTransformer,
     authors = ['Sefa Kiliç', 'Elliot R White', 'Dinara M Sagitova', 'Joseph P Cornish', 'Ivan Erill']
     description = 'CollecTF: a database of experimentally validated transcription factor-binding sites in Bacteria'
 
-    columns = SetList(['name', 'type', 'url', 'doi', 'authors', 'description', 'protrend_id'])
-
-    def transform(self):
-        collectf = dict(name=[self.name],
-                        type=[self.type],
-                        url=[self.url],
-                        doi=[self.doi],
-                        authors=[self.authors],
-                        description=[self.description])
-
-        df = pd.DataFrame(collectf, index=[0])
-
-        self.stack_transformed_nodes(df)
-
-        return df
+    columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
 
 class OrganismToSourceConnector(CollectfConnector,
@@ -142,50 +126,6 @@ class RegulatorToSourceConnector(CollectfConnector,
         url = []
         external_identifier = []
         for uniprot_accession in regulator['uniprot_accession']:
-            if not is_null(uniprot_accession):
-                url.append(f'http://www.collectf.org/uniprot/{uniprot_accession}')
-                external_identifier.append(uniprot_accession)
-            else:
-                url.append(None)
-                external_identifier.append(None)
-
-        kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['uniprot'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class OperonToSourceConnector(CollectfConnector,
-                              source='collectf',
-                              version='0.0.1',
-                              from_node=Operon,
-                              to_node=Source,
-                              register=True):
-    default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
-
-    def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = apply_processors(operon, regulon=to_list)
-        operon = operon.explode('regulon')
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = operon['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        # http://www.collectf.org/uniprot/
-        url = []
-        external_identifier = []
-        for uniprot_accession in operon['regulon']:
             if not is_null(uniprot_accession):
                 url.append(f'http://www.collectf.org/uniprot/{uniprot_accession}')
                 external_identifier.append(uniprot_accession)

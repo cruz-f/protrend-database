@@ -5,10 +5,6 @@ from .evidence import (EvidenceTransformer,
                        EvidenceToRegulatoryInteractionConnector,
                        EvidenceToTFBSConnector)
 from .gene import GeneTransformer
-from .operon import (OperonTransformer,
-                     GeneToTFBSConnector,
-                     OperonToGeneConnector,
-                     OperonToTFBSConnector)
 from .organism import (OrganismToGeneConnector,
                        OrganismToOperonConnector,
                        OrganismToRegulatorConnector,

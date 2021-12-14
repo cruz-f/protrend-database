@@ -5,7 +5,6 @@ import pandas as pd
 from protrend.bioapis import entrez_summary
 from protrend.io import read_json_lines, read_from_stack, read_json_frame
 from protrend.model import Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
-from protrend.annotation import annotate_organisms, OrganismDTO
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils.processors import (apply_processors, rstrip, lstrip, to_int_str, take_last,
@@ -20,77 +19,65 @@ class OrganismTransformer(CollectfTransformer,
                           order=100,
                           register=True):
     default_transform_stack = {'organism': 'Organism.json'}
-    columns = SetList(['species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
-                       'genbank_accession', 'genbank_ftp', 'ncbi_assembly',
-                       'assembly_accession', 'genome_accession', 'taxonomy', 'regulon', 'tfbs',
-                       'name', 'name_collectf', 'protrend_id'])
+    columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+                       'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession',
+                       'name_collectf', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
     read_columns = SetList(['name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
 
-    def _transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        aggregation = {'genome_accession': take_last, 'taxonomy': take_last}
-        organism = self.group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
-
-        organism = apply_processors(organism, name=[rstrip, lstrip], genome_accession=[rstrip, lstrip],
-                                    taxonomy=to_int_str)
-
-        organism = self.drop_duplicates(df=organism, subset=['genome_accession', 'name'])
-        organism = self.create_input_value(organism, col='name')
-
-        return organism
-
     @staticmethod
-    def _transform_organisms(nucleotide: List[str], names: List[str]):
-
-        identifiers = []
+    def get_ncbi_taxa_from_nucleotide(nucleotide: List[str]):
+        ncbi_taxa = []
         for acc in nucleotide:
 
-            ncbi_tax = None
+            ncbi_taxon = None
 
             if not is_null(acc):
                 summary = entrez_summary(identifier=acc, db='nucleotide')
 
                 if 'TaxId' in summary:
-                    ncbi_tax = str(summary['TaxId'])
+                    ncbi_taxon = str(summary['TaxId'])
 
-            identifiers.append(ncbi_tax)
+            ncbi_taxa.append(ncbi_taxon)
 
-        dtos = [OrganismDTO(input_value=name) for name in names]
-        annotate_organisms(dtos=dtos, identifiers=identifiers, names=names)
+        return ncbi_taxa
 
-        # name: List[str]
-        # species: List[str]
-        # strain: List[str]
-        # ncbi_taxonomy: List[int]
-        # refseq_accession: List[str]
-        # refseq_ftp: List[str]
-        # genbank_accession: List[str]
-        # genbank_ftp: List[str]
-        # ncbi_assembly: List[str]
-        # assembly_accession: List[str]
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = apply_processors(organism, name=[rstrip, lstrip])
+        organism = organism.dropna(subset=['name'])
+        organism = self.drop_empty_string(organism, 'name')
 
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        aggregation = {'genome_accession': take_last, 'taxonomy': take_last}
+        organism = self.group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
+
+        organism = apply_processors(organism, genome_accession=[rstrip, lstrip], taxonomy=to_int_str)
+        organism = self.drop_duplicates(df=organism, subset=['genome_accession', 'name'])
+
+        nucleotide = organism['genome_accession'].to_list()
+        ncbi_taxa = self.get_ncbi_taxa_from_nucleotide(nucleotide)
+        organism = organism.assign(ncbi_taxonomy=ncbi_taxa)
+
+        organism = self.create_input_value(organism, col='name')
+        return organism
 
     def transform(self):
         organism = read_from_stack(stack=self.transform_stack, key='organism',
                                    columns=self.read_columns, reader=read_json_lines)
-        organism = self._transform_organism(organism)
 
-        names = organism['input_value'].tolist()
-        nucleotide = organism['genome_accession'].tolist()
-        organisms = self._transform_organisms(nucleotide, names)
+        organisms = self.transform_organism(organism)
+        annotated_organisms = self.annotate_organisms(organisms)
 
-        df = pd.merge(organisms, organism, on='input_value', suffixes=('_annotation', '_collectf'))
+        df = pd.merge(annotated_organisms, organisms, on='input_value', suffixes=('_annotation', '_collectf'))
 
-        names_collectf = df['name_collectf'].tolist()
+        # merge name
+        names_collectf = df['name_collectf'].to_list()
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
         df['name_collectf'] = names_collectf
 
-        df = df.drop(columns=['input_value'])
-
         df = apply_processors(df, ncbi_taxonomy=to_int_str, ncbi_assembly=to_int_str)
 
-        self.stack_transformed_nodes(df)
+        df = df.drop(columns=['input_value'])
 
+        self.stack_transformed_nodes(df)
         return df
 
 

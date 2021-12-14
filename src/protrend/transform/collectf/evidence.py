@@ -17,22 +17,21 @@ class EvidenceTransformer(CollectfTransformer,
                           order=100,
                           register=True):
     default_transform_stack = {'evidence': 'ExperimentalEvidence.json'}
-    columns = SetList(['exp_id', 'regulon', 'tfbs', 'name', 'description', 'protrend_id'])
+    columns = SetList(['protrend_id', 'name', 'description', 'exp_id', 'regulon', 'tfbs'])
     read_columns = SetList(['exp_id', 'regulon', 'tfbs'])
 
-    def _transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=evidence, subset=['exp_id'], perfect_match=True)
-        df = apply_processors(df, exp_id=[rstrip, lstrip])
-        df = df.dropna(subset=['exp_id'])
-        df['name'] = df['exp_id']
-        df['description'] = None
-
-        return df
+    def transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
+        evidence = apply_processors(evidence, exp_id=[rstrip, lstrip])
+        evidence = evidence.dropna(subset=['exp_id'])
+        evidence = self.drop_empty_string(evidence, 'exp_id')
+        evidence = self.drop_duplicates(df=evidence, subset=['exp_id'])
+        evidence = evidence.assign(name=evidence['exp_id'].copy(), description=None)
+        return evidence
 
     def transform(self):
         evidence = read_from_stack(stack=self.transform_stack, key='evidence',
                                    columns=self.read_columns, reader=read_json_lines)
-        evidence = self._transform_evidence(evidence)
+        evidence = self.transform_evidence(evidence)
 
         self.stack_transformed_nodes(evidence)
         return evidence

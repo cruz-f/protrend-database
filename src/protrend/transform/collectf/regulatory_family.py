@@ -4,8 +4,7 @@ from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.utils.processors import (apply_processors, remove_white_space, rstrip, lstrip,
-                                       remove_multiple_white_space, parse_collectf_description, to_list)
+from protrend.utils.processors import apply_processors, rstrip, lstrip,to_list, flatten_set_list, to_list_nan
 from protrend.utils import SetList
 
 
@@ -16,24 +15,23 @@ class RegulatoryFamilyTransformer(CollectfTransformer,
                                   order=100,
                                   register=True):
     default_transform_stack = {'tf': 'TranscriptionFactor.json'}
-    columns = SetList(['name', 'family', 'description', 'regulon', 'mechanism', 'protrend_id'])
+    columns = SetList(['protrend_id', 'name', 'mechanism', 'description',
+                       'regulon'])
     read_columns = SetList(['name', 'family', 'description', 'regulon'])
 
-    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True)
+    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+        tf = apply_processors(tf, family=[rstrip, lstrip], regulon=to_list_nan)
+        tf = self.select_columns(tf, 'family', 'regulon')
 
-        df = apply_processors(df,
-                              name=remove_white_space,
-                              description=[parse_collectf_description, remove_multiple_white_space, rstrip, lstrip])
-
-        df['mechanism'] = 'transcription factor'
-
-        return df
+        tf = self.group_by(df=tf, column='family', aggregation={}, default=flatten_set_list)
+        tf = tf.rename(columns={'family': 'name'})
+        tf = tf.assign(mechanism='transcription factor', description=None)
+        return tf
 
     def transform(self):
         tf = read_from_stack(stack=self.transform_stack, key='tf',
                              columns=self.read_columns, reader=read_json_lines)
-        tf = self._transform_tf(tf)
+        tf = self.transform_tf(tf)
 
         self.stack_transformed_nodes(tf)
         return tf
