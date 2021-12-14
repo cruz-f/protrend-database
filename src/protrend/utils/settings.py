@@ -16,9 +16,9 @@ class Settings:
         config.read(self._source.joinpath('etl.conf'))
 
         self._working_directory = Path(config.get('etl-configuration', 'working_directory'))
-        self._request_sleep = config.get('etl-configuration', 'request_sleep')
-        self._request_timeout = config.get('etl-configuration', 'request_timeout')
-        self._request_retries = config.get('etl-configuration', 'request_retries')
+        self._request_sleep = float(config.get('etl-configuration', 'request_sleep'))
+        self._request_timeout = float(config.get('etl-configuration', 'request_timeout'))
+        self._request_retries = int(config.get('etl-configuration', 'request_retries'))
 
         self._started = False
 
