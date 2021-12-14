@@ -5,11 +5,9 @@ from typing import List, Type, Dict, Tuple, Callable
 
 import pandas as pd
 
-from protrend.io import read_from_stack
-from protrend.io.json import write_json_frame, read_json_frame
-from protrend.model.node import Node
-from protrend.utils import Settings, WriteStack, DefaultProperty
-from protrend.utils.miscellaneous import build_stack
+from protrend.io import read_from_stack, read_json_frame, write_json_frame
+from protrend.model import Node
+from protrend.utils import Settings, WriteStack, DefaultProperty, build_stack
 from protrend.utils.processors import apply_processors
 
 
