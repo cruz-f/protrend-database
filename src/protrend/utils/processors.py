@@ -262,7 +262,7 @@ def site_hash(items: List[str]) -> Union[None, str]:
     return '_'.join(items)
 
 
-def regulatory_interaction_hash(items: List[str]) -> Union[None, str]:
+def regulatory_hash(items: List[str]) -> Union[None, str]:
     if is_null(items):
         return None
 
