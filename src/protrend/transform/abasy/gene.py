@@ -17,7 +17,7 @@ class GeneTransformer(AbasyTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
-                       'Product_function', 'NDA_component', 'taxonomy', 'gene_taxonomy'])
+                       'Product_function', 'NDA_component', 'taxonomy', 'ncbi_taxonomy', 'gene_taxonomy'])
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
         gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
@@ -33,6 +33,7 @@ class GeneTransformer(AbasyTransformer,
         gene_taxonomy = gene['Gene_name'] + gene['taxonomy']
 
         gene = gene.assign(gene_taxonomy=gene_taxonomy,
+                           ncbi_taxonomy=gene['taxonomy'].copy(),
                            locus_tag=gene['Locus_tag'].copy(),
                            name=gene['Gene_name'].copy(),
                            ncbi_gene=gene['NCBI_gene_ID'].copy(),
@@ -50,10 +51,7 @@ class GeneTransformer(AbasyTransformer,
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_abasy'))
 
         # merge loci
-        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_abasy')
-        df = df.dropna(subset=['locus_tag'])
-        df = self.drop_empty_string(df, 'locus_tag')
-        df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
+        df = self.merge_loci(df=df, left_suffix='_annotation', right_suffix='_abasy')
 
         # merge name
         df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_abasy')

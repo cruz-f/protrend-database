@@ -1,12 +1,6 @@
 from .gene import GeneTransformer
-from .operon import OperonToGeneConnector, OperonTransformer
-from .organism import (GeneToOrganismConnector, OperonToOrganismConnector,
-                       RegulatorToOrganismConnector, RegulatoryInteractionToOrganismConnector,
-                       OrganismTransformer)
+from .organism import OrganismTransformer
 from .regulator import RegulatorTransformer
-from .regulatory_interaction import (RegulatorToGeneConnector, RegulatorToOperonConnector,
-                                     RegulatoryInteractionToGeneConnector, RegulatoryInteractionToOperonConnector,
+from .regulatory_interaction import (RegulatorToGeneConnector, RegulatoryInteractionToGeneConnector,
                                      RegulatoryInteractionToRegulatorConnector, RegulatoryInteractionTransformer)
-from .source import (GeneToSourceConnector, OperonToSourceConnector,
-                     OrganismToSourceConnector, RegulatorToSourceConnector,
-                     RegulatoryInteractionToSourceConnector, SourceTransformer)
+from .source import SourceTransformer

@@ -15,8 +15,8 @@ class RegulatorTransformer(AbasyTransformer,
                            order=90,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
-                       'strand', 'start', 'stop', 'mechanism',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                       'sequence', 'strand', 'start', 'stop', 'mechanism',
                        'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'regulator_taxonomy'])
 
     def transform_network(self, networks: pd.DataFrame) -> pd.DataFrame:
