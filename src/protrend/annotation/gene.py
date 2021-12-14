@@ -11,11 +11,9 @@ if TYPE_CHECKING:
     from .dto import GeneDTO
 
 
-def _find_in_mapping(acc: str, mapping: pd.DataFrame):
-    acc_mask = mapping['From'] == acc
-    acc_series: pd.Series = mapping.loc[acc_mask, 'To']
-
-    return list(acc_series)
+def _map_accession(acc: str, mapping: pd.DataFrame) -> List[str]:
+    mask = mapping['From'] == acc
+    return mapping.loc[mask, 'To'].to_list()
 
 
 def _fetch_genes(identifiers: List[str],
@@ -250,9 +248,9 @@ def annotate_genes(dtos: List['GeneDTO'],
         # base annotation, in case none of the annotations work
         _annotate_gene(uniprot_protein, gene_dto)
 
-        uniprot_ncbi_protein = _find_in_mapping(uniprot_id, uniprot_ncbi_proteins)
-        uniprot_ncbi_refseq = _find_in_mapping(uniprot_id, uniprot_ncbi_refseqs)
-        uniprot_ncbi_genbank = _find_in_mapping(uniprot_id, uniprot_ncbi_genbanks)
+        uniprot_ncbi_protein = _map_accession(uniprot_id, uniprot_ncbi_proteins)
+        uniprot_ncbi_refseq = _map_accession(uniprot_id, uniprot_ncbi_refseqs)
+        uniprot_ncbi_genbank = _map_accession(uniprot_id, uniprot_ncbi_genbanks)
 
         gene_dto.ncbi_protein.extend(uniprot_ncbi_protein)
         gene_dto.refseq_accession.extend(uniprot_ncbi_refseq)
