@@ -215,13 +215,13 @@ class Connector(AbstractConnector):
         json_partial = partial(write_json_frame, file_path=fp, df=df)
         self._write_stack.append(json_partial)
 
-    def _read_connect_stacks(self,
-                             source: str,
-                             target: str,
-                             source_column: str,
-                             target_column: str,
-                             source_processors: Dict[str, List[Callable]] = None,
-                             target_processors: Dict[str, List[Callable]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def transform_stacks(self,
+                         source: str,
+                         target: str,
+                         source_column: str,
+                         target_column: str,
+                         source_processors: Dict[str, List[Callable]] = None,
+                         target_processors: Dict[str, List[Callable]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
         default_source_cols = [source_column]
         default_target_cols = [target_column]
@@ -248,26 +248,29 @@ class Connector(AbstractConnector):
         return source_df, target_df
 
     @staticmethod
-    def _get_source_target_ids(source_df: pd.DataFrame,
-                               target_df: pd.DataFrame,
-                               source_on: str = None,
-                               target_on: str = None) -> Tuple[List[str], List[str]]:
+    def merge_source_target(source_df: pd.DataFrame,
+                            target_df: pd.DataFrame,
+                            source_on: str = None,
+                            target_on: str = None) -> Tuple[List[str], List[str]]:
         if source_on:
             df = pd.merge(source_df, target_df, left_on=source_on, right_on=target_on)
-
-            source_ids = df['source_col'].to_list()
-            target_ids = df['target_col'].to_list()
+            df = df.drop_duplicates(subset=['source_col', 'target_col'])
 
         else:
-            source_ids = source_df['source_col'].to_list()
-            target_ids = target_df['target_col'].to_list()
+            source_df = source_df.reset_index(drop=True)
+            target_df = target_df.reset_index(drop=True)
+            df = pd.concat([source_df, target_df], axis=1)
+            df = df.drop_duplicates(subset=['source_col', 'target_col'])
 
+        source_ids = df['source_col'].to_list()
+        target_ids = df['target_col'].to_list()
+        
         return source_ids, target_ids
 
-    def _create_connection(self,
-                           source_ids: List[str],
-                           target_ids: List[str],
-                           kwargs: Dict[str, List[str]] = None) -> pd.DataFrame:
+    def connection_frame(self,
+                         source_ids: List[str],
+                         target_ids: List[str],
+                         kwargs: Dict[str, List[str]] = None) -> pd.DataFrame:
 
         size = len(source_ids)
 
@@ -296,18 +299,17 @@ class Connector(AbstractConnector):
                           source_processors: Dict[str, List[Callable]] = None,
                           target_processors: Dict[str, List[Callable]] = None) -> pd.DataFrame:
 
-        source_df, target_df = self._read_connect_stacks(source=source,
-                                                         target=target,
-                                                         source_column=source_column,
-                                                         target_column=target_column,
-                                                         source_processors=source_processors,
-                                                         target_processors=target_processors)
+        source_df, target_df = self.transform_stacks(source=source,
+                                                     target=target,
+                                                     source_column=source_column,
+                                                     target_column=target_column,
+                                                     source_processors=source_processors,
+                                                     target_processors=target_processors)
 
-        source_ids, target_ids = self._get_source_target_ids(source_df=source_df, target_df=target_df,
-                                                             source_on=source_on, target_on=target_on)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on=source_on, target_on=target_on)
 
         if cardinality == 'one_to_many':
             source_ids *= len(target_ids)
 
-        return self._create_connection(source_ids=source_ids,
-                                       target_ids=target_ids)
+        return self.connection_frame(source_ids=source_ids, target_ids=target_ids)
