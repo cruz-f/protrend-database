@@ -1,11 +1,10 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines, read_json_frame
+from protrend.io import read_from_stack, read_json_lines
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
-from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.utils.processors import apply_processors, rstrip, lstrip,to_list, flatten_set_list, to_list_nan
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, rstrip, lstrip, flatten_set_list, to_list_nan
 
 
 class RegulatoryFamilyTransformer(CollectfTransformer,
@@ -46,21 +45,17 @@ class RegulatoryFamilyToRegulatorConnector(CollectfConnector,
     default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
+        source_df, target_df = self.transform_stacks(source='rfam',
+                                                     target='regulator',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={'regulon': [to_list_nan]},
+                                                     target_processors={})
+        target_df = target_df.explode('regulon')
+        target_df = apply_processors(target_df, regulon=[rstrip, lstrip])
 
-        rfam = read_from_stack(stack=self.connect_stack, key='rfam',
-                               columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
-        rfam = apply_processors(rfam, regulon=to_list)
-        rfam = rfam.explode(column='regulon')
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='regulon', target_on='uniprot_accession')
 
-        df = pd.merge(regulator, rfam, left_on='uniprot_accession', right_on='regulon')
-
-        from_identifiers = df['rfam_protrend_id'].tolist()
-        to_identifiers = df['regulator_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
         self.stack_json(df)

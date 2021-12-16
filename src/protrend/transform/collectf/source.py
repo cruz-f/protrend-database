@@ -1,15 +1,8 @@
-from protrend.io import read_from_stack, read_json_frame
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, RegulatoryInteraction)
 from protrend.transform import BaseSourceTransformer
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
-from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.collectf.organism import OrganismTransformer
-from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.transform.collectf.regulatory_family import RegulatoryFamilyTransformer
-from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.utils import SetList, is_null
-from protrend.utils.processors import apply_processors, to_list
+from protrend.utils.processors import to_list_nan
 
 
 class SourceTransformer(CollectfTransformer, BaseSourceTransformer,
@@ -28,250 +21,168 @@ class SourceTransformer(CollectfTransformer, BaseSourceTransformer,
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
 
-class OrganismToSourceConnector(CollectfConnector,
+class SourceToOrganismConnector(CollectfConnector,
                                 source='collectf',
                                 version='0.0.1',
-                                from_node=Organism,
-                                to_node=Source,
+                                from_node=Source,
+                                to_node=Organism,
                                 register=True):
-    default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        organism = read_from_stack(stack=self._connect_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
+        source_df, target_df = self.transform_stacks(source='source',
+                                                     target='organism',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={},
+                                                     target_processors={})
 
-        from_identifiers = organism['protrend_id'].tolist()
-        size = len(from_identifiers)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df)
+        source_ids *= len(target_ids)
 
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        # http://www.collectf.org/browse/view_motif_reports_by_taxonomy/
         url = []
-        external_identifier = []
-        for tax_id in organism['taxonomy']:
-            if not is_null(tax_id):
-                url.append(f'http://www.collectf.org/browse/view_motif_reports_by_taxonomy/{tax_id}')
-                external_identifier.append(tax_id)
-            else:
+        ext_id = []
+        key = []
+        for tax_id in target_df['taxonomy']:
+            if is_null(tax_id):
                 url.append(None)
-                external_identifier.append(None)
+                ext_id.append(None)
+                key.append(None)
+            else:
+                url.append(f'http://www.collectf.org/browse/view_motif_reports_by_taxonomy/{tax_id}')
+                ext_id.append(tax_id)
+                key.append('view_motif_reports_by_taxonomy')
 
         kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['view_motif_reports_by_taxonomy'] * size)
+                      external_identifier=ext_id,
+                      key=key)
 
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
         self.stack_json(df)
 
 
-class RegulatoryFamilyToSourceConnector(CollectfConnector,
+class SourceToRegulatoryFamilyConnector(CollectfConnector,
                                         source='collectf',
                                         version='0.0.1',
-                                        from_node=RegulatoryFamily,
-                                        to_node=Source,
+                                        from_node=Source,
+                                        to_node=RegulatoryFamily,
                                         register=True):
-    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
-                             'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
-        rfam = read_from_stack(stack=self._connect_stack, key='regulatory_family',
-                               columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rfam['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        kwargs = dict(url=['http://collectf.org/browse/browse_by_TF/'] * size,
-                      external_identifier=[None] * size,
-                      key=['browse_by_TF'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.create_connection(source='source',
+                                    target='rfam',
+                                    cardinality='one_to_many')
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(CollectfConnector,
+class SourceToRegulatorConnector(CollectfConnector,
                                  source='collectf',
                                  version='0.0.1',
-                                 from_node=Regulator,
-                                 to_node=Source,
+                                 from_node=Source,
+                                 to_node=Regulator,
                                  register=True):
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
+        source_df, target_df = self.transform_stacks(source='source',
+                                                     target='regulator',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={},
+                                                     target_processors={})
 
-        from_identifiers = regulator['protrend_id'].tolist()
-        size = len(from_identifiers)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df)
+        source_ids *= len(target_ids)
 
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        # http://www.collectf.org/uniprot/
         url = []
-        external_identifier = []
-        for uniprot_accession in regulator['uniprot_accession']:
-            if not is_null(uniprot_accession):
-                url.append(f'http://www.collectf.org/uniprot/{uniprot_accession}')
-                external_identifier.append(uniprot_accession)
-            else:
+        ext_id = []
+        key = []
+        for reg_id in target_df['uniprot_accession']:
+            if is_null(reg_id):
                 url.append(None)
-                external_identifier.append(None)
+                ext_id.append(None)
+                key.append(None)
+            else:
+                url.append(f'http://www.collectf.org/uniprot/{reg_id}')
+                ext_id.append(reg_id)
+                key.append('uniprot')
 
         kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['uniprot'] * size)
+                      external_identifier=ext_id,
+                      key=key)
 
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
         self.stack_json(df)
 
 
-class GeneToSourceConnector(CollectfConnector,
+class SourceToGeneConnector(CollectfConnector,
                             source='collectf',
                             version='0.0.1',
-                            from_node=Gene,
-                            to_node=Source,
+                            from_node=Source,
+                            to_node=Gene,
                             register=True):
-    default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, key='gene',
-                               columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = apply_processors(gene, regulon=to_list)
-        gene = gene.explode('regulon')
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = gene['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        # http://www.collectf.org/uniprot/
-        url = []
-        external_identifier = []
-        for uniprot_accession in gene['regulon']:
-            if not is_null(uniprot_accession):
-                url.append(f'http://www.collectf.org/uniprot/{uniprot_accession}')
-                external_identifier.append(uniprot_accession)
-            else:
-                url.append(None)
-                external_identifier.append(None)
-
-        kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['uniprot'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.create_connection(source='source',
+                                    target='gene',
+                                    cardinality='one_to_many')
         self.stack_json(df)
 
 
-class TFBSToSourceConnector(CollectfConnector,
+class SourceToTFBSConnector(CollectfConnector,
                             source='collectf',
                             version='0.0.1',
-                            from_node=TFBS,
-                            to_node=Source,
+                            from_node=Source,
+                            to_node=TFBS,
                             register=True):
-    default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = apply_processors(tfbs, regulon=to_list)
-        tfbs = tfbs.explode('regulon')
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = tfbs['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        # http://www.collectf.org/uniprot/
-        url = []
-        external_identifier = []
-        for uniprot_accession in tfbs['regulon']:
-            if not is_null(uniprot_accession):
-                url.append(f'http://www.collectf.org/uniprot/{uniprot_accession}')
-                external_identifier.append(uniprot_accession)
-            else:
-                url.append(None)
-                external_identifier.append(None)
-
-        kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['uniprot'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.create_connection(source='source',
+                                    target='tfbs',
+                                    cardinality='one_to_many')
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(CollectfConnector,
+class SourceToRegulatoryInteractionConnector(CollectfConnector,
                                              source='collectf',
                                              version='0.0.1',
-                                             from_node=RegulatoryInteraction,
-                                             to_node=Source,
+                                             from_node=Source,
+                                             to_node=RegulatoryInteraction,
                                              register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
-                             'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = apply_processors(rin, regulon=to_list)
-        rin = rin.explode('regulon')
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
+        source_df, target_df = self.transform_stacks(source='source',
+                                                     target='rin',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={},
+                                                     target_processors={'regulon': [to_list_nan]})
 
-        from_identifiers = rin['protrend_id'].tolist()
-        size = len(from_identifiers)
+        target_df = target_df.explode('regulon')
 
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df)
+        source_ids *= len(target_ids)
 
-        # http://www.collectf.org/uniprot/
         url = []
-        external_identifier = []
-        for uniprot_accession in rin['regulon']:
-            if not is_null(uniprot_accession):
-                url.append(f'http://www.collectf.org/uniprot/{uniprot_accession}')
-                external_identifier.append(uniprot_accession)
-            else:
+        ext_id = []
+        key = []
+        for reg_id in target_df['regulon']:
+            if is_null(reg_id):
                 url.append(None)
-                external_identifier.append(None)
+                ext_id.append(None)
+                key.append(None)
+            else:
+                url.append(f'http://www.collectf.org/uniprot/{reg_id}')
+                ext_id.append(reg_id)
+                key.append('uniprot')
 
         kwargs = dict(url=url,
-                      external_identifier=external_identifier,
-                      key=['uniprot'] * size)
+                      external_identifier=ext_id,
+                      key=key)
 
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
         self.stack_json(df)

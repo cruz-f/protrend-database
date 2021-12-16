@@ -1,13 +1,10 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model import Evidence, Regulator, Operon, TFBS, Gene, RegulatoryInteraction
+from protrend.io import read_from_stack, read_json_lines
+from protrend.model import Evidence, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
-from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_nan
 
 
 class EvidenceTransformer(CollectfTransformer,
@@ -37,198 +34,44 @@ class EvidenceTransformer(CollectfTransformer,
         return evidence
 
 
-class EvidenceToRegulatorConnector(CollectfConnector,
-                                   source='collectf',
-                                   version='0.0.1',
-                                   from_node=Evidence,
-                                   to_node=Regulator,
-                                   register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
+class EvidenceConnector(CollectfConnector, register=False):
+    default_connect_stack = {'evidence': 'integrated_evidence.json',
+                             'tfbs': 'integrated_tfbs.json',
+                             'rin': 'integrated_regulatoryinteraction.json'}
 
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-        evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
-        evidence = apply_processors(evidence, regulon=to_list)
-        evidence = evidence.explode(column='regulon')
+    def _connect(self, source: str, target: str):
+        source_df, target_df = self.transform_stacks(source=source,
+                                                     target=target,
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={},
+                                                     target_processors={'experimental_evidence': [to_list_nan]})
+        target_df = target_df.explode('experimental_evidence')
+        target_df = apply_processors(target_df, experimental_evidence=[rstrip, lstrip])
 
-        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='name', target_on='experimental_evidence')
 
-        df = pd.merge(evidence, regulator, left_on='regulon', right_on='uniprot_accession')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'regulator_protrend_id'])
-
-        from_identifiers = df['evidence_protrend_id'].tolist()
-        to_identifiers = df['regulator_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
         self.stack_json(df)
 
 
-class EvidenceToTFBSConnector(CollectfConnector,
+class EvidenceToTFBSConnector(EvidenceConnector,
                               source='collectf',
                               version='0.0.1',
                               from_node=Evidence,
                               to_node=TFBS,
                               register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'tfbs': 'integrated_tfbs.json'}
-
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-        evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
-
-        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-        tfbs = apply_processors(tfbs, experimental_evidence=to_list)
-        tfbs = tfbs.explode(column='experimental_evidence')
-        tfbs = apply_processors(tfbs, experimental_evidence=[rstrip, lstrip])
-
-        df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-
-        from_identifiers = df['evidence_protrend_id'].tolist()
-        to_identifiers = df['tfbs_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        return self._connect(source='evidence', target='tfbs')
 
 
-class EvidenceToOperonConnector(CollectfConnector,
-                                source='collectf',
-                                version='0.0.1',
-                                from_node=Evidence,
-                                to_node=Operon,
-                                register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'rin': 'integrated_regulatoryinteraction.json',
-                             'tfbs': 'integrated_tfbs.json'}
-
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-        evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
-
-        rin = read_from_stack(stack=self._connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id',
-                                  'operon': 'operon_protrend_id'})
-        rin = rin.explode(column='tfbss')
-
-        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-        tfbs = apply_processors(tfbs, experimental_evidence=to_list)
-        tfbs = tfbs.explode(column='experimental_evidence')
-        tfbs = apply_processors(tfbs, experimental_evidence=[rstrip, lstrip])
-
-        df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-
-        df = pd.merge(df, rin, left_on='tfbs_protrend_id', right_on='tfbss')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'operon_protrend_id'])
-
-        from_identifiers = df['evidence_protrend_id'].tolist()
-        to_identifiers = df['operon_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class EvidenceToGeneConnector(CollectfConnector,
-                              source='collectf',
-                              version='0.0.1',
-                              from_node=Evidence,
-                              to_node=Gene,
-                              register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'rin': 'integrated_regulatoryinteraction.json',
-                             'tfbs': 'integrated_tfbs.json'}
-
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-        evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
-
-        rin = read_from_stack(stack=self._connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id',
-                                  'operon': 'operon_protrend_id',
-                                  'genes': 'genes_protrend_id'})
-        rin = rin.explode(column='tfbss')
-
-        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-        tfbs = apply_processors(tfbs, experimental_evidence=to_list)
-        tfbs = tfbs.explode(column='experimental_evidence')
-        tfbs = apply_processors(tfbs, experimental_evidence=[rstrip, lstrip])
-
-        df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-
-        df = pd.merge(df, rin, left_on='tfbs_protrend_id', right_on='tfbss')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'operon_protrend_id'])
-        df = df.explode(column='genes_protrend_id')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'genes_protrend_id'])
-
-        from_identifiers = df['evidence_protrend_id'].tolist()
-        to_identifiers = df['genes_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class EvidenceToRegulatoryInteractionConnector(CollectfConnector,
+class EvidenceToRegulatoryInteractionConnector(EvidenceConnector,
                                                source='collectf',
                                                version='0.0.1',
                                                from_node=Evidence,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'rin': 'integrated_regulatoryinteraction.json',
-                             'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-        evidence = evidence.rename(columns={'protrend_id': 'evidence_protrend_id'})
-
-        rin = read_from_stack(stack=self._connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = rin.rename(columns={'protrend_id': 'regulatory_interaction_protrend_id',
-                                  'operon': 'operon_protrend_id',
-                                  'genes': 'genes_protrend_id'})
-        rin = rin.explode(column='tfbss')
-
-        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-        tfbs = apply_processors(tfbs, experimental_evidence=to_list)
-        tfbs = tfbs.explode(column='experimental_evidence')
-        tfbs = apply_processors(tfbs, experimental_evidence=[rstrip, lstrip])
-
-        df = pd.merge(evidence, tfbs, left_on='name', right_on='experimental_evidence')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'tfbs_protrend_id'])
-
-        df = pd.merge(df, rin, left_on='tfbs_protrend_id', right_on='tfbss')
-        df = df.drop_duplicates(subset=['evidence_protrend_id', 'regulatory_interaction_protrend_id'])
-
-        from_identifiers = df['evidence_protrend_id'].tolist()
-        to_identifiers = df['regulatory_interaction_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        return self._connect(source='evidence', target='tfbs')

@@ -9,7 +9,7 @@ from protrend.model import Regulator
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.organism import OrganismTransformer
 from protrend.utils import SetList
-from protrend.utils.processors import take_first, flatten_set_list, apply_processors, to_list_nan, rstrip, lstrip
+from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
 def map_accession(acc: str, mapping: pd.DataFrame) -> Union[str, None]:

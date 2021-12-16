@@ -1,17 +1,10 @@
-from typing import List
-
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines, read_json_frame
-from protrend.model import Publication, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
-from protrend.annotation import annotate_publications, PublicationDTO
+from protrend.io import read_from_stack, read_json_lines
+from protrend.model import Publication, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
-from protrend.transform.collectf.gene import GeneTransformer
-from protrend.transform.collectf.regulator import RegulatorTransformer
-from protrend.transform.collectf.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.collectf.tfbs import TFBSTransformer
-from protrend.utils.processors import apply_processors, to_int_str, to_list
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
 
 
 class PublicationTransformer(CollectfTransformer,
@@ -28,7 +21,7 @@ class PublicationTransformer(CollectfTransformer,
                             'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        tfbs = apply_processors(df=tfbs, pubmed=to_list)
+        tfbs = apply_processors(df=tfbs, pubmed=to_list_nan)
         tfbs = tfbs.explode(column='pubmed')
 
         tfbs = tfbs.dropna(subset=['pubmed'])
@@ -54,161 +47,66 @@ class PublicationTransformer(CollectfTransformer,
         return df
 
 
-class PublicationToRegulatorConnector(CollectfConnector,
+class PublicationConnector(CollectfConnector, register=False):
+    default_connect_stack = {'publication': 'integrated_publication.json',
+                             'rin': 'integrated_regulatoryinteraction.json'}
+
+    def _connect(self, target_column: str):
+        source_df, target_df = self.transform_stacks(source='publication',
+                                                     target='rin',
+                                                     source_column='protrend_id',
+                                                     target_column=target_column,
+                                                     source_processors={'pmid': [to_int_str]},
+                                                     target_processors={'pubmed': [to_list_nan]})
+        target_df = target_df.explode('pubmed')
+        target_df = apply_processors(target_df, pubmed=to_int_str)
+
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='pmid', target_on='pubmed')
+
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
+        self.stack_json(df)
+
+
+class PublicationToRegulatorConnector(PublicationConnector,
                                       source='collectf',
                                       version='0.0.1',
                                       from_node=Publication,
                                       to_node=Regulator,
                                       register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = apply_processors(publication, regulon=to_list)
-        publication = publication.explode(column='regulon')
-        publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
-
-        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
-
-        df = pd.merge(publication, regulator, left_on='regulon', right_on='uniprot_accession')
-        df = df.dropna(subset=['publication_protrend_id', 'regulator_protrend_id'])
-        df = df.drop_duplicates(subset=['publication_protrend_id', 'regulator_protrend_id'])
-
-        from_identifiers = df['publication_protrend_id'].tolist()
-        to_identifiers = df['regulator_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-        self.stack_json(df)
+        return self._connect(target_column='regulator')
 
 
-class PublicationToOperonConnector(CollectfConnector,
-                                   source='collectf',
-                                   version='0.0.1',
-                                   from_node=Publication,
-                                   to_node=Operon,
-                                   register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = apply_processors(publication, operon=to_list)
-        publication = publication.explode(column='operon')
-        publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
-
-        operon = read_from_stack(stack=self.connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = apply_processors(operon, operon_id_old=to_list)
-        operon = operon.explode(column='operon_id_old')
-        operon = operon.rename(columns={'protrend_id': 'operon_protrend_id'})
-
-        df = pd.merge(publication, operon, left_on='operon', right_on='operon_id_old')
-        df = df.dropna(subset=['publication_protrend_id', 'operon_protrend_id'])
-        df = df.drop_duplicates(subset=['publication_protrend_id', 'operon_protrend_id'])
-
-        from_identifiers = df['publication_protrend_id'].tolist()
-        to_identifiers = df['operon_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-        self.stack_json(df)
-
-
-class PublicationToGeneConnector(CollectfConnector,
+class PublicationToGeneConnector(PublicationConnector,
                                  source='collectf',
                                  version='0.0.1',
                                  from_node=Publication,
                                  to_node=Gene,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = apply_processors(publication, gene=to_list)
-        publication = publication.explode(column='gene')
-        publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
-
-        gene = read_from_stack(stack=self.connect_stack, key='gene',
-                               columns=GeneTransformer.columns, reader=read_json_frame)
-        gene = apply_processors(gene, locus_tag_old=to_list)
-        gene = gene.explode(column='locus_tag_old')
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
-
-        df = pd.merge(publication, gene, left_on='gene', right_on='locus_tag_old')
-        df = df.dropna(subset=['publication_protrend_id', 'gene_protrend_id'])
-        df = df.drop_duplicates(subset=['publication_protrend_id', 'gene_protrend_id'])
-
-        from_identifiers = df['publication_protrend_id'].tolist()
-        to_identifiers = df['gene_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-        self.stack_json(df)
+        return self._connect(target_column='gene')
 
 
-class PublicationToTFBSConnector(CollectfConnector,
+class PublicationToTFBSConnector(PublicationConnector,
                                  source='collectf',
                                  version='0.0.1',
                                  from_node=Publication,
                                  to_node=TFBS,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
-
-        tfbs = read_from_stack(stack=self.connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs_protrend_id'})
-
-        df = pd.merge(publication, tfbs, on='tfbs_id')
-        df = df.dropna(subset=['publication_protrend_id', 'tfbs_protrend_id'])
-        df = df.drop_duplicates(subset=['publication_protrend_id', 'tfbs_protrend_id'])
-
-        from_identifiers = df['publication_protrend_id'].tolist()
-        to_identifiers = df['tfbs_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-        self.stack_json(df)
+        return self._connect(target_column='tfbs')
 
 
-class PublicationToRegulatoryInteractionConnector(CollectfConnector,
+class PublicationToRegulatoryInteractionConnector(PublicationConnector,
                                                   source='collectf',
                                                   version='0.0.1',
                                                   from_node=Publication,
                                                   to_node=RegulatoryInteraction,
                                                   register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = apply_processors(publication, regulon=to_list)
-        publication = publication.explode(column='regulon')
-        publication = publication.rename(columns={'protrend_id': 'publication_protrend_id'})
-
-        rin = read_from_stack(stack=self.connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = apply_processors(rin, regulon=to_list)
-        rin = rin.explode(column='regulon')
-        rin = rin.rename(columns={'protrend_id': 'rin_protrend_id'})
-
-        df = pd.merge(publication, rin, on='regulon')
-        df = df.dropna(subset=['publication_protrend_id', 'rin_protrend_id'])
-        df = df.drop_duplicates(subset=['publication_protrend_id', 'rin_protrend_id'])
-
-        from_identifiers = df['publication_protrend_id'].tolist()
-        to_identifiers = df['rin_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-        self.stack_json(df)
+        return self._connect(target_column='protrend_id')

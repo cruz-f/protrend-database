@@ -1,13 +1,13 @@
 import pandas as pd
 
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
-from protrend.model import RegulatoryInteraction, Regulator, Operon, Gene, TFBS
+from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
 from protrend.transform import GeneTransformer
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, to_list, regulatory_effect_collectf, to_list_nan
+from protrend.utils.processors import apply_processors, regulatory_effect_collectf, to_list_nan
 
 
 class RegulatoryInteractionTransformer(CollectfTransformer,
@@ -90,39 +90,11 @@ class RegulatoryInteractionToRegulatorConnector(CollectfConnector,
                                                 from_node=RegulatoryInteraction,
                                                 to_node=Regulator,
                                                 register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class RegulatoryInteractionToOperonConnector(CollectfConnector,
-                                             source='collectf',
-                                             version='0.0.1',
-                                             from_node=RegulatoryInteraction,
-                                             to_node=Operon,
-                                             register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
-
-    def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='regulator')
         self.stack_json(df)
 
 
@@ -132,25 +104,11 @@ class RegulatoryInteractionToGeneConnector(CollectfConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=Gene,
                                            register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-        rin = rin.dropna(subset=['genes'])
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['genes'].tolist()
-
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='gene')
         self.stack_json(df)
 
 
@@ -160,46 +118,11 @@ class RegulatoryInteractionToTFBSConnector(CollectfConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=TFBS,
                                            register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, tfbss=to_list)
-        rin = rin.explode(column='tfbss')
-        rin = rin.dropna(subset=['tfbss'])
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['tfbss'].tolist()
-
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class RegulatorToOperonConnector(CollectfConnector,
-                                 source='collectf',
-                                 version='0.0.1',
-                                 from_node=Regulator,
-                                 to_node=Operon,
-                                 register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
-
-    def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='tfbs')
         self.stack_json(df)
 
 
@@ -209,23 +132,11 @@ class RegulatorToGeneConnector(CollectfConnector,
                                from_node=Regulator,
                                to_node=Gene,
                                register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['genes'].tolist()
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='gene')
         self.stack_json(df)
 
 
@@ -235,21 +146,23 @@ class RegulatorToTFBSConnector(CollectfConnector,
                                from_node=Regulator,
                                to_node=TFBS,
                                register=True):
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='tfbs')
+        self.stack_json(df)
 
-        rin = apply_processors(rin, tfbss=to_list)
-        rin = rin.explode(column='tfbss')
 
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['tfbss'].tolist()
-        kwargs = dict(operon=rin['operon'].tolist())
+class GeneToTFBSConnector(CollectfConnector,
+                          source='collectf',
+                          version='0.0.1',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
+    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='gene', target_column='tfbs')
         self.stack_json(df)
