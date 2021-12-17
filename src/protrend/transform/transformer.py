@@ -588,8 +588,9 @@ class Transformer(AbstractTransformer):
 
         df = df.assign(site_hash=ri_series_hash)
         df = apply_processors(df, site_hash=regulatory_hash)
-        df = self.drop_duplicates(df=df, subset=['site_hash'], perfect_match=True)
+        df = self.drop_duplicates(df=df, subset=['site_hash'])
         df = df.dropna(subset=['site_hash'])
+        df = self.drop_empty_string(df, 'site_hash')
 
         return df
 
