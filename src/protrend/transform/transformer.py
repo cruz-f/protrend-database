@@ -360,7 +360,7 @@ class Transformer(AbstractTransformer):
         names = get_values(df, 'name')
 
         iterator = zip(
-            ('ncbi_taxonomy', 'name', ),
+            ('ncbi_taxonomy', 'name',),
             (identifiers, names)
         )
 
@@ -631,24 +631,58 @@ class MultiStackTransformer(Transformer, register=False):
 
 
 class BaseSourceTransformer(Transformer, register=False):
-    name = ''
-    type = ''
-    url = ''
-    doi = ''
-    authors = []
-    description = ''
+    name = ['']
+    type = ['']
+    url = ['']
+    doi = ['']
+    authors = [[]]
+    description = ['']
 
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
     def transform(self):
-        db = dict(name=[self.name],
-                  type=[self.type],
-                  url=[self.url],
-                  doi=[self.doi],
-                  authors=[self.authors],
-                  description=[self.description])
+        db = dict(name=self.name,
+                  type=self.type,
+                  url=self.url,
+                  doi=self.doi,
+                  authors=self.authors,
+                  description=self.description)
 
-        df = pd.DataFrame(db, index=[0])
+        df = pd.DataFrame(db, index=list(range(len(self.name))))
+
+        self.stack_transformed_nodes(df)
+
+        return df
+
+
+class BaseOrganismTransformer(Transformer, register=False):
+    species = ['']
+    strain = ['']
+    ncbi_taxonomy = [None]
+    refseq_accession = ['']
+    refseq_ftp = ['']
+    genbank_accession = ['']
+    genbank_ftp = ['']
+    ncbi_assembly = [None]
+    assembly_accession = ['']
+    name = ['']
+
+    columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
+                       'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
+
+    def transform(self):
+        org = dict(name=self.name,
+                   species=self.species,
+                   strain=self.strain,
+                   ncbi_taxonomy=self.ncbi_taxonomy,
+                   refseq_accession=self.refseq_accession,
+                   refseq_ftp=self.refseq_ftp,
+                   genbank_accession=self.genbank_accession,
+                   genbank_ftp=self.genbank_ftp,
+                   ncbi_assembly=self.ncbi_assembly,
+                   assembly_accession=self.assembly_accession)
+
+        df = pd.DataFrame(org, index=list(range(len(self.name))))
 
         self.stack_transformed_nodes(df)
 
