@@ -15,6 +15,7 @@ def read_abasy_network(file_path: str) -> pd.DataFrame:
     network_data = [edge['data'] for edge in network_edges]
 
     network_df = pd.DataFrame(network_data)
+    network_df = network_df.rename(columns={'source': 'regulator'})
     return network_df
 
 
@@ -63,7 +64,7 @@ class AbasyTransformer(MultiStackTransformer, source='abasy', version='0.0.0', r
         )
     }
 
-    default_network_columns = SetList(['id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy'])
+    default_network_columns = SetList(['id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy'])
 
     default_gene_columns = SetList(['Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
                                     'Product_function', 'NDA_component', 'taxonomy'])

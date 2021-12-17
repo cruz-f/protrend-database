@@ -17,7 +17,7 @@ class GeneTransformer(AbasyTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
-                       'Product_function', 'NDA_component', 'taxonomy', 'ncbi_taxonomy', 'gene_taxonomy'])
+                       'Product_function', 'NDA_component', 'taxonomy', 'source', 'ncbi_taxonomy', 'gene_taxonomy'])
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
         gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)

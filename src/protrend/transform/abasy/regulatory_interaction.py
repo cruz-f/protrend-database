@@ -18,19 +18,20 @@ class RegulatoryInteractionTransformer(AbasyTransformer,
                                        register=True):
     columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
                        'regulatory_interaction_hash',
-                       'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'source_target_taxonomy'])
+                       'id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy',
+                       'regulator_taxonomy', 'target_taxonomy'])
 
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = network.dropna(subset=['source', 'target', 'taxonomy', 'Effect'])
-        network = self.drop_duplicates(df=network, subset=['source', 'target', 'taxonomy', 'Effect'],
+        network = network.dropna(subset=['regulator', 'target', 'taxonomy', 'Effect'])
+        network = self.drop_duplicates(df=network, subset=['regulator', 'target', 'taxonomy', 'Effect'],
                                        perfect_match=True)
 
         network = apply_processors(network,
-                                   source=[rstrip, lstrip],
+                                   regulator=[rstrip, lstrip],
                                    target=[rstrip, lstrip],
                                    Effect=[rstrip, lstrip])
 
-        regulator_taxonomy = network['source'] + network['taxonomy']
+        regulator_taxonomy = network['regulator'] + network['taxonomy']
         gene_taxonomy = network['target'] + network['taxonomy']
 
         network = network.assign(regulator_taxonomy=regulator_taxonomy,

@@ -2,10 +2,10 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame, read_from_multi_stack
 from protrend.model import Regulator
-from protrend.transform.abasy.base import AbasyTransformer, read_abasy_network
+from protrend.transform.abasy.base import AbasyTransformer
 from protrend.transform.abasy.gene import GeneTransformer
-from protrend.utils.processors import apply_processors, rstrip, lstrip
 from protrend.utils import SetList, build_stack
+from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
 class RegulatorTransformer(AbasyTransformer,
@@ -17,16 +17,16 @@ class RegulatorTransformer(AbasyTransformer,
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
-                       'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'regulator_taxonomy'])
+                       'id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy', 'regulator_taxonomy'])
 
     def transform_network(self, networks: pd.DataFrame) -> pd.DataFrame:
-        networks = self.drop_duplicates(df=networks, subset=['source', 'taxonomy'], perfect_match=True)
-        networks = networks.dropna(subset=['source', 'taxonomy'])
-        networks = self.drop_empty_string(networks, 'source')
+        networks = self.drop_duplicates(df=networks, subset=['regulator', 'taxonomy'], perfect_match=True)
+        networks = networks.dropna(subset=['regulator', 'taxonomy'])
+        networks = self.drop_empty_string(networks, 'regulator')
 
-        networks = apply_processors(networks, source=[rstrip, lstrip])
+        networks = apply_processors(networks, regulator=[rstrip, lstrip])
 
-        regulator_taxonomy = networks['source'] + networks['taxonomy']
+        regulator_taxonomy = networks['regulator'] + networks['taxonomy']
 
         networks = networks.assign(regulator_taxonomy=regulator_taxonomy,
                                    mechanism=None)
