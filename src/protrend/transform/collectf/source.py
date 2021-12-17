@@ -11,12 +11,12 @@ class SourceTransformer(CollectfTransformer, BaseSourceTransformer,
                         node=Source,
                         order=100,
                         register=True):
-    name = 'collectf'
-    type = 'database'
-    url = 'http://collectf.org/'
-    doi = '10.1093/nar/gkt1123'
-    authors = ['Sefa Kiliç', 'Elliot R White', 'Dinara M Sagitova', 'Joseph P Cornish', 'Ivan Erill']
-    description = 'CollecTF: a database of experimentally validated transcription factor-binding sites in Bacteria'
+    name = ['collectf']
+    type = ['database']
+    url = ['http://collectf.org/']
+    doi = ['10.1093/nar/gkt1123']
+    authors = [['Sefa Kiliç', 'Elliot R White', 'Dinara M Sagitova', 'Joseph P Cornish', 'Ivan Erill']]
+    description = ['CollecTF: a database of experimentally validated transcription factor-binding sites in Bacteria']
 
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 

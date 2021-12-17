@@ -10,13 +10,13 @@ class SourceTransformer(AbasyTransformer, BaseSourceTransformer,
                         node=Source,
                         order=100,
                         register=True):
-    name = 'abasy'
-    type = 'database'
-    url = 'https://abasy.ccg.unam.mx'
-    doi = '10.1016/j.csbj.2020.05.015'
-    authors = ['Juan M. Escorcia-Rodríguez, AndreasTauch, Julio A. Freyre-Gonzáleza']
-    description = 'Abasy Atlas v2.2: The most comprehensive and up-to-date inventory of meta-curated, historical, ' \
-                  'bacterial regulatory networks, their completeness and system-level characterization '
+    name = ['abasy']
+    type = ['database']
+    url = ['https://abasy.ccg.unam.mx']
+    doi = ['10.1016/j.csbj.2020.05.015']
+    authors = [['Juan M. Escorcia-Rodríguez, AndreasTauch, Julio A. Freyre-Gonzáleza']]
+    description = ['Abasy Atlas v2.2: The most comprehensive and up-to-date inventory of meta-curated, historical '
+                   'bacterial regulatory networks, their completeness and system-level characterization']
 
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
