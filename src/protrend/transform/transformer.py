@@ -8,6 +8,7 @@ import pandas as pd
 from protrend.annotation import (GeneDTO, annotate_genes, OrganismDTO, annotate_organisms,
                                  PublicationDTO, annotate_publications)
 from protrend.io import write_json_frame
+from protrend.log import ProtrendLogger
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.utils import Settings, DefaultProperty, SetList, WriteStack, MultiStack, build_stack, build_multi_stack
 from protrend.utils.processors import take_last, apply_processors, to_list_nan, regulatory_hash
@@ -302,8 +303,12 @@ class Transformer(AbstractTransformer):
     # ----------------------------------------
     @staticmethod
     def annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
-
         input_values = get_values(df, 'input_value')
+
+        genes = [GeneDTO(input_value=input_value) for input_value in input_values]
+
+        ProtrendLogger.log.info(f'Annotating {len(genes)} genes')
+
         loci = get_values(df, 'locus_tag')
         names = get_values(df, 'name')
         taxa = get_values(df, 'ncbi_taxonomy')
@@ -313,7 +318,16 @@ class Transformer(AbstractTransformer):
         ncbi_refseqs = get_values(df, 'refseq_accession')
         ncbi_genes = get_values(df, 'ncbi_gene')
 
-        genes = [GeneDTO(input_value=input_value) for input_value in input_values]
+        iterator = zip(
+            ('locus_tag', 'name', 'ncbi_taxonomy', 'uniprot_accession', 'ncbi_protein', 'genbank_accession',
+             'refseq_accession', 'ncbi_gene'),
+            (loci, names, taxa, uniprot_proteins, ncbi_proteins, ncbi_genbanks, ncbi_refseqs, ncbi_genes)
+        )
+
+        params = [param for param, value in iterator if value is not None]
+        params = ','.join(params)
+
+        ProtrendLogger.log.info(f'Annotating with the following params: {params}')
 
         annotate_genes(dtos=genes,
                        loci=loci,
@@ -336,12 +350,24 @@ class Transformer(AbstractTransformer):
 
     @staticmethod
     def annotate_organisms(df: pd.DataFrame) -> pd.DataFrame:
-
         input_values = get_values(df, 'input_value')
+
+        organisms = [OrganismDTO(input_value=input_value) for input_value in input_values]
+
+        ProtrendLogger.log.info(f'Annotating {len(organisms)} organisms')
+
         identifiers = get_values(df, 'ncbi_taxonomy')
         names = get_values(df, 'name')
 
-        organisms = [OrganismDTO(input_value=input_value) for input_value in input_values]
+        iterator = zip(
+            ('ncbi_taxonomy', 'name', ),
+            (identifiers, names)
+        )
+
+        params = [param for param, value in iterator if value is not None]
+        params = ','.join(params)
+
+        ProtrendLogger.log.info(f'Annotating with the following params: {params}')
 
         annotate_organisms(dtos=organisms, identifiers=identifiers, names=names)
 
@@ -354,9 +380,14 @@ class Transformer(AbstractTransformer):
     def annotate_publications(df: pd.DataFrame) -> pd.DataFrame:
 
         input_values = get_values(df, 'input_value')
-        identifiers = get_values(df, 'pmid')
 
         publications = [PublicationDTO(input_value=input_value) for input_value in input_values]
+
+        ProtrendLogger.log.info(f'Annotating {len(publications)} publications')
+
+        identifiers = get_values(df, 'pmid')
+
+        ProtrendLogger.log.info('Annotating with the following params: pmid')
 
         annotate_publications(dtos=publications, identifiers=identifiers)
 
