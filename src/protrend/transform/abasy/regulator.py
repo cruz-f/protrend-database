@@ -32,13 +32,7 @@ class RegulatorTransformer(AbasyTransformer,
                                    mechanism=None)
         return networks
 
-    def transform(self):
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
-        regulator = self.transform_network(network)
-
-        gene_stack = build_stack(source=self.source, version=self.version,
-                                 stack_to_load={'gene': 'integrated_gene.json'}, sa=False)
-
+    def transform_gene(self, gene_stack: dict) -> pd.DataFrame:
         gene = read_from_stack(stack=gene_stack,
                                key='gene',
                                columns=GeneTransformer.columns,
@@ -46,6 +40,15 @@ class RegulatorTransformer(AbasyTransformer,
         gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                                    'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                                    'sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
+        return gene
+
+    def transform(self):
+        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        regulator = self.transform_network(network)
+
+        gene_stack = build_stack(source=self.source, version=self.version,
+                                 stack_to_load={'gene': 'integrated_gene.json'}, sa=False)
+        gene = self.transform_gene(gene_stack)
 
         df = pd.merge(regulator, gene, left_on='regulator_taxonomy', right_on='gene_taxonomy')
 
