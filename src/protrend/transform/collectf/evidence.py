@@ -74,4 +74,4 @@ class EvidenceToRegulatoryInteractionConnector(EvidenceConnector,
                                                register=True):
 
     def connect(self):
-        return self._connect(source='evidence', target='tfbs')
+        return self._connect(source='evidence', target='rin')
