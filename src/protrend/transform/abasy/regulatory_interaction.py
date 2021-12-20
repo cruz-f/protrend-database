@@ -1,16 +1,17 @@
 import pandas as pd
 
-from protrend.io import read_json_frame, read_from_stack, read_from_multi_stack
+from protrend.io import read_from_multi_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, Organism
+from protrend.transform import BaseRegulatoryInteractionTransformer
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.abasy.organism import OrganismTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
-from protrend.utils import SetList, build_stack
+from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, regulatory_effect_abasy
 
 
-class RegulatoryInteractionTransformer(AbasyTransformer,
+class RegulatoryInteractionTransformer(AbasyTransformer, BaseRegulatoryInteractionTransformer,
                                        source='abasy',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,
@@ -22,14 +23,15 @@ class RegulatoryInteractionTransformer(AbasyTransformer,
                        'regulator_taxonomy', 'target_taxonomy'])
 
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = network.dropna(subset=['regulator', 'target', 'taxonomy', 'Effect'])
-        network = self.drop_duplicates(df=network, subset=['regulator', 'target', 'taxonomy', 'Effect'],
-                                       perfect_match=True)
-
         network = apply_processors(network,
                                    regulator=[rstrip, lstrip],
                                    target=[rstrip, lstrip],
                                    Effect=[rstrip, lstrip])
+
+        network = network.dropna(subset=['regulator', 'target', 'taxonomy', 'Effect'])
+        network = self.drop_empty_string(network, 'regulator', 'target')
+        network = self.drop_duplicates(df=network, subset=['regulator', 'target', 'taxonomy', 'Effect'],
+                                       perfect_match=True)
 
         regulator_taxonomy = network['regulator'] + network['taxonomy']
         gene_taxonomy = network['target'] + network['taxonomy']
@@ -56,48 +58,20 @@ class RegulatoryInteractionTransformer(AbasyTransformer,
         return gene
 
     def transform(self) -> pd.DataFrame:
+        # noinspection DuplicatedCode
         network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
-        network = self.transform_network(network)
+        organism = self.read_integrated(node='organism', columns=OrganismTransformer.columns)
+        regulator = self.read_integrated(node='regulator', columns=RegulatorTransformer.columns)
+        gene = self.read_integrated(node='gene', columns=GeneTransformer.columns)
 
-        # by organism
-        organism_stack = build_stack(source=self.source, version=self.version,
-                                     stack_to_load={'organism': 'integrated_organism.json'}, sa=False)
-        organism = read_from_stack(stack=organism_stack,
-                                   key='organism',
-                                   columns=OrganismTransformer.columns,
-                                   reader=read_json_frame)
-        organism = self.transform_organism(organism)
-        network_organism = pd.merge(network, organism, on='taxonomy')
+        df = self._transform(network=network,
+                             organism=organism, organism_key='taxonomy',
+                             regulator=regulator, regulator_key='regulator_taxonomy',
+                             gene=gene, gene_key='gene_taxonomy',
+                             regulatory_effect_processor=regulatory_effect_abasy)
 
-        # by regulator
-        regulator_stack = build_stack(source=self.source, version=self.version,
-                                      stack_to_load={'regulator': 'integrated_regulator.json'}, sa=False)
-        regulator = read_from_stack(stack=regulator_stack,
-                                    key='regulator',
-                                    columns=RegulatorTransformer.columns,
-                                    reader=read_json_frame)
-        regulator = self.transform_regulator(regulator)
-        network_organism_regulator = pd.merge(network_organism, regulator, on='regulator_taxonomy')
-
-        # by gene
-        gene_stack = build_stack(source=self.source, version=self.version,
-                                 stack_to_load={'gene': 'integrated_gene.json'}, sa=False)
-        gene = read_from_stack(stack=gene_stack,
-                               key='gene',
-                               columns=GeneTransformer.columns,
-                               reader=read_json_frame)
-        gene = self.transform_gene(gene)
-        network_organism_regulator_gene = pd.merge(network_organism_regulator, gene, on='gene_taxonomy')
-
-        regulatory_interaction = apply_processors(network_organism_regulator_gene,
-                                                  regulatory_effect=regulatory_effect_abasy)
-
-        regulatory_interaction = regulatory_interaction.assign(tfbs=None, effector=None)
-
-        regulatory_interaction = self.interaction_hash(regulatory_interaction)
-
-        self.stack_transformed_nodes(regulatory_interaction)
-        return regulatory_interaction
+        self.stack_transformed_nodes(df)
+        return df
 
 
 class RegulatoryInteractionToOrganismConnector(AbasyConnector,
