@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.annotation import (GeneDTO, annotate_genes, OrganismDTO, annotate_organisms,
                                  PublicationDTO, annotate_publications)
-from protrend.io import write_json_frame
+from protrend.io import write_json_frame, read_from_stack, read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
 from protrend.utils import Settings, DefaultProperty, SetList, WriteStack, MultiStack, build_stack, build_multi_stack
@@ -629,6 +629,15 @@ class MultiStackTransformer(Transformer, register=False):
         self._transform_stack: Dict[str, MultiStack]
 
         return self._transform_stack
+
+    def read_integrated(self, node: str, columns: List[str]) -> pd.DataFrame:
+        stack = build_stack(source=self.source, version=self.version,
+                            stack_to_load={node: f'integrated_{node}.json'}, sa=False)
+        df = read_from_stack(stack=stack,
+                             key=node,
+                             columns=columns,
+                             reader=read_json_frame)
+        return df
 
 
 class BaseSourceTransformer(Transformer, register=False):
