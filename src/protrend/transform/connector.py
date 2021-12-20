@@ -264,7 +264,7 @@ class Connector(AbstractConnector):
 
         source_ids = df['source_col'].to_list()
         target_ids = df['target_col'].to_list()
-        
+
         return source_ids, target_ids
 
     def connection_frame(self,

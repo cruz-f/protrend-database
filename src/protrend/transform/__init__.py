@@ -1,4 +1,5 @@
-from .transformer import Transformer, MultiStackTransformer, BaseSourceTransformer
+from .transformer import (Transformer, MultiStackTransformer,
+                          BaseSourceTransformer, BaseOrganismTransformer, BaseRegulatoryInteractionTransformer)
 from .connector import Connector
 from .abasy import *
 from .collectf import *
