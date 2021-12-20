@@ -1,213 +1,87 @@
-import pandas as pd
-
-from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Source, Organism, Regulator, Operon, Gene, TFBS, RegulatoryInteraction
+from protrend.model.model import Source, Organism, Regulator, Gene, TFBS, RegulatoryInteraction
+from protrend.transform import BaseSourceTransformer
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
-from protrend.transform.coryneregnet.gene import GeneTransformer
-from protrend.transform.coryneregnet.operon import OperonTransformer
-from protrend.transform.coryneregnet.organism import OrganismTransformer
-from protrend.transform.coryneregnet.regulator import RegulatorTransformer
-from protrend.transform.coryneregnet.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.transform.coryneregnet.tfbs import TFBSTransformer
 from protrend.utils import SetList
 
 
-class SourceTransformer(CoryneRegNetTransformer,
+class SourceTransformer(CoryneRegNetTransformer, BaseSourceTransformer,
                         source='coryneregnet',
                         version='0.0.0',
                         node=Source,
                         order=100,
                         register=True):
-    name = 'coryneregnet'
-    type = 'database'
-    url = 'https://www.exbio.wzw.tum.de/coryneregnet/'
-    doi = '10.1038/s41597-020-0484-9'
-    authors = ['Mariana Teixeira Dornelles Parise', 'Doglas Parise', 'Rodrigo Bentes Kato',
-               'Josch Konstantin Pauling', 'Andreas Tauch', 'Vasco Ariston de Carvalho Azevedo', 'Jan Baumbach']
-    description = 'CoryneRegNet 7, the reference database and analysis platform for corynebacterial gene regulatory networks'
+    name = ['coryneregnet']
+    type = ['database']
+    url = ['https://www.exbio.wzw.tum.de/coryneregnet/']
+    doi = ['10.1038/s41597-020-0484-9']
+    authors = [['Mariana Teixeira Dornelles Parise', 'Doglas Parise', 'Rodrigo Bentes Kato',
+               'Josch Konstantin Pauling', 'Andreas Tauch', 'Vasco Ariston de Carvalho Azevedo', 'Jan Baumbach']]
+    description = ['CoryneRegNet 7, the reference database and analysis platform for corynebacterial gene regulatory '
+                   'networks']
 
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
-    def transform(self):
-        db = dict(name=[self.name],
-                  type=[self.type],
-                  url=[self.url],
-                  doi=[self.doi],
-                  authors=[self.authors],
-                  description=[self.description])
 
-        df = pd.DataFrame(db, index=[0])
-
-        self.stack_transformed_nodes(df)
-
-        return df
-
-
-class OrganismToSourceConnector(CoryneRegNetConnector,
+class SourceToOrganismConnector(CoryneRegNetConnector,
                                 source='coryneregnet',
                                 version='0.0.0',
-                                from_node=Organism,
-                                to_node=Source,
+                                from_node=Source,
+                                to_node=Organism,
                                 register=True):
-    default_from_node = Organism
-    default_to_node = Source
-    default_connect_stack = {'organism': 'integrated_organism.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        organism = read_from_stack(stack=self._connect_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = organism['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='source', target='organism', cardinality='one_to_many')
         self.stack_json(df)
 
 
-class RegulatorToSourceConnector(CoryneRegNetConnector,
+class SourceToRegulatorConnector(CoryneRegNetConnector,
                                  source='coryneregnet',
                                  version='0.0.0',
-                                 from_node=Regulator,
-                                 to_node=Source,
+                                 from_node=Source,
+                                 to_node=Regulator,
                                  register=True):
-    default_from_node = Regulator
-    default_to_node = Source
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = regulator['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='source', target='regulator', cardinality='one_to_many')
         self.stack_json(df)
 
 
-class OperonToSourceConnector(CoryneRegNetConnector,
-                              source='coryneregnet',
-                              version='0.0.0',
-                              from_node=Operon,
-                              to_node=Source,
-                              register=True):
-    default_from_node = Operon
-    default_to_node = Source
-    default_connect_stack = {'operon': 'integrated_operon.json', 'source': 'integrated_source.json'}
-
-    def connect(self):
-        operon = read_from_stack(stack=self._connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = operon['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class GeneToSourceConnector(CoryneRegNetConnector,
+class SourceToGeneConnector(CoryneRegNetConnector,
                             source='coryneregnet',
                             version='0.0.0',
-                            from_node=Gene,
-                            to_node=Source,
+                            from_node=Source,
+                            to_node=Gene,
                             register=True):
-    default_from_node = Gene
-    default_to_node = Source
-    default_connect_stack = {'gene': 'integrated_gene.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        gene = read_from_stack(stack=self._connect_stack, key='gene',
-                               columns=GeneTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = gene['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='source', target='gene', cardinality='one_to_many')
         self.stack_json(df)
 
 
-class TFBSToSourceConnector(CoryneRegNetConnector,
+class SourceToTFBSConnector(CoryneRegNetConnector,
                             source='coryneregnet',
                             version='0.0.0',
-                            from_node=TFBS,
-                            to_node=Source,
+                            from_node=Source,
+                            to_node=TFBS,
                             register=True):
-    default_from_node = TFBS
-    default_to_node = Source
-    default_connect_stack = {'tfbs': 'integrated_tfbs.json', 'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        tfbs = read_from_stack(stack=self._connect_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = tfbs['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='source', target='tfbs', cardinality='one_to_many')
         self.stack_json(df)
 
 
-class RegulatoryInteractionToSourceConnector(CoryneRegNetConnector,
+class SourceToRegulatoryInteractionConnector(CoryneRegNetConnector,
                                              source='coryneregnet',
                                              version='0.0.0',
-                                             from_node=RegulatoryInteraction,
-                                             to_node=Source,
+                                             from_node=Source,
+                                             to_node=RegulatoryInteraction,
                                              register=True):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
-                             'source': 'integrated_source.json'}
+    default_connect_stack = {'source': 'integrated_source.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='regulatory_interaction',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='source', target='rin', cardinality='one_to_many')
         self.stack_json(df)

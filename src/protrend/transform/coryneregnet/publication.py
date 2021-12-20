@@ -1,17 +1,10 @@
-from typing import List
-
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Publication, Regulator, Organism, Operon, Gene, TFBS, RegulatoryInteraction
-from protrend.annotation import annotate_publications, PublicationDTO
+from protrend.io import read_from_multi_stack
+from protrend.model import Publication, Regulator, Organism, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
-from protrend.transform.coryneregnet.operon import OperonTransformer
-from protrend.transform.coryneregnet.organism import OrganismTransformer
-from protrend.transform.coryneregnet.regulator import RegulatorTransformer
-from protrend.transform.coryneregnet.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.utils.processors import apply_processors, to_int_str, to_set_list, to_str
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_int_str, to_str
 
 
 class PublicationTransformer(CoryneRegNetTransformer,
@@ -20,62 +13,45 @@ class PublicationTransformer(CoryneRegNetTransformer,
                              node=Publication,
                              order=100,
                              register=True):
-    default_transform_stack = {'bsub': 'bsub_regulation.csv',
-                               'cglu': 'cglu_regulation.csv',
-                               'ecol': 'ecol_regulation.csv',
-                               'mtub': 'mtub_regulation.csv'}
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy',
-                       'coryneregnet_pmid'])
+                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
+                       'PMID', 'Source', 'taxonomy', 'source'])
 
-    def _transform_publication(self, regulation: pd.DataFrame) -> pd.DataFrame:
-        regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True)
-        regulation = regulation.dropna(subset=['PMID'])
+    def transform_publication(self, network: pd.DataFrame) -> pd.DataFrame:
+        pub = network.dropna(subset=['PMID'])
+        pub = self.drop_empty_string(pub, 'PMID')
+        pub = self.drop_duplicates(pub, subset=['PMID'])
 
-        regulation['coryneregnet_pmid'] = regulation['PMID']
+        pub = pub.assign(pmid=pub['PMID'].copy())
 
         def split_pmid(item: str) -> list:
             items = item.split(',')
             return [item.lstrip().rstrip() for item in items]
 
-        regulation = apply_processors(regulation, PMID=[to_str, split_pmid])
+        pub = apply_processors(pub, pmid=[to_str, split_pmid])
 
-        regulation = regulation.explode(column='PMID')
-        regulation = self.drop_duplicates(df=regulation, subset=['PMID'], perfect_match=True)
+        pub = pub.explode('pmid')
+        pub = pub.dropna(subset=['pmid'])
+        pub = self.drop_empty_string(pub, 'pmid')
+        pub = self.drop_duplicates(pub, subset=['pmid'])
 
-        regulation = self.create_input_value(regulation, col='PMID')
-
-        return regulation
-
-    @staticmethod
-    def _transform_publications(identifiers: List[str]):
-        dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
-        annotate_publications(dtos=dtos, identifiers=identifiers)
-
-        # pmid: List[str]
-        # doi: List[str]
-        # title: List[str]
-        # author: List[str]
-        # year: List[str]
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        pub = self.create_input_value(pub, col='pmid')
+        return pub
 
     def transform(self):
-        regulation = self._build_regulations()
+        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
 
-        publication = self._transform_publication(regulation)
+        publications = self.transform_publication(network)
+        annotated_publications = self.annotate_publications(publications)
 
-        pmids = publication['input_value'].tolist()
-        publications = self._transform_publications(pmids)
-
-        df = pd.merge(publications, publication, on='input_value', suffixes=('_annotation', '_coryneregnet'))
-        df = df.drop(columns=['input_value'])
-
+        df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_coryneregnet'))
         df = apply_processors(df, pmid=to_int_str)
 
-        self.stack_transformed_nodes(df)
+        df = df.drop(columns=['input_value'])
 
+        self.stack_transformed_nodes(df)
         return df
 
 
@@ -85,28 +61,13 @@ class PublicationToOrganismConnector(CoryneRegNetConnector,
                                      from_node=Publication,
                                      to_node=Organism,
                                      register=True):
-    default_from_node = Publication
-    default_to_node = Organism
     default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = apply_processors(publication, taxonomy=to_int_str)
-
-        organism = read_from_stack(stack=self.connect_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
-        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
-
-        df = pd.merge(publication, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
-                      suffixes=('_publication', '_organism'))
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_organism'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='publication', target='organism',
+                                    source_on='taxonomy', target_on='ncbi_taxonomy',
+                                    source_processors={'taxonomy': [to_int_str]},
+                                    target_processors={'ncbi_taxonomy': [to_int_str]})
         self.stack_json(df)
 
 
@@ -116,59 +77,11 @@ class PublicationToRegulatorConnector(CoryneRegNetConnector,
                                       from_node=Publication,
                                       to_node=Regulator,
                                       register=True):
-    default_from_node = Publication
-    default_to_node = Regulator
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(publication, regulator, on='TF_locusTag', suffixes=('_publication', '_regulator'))
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class PublicationToOperonConnector(CoryneRegNetConnector,
-                                   source='coryneregnet',
-                                   version='0.0.0',
-                                   from_node=Publication,
-                                   to_node=Operon,
-                                   register=True):
-    default_from_node = Publication
-    default_to_node = Operon
-    default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self.connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = apply_processors(operon, Genes=to_set_list)
-        operon = operon.explode(column='Genes')
-
-        df = pd.merge(publication, operon, left_on='TG_locusTag', right_on='Genes',
-                      suffixes=('_publication', '_operon'))
-        df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'protrend_id_operon'],
-                                                    perfect_match=True)
-        df = df.dropna(subset=['protrend_id_publication', 'protrend_id_operon'])
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='publication', target='regulator',
+                                    source_on='TF_locusTag', target_on='TF_locusTag')
         self.stack_json(df)
 
 
@@ -178,36 +91,11 @@ class PublicationToGeneConnector(CoryneRegNetConnector,
                                  from_node=Publication,
                                  to_node=Gene,
                                  register=True):
-    default_from_node = Publication
-    default_to_node = Gene
-    default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
+    default_connect_stack = {'publication': 'integrated_publication.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self.connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = apply_processors(operon, Genes=to_set_list)
-        operon = operon.explode(column='Genes')
-
-        df = pd.merge(publication, operon, left_on='TG_locusTag', right_on='Genes',
-                      suffixes=('_publication', '_operon'))
-        df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'protrend_id_operon'],
-                                                    perfect_match=True)
-        df = df.dropna(subset=['protrend_id_publication', 'protrend_id_operon'])
-
-        df = df.explode(column='genes')
-        df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'genes'],
-                                                    perfect_match=True)
-        df = df.dropna(subset=['protrend_id_publication', 'genes'])
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['genes'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='publication', target='gene',
+                                    source_on='TG_locusTag', target_on='TG_locusTag')
         self.stack_json(df)
 
 
@@ -217,36 +105,11 @@ class PublicationToTFBSConnector(CoryneRegNetConnector,
                                  from_node=Publication,
                                  to_node=TFBS,
                                  register=True):
-    default_from_node = Publication
-    default_to_node = TFBS
-    default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
+    default_connect_stack = {'publication': 'integrated_publication.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self.connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = apply_processors(operon, Genes=to_set_list)
-        operon = operon.explode(column='Genes')
-
-        df = pd.merge(publication, operon, left_on='TG_locusTag', right_on='Genes',
-                      suffixes=('_publication', '_operon'))
-        df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'protrend_id_operon'],
-                                                    perfect_match=True)
-        df = df.dropna(subset=['protrend_id_publication', 'protrend_id_operon'])
-
-        df = df.explode(column='tfbss')
-        df = PublicationTransformer.drop_duplicates(df=df, subset=['protrend_id_publication', 'tfbss'],
-                                                    perfect_match=True)
-        df = df.dropna(subset=['protrend_id_publication', 'tfbss'])
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['tfbss'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='publication', target='tfbs',
+                                    source_on='PMID', target_on='PMID')
         self.stack_json(df)
 
 
@@ -256,25 +119,10 @@ class PublicationToRegulatoryInteractionConnector(CoryneRegNetConnector,
                                                   from_node=Publication,
                                                   to_node=RegulatoryInteraction,
                                                   register=True):
-    default_from_node = Publication
-    default_to_node = RegulatoryInteraction
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        rin = read_from_stack(stack=self.connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(rin, publication, left_on='PMID', right_on='coryneregnet_pmid',
-                      suffixes=('_rin', '_publication'))
-        df = df.drop_duplicates(subset=['protrend_id_publication', 'protrend_id_rin'])
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_rin'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='publication', target='rin',
+                                    source_on='PMID', target_on='PMID')
         self.stack_json(df)

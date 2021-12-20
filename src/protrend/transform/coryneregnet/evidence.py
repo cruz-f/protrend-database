@@ -1,9 +1,8 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Evidence, RegulatoryInteraction
+from protrend.io import read_from_multi_stack
+from protrend.model import Evidence, RegulatoryInteraction, TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
-from protrend.transform.coryneregnet.regulatory_interaction import RegulatoryInteractionTransformer
 from protrend.utils import SetList
 
 
@@ -13,30 +12,39 @@ class EvidenceTransformer(CoryneRegNetTransformer,
                           node=Evidence,
                           order=100,
                           register=True):
-    default_transform_stack = {'bsub': 'bsub_regulation.csv',
-                               'cglu': 'cglu_regulation.csv',
-                               'cglu_rna': 'cglu_rna.csv',
-                               'ecol': 'ecol_regulation.csv',
-                               'mtub': 'mtub_regulation.csv'}
-    columns = SetList(['protrend_id',
-                       'name', 'description',
+    columns = SetList(['protrend_id', 'name', 'description',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy'])
+                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
+                       'PMID', 'Source', 'taxonomy', 'source'])
 
-    def _transform_evidence(self, regulation: pd.DataFrame) -> pd.DataFrame:
-        regulation = self.drop_duplicates(df=regulation, subset=['Evidence'], perfect_match=True)
-        regulation = regulation.dropna(subset=['Evidence'])
-        regulation['name'] = regulation['Evidence']
-        regulation['description'] = None
-        return regulation
+    def transform_evidence(self, network: pd.DataFrame) -> pd.DataFrame:
+        evidence = network.dropna(subset=['Evidence'])
+        evidence = self.drop_empty_string(evidence, 'Evidence')
+        evidence = self.drop_duplicates(df=evidence, subset=['Evidence'])
+        evidence = evidence.assign(name=evidence['Evidence'], description=None)
+        return evidence
 
     def transform(self):
-        regulation = self._build_regulations()
-        evidence = self._transform_evidence(regulation)
+        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        df = self.transform_evidence(network)
 
-        self.stack_transformed_nodes(evidence)
-        return evidence
+        self.stack_transformed_nodes(df)
+        return df
+
+
+class EvidenceToTFBSConnector(CoryneRegNetConnector,
+                              source='coryneregnet',
+                              version='0.0.0',
+                              from_node=Evidence,
+                              to_node=TFBS,
+                              register=True):
+    default_connect_stack = {'evidence': 'integrated_evidence.json', 'tfbs': 'integrated_tfbs.json'}
+
+    def connect(self):
+        df = self.create_connection(source='evidence', target='tfbs',
+                                    source_on='Evidence', target_on='Evidence')
+        self.stack_json(df)
 
 
 class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector,
@@ -48,18 +56,6 @@ class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(rin, evidence, on='Evidence', suffixes=('_rin', '_evidence'))
-
-        from_identifiers = df['protrend_id_evidence'].tolist()
-        to_identifiers = df['protrend_id_rin'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='evidence', target='rin',
+                                    source_on='Evidence', target_on='Evidence')
         self.stack_json(df)
