@@ -2,15 +2,16 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform import GeneTransformer
+from protrend.transform import BaseRegulatoryInteractionTransformer
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_collectf, to_list_nan
 
 
-class RegulatoryInteractionTransformer(CollectfTransformer,
+class RegulatoryInteractionTransformer(CollectfTransformer, BaseRegulatoryInteractionTransformer,
                                        source='collectf',
                                        version='0.0.1',
                                        node=RegulatoryInteraction,
@@ -19,40 +20,45 @@ class RegulatoryInteractionTransformer(CollectfTransformer,
     default_transform_stack = {'regulator': 'integrated_regulator.json',
                                'gene': 'integrated_gene.json',
                                'tfbs': 'integrated_tfbs.json',
-                               'rin': 'TFBS.json'}
+                               'network': 'TFBS.json'}
     columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
                        'regulatory_interaction_hash'])
 
-    def transform_rin(self, rin: pd.DataFrame) -> pd.DataFrame:
-        rin = self.select_columns(rin, 'tfbs_id', 'mode', 'regulon', 'gene')
-        rin = apply_processors(rin, regulon=to_list_nan, gene=to_list_nan)
-        rin = rin.explode('regulon')
-        rin = rin.explode('gene')
-        rin = rin.dropna(subset=['regulon', 'gene'])
-        rin = rin.rename(columns={'mode': 'regulatory_effect'})
-        return rin
+    def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
+        network = self.select_columns(network, 'tfbs_id', 'regulon', 'gene', 'mode')
+        network = apply_processors(network, regulon=to_list_nan, gene=to_list_nan)
+        network = network.explode('regulon')
+        network = network.explode('gene')
+        network = network.dropna(subset=['regulon', 'gene'])
+        network = network.rename(columns={'mode': 'regulatory_effect', 'gene': 'tg_gene'})
+        return network
+
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = self.select_columns(organism, 'organism_protrend_id', 'uniprot_accession')
+        organism = organism.rename(columns={'organism_protrend_id': 'organism', 'uniprot_accession': 'regulon'})
+        return organism
+
+    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
+        regulator = self.select_columns(regulator, 'protrend_id', 'uniprot_accession')
+        regulator = regulator.rename(columns={'protrend_id': 'regulator', 'uniprot_accession': 'regulon'})
+        return regulator
+
+    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
+        gene = self.select_columns(gene, 'protrend_id', 'locus_tag_old')
+        gene = gene.rename(columns={'protrend_id': 'gene', 'locus_tag_old': 'tg_gene'})
+        return gene
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = self.select_columns(tfbs, 'tfbs_id', 'protrend_id')
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
         return tfbs
 
-    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'uniprot_accession', 'protrend_id', 'organism_protrend_id')
-        regulator = regulator.rename(columns={'protrend_id': 'regulator', 'organism_protrend_id': 'organism'})
-        return regulator
-
-    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'locus_tag_old', 'protrend_id')
-        gene = gene.rename(columns={'protrend_id': 'gene'})
-        return gene
-
     def transform(self) -> pd.DataFrame:
-        rin = read_from_stack(stack=self.transform_stack, key='rin',
-                              columns=TFBSTransformer.read_columns, reader=read_json_lines)
+        network = read_from_stack(stack=self.transform_stack, key='network',
+                                  columns=TFBSTransformer.read_columns, reader=read_json_lines)
 
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
+        organism = read_from_stack(stack=self.transform_stack, key='regulator',
+                                   columns=RegulatorTransformer.read_columns, reader=read_json_frame)
 
         regulator = read_from_stack(stack=self.transform_stack, key='regulator',
                                     columns=RegulatorTransformer.read_columns, reader=read_json_frame)
@@ -60,28 +66,18 @@ class RegulatoryInteractionTransformer(CollectfTransformer,
         gene = read_from_stack(stack=self.transform_stack, key='gene',
                                columns=GeneTransformer.read_columns, reader=read_json_frame)
 
-        rin = self.transform_rin(rin)
+        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
+                               columns=TFBSTransformer.columns, reader=read_json_frame)
 
-        # by regulator
-        regulator = self.transform_regulator(regulator)
-        rin_regulator = pd.merge(rin, regulator, left_on='regulon', right_on='uniprot_accession')
+        df = self._transform(network=network,
+                             organism=organism, organism_key='regulon',
+                             regulator=regulator, regulator_key='regulon',
+                             gene=gene, gene_key='tg_gene',
+                             tfbs=tfbs, tfbs_key='tfbs_id',
+                             regulatory_effect_processor=regulatory_effect_collectf)
 
-        # by gene
-        gene = self.transform_gene(gene)
-        rin_regulator_gene = pd.merge(rin_regulator, gene, left_on='gene', right_on='locus_tag_old')
-
-        # by tfbs
-        tfbs = self.transform_tfbs(tfbs)
-        rin_regulator_gene_tfbs = pd.merge(rin_regulator_gene, tfbs, left_on='tfbs_id', right_on='tfbs_id')
-
-        regulatory_interaction = apply_processors(rin_regulator_gene_tfbs,
-                                                  regulatory_effect=regulatory_effect_collectf)
-        regulatory_interaction = regulatory_interaction.assign(effector=None)
-
-        regulatory_interaction = self.interaction_hash(regulatory_interaction)
-
-        self.stack_transformed_nodes(regulatory_interaction)
-        return regulatory_interaction
+        self.stack_transformed_nodes(df)
+        return df
 
 
 class RegulatoryInteractionToRegulatorConnector(CollectfConnector,
