@@ -5,7 +5,6 @@ from scrapy.exporters import JsonLinesItemExporter
 
 from protrend.extract.items.dbtbs import (DatabaseItem,
                                           TranscriptionFactorItem,
-                                          OperonItem,
                                           GeneItem,
                                           TFBSItem)
 from protrend.extract.pipelines.json_pipeline import JSONPipeline, build_json_exporters
@@ -33,7 +32,6 @@ class DBTBSPipeline(JSONPipeline):
 
         self.items_types = (DatabaseItem,
                             TranscriptionFactorItem,
-                            OperonItem,
                             GeneItem,
                             TFBSItem)
 
