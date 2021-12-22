@@ -1,7 +1,7 @@
 import sys
 from abc import ABCMeta, abstractmethod
 
-from protrend.extract import run_spider
+from protrend.extract.run_spider import run_spider
 from protrend.utils import DefaultProperty
 from protrend.utils import Settings
 

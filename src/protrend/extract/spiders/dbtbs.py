@@ -131,7 +131,7 @@ class DBTBSSpider(Spider):
             gene_xpath = ".//td[2]/text()"
             tfbs_xpath = ".//td[7]/text()"
             absolute_position_xpath = ".//td[5]/text()"
-            sequence_xpath = ".//td[7]/tt"
+            sequence_xpath = ".//td[7]"
             pubmed_xpath = ".//td[8]/a/@href"
 
         else:
@@ -140,7 +140,7 @@ class DBTBSSpider(Spider):
             gene_xpath = ".//td[2]/text()"
             tfbs_xpath = ".//td[5]/text()"
             absolute_position_xpath = ".//td[3]/text()"
-            sequence_xpath = ".//td[5]/tt"
+            sequence_xpath = ".//td[5]"
             pubmed_xpath = ".//td[6]/a/@href"
 
         genes_items = []
@@ -217,7 +217,7 @@ class DBTBSSpider(Spider):
                 tfbs_items.append(tfbs_item)
 
                 tf_loader.add_value('gene', gene_item.get('name'))
-                tfbs_loader.add_value('tfbs', tfbs_item.get('identifier'))
+                tf_loader.add_value('tfbs', tfbs_item.get('identifier'))
 
         tf_item = tf_loader.load_item()
 

@@ -9,5 +9,5 @@ class CollectfExtractor(Extractor, source='collectf', version='0.0.1', register=
     pass
 
 
-class DBTBSExtractor(Extractor, source='dbtbs', version='0.0.3', register=True):
+class DBTBSExtractor(Extractor, source='dbtbs', version='0.0.4', register=True):
     pass

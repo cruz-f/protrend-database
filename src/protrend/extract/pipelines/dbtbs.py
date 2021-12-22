@@ -30,10 +30,10 @@ class DBTBSPipeline(JSONPipeline):
         exporter.finish_exporting()
         file.close()
 
-        self.items_types = (DatabaseItem,
+        self.items_types = [DatabaseItem,
                             TranscriptionFactorItem,
                             GeneItem,
-                            TFBSItem)
+                            TFBSItem]
 
         self.exporters = build_json_exporters(self.staging_area, self.items_types)
 

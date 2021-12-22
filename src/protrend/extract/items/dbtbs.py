@@ -44,10 +44,11 @@ class GeneItem(Item):
     function = Field()
     cog_id = Field()
     conversed_groups = Field()
+    regulation = Field()
+    pubmed = Field(input_processor=MapCompose(DBTBSProcessors.process_pubmed, DBTBSProcessors.process_nd))
 
     # relationships
     tf = Field()
-    operon = Field(output_processor=TakeFirst())
     tfbs = Field()
 
 
