@@ -8,8 +8,7 @@ from tqdm import tqdm
 from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
-from protrend.utils import Settings, DefaultProperty
-from protrend.utils.miscellaneous import build_load_stack
+from protrend.utils import DefaultProperty, build_load_stack
 
 
 class Loader:
