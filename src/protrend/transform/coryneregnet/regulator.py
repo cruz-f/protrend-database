@@ -44,7 +44,7 @@ class RegulatorTransformer(CoryneRegNetTransformer,
         regulators = self.transform_regulator(network)
         annotated_regulators = self.annotate_genes(regulators)
 
-        df = self.merge_annotations_coryneregnet(annotated_regulators, regulators)
+        df = self.merge_annotations(annotated_regulators, regulators)
 
         self.stack_transformed_nodes(df)
         return df

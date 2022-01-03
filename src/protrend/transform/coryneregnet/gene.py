@@ -40,7 +40,7 @@ class GeneTransformer(CoryneRegNetTransformer,
         genes = self.transform_gene(network)
         annotated_genes = self.annotate_genes(genes)
 
-        df = self.merge_annotations_coryneregnet(annotated_genes, genes)
+        df = self.merge_annotations(annotated_genes, genes)
 
         df = df.drop(columns=['input_value'])
 

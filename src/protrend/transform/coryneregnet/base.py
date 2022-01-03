@@ -36,7 +36,7 @@ class CoryneRegNetTransformer(MultiStackTransformer, source='coryneregnet', vers
     def transform(self):
         pass
 
-    def merge_annotations_coryneregnet(self, annotations: pd.DataFrame, coryneregnet: pd.DataFrame):
+    def merge_annotations(self, annotations: pd.DataFrame, coryneregnet: pd.DataFrame):
         df = pd.merge(annotations, coryneregnet, on='input_value', suffixes=('_annotation', '_coryneregnet'))
 
         # merge loci
