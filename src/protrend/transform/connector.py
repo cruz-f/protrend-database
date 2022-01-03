@@ -251,7 +251,8 @@ class Connector(AbstractConnector):
     def merge_source_target(source_df: pd.DataFrame,
                             target_df: pd.DataFrame,
                             source_on: str = None,
-                            target_on: str = None) -> Tuple[List[str], List[str]]:
+                            target_on: str = None,
+                            cardinality: str = 'many_to_many') -> Tuple[List[str], List[str]]:
         if source_on:
             df = pd.merge(source_df, target_df, left_on=source_on, right_on=target_on)
             df = df.drop_duplicates(subset=['source_col', 'target_col'])
@@ -262,8 +263,25 @@ class Connector(AbstractConnector):
             df = pd.concat([source_df, target_df], axis=1)
             df = df.drop_duplicates(subset=['source_col', 'target_col'])
 
-        source_ids = df['source_col'].to_list()
-        target_ids = df['target_col'].to_list()
+        if cardinality == 'many_to_many':
+            source_ids = df['source_col'].to_list()
+            target_ids = df['target_col'].to_list()
+
+        elif cardinality == 'one_to_many':
+            target_ids = df['target_col'].to_list()
+
+            source_ids = df['source_col'].dropna().to_list()
+            source_ids *= len(target_ids)
+
+        elif cardinality == 'many_to_one':
+            source_ids = df['source_col'].to_list()
+
+            target_ids = df['target_col'].dropna().to_list()
+            target_ids *= len(target_ids)
+
+        else:
+            source_ids = []
+            target_ids = []
 
         return source_ids, target_ids
 
@@ -307,9 +325,7 @@ class Connector(AbstractConnector):
                                                      target_processors=target_processors)
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
-                                                          source_on=source_on, target_on=target_on)
-
-        if cardinality == 'one_to_many':
-            source_ids *= len(target_ids)
+                                                          source_on=source_on, target_on=target_on,
+                                                          cardinality=cardinality)
 
         return self.connection_frame(source_ids=source_ids, target_ids=target_ids)
