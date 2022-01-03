@@ -1,5 +1,4 @@
 from typing import Union
-from urllib import parse
 
 from itemloaders import ItemLoader
 from scrapy import Request, Spider
@@ -127,19 +126,17 @@ class DBTBSSpider(Spider):
 
         if len(cols) > 6:
             mechanism = 'tf'
-            operon_xpath = ".//td[1]/a/@href"
             gene_xpath = ".//td[2]/text()"
             tfbs_xpath = ".//td[7]/text()"
-            absolute_position_xpath = ".//td[5]/text()"
+            absolute_position_xpath = ".//td[5]/tt/text()"
             sequence_xpath = ".//td[7]"
             pubmed_xpath = ".//td[8]/a/@href"
 
         else:
             mechanism = 'sigma'
-            operon_xpath = ".//td[1]/a/@href"
             gene_xpath = ".//td[2]/text()"
             tfbs_xpath = ".//td[5]/text()"
-            absolute_position_xpath = ".//td[3]/text()"
+            absolute_position_xpath = ".//td[3]/tt/text()"
             sequence_xpath = ".//td[5]"
             pubmed_xpath = ".//td[6]/a/@href"
 
@@ -156,9 +153,7 @@ class DBTBSSpider(Spider):
                 gene_loader = ItemLoader(item=GeneItem(), selector=ri)
                 gene_loader.add_xpath("name", gene_xpath)
 
-                relative_url = ri.xpath(operon_xpath).get()
-                url = parse.urljoin(response.url, relative_url)
-                gene_loader.add_value("url", url)
+                gene_loader.add_value("url", response.url)
 
                 if mechanism == 'tf':
                     gene_loader.add_xpath("regulation", ".//td[4]/text()")
@@ -179,9 +174,7 @@ class DBTBSSpider(Spider):
 
                 tfbs_loader.add_xpath("identifier", absolute_position_xpath)
 
-                relative_url = ri.xpath(operon_xpath).get()
-                url = parse.urljoin(response.url, relative_url)
-                tfbs_loader.add_value("url", url)
+                tfbs_loader.add_value("url", response.url)
 
                 if mechanism == 'tf':
                     tfbs_loader.add_xpath("regulation", ".//td[4]/text()")
