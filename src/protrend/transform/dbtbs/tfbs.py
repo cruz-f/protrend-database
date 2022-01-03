@@ -3,97 +3,105 @@ import pandas as pd
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer
-from protrend.transform.dbtbs.gene import GeneTransformer
-from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
-                                       take_first, upper_case, flatten_set_list)
+from protrend.transform.dbtbs.organism import OrganismTransformer
 from protrend.utils import SetList, is_null
+from protrend.utils.processors import apply_processors, upper_case
 
 
 class TFBSTransformer(DBTBSTransformer,
                       source='dbtbs',
-                      version='0.0.3',
+                      version='0.0.4',
                       node=TFBS,
                       order=90,
                       register=True):
     default_transform_stack = {'tfbs': 'TFBS.json',
-                               'gene': 'integrated_gene.json'}
-    columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
-                       'identifier', 'url', 'regulation', 'pubmed', 'tf', 'operon', 'gene',
-                       'location', 'absolute_position'])
-    read_columns = SetList(['identifier', 'url', 'regulation', 'pubmed', 'tf', 'operon', 'gene',
-                            'location', 'absolute_position', 'sequence'])
+                               'organism': 'integrated_organism.json'}
+    columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
+                       'identifier', 'url', 'regulation', 'absolute_position', 'pubmed', 'tf', 'gene'])
+    read_columns = SetList(['identifier', 'url', 'regulation', 'absolute_position', 'sequence', 'pubmed', 'tf', 'gene'])
 
-    def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        # filter by nan
-        tfbs = tfbs.dropna(subset=['identifier', 'sequence'])
+    def transform_tfbs(self, tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+        tfbs = tfbs.explode(column='url')
+        tfbs = tfbs.explode(column='regulation')
+        tfbs = tfbs.explode(column='absolute_position')
+        tfbs = tfbs.explode(column='sequence')
+        tfbs = tfbs.explode(column='tf')
+        tfbs = tfbs.explode(column='gene')
 
-        # filter by id
-        tfbs = self.drop_duplicates(df=tfbs, subset=['identifier'], perfect_match=True)
+        # filter duplicates, nan and empty strings
+        tfbs = tfbs.dropna(subset=['identifier', 'sequence', 'absolute_position'])
+        tfbs = self.drop_empty_string(tfbs, 'identifier', 'sequence', 'absolute_position')
+        tfbs = self.drop_duplicates(df=tfbs, subset=['identifier', 'sequence', 'absolute_position'], perfect_match=True)
 
         # processing
-        tfbs = tfbs.explode(column='sequence')
-        tfbs = apply_processors(tfbs, sequence=upper_case, location=take_first, absolute_position=take_first)
+        tfbs = apply_processors(tfbs, sequence=upper_case)
 
-        # filter by coordinates
-        tfbs = self.drop_duplicates(df=tfbs, subset=['sequence', 'location', 'absolute_position'], perfect_match=True)
-
+        # adding organism
+        tfbs = tfbs.reset_index(drop=True)
+        organism = organism.reset_index(drop=True)
+        tfbs = pd.concat([tfbs, organism], axis=1)
         return tfbs
 
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = self.select_columns(organism, 'protrend_id')
+        organism = organism.rename(columns={'protrend_id': 'organism'})
+        return organism
+
     @staticmethod
-    def _tfbs_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
+    def site_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
 
         def sequence_len(item):
             if is_null(item):
-                return None
+                return
 
             if isinstance(item, str):
                 return len(item)
 
-            return None
+            return
 
         def sequence_start(item):
             if is_null(item):
-                return None
+                return
 
             if isinstance(item, str):
                 try:
-                    start, _ = item.split('..')
+                    seq_start, _ = item.split('..')
 
-                    start = int(start)
-                    return start
+                    seq_start = int(seq_start)
+                    return seq_start
 
                 except ValueError:
-                    return None
+                    return
 
-            return None
+            return
 
         def sequence_stop(item):
             if is_null(item):
-                return None
+                return
 
             if isinstance(item, str):
                 try:
-                    _, stop = item.split('..')
+                    _, seq_stop = item.split('..')
 
-                    stop = int(stop)
-                    return stop
+                    seq_stop = int(seq_stop)
+                    return seq_stop
 
                 except ValueError:
-                    return None
+                    return
 
-            return None
+            return
 
         def sequence_strand(item):
             if is_null(item):
-                return None
+                return
 
             if isinstance(item, str):
                 try:
-                    start, stop = item.split('..')
+                    seq_start, seq_stop = item.split('..')
 
-                    start = int(start)
-                    stop = int(stop)
-                    diff = stop - start
+                    seq_start = int(seq_start)
+                    seq_stop = int(seq_stop)
+                    diff = seq_stop - seq_start
 
                     if diff < 0:
                         return 'reverse'
@@ -101,60 +109,30 @@ class TFBSTransformer(DBTBSTransformer,
                     return 'forward'
 
                 except ValueError:
-                    return None
+                    return
 
-            return None
+            return
 
-        tfbs['length'] = tfbs['sequence'].map(sequence_len, na_action='ignore')
-        tfbs['start'] = tfbs['absolute_position'].map(sequence_start, na_action='ignore')
-        tfbs['stop'] = tfbs['absolute_position'].map(sequence_stop, na_action='ignore')
-        tfbs['strand'] = tfbs['absolute_position'].map(sequence_strand, na_action='ignore')
+        length = tfbs['sequence'].map(sequence_len, na_action='ignore')
+        start = tfbs['absolute_position'].map(sequence_start, na_action='ignore')
+        stop = tfbs['absolute_position'].map(sequence_stop, na_action='ignore')
+        strand = tfbs['absolute_position'].map(sequence_strand, na_action='ignore')
 
+        tfbs = tfbs.assign(length=length, start=start, stop=stop, strand=strand)
         return tfbs
 
     def transform(self):
         tfbs = read_from_stack(stack=self.transform_stack, key='tfbs', columns=self.read_columns,
                                reader=read_json_lines)
 
-        tfbs = self._transform_tfbs(tfbs)
-        tfbs = self._tfbs_coordinates(tfbs)
+        organism = read_from_stack(stack=self.transform_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
-        gene = read_from_stack(stack=self.transform_stack, key='gene', columns=GeneTransformer.columns,
-                               reader=read_json_frame)
-        gene = self.select_columns(gene, 'protrend_id', 'name_dbtbs')
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id', 'name_dbtbs': 'gene_name_dbtbs'})
+        organism = self.transform_organism(organism)
 
-        tfbs = apply_processors(tfbs, gene=flatten_set_list)
-        tfbs = tfbs.explode(column='gene')
+        tfbs = self.transform_tfbs(tfbs, organism)
+        tfbs = self.site_coordinates(tfbs)
+        tfbs = self.site_hash(tfbs)
 
-        gene_tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='gene_name_dbtbs')
-        aggregation = {'location': take_first,
-                       'absolute_position': take_first,
-                       'sequence': take_first,
-                       'length': take_first,
-                       'start': take_first,
-                       'stop': take_first,
-                       'strand': take_first,
-                       'gene': to_set_list,
-                       'gene_name_dbtbs': to_set_list,
-                       'gene_protrend_id': to_set_list}
-
-        gene_tfbs = self.group_by(df=gene_tfbs, column='identifier', aggregation=aggregation, default=flatten_set_list)
-
-        # filter by site hash: length + strand + start + genes
-        df = apply_processors(gene_tfbs,
-                              sequence=[to_str, to_list],
-                              length=[to_str, to_list],
-                              strand=[to_str, to_list],
-                              start=[to_str, to_list],
-                              gene_protrend_id=[to_list, operon_hash, to_list])
-
-        gene_tfbs['site_hash'] = df['sequence'] + df['length'] + df['strand'] + df['start'] + df['gene_protrend_id']
-        gene_tfbs = apply_processors(gene_tfbs, site_hash=site_hash)
-
-        gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True)
-        gene_tfbs = gene_tfbs.dropna(subset=['site_hash'])
-
-        self.stack_transformed_nodes(gene_tfbs)
-
-        return gene_tfbs
+        self.stack_transformed_nodes(tfbs)
+        return tfbs
