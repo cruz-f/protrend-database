@@ -51,8 +51,8 @@ class RegulatoryFamilyToRegulatorConnector(CollectfConnector,
                                                      target_column='protrend_id',
                                                      source_processors={'regulon': [to_list_nan]},
                                                      target_processors={})
-        target_df = target_df.explode('regulon')
-        target_df = apply_processors(target_df, regulon=[rstrip, lstrip])
+        source_df = source_df.explode('regulon')
+        source_df = apply_processors(source_df, regulon=[rstrip, lstrip])
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           source_on='regulon', target_on='uniprot_accession')

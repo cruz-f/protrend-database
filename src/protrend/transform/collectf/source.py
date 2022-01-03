@@ -37,8 +37,8 @@ class SourceToOrganismConnector(CollectfConnector,
                                                      source_processors={},
                                                      target_processors={})
 
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df)
-        source_ids *= len(target_ids)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          cardinality='one_to_many')
 
         url = []
         ext_id = []
@@ -92,8 +92,8 @@ class SourceToRegulatorConnector(CollectfConnector,
                                                      source_processors={},
                                                      target_processors={})
 
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df)
-        source_ids *= len(target_ids)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          cardinality='one_to_many')
 
         url = []
         ext_id = []
@@ -164,8 +164,8 @@ class SourceToRegulatoryInteractionConnector(CollectfConnector,
 
         target_df = target_df.explode('regulon')
 
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df)
-        source_ids *= len(target_ids)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          cardinality='one_to_many')
 
         url = []
         ext_id = []

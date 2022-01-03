@@ -52,7 +52,7 @@ class TFBSTransformer(CollectfTransformer,
 
         def strand_translation(item):
             if is_null(item):
-                return None
+                return
 
             if item == '1':
                 return 'forward'
@@ -60,16 +60,16 @@ class TFBSTransformer(CollectfTransformer,
             elif item == '-1':
                 return 'reverse'
 
-            return None
+            return
 
         def sequence_len(item):
             if is_null(item):
-                return None
+                return
 
             if isinstance(item, str):
                 return len(item)
 
-            return None
+            return
 
         length = tfbs['sequence'].map(sequence_len, na_action='ignore')
         strand = tfbs['strand'].map(strand_translation, na_action='ignore')
