@@ -1,17 +1,9 @@
-from typing import List
-
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Publication, Organism, Regulator, Operon, Gene, RegulatoryInteraction
-from protrend.annotation import annotate_publications, PublicationDTO
+from protrend.model import Publication, Organism, Regulator, Gene, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
-from protrend.transform.literature.operon import OperonTransformer
-from protrend.transform.literature.organism import OrganismTransformer
-from protrend.transform.literature.regulator import RegulatorTransformer
-from protrend.transform.literature.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.utils.processors import apply_processors, to_int_str, to_set_list
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, rstrip, lstrip
 
 
 class PublicationTransformer(LiteratureTransformer,
@@ -21,47 +13,35 @@ class PublicationTransformer(LiteratureTransformer,
                              order=100,
                              register=True):
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
-                       'regulator_locus_tag', 'operon', 'genes_locus_tag',
-                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                       'publication', 'taxonomy', 'source', 'network_id'])
+                       'regulator_locus_tag', 'gene_locus_tag',
+                       'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
+                       'publication', 'taxonomy', 'source'])
 
-    def _transform_publication(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = apply_processors(network, publication=[to_set_list])
-        network = network.explode(column='publication')
+    def transform_publication(self, network: pd.DataFrame) -> pd.DataFrame:
+        network = network.assign(pmid=network['publication'].copy())
 
-        network = self.drop_duplicates(df=network, subset=['publication'], perfect_match=True)
-        network = network.dropna(subset=['publication'])
+        network = apply_processors(network, pmid=to_list_nan)
+        network = network.explode(column='pmid')
 
-        network = self.create_input_value(network, col='publication')
+        network = network.dropna(subset=['pmid'])
+        network = self.drop_empty_string(network, 'pmid')
+        network = self.drop_duplicates(df=network, subset=['pmid'], perfect_match=True)
 
+        network = self.create_input_value(network, col='pmid')
         return network
 
-    @staticmethod
-    def _transform_publications(identifiers: List[str]):
-        dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
-        annotate_publications(dtos=dtos, identifiers=identifiers)
-
-        # pmid: List[str]
-        # doi: List[str]
-        # title: List[str]
-        # author: List[str]
-        # year: List[str]
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
-
     def transform(self):
-        network = self._build_network()
-        publication = self._transform_publication(network)
+        network = self.read_network()
 
-        pmids = publication['input_value'].tolist()
-        publications = self._transform_publications(pmids)
+        publications = self.transform_publication(network)
+        annotated_publications = self.annotate_publications(publications)
 
-        df = pd.merge(publications, publication, on='input_value', suffixes=('_annotation', '_literature'))
-        df = df.drop(columns=['input_value'])
-
+        df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_literature'))
         df = apply_processors(df, pmid=to_int_str)
 
-        self.stack_transformed_nodes(df)
+        df = df.drop(columns=['input_value'])
 
+        self.stack_transformed_nodes(df)
         return df
 
 
@@ -74,27 +54,38 @@ class PublicationToOrganismConnector(LiteratureConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = apply_processors(publication, taxonomy=to_int_str)
-
-        organism = read_from_stack(stack=self.connect_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
-        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
-
-        df = pd.merge(publication, organism, left_on='taxonomy', right_on='ncbi_taxonomy',
-                      suffixes=('_publication', '_organism'))
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_organism'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='publication', target='organism',
+                                    source_on='taxonomy', target_on='ncbi_taxonomy',
+                                    source_processors={'taxonomy': [to_int_str]},
+                                    target_processors={'ncbi_taxonomy': [to_int_str]})
         self.stack_json(df)
 
 
-class PublicationToRegulatorConnector(LiteratureConnector,
+class PublicationConnector(LiteratureConnector,
+                           source='literature',
+                           version='0.0.0',
+                           register=False):
+
+    def _connect(self, source: str, target: str) -> pd.DataFrame:
+        source_df, target_df = self.transform_stacks(source=source,
+                                                     target=target,
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={'publication': [to_list_nan]},
+                                                     target_processors={'publication': [to_list_nan]})
+        source_df = source_df.explode('publication')
+        source_df = apply_processors(source_df, evidence=[rstrip, lstrip])
+
+        target_df = target_df.explode('publication')
+        target_df = apply_processors(target_df, evidence=[rstrip, lstrip])
+
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='publication', target_on='publication')
+
+        return self.connection_frame(source_ids=source_ids, target_ids=target_ids)
+
+
+class PublicationToRegulatorConnector(PublicationConnector,
                                       source='literature',
                                       version='0.0.0',
                                       from_node=Publication,
@@ -103,77 +94,24 @@ class PublicationToRegulatorConnector(LiteratureConnector,
     default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        regulator = read_from_stack(stack=self.connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(publication, regulator, on='network_id', suffixes=('_publication', '_regulator'))
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self._connect('publication', 'regulator')
         self.stack_json(df)
 
 
-class PublicationToOperonConnector(LiteratureConnector,
-                                   source='literature',
-                                   version='0.0.0',
-                                   from_node=Publication,
-                                   to_node=Operon,
-                                   register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self.connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(publication, operon, on='network_id', suffixes=('_publication', '_operon'))
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class PublicationToGeneConnector(LiteratureConnector,
+class PublicationToGeneConnector(PublicationConnector,
                                  source='literature',
                                  version='0.0.0',
                                  from_node=Publication,
                                  to_node=Gene,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'operon': 'integrated_operon.json'}
+    default_connect_stack = {'publication': 'integrated_publication.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self.connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(publication, operon, on='network_id', suffixes=('_publication', '_operon'))
-        df = df.explode(column='genes')
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['genes'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self._connect('publication', 'gene')
         self.stack_json(df)
 
 
-class PublicationToRegulatoryInteractionConnector(LiteratureConnector,
+class PublicationToRegulatoryInteractionConnector(PublicationConnector,
                                                   source='literature',
                                                   version='0.0.0',
                                                   from_node=Publication,
@@ -183,17 +121,5 @@ class PublicationToRegulatoryInteractionConnector(LiteratureConnector,
                              'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        publication = read_from_stack(stack=self.connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        rin = read_from_stack(stack=self.connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(publication, rin, on='network_id', suffixes=('_publication', '_rin'))
-
-        from_identifiers = df['protrend_id_publication'].tolist()
-        to_identifiers = df['protrend_id_rin'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self._connect('publication', 'rin')
         self.stack_json(df)

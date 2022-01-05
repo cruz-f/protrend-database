@@ -1,13 +1,9 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Evidence, Regulator, Operon, Gene, RegulatoryInteraction
+from protrend.model import Evidence, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
-from protrend.transform.literature.operon import OperonTransformer
-from protrend.transform.literature.regulator import RegulatorTransformer
-from protrend.transform.literature.regulatory_interaction import RegulatoryInteractionTransformer
-from protrend.utils.processors import apply_processors, to_set_list
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_list_nan, rstrip, lstrip
 
 
 class EvidenceTransformer(LiteratureTransformer,
@@ -16,18 +12,20 @@ class EvidenceTransformer(LiteratureTransformer,
                           node=Evidence,
                           order=100,
                           register=True):
-    columns = SetList(['protrend_id',
-                       'name', 'description',
-                       'regulator_locus_tag', 'operon', 'genes_locus_tag',
-                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                       'publication', 'taxonomy', 'source', 'network_id'])
+    columns = SetList(['protrend_id', 'name', 'description',
+                       'regulator_locus_tag', 'gene_locus_tag',
+                       'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
+                       'publication', 'taxonomy', 'source'])
 
-    def _transform_evidence(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = apply_processors(network, evidence=to_set_list)
-        network = network.explode(column='evidence')
+    def transform_evidence(self, network: pd.DataFrame) -> pd.DataFrame:
+        network = network.assign(name=network['evidence'].copy(), description=None)
 
-        network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True)
-        network = network.dropna(subset=['evidence'])
+        network = apply_processors(network, name=to_list_nan)
+        network = network.explode(column='name')
+
+        network = network.dropna(subset=['name'])
+        network = self.drop_empty_string(network, 'name')
+        network = self.drop_duplicates(df=network, subset=['name'])
 
         def split_evidence(item: str) -> SetList:
             res = SetList()
@@ -42,101 +40,20 @@ class EvidenceTransformer(LiteratureTransformer,
 
             return res
 
-        network = apply_processors(network, evidence=split_evidence)
-        network = network.explode(column='evidence')
+        network = apply_processors(network, name=split_evidence)
+        network = network.explode(column='name')
 
-        network = self.drop_duplicates(df=network, subset=['evidence'], perfect_match=True)
-        network = network.dropna(subset=['evidence'])
-
-        network['name'] = network['evidence']
-        network['description'] = None
+        network = network.dropna(subset=['name'])
+        network = self.drop_empty_string(network, 'name')
+        network = self.drop_duplicates(df=network, subset=['name'])
         return network
 
     def transform(self):
-        network = self._build_network()
-        evidence = self._transform_evidence(network)
+        network = self.read_network()
+        evidence = self.transform_evidence(network)
 
         self.stack_transformed_nodes(evidence)
         return evidence
-
-
-class EvidenceToRegulatorConnector(LiteratureConnector,
-                                   source='literature',
-                                   version='0.0.0',
-                                   from_node=Evidence,
-                                   to_node=Regulator,
-                                   register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'regulator': 'integrated_regulator.json'}
-
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-
-        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(regulator, evidence, on='network_id', suffixes=('_regulator', '_evidence'))
-
-        from_identifiers = df['protrend_id_evidence'].tolist()
-        to_identifiers = df['protrend_id_regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class EvidenceToOperonConnector(LiteratureConnector,
-                                source='literature',
-                                version='0.0.0',
-                                from_node=Evidence,
-                                to_node=Operon,
-                                register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self._connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(operon, evidence, on='network_id', suffixes=('_operon', '_evidence'))
-
-        from_identifiers = df['protrend_id_evidence'].tolist()
-        to_identifiers = df['protrend_id_operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class EvidenceToGeneConnector(LiteratureConnector,
-                              source='literature',
-                              version='0.0.0',
-                              from_node=Evidence,
-                              to_node=Gene,
-                              register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'operon': 'integrated_operon.json'}
-
-    def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
-
-        operon = read_from_stack(stack=self._connect_stack, key='operon',
-                                 columns=OperonTransformer.columns, reader=read_json_frame)
-
-        df = pd.merge(operon, evidence, on='network_id', suffixes=('_operon', '_evidence'))
-        df = df.explode(column='genes')
-
-        from_identifiers = df['protrend_id_evidence'].tolist()
-        to_identifiers = df['genes'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
 
 
 class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
@@ -148,18 +65,20 @@ class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
     default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        evidence = read_from_stack(stack=self._connect_stack, key='evidence',
-                                   columns=EvidenceTransformer.columns, reader=read_json_frame)
+        source_df, target_df = self.transform_stacks(source='evidence',
+                                                     target='rin',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={'evidence': [to_list_nan]},
+                                                     target_processors={'evidence': [to_list_nan]})
+        source_df = source_df.explode('evidence')
+        source_df = apply_processors(source_df, evidence=[rstrip, lstrip])
 
-        rin = read_from_stack(stack=self._connect_stack, key='rin',
-                              columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        target_df = target_df.explode('evidence')
+        target_df = apply_processors(target_df, evidence=[rstrip, lstrip])
 
-        df = pd.merge(rin, evidence, on='network_id', suffixes=('_rin', '_evidence'))
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='evidence', target_on='evidence')
 
-        from_identifiers = df['protrend_id_evidence'].tolist()
-        to_identifiers = df['protrend_id_rin'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
         self.stack_json(df)

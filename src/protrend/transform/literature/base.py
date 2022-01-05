@@ -6,7 +6,7 @@ from protrend import MultiStackTransformer, Transformer
 from protrend.io import read_from_multi_stack
 from protrend.transform import Connector
 from protrend.utils import SetList, is_null, MultiStack
-from protrend.utils.processors import apply_processors, to_int_str, rstrip, lstrip
+from protrend.utils.processors import apply_processors, to_int_str, rstrip, lstrip, to_set_list
 
 
 def read_bsub_faria_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
@@ -58,7 +58,7 @@ def read_bsub_faria_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
                'BSU Number': 'gene_locus_tag',
                'Regulation sign': 'regulatory_effect',
                'Mechanism': 'mechanism',
-               'Involved Metabolite(s)': 'effector'}
+               'Involved Metabolite(s)': 'effector_name'}
     df = df.rename(columns=columns)
     df = df.assign(evidence=None, publication=None)
     return df
@@ -95,7 +95,7 @@ def read_ecol_fang_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
                'gene_ids': 'gene_locus_tag',
                'effect': 'regulatory_effect'}
     df = df.rename(columns=columns)
-    df = df.assign(evidence=None, effector=None, mechanism=None, publication=None)
+    df = df.assign(evidence=None, effector_name=None, mechanism=None, publication=None)
     return df
 
 
@@ -119,7 +119,7 @@ def read_mtub_turkarslan_et_al_2015(file_path: str, **kwargs) -> pd.DataFrame:
                'Target Gene': 'gene_locus_tag',
                'Differential Expression': 'regulatory_effect'}
     df = df.rename(columns=columns)
-    df = df.assign(evidence=None, effector=None, mechanism=None, publication=None)
+    df = df.assign(evidence=None, effector_name=None, mechanism=None, publication=None)
     return df
 
 
@@ -161,7 +161,7 @@ def read_paer_vasquez_et_al_2011(file_path: str, **kwargs) -> pd.DataFrame:
                'PubMed Referencea': 'publication',
                'P. aeruginosa Strain': 'strain'}
     df = df.rename(columns=columns)
-    df = df.assign(mechanism=None, effector=None)
+    df = df.assign(mechanism=None, effector_name=None)
     return df
 
 
@@ -197,7 +197,7 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
     }
 
     default_network_columns = SetList(['regulator_locus_tag', 'gene_locus_tag',
-                                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
+                                       'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
                                        'publication', 'taxonomy', 'source'])
 
     def read_network(self) -> pd.DataFrame:
@@ -210,40 +210,90 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
         taxonomy = network['taxonomy'].fillna(taxonomy)
         network = network.assign(taxonomy=taxonomy)
 
-        filtered_networks = [self._filter_bsub_locus_regulator(network),
-                             self._filter_ecol_locus_regulator(network),
-                             self._filter_mtub_locus_regulator(network),
-                             self._filter_paer_locus_regulator(network)]
+        filtered_networks = [self.filter_bsub_locus(network, 'regulator_locus_tag'),
+                             self.filter_ecol_locus(network, 'regulator_locus_tag'),
+                             self.filter_mtub_locus(network, 'regulator_locus_tag'),
+                             self.filter_paer(network, 'regulator_locus_tag')]
         network = pd.concat(filtered_networks)
         network = network.reset_index(drop=True)
         return network
 
+    def _transform_gene(self, network: pd.DataFrame, col: str) -> pd.DataFrame:
+        network = network.assign(locus_tag=network[col].copy(), name=None)
+
+        network = apply_processors(network, locus_tag=to_set_list)
+        network = network.explode(column='locus_tag')
+
+        network = apply_processors(network, locus_tag=[rstrip, lstrip])
+        network = network.dropna(subset=['locus_tag'])
+        network = self.drop_empty_string(network, 'locus_tag')
+        network = self.drop_duplicates(df=network, subset=['locus_tag', 'taxonomy'], perfect_match=True)
+
+        filtered_networks = [self.filter_bsub_locus(network, 'locus_tag'),
+                             self.filter_ecol_locus(network, 'locus_tag'),
+                             self.filter_mtub_locus(network, 'locus_tag'),
+                             self.filter_paer_locus(network, 'locus_tag'),
+                             self.filter_paer_names(network, 'locus_tag')]
+        network = pd.concat(filtered_networks)
+        network = network.reset_index(drop=True)
+
+        gene_input_value = network['locus_tag'] + network['taxonomy']
+        network = network.assign(input_value=gene_input_value)
+        return network
+
+    def merge_annotations(self, annotated: pd.DataFrame, original: pd.DataFrame) -> pd.DataFrame:
+        df = pd.merge(annotated, original, on='input_value', suffixes=('_annotation', '_literature'))
+
+        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_literature')
+        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
+
+        df = df.drop(columns=['input_value'])
+        return df
+
     @staticmethod
-    def _filter_bsub_locus_regulator(df: pd.DataFrame) -> pd.DataFrame:
+    def filter_bsub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
         df = df.copy()
-        mask = (df['regulator_locus_tag'].str.startswith('BSU')) & (df['source'] == 'bsub_faria_et_al_2017')
+        mask = (df[col].str.startswith('BSU')) & (df['source'] == 'bsub_faria_et_al_2017')
         df = df[mask]
         return df
 
     @staticmethod
-    def _filter_ecol_locus_regulator(df: pd.DataFrame) -> pd.DataFrame:
+    def filter_ecol_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
         df = df.copy()
-        mask = (df['regulator_locus_tag'].str.startswith('b')) & (df['source'] == 'ecol_fang_et_al_2017')
+        mask = (df[col].str.startswith('b')) & (df['source'] == 'ecol_fang_et_al_2017')
         df = df[mask]
         return df
 
     @staticmethod
-    def _filter_mtub_locus_regulator(df: pd.DataFrame) -> pd.DataFrame:
+    def filter_mtub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
         df = df.copy()
-        mask = (df['regulator_locus_tag'].str.startswith('R')) & (df['source'] == 'mtub_turkarslan_et_al_2015')
+        mask = (df[col].str.startswith('R')) & (df['source'] == 'mtub_turkarslan_et_al_2015')
         df = df[mask]
         return df
 
     @staticmethod
-    def _filter_paer_locus_regulator(df: pd.DataFrame) -> pd.DataFrame:
+    def filter_paer(df: pd.DataFrame, _: str) -> pd.DataFrame:
         df = df.copy()
         mask = df['source'] == 'paer_vasquez_et_al_2011'
         df = df[mask]
+        return df
+
+    @staticmethod
+    def filter_paer_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
+        df = df.copy()
+        mask = (df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
+        df = df[mask]
+        return df
+
+    @staticmethod
+    def filter_paer_names(df: pd.DataFrame, col: str) -> pd.DataFrame:
+        # several loci in the paer_vasquez source are actually gene names,
+        # so they should be reallocated to the name collum
+        df = df.copy()
+        mask = (~ df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
+        df = df[mask]
+        df = df.rename(columns={col: 'name'})
+        df = df.assign(**{col: None})
         return df
 
     @abstractmethod
