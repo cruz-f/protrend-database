@@ -60,6 +60,7 @@ class RegulatoryInteractionTransformer(CollectfTransformer, BaseRegulatoryIntera
         organism = read_from_stack(stack=self.transform_stack, key='regulator',
                                    columns=RegulatorTransformer.read_columns, reader=read_json_frame)
 
+        # noinspection DuplicatedCode
         regulator = read_from_stack(stack=self.transform_stack, key='regulator',
                                     columns=RegulatorTransformer.read_columns, reader=read_json_frame)
 
