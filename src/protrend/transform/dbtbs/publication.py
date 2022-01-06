@@ -45,7 +45,7 @@ class PublicationTransformer(DBTBSTransformer,
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_dbtbs'))
 
         df = self.merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_dbtbs')
-        df = apply_processors(df, pmid=to_int_str)
+        df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         df = df.drop(columns=['input_value'])
 

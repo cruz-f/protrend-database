@@ -37,7 +37,7 @@ class PublicationTransformer(LiteratureTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_literature'))
-        df = apply_processors(df, pmid=to_int_str)
+        df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         df = df.drop(columns=['input_value'])
 

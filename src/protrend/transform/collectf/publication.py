@@ -40,7 +40,7 @@ class PublicationTransformer(CollectfTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_collectf'))
-        df = apply_processors(df, pmid=to_int_str)
+        df = apply_processors(df, pmid=to_int_str, year=to_int_str)
         df = df.drop(columns=['input_value'])
 
         self.stack_transformed_nodes(df)
