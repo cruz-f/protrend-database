@@ -1,13 +1,10 @@
-from typing import List
-
 import pandas as pd
 
 from protrend.io import read_json_lines, read_from_stack
-from protrend.model import Publication
-from protrend.annotation import annotate_publications, PublicationDTO
-from protrend.utils.processors import apply_processors, to_int_str
-from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.model import Publication, RegulatoryFamily
+from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list
 
 
 class PublicationTransformer(RegPreciseTransformer,
@@ -19,67 +16,87 @@ class PublicationTransformer(RegPreciseTransformer,
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
                                'tf': 'TranscriptionFactor.json',
                                'rna': 'RNAFamily.json'}
-    columns = SetList(['pmid', 'doi', 'title', 'author', 'year', 'protrend_id'])
+    columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
+                       'tffamily_id', 'collection_id', 'riboswitch_id', 'pubmed'])
     tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
-    def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
+    def _transform_rfams(self, rfam: pd.DataFrame):
+        rfam = rfam.assign(pmid=rfam['pubmed'].copy())
 
-        df = df.drop(columns=['tffamily_id', 'name', 'url', 'description', 'regulog'])
+        rfam = apply_processors(rfam, pmid=to_list_nan)
+        rfam = rfam.explode('pmid')
 
-        return df
+        rfam = rfam.dropna(subset=['pmid'])
+        rfam = self.drop_empty_string(rfam, 'pmid')
 
-    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
+        return rfam
 
-        df = df.drop(columns=['collection_id', 'name', 'url', 'description', 'regulog'])
-        return df
+    def transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
+        tf_family = self.select_columns(tf_family, 'tffamily_id', 'pubmed')
+        return self._transform_rfams(tf_family)
 
-    def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=rna, subset=['name'], perfect_match=True, preserve_nan=False)
+    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+        tf = self.select_columns(tf, 'collection_id', 'pubmed')
+        return self._transform_rfams(tf)
 
-        df = df.drop(columns=['riboswitch_id', 'name', 'url', 'description', 'rfam', 'regulog'])
-        return df
-
-    @staticmethod
-    def _transform_publications(identifiers: List[str]):
-        dtos = [PublicationDTO(input_value=identifier) for identifier in identifiers]
-        annotate_publications(dtos=dtos, identifiers=identifiers)
-
-        # pmid: List[str]
-        # doi: List[str]
-        # title: List[str]
-        # author: List[str]
-        # year: List[str]
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+    def transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
+        rna = self.select_columns(rna, 'riboswitch_id', 'pubmed')
+        return self._transform_rfams(rna)
 
     def transform(self):
+        # noinspection DuplicatedCode
         tf_family = read_from_stack(stack=self.transform_stack, key='tf_family',
                                     columns=self.tf_family_columns, reader=read_json_lines)
-        tf_family = self._transform_tf_family(tf_family)
-
         tf = read_from_stack(stack=self.transform_stack, key='tf',
                              columns=self.tf_columns, reader=read_json_lines)
-        tf = self._transform_tf(tf)
-
         rna = read_from_stack(stack=self.transform_stack, key='rna',
                               columns=self.rna_columns, reader=read_json_lines)
-        rna = self._transform_rna(rna)
 
-        df = pd.concat([tf_family, tf, rna])
-        df = df.explode('pubmed')
-        df = df.dropna(subset=['pubmed'])
-        df = self.drop_duplicates(df=df, subset=['pubmed'], preserve_nan=False)
+        tf_family = self.transform_tf_family(tf_family)
+        tf = self.transform_tf(tf)
+        rna = self.transform_rna(rna)
 
-        pmids = df['pubmed'].tolist()
-        df = self._transform_publications(pmids)
+        publications = pd.concat([tf_family, tf, rna])
+        publications = publications.reset_index(drop=True)
 
-        df = df.drop(columns=['input_value'])
+        aggregation = {'tffamily_id': to_set_list, 'collection_id': to_set_list, 'riboswitch_id': to_set_list,
+                       'pubmed': flatten_set_list}
+        publications = self.group_by(publications, column='pmid', aggregation=aggregation)
+
+        annotated_publications = self.annotate_publications(publications)
+
+        df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_regprecise'))
 
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
-        self.stack_transformed_nodes(df)
+        df = df.drop(columns=['input_value'])
 
+        self.stack_transformed_nodes(df)
         return df
+
+
+class PublicationToRegulatoryFamilyConnector(RegPreciseConnector,
+                                             source='regprecise',
+                                             version='0.0.0',
+                                             from_node=Publication,
+                                             to_node=RegulatoryFamily,
+                                             register=True):
+    default_connect_stack = {'publication': 'integrated_publication.json',
+                             'rfam': 'integrated_regulatoryfamily.json'}
+
+    def connect(self):
+        source_df, target_df = self.transform_stacks(source='publication',
+                                                     target='rfam',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={'pubmed': [to_list_nan]},
+                                                     target_processors={'pubmed': [to_list_nan]})
+        source_df = source_df.explode('pubmed')
+        target_df = target_df.explode('pubmed')
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='pubmed', target_on='pubmed')
+
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
+        self.stack_json(df)

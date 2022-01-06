@@ -1,15 +1,12 @@
 import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
-from protrend.model import RegulatoryFamily, Source, Publication, Regulator
-from protrend.utils.processors import (remove_white_space, remove_regprecise_more, remove_multiple_white_space,
-                                       rstrip, lstrip, remove_pubmed, apply_processors, to_set_list, to_list_nan,
-                                       to_int_str, to_nan, to_list)
-from protrend.transform.regprecise import PublicationTransformer
+from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
 from protrend.utils import SetList
+from protrend.utils.processors import (remove_regprecise_more, remove_multiple_white_space,
+                                       rstrip, lstrip, remove_pubmed, apply_processors, to_int_str)
 
 
 class RegulatoryFamilyTransformer(RegPreciseTransformer,
@@ -21,178 +18,87 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
     default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
                                'tf': 'TranscriptionFactor.json',
                                'rna': 'RNAFamily.json'}
-    columns = SetList(['tffamily_id', 'name', 'url_tf_family', 'collection_id', 'url_tf',
-                       'mechanism', 'description', 'pubmed', 'regulog', 'riboswitch_id',
-                       'url_rna', 'rfam', 'protrend_id'])
+    columns = SetList(['protrend_id', 'name', 'mechanism', 'rfam', 'description',
+                       'tffamily_id', 'collection_id', 'riboswitch_id', 'url'])
     tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
-    def _transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=tf_family, subset=['name'], perfect_match=True, preserve_nan=False)
+    def transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
+        tf_family = self.select_columns(tf_family, 'tffamily_id', 'name', 'url', 'description', 'pubmed')
 
-        df = apply_processors(df, name=remove_white_space,
-                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
-                                           lstrip])
+        # noinspection DuplicatedCode
+        tf_family = tf_family.dropna(subset=['name'])
+        tf_family = self.drop_empty_string(tf_family, 'name')
+        tf_family = self.drop_duplicates(df=tf_family, subset=['name'])
 
-        return df
+        tf_family = apply_processors(tf_family,
+                                     name=[rstrip, lstrip],
+                                     description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space,
+                                                  rstrip, lstrip])
 
-    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=tf, subset=['name'], perfect_match=True, preserve_nan=False)
+        tf_family = tf_family.assign(mechanism='transcription factor')
+        return tf_family
 
-        df = apply_processors(df, name=remove_white_space,
-                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
-                                           lstrip])
+    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+        tf = self.select_columns(tf, 'collection_id', 'name', 'url', 'description', 'pubmed')
 
-        return df
+        # noinspection DuplicatedCode
+        tf = tf.dropna(subset=['name'])
+        tf = self.drop_empty_string(tf, 'name')
+        tf = self.drop_duplicates(df=tf, subset=['name'])
 
-    def _transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=rna, subset=['rfam'], perfect_match=True, preserve_nan=False)
+        tf = apply_processors(tf,
+                              name=[rstrip, lstrip],
+                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space,
+                                           rstrip, lstrip])
 
-        df = apply_processors(df, name=remove_white_space, rfam=remove_white_space,
-                              description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
-                                           lstrip],
-                              pubmed=to_set_list,
-                              regulog=to_set_list)
+        tf = tf.assign(mechanism='transcription factor')
+        return tf
 
-        df = df.rename(columns={'url': 'url_rna'})
+    def transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
+        rna = self.select_columns(rna, 'riboswitch_id', 'name', 'url', 'description', 'rfam', 'pubmed')
 
-        # set mechanism
-        df['mechanism'] = 'small RNA (sRNA)'
-        return df
+        # noinspection DuplicatedCode
+        rna = rna.dropna(subset=['name'])
+        rna = self.drop_empty_string(rna, 'name')
+        rna = self.drop_duplicates(df=rna, subset=['name'])
 
-    def _transform_tfs(self, tf_family: pd.DataFrame, tf: pd.DataFrame) -> pd.DataFrame:
-        df = pd.merge(tf_family, tf, how='outer', on='name', suffixes=('_tf_family', '_tf'))
+        rna = apply_processors(rna,
+                               name=[rstrip, lstrip],
+                               rfam=[rstrip, lstrip],
+                               description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
+                                            lstrip])
 
-        # set mechanism
-        df['mechanism'] = 'transcription factor'
-
-        # concat description
-        df = apply_processors(df, description_tf_family=to_nan, description_tf=to_nan)
-        df['description_tf_family'] = df['description_tf_family'].fillna(value='')
-        df['description_tf'] = df['description_tf'].fillna(value='')
-        df = self.concat_columns(df=df, column='description', left='description_tf_family', right='description_tf')
-
-        # concat pubmed
-        df = apply_processors(df, pubmed_tf_family=to_list_nan, pubmed_tf=to_list_nan)
-        df = self.concat_columns(df=df, column='pubmed', left='pubmed_tf_family', right='pubmed_tf')
-        df = apply_processors(df, pubmed=to_set_list)
-
-        # concat regulog
-        df = apply_processors(df, regulog_tf_family=to_list_nan, regulog_tf=to_list_nan)
-        df = self.concat_columns(df=df, column='regulog', left='regulog_tf_family', right='regulog_tf')
-        df = apply_processors(df, regulog=to_set_list)
-
-        return df
+        rna = rna.assign(mechanism='small RNA (sRNA)')
+        return rna
 
     def transform(self):
-        # -------------------- TFs -------------------
+        # noinspection DuplicatedCode
         tf_family = read_from_stack(stack=self.transform_stack, key='tf_family',
                                     columns=self.tf_family_columns, reader=read_json_lines)
-        tf_family = self._transform_tf_family(tf_family)
-
         tf = read_from_stack(stack=self.transform_stack, key='tf',
                              columns=self.tf_columns, reader=read_json_lines)
-        tf = self._transform_tf(tf)
-        tfs = self._transform_tfs(tf_family=tf_family, tf=tf)
-
-        # -------------------- RNAs -------------------
         rna = read_from_stack(stack=self.transform_stack, key='rna',
                               columns=self.rna_columns, reader=read_json_lines)
-        rna = self._transform_rna(rna)
 
-        df = pd.concat([tfs, rna])
+        tf_family = self.transform_tf_family(tf_family)
+        tf = self.transform_tf(tf)
+        rna = self.transform_rna(rna)
+
+        df = pd.concat([tf_family, tf, rna])
+        df = df.reset_index(drop=True)
 
         # clean the other regulatory family
-        other_mask = df['name'] != '[Other]'
-        df = df[other_mask]
+        mask = df['name'] != '[Other]'
+        df = df[mask]
+
+        df = self.drop_duplicates(df, subset=['name'])
 
         df = apply_processors(df, tffamily_id=to_int_str, riboswitch_id=to_int_str, collection_id=to_int_str)
 
         self.stack_transformed_nodes(df)
         return df
-
-
-class RegulatoryFamilyToSourceConnector(RegPreciseConnector,
-                                        source='regprecise',
-                                        version='0.0.0',
-                                        from_node=RegulatoryFamily,
-                                        to_node=Source,
-                                        register=True):
-    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
-                             'source': 'integrated_source.json'}
-
-    def connect(self):
-        regulatory_family = read_from_stack(stack=self._connect_stack, key='regulatory_family',
-                                            columns=RegulatoryFamilyTransformer.columns,
-                                            reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-
-        protrend_id = source['protrend_id'].iloc[0]
-
-        tf_chain = [('tffamily_id', 'url_tf_family'),
-                    ('collection_id', 'url_tf'),
-                    ('riboswitch_id', 'url_rna')]
-
-        dfs = []
-        for key, url in tf_chain:
-            key_df = regulatory_family.dropna(subset=[key])
-
-            from_identifiers = key_df['protrend_id'].tolist()
-            size = len(from_identifiers)
-
-            to_identifiers = [protrend_id] * size
-
-            kwargs = dict(url=key_df[url].tolist(),
-                          external_identifier=key_df[key].tolist(),
-                          key=[key] * size)
-
-            df = self.make_connection(from_identifiers=from_identifiers,
-                                      to_identifiers=to_identifiers,
-                                      kwargs=kwargs)
-
-            dfs.append(df)
-
-        df = pd.concat(dfs)
-
-        self.stack_json(df)
-
-
-class RegulatoryFamilyToPublicationConnector(RegPreciseConnector,
-                                             source='regprecise',
-                                             version='0.0.0',
-                                             from_node=RegulatoryFamily,
-                                             to_node=Publication,
-                                             register=True):
-    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
-                             'publication': 'integrated_publication.json'}
-
-    def connect(self):
-        regulatory_family = read_from_stack(stack=self._connect_stack, key='regulatory_family',
-                                            columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        regulatory_family = apply_processors(regulatory_family, pubmed=[to_list])
-        regulatory_family = regulatory_family.explode('pubmed')
-        regulatory_family = apply_processors(regulatory_family, pubmed=to_int_str)
-
-        publication = read_from_stack(stack=self._connect_stack, key='publication',
-                                      columns=PublicationTransformer.columns, reader=read_json_frame)
-        publication = publication.dropna(subset=['pmid'])
-        publication = publication.drop_duplicates(subset=['pmid'])
-        publication = apply_processors(publication, pmid=to_int_str)
-
-        merged = pd.merge(regulatory_family, publication, left_on='pubmed', right_on='pmid',
-                          suffixes=('_regulatory_family', '_publication'))
-        merged = merged.dropna(subset=['protrend_id_regulatory_family', 'protrend_id_publication'])
-        merged = merged.drop_duplicates(subset=['protrend_id_regulatory_family', 'protrend_id_publication'])
-
-        from_identifiers = merged['protrend_id_regulatory_family'].tolist()
-        to_identifiers = merged['protrend_id_publication'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
 
 
 class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector,
@@ -201,14 +107,14 @@ class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector,
                                            from_node=RegulatoryFamily,
                                            to_node=Regulator,
                                            register=True):
-    default_connect_stack = {'regulatory_family': 'integrated_regulatoryfamily.json',
+    default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json',
                              'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        regulatory_family = read_from_stack(stack=self._connect_stack, key='regulatory_family',
-                                            columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        source = read_from_stack(stack=self.connect_stack, key='rfam',
+                                 columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
+        target = read_from_stack(stack=self.connect_stack, key='regulator',
+                                 columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         tfs_chain = [('tffamily_id', 'tf_family'),
                      ('collection_id', 'transcription_factor'),
@@ -216,23 +122,20 @@ class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector,
 
         from_identifiers = []
         to_identifiers = []
+        for source_key, target_key in tfs_chain:
+            source_df = source.dropna(subset=[source_key])
 
-        for family_key, regulator_key in tfs_chain:
-            family_df = regulatory_family.dropna(subset=[family_key])
+            target_df = target.explode(target_key)
+            target_df = target_df.dropna(subset=[target_key])
 
-            regulator_df = regulator.explode(regulator_key)
-            regulator_df = regulator_df.dropna(subset=[regulator_key])
+            merged = pd.merge(source_df, target_df, left_on=source_key, right_on=target_key,
+                              suffixes=('_rfam', '_regulator'))
 
-            merged = pd.merge(family_df, regulator_df, left_on=family_key, right_on=regulator_key,
-                              suffixes=('_regulatory_family', '_regulator'))
+            merged = merged.dropna(subset=['protrend_id_rfam', 'protrend_id_regulator'])
+            merged = merged.drop_duplicates(subset=['protrend_id_rfam', 'protrend_id_regulator'])
 
-            merged = merged.dropna(subset=['protrend_id_regulatory_family', 'protrend_id_regulator'])
-            merged = merged.drop_duplicates(subset=['protrend_id_regulatory_family', 'protrend_id_regulator'])
+            from_identifiers.extend(merged['protrend_id_rfam'].to_list())
+            to_identifiers.extend(merged['protrend_id_regulator'].to_list())
 
-            from_identifiers.extend(merged['protrend_id_regulatory_family'].tolist())
-            to_identifiers.extend(merged['protrend_id_regulator'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.connection_frame(source_ids=from_identifiers, target_ids=to_identifiers)
         self.stack_json(df)
