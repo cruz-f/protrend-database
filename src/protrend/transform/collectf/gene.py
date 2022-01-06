@@ -45,6 +45,7 @@ class GeneTransformer(CollectfTransformer,
         return gene
 
     def transform(self):
+        # noinspection DuplicatedCode
         gene = read_from_stack(stack=self.transform_stack, key='gene',
                                columns=self.read_columns, reader=read_json_lines)
 
