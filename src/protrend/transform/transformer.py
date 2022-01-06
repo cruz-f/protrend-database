@@ -8,7 +8,7 @@ import pandas as pd
 from protrend.annotation import (GeneDTO, annotate_genes,
                                  OrganismDTO, annotate_organisms,
                                  PublicationDTO, annotate_publications,
-                                 EffectorDTO, annotate_effectors)
+                                 EffectorDTO, annotate_effectors, PathwayDTO, annotate_pathways)
 from protrend.io import write_json_frame, read_from_stack, read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
@@ -417,6 +417,26 @@ class Transformer(AbstractTransformer):
 
         effectors_df = pd.DataFrame(effectors_dict)
         return effectors_df
+
+    @staticmethod
+    def annotate_pathways(df: pd.DataFrame) -> pd.DataFrame:
+
+        input_values = get_values(df, 'input_value')
+
+        pathways = [PathwayDTO(input_value=input_value) for input_value in input_values]
+
+        ProtrendLogger.log.info(f'Annotating {len(pathways)} pathways')
+
+        names = get_values(df, 'name')
+
+        ProtrendLogger.log.info('Annotating with the following params: name')
+
+        annotate_pathways(dtos=pathways, names=names)
+
+        pathways_dict = [dto.to_dict() for dto in pathways]
+
+        pathways_df = pd.DataFrame(pathways_dict)
+        return pathways_df
 
     # ----------------------------------------
     # Utilities
