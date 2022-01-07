@@ -2,9 +2,8 @@ from abc import abstractmethod
 
 import pandas as pd
 
-from protrend import MultiStackTransformer, Transformer
 from protrend.io import read_from_multi_stack
-from protrend.transform import Connector
+from protrend.transform import MultiStackTransformer, Transformer, Connector
 from protrend.utils import SetList, is_null, MultiStack
 from protrend.utils.processors import apply_processors, to_int_str, rstrip, lstrip, to_set_list
 
