@@ -4,7 +4,7 @@ from Bio import SeqIO
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer
-from protrend.transform.transformer import transform_sequence
+from protrend.transform import transform_sequence
 from protrend.utils import SetList
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_list_nan, take_first
 
