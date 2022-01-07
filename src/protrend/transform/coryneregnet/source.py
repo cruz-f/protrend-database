@@ -1,4 +1,4 @@
-from protrend.model.model import Source, Organism, Regulator, Gene, TFBS, RegulatoryInteraction
+from protrend.model import Source, Organism, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform import BaseSourceTransformer
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.utils import SetList
