@@ -1,12 +1,11 @@
 import pandas as pd
 
-from protrend.io import read_txt, read_json_frame, read_from_stack
+from protrend.io import read_json_frame, read_from_stack
 from protrend.model import TFBS
-from protrend.utils.processors import (apply_processors, to_list, to_str, operon_hash, site_hash, to_set_list,
-                                       take_first)
-from protrend.transform.regulondb.base import RegulondbTransformer
-from protrend.transform.regulondb.gene import GeneTransformer
-from protrend.utils import SetList, is_null
+from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
+from protrend.transform.regulondb.organism import OrganismTransformer
+from protrend.utils import SetList
+from protrend.utils.processors import apply_processors
 
 
 class TFBSTransformer(RegulondbTransformer,
@@ -16,22 +15,18 @@ class TFBSTransformer(RegulondbTransformer,
                       order=90,
                       register=True):
     default_transform_stack = {'site': 'site.txt',
-                               'gene': 'integrated_gene.json'}
-    columns = SetList(['sequence', 'strand', 'start', 'stop', 'length', 'site_hash', 'protrend_id',
+                               'organism': 'integrated_organism.json'}
+    columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
                        'site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                        'site_internal_comment', 'key_id_org', 'site_length'])
 
     read_columns = SetList(['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                             'site_internal_comment', 'key_id_org', 'site_length'])
 
-    def _transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        # filter by id
-        tfbs = self.drop_duplicates(df=tfbs, subset=['site_id'], perfect_match=True)
+    def transform_tfbs(self, tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+        tfbs = tfbs.assign(sequence=tfbs['site_sequence'].copy())
 
-        # filter by nan
-        tfbs = tfbs.dropna(subset=['site_id', 'site_sequence'])
-
-        # filter out non-tfbs data
+        # filter by nan and duplicates
         def remove_non_tfbs_sequence(sequence: str):
 
             tfbs_seq = ''
@@ -42,69 +37,47 @@ class TFBSTransformer(RegulondbTransformer,
             if tfbs_seq:
                 return tfbs_seq
 
-            return None
+            return
 
-        tfbs = apply_processors(tfbs, site_sequence=remove_non_tfbs_sequence)
+        tfbs = apply_processors(tfbs, sequence=remove_non_tfbs_sequence)
 
-        # filter by coordinates
-        tfbs = self.drop_duplicates(df=tfbs, subset=['site_sequence', 'site_posleft', 'site_posright'],
-                                    perfect_match=True)
+        tfbs = tfbs.dropna(subset=['site_id', 'sequence'])
+        tfbs = self.drop_empty_string(tfbs, 'site_id', 'sequence')
+        tfbs = self.drop_duplicates(df=tfbs, subset=['site_id', 'sequence'])
 
-        tfbs['sequence'] = tfbs['site_sequence']
-
+        # adding organism
+        tfbs = tfbs.reset_index(drop=True)
+        organism = organism.reset_index(drop=True)
+        tfbs = pd.concat([tfbs, organism], axis=1)
         return tfbs
 
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = self.select_columns(organism, 'protrend_id')
+        organism = organism.rename(columns={'protrend_id': 'organism'})
+        return organism
+
     @staticmethod
-    def _tfbs_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
-
-        def sequence_len(item):
-            if is_null(item):
-                return None
-
-            if isinstance(item, str):
-                return len(item)
-
-            return None
-
-        tfbs['length'] = tfbs['sequence'].map(sequence_len, na_action='ignore')
-        tfbs['start'] = tfbs['site_posleft']
-        tfbs['stop'] = tfbs['site_posright']
-        tfbs['strand'] = 'forward'
-
+    def site_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
+        tfbs = tfbs.assign(length=tfbs['sequence'].str.len(),
+                           strand='forward',
+                           start=tfbs['site_posleft'].copy(),
+                           stop=tfbs['site_posright'].copy())
         return tfbs
 
     def transform(self):
+        reader = regulondb_reader(skiprows=35, names=self.read_columns)
         tfbs = read_from_stack(stack=self.transform_stack, key='site', columns=self.read_columns,
-                               reader=read_txt, skiprows=35, names=self.read_columns)
+                               reader=reader)
 
-        tfbs = self._transform_tfbs(tfbs)
-        tfbs = self._tfbs_coordinates(tfbs)
+        # noinspection DuplicatedCode
+        organism = read_from_stack(stack=self.transform_stack, key='organism',
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
-        gene = read_from_stack(stack=self.transform_stack, key='gene', columns=GeneTransformer.columns,
-                               reader=read_json_frame)
-        gene = self.select_columns(gene, 'gene_id', 'protrend_id')
-        gene = gene.rename(columns={'protrend_id': 'gene_protrend_id'})
+        organism = self.transform_organism(organism)
 
-        gene_tfbs = self._build_gene_tfbs()
-        gene_tfbs = pd.merge(gene, gene_tfbs, on='gene_id')
-        gene_tfbs = pd.merge(tfbs, gene_tfbs, on='site_id')
-        aggregation = {'gene_id': to_set_list, 'gene_protrend_id': to_set_list}
-        gene_tfbs = self.group_by(df=gene_tfbs, column='site_id', aggregation=aggregation, default=take_first)
+        tfbs = self.transform_tfbs(tfbs, organism)
+        tfbs = self.site_coordinates(tfbs)
+        tfbs = self.site_hash(tfbs)
 
-        # filter by site hash: length + strand + start + genes
-        df = apply_processors(gene_tfbs,
-                              sequence=[to_str, to_list],
-                              length=[to_str, to_list],
-                              strand=[to_str, to_list],
-                              start=[to_str, to_list],
-                              gene_protrend_id=[to_list, operon_hash, to_list])
-
-        gene_tfbs['site_hash'] = df['sequence'] + df['length'] + df['strand'] + df['start'] + df['gene_protrend_id']
-        gene_tfbs = apply_processors(gene_tfbs, site_hash=site_hash)
-
-        gene_tfbs = self.drop_duplicates(df=gene_tfbs, subset=['site_hash'], perfect_match=True)
-        gene_tfbs = gene_tfbs.dropna(subset=['site_hash'])
-
-        self.stack_transformed_nodes(gene_tfbs)
-
-        return gene_tfbs
+        self.stack_transformed_nodes(tfbs)
+        return tfbs

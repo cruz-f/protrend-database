@@ -1,11 +1,10 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_txt, read_json_frame
+from protrend.io import read_from_stack
 from protrend.model import RegulatoryFamily, Regulator
-from protrend.utils.processors import (apply_processors, rstrip, lstrip)
-from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
-from protrend.transform.regulondb.regulator import RegulatorTransformer
+from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
 from protrend.utils import SetList
+from protrend.utils.processors import (apply_processors, rstrip, lstrip)
 
 
 class RegulatoryFamilyTransformer(RegulondbTransformer,
@@ -15,60 +14,49 @@ class RegulatoryFamilyTransformer(RegulondbTransformer,
                                   order=100,
                                   register=True):
     default_transform_stack = {'tf': 'transcription_factor.txt'}
-    columns = SetList(['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
+    columns = SetList(['protrend_id', 'name', 'mechanism', 'description',
+                       'transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
                        'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
-                       'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence',
-                       'mechanism', 'name', 'protrend_id'])
+                       'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
     read_columns = SetList(['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
                             'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
                             'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
 
-    def _transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        tf = apply_processors(tf, transcription_factor_family=[rstrip, lstrip])
-        tf = tf.dropna(subset=['transcription_factor_family'])
-        tf = self.drop_duplicates(df=tf, subset=['transcription_factor_family'], perfect_match=True)
+    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+        tf = tf.assign(name=tf['transcription_factor_family'].copy(), mechanism='transcription factor',
+                       description=None)
 
-        tf['name'] = tf['transcription_factor_family']
-        tf['mechanism'] = 'transcription factor'
+        tf = apply_processors(tf, name=[rstrip, lstrip])
+        tf = tf.dropna(subset=['name'])
+        tf = self.drop_empty_string(tf, 'name')
+        tf = self.drop_duplicates(df=tf, subset=['name'])
+
+        # removing families with _like and _
+        name = tf['name'].str.replace('_like', '')
+        name = name.str.replace('_', ' ')
+        tf = tf.assign(name=name)
 
         return tf
 
     def transform(self):
+        tf_reader = regulondb_reader(skiprows=38, names=self.read_columns)
         tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.read_columns, reader=read_txt,
-                             skiprows=38, names=self.read_columns)
-        tf = self._transform_tf(tf)
+                             columns=self.read_columns, reader=tf_reader)
+        tf = self.transform_tf(tf)
 
         self.stack_transformed_nodes(tf)
         return tf
 
 
-class RegulatorToRegulatoryFamilyConnector(RegulondbConnector,
+class RegulatoryFamilyToRegulatorConnector(RegulondbConnector,
                                            source='regulondb',
                                            version='0.0.0',
-                                           from_node=Regulator,
-                                           to_node=RegulatoryFamily,
+                                           from_node=RegulatoryFamily,
+                                           to_node=Regulator,
                                            register=True):
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'rfam': 'integrated_regulatoryfamily.json'}
+    default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = regulator[['protrend_id', 'transcription_factor_id']]
-        regulator = regulator.rename(columns={'protrend_id': 'regulator_protrend_id'})
-
-        rfam = read_from_stack(stack=self._connect_stack, key='rfam',
-                               columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        rfam = rfam[['protrend_id', 'transcription_factor_id']]
-        rfam = rfam.rename(columns={'protrend_id': 'rfam_protrend_id'})
-
-        df = pd.merge(regulator, rfam, on='transcription_factor_id')
-        df = df.drop_duplicates(subset=['regulator_protrend_id', 'rfam_protrend_id'])
-
-        from_identifiers = df['regulator_protrend_id'].tolist()
-        to_identifiers = df['rfam_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
+        df = self.create_connection(source='rfam', target='regulator',
+                                    source_on='transcription_factor_id', target_on='transcription_factor_id')
         self.stack_json(df)
