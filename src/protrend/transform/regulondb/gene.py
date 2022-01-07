@@ -2,7 +2,7 @@ import pandas as pd
 from Bio import SeqIO
 
 from protrend.io import read_from_stack
-from protrend.model.model import Gene
+from protrend.model import Gene
 from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
 from protrend.transform import transform_sequence
 from protrend.utils import SetList
