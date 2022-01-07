@@ -31,11 +31,10 @@ class OrganismToRegulatorConnector(DBTBSConnector,
                                    from_node=Organism,
                                    to_node=Regulator,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'organism': 'integrated_organism.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        df = self.create_connection(source='rin', target='rin',
-                                    source_column='organism', target_column='regulator')
+        df = self.create_connection(source='organism', target='regulator', cardinality='one_to_many')
         self.stack_json(df)
 
 
@@ -45,11 +44,10 @@ class OrganismToGeneConnector(DBTBSConnector,
                               from_node=Organism,
                               to_node=Gene,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'organism': 'integrated_organism.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
-        df = self.create_connection(source='rin', target='rin',
-                                    source_column='organism', target_column='gene')
+        df = self.create_connection(source='organism', target='gene', cardinality='one_to_many')
         self.stack_json(df)
 
 
@@ -59,11 +57,10 @@ class OrganismToTFBSConnector(DBTBSConnector,
                               from_node=Organism,
                               to_node=TFBS,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+    default_connect_stack = {'organism': 'integrated_organism.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
-        df = self.create_connection(source='rin', target='rin',
-                                    source_column='organism', target_column='tfbs')
+        df = self.create_connection(source='organism', target='tfbs', cardinality='one_to_many')
         self.stack_json(df)
 
 
@@ -76,6 +73,5 @@ class OrganismToRegulatoryInteractionConnector(DBTBSConnector,
     default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        df = self.create_connection(source='rin', target='rin',
-                                    source_column='organism')
+        df = self.create_connection(source='rin', target='rin', source_column='organism')
         self.stack_json(df)
