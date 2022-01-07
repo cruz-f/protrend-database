@@ -1,5 +1,5 @@
-from protrend.transform import BaseOrganismTransformer
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
+from protrend.transform import BaseOrganismTransformer
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.utils import SetList
 
