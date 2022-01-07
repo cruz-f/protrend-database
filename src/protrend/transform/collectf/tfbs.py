@@ -2,8 +2,8 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import TFBS
-from protrend.transform import RegulatorTransformer
 from protrend.transform.collectf.base import CollectfTransformer
+from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import (apply_processors, flatten_set_list, to_set_list, to_list_nan, lstrip, rstrip,
                                        take_first)
