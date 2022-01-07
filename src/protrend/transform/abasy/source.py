@@ -1,6 +1,6 @@
 from protrend.model import Source, Organism, Regulator, Gene, RegulatoryInteraction
+from protrend.transform import BaseSourceTransformer
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
-from protrend.transform.transformer import BaseSourceTransformer
 from protrend.utils import SetList
 
 
