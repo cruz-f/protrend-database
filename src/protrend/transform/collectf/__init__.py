@@ -1,5 +1,4 @@
-from .evidence import (EvidenceConnector,
-                       EvidenceToRegulatoryInteractionConnector,
+from .evidence import (EvidenceToRegulatoryInteractionConnector,
                        EvidenceToTFBSConnector,
                        EvidenceTransformer)
 from .gene import GeneTransformer
@@ -8,8 +7,7 @@ from .organism import (OrganismToGeneConnector,
                        OrganismToRegulatoryInteractionConnector,
                        OrganismToTFBSConnector,
                        OrganismTransformer)
-from .publication import (PublicationConnector,
-                          PublicationToGeneConnector,
+from .publication import (PublicationToGeneConnector,
                           PublicationToRegulatorConnector,
                           PublicationToRegulatoryInteractionConnector,
                           PublicationToTFBSConnector,
