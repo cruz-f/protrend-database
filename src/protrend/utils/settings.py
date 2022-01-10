@@ -16,9 +16,15 @@ class Settings:
         config.read(self._source.joinpath('etl.conf'))
 
         self._working_directory = Path(config.get('etl-configuration', 'working_directory'))
+
         self._request_sleep = float(config.get('etl-configuration', 'request_sleep'))
         self._request_timeout = float(config.get('etl-configuration', 'request_timeout'))
         self._request_retries = int(config.get('etl-configuration', 'request_retries'))
+
+        self._db_user_name = int(config.get('db-configuration', 'user_name'))
+        self._db_password = int(config.get('db-configuration', 'password'))
+        self._db_ip = int(config.get('db-configuration', 'ip'))
+        self._db_port = int(config.get('db-configuration', 'port'))
 
         self._started = False
 
@@ -41,6 +47,22 @@ class Settings:
     @property
     def request_retries(self):
         return self._request_retries
+
+    @property
+    def db_user_name(self):
+        return self._db_user_name
+
+    @property
+    def db_password(self):
+        return self._db_password
+
+    @property
+    def db_ip(self):
+        return self._db_ip
+
+    @property
+    def db_port(self):
+        return self._db_port
 
     @property
     def extract(self):
