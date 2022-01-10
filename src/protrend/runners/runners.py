@@ -10,10 +10,23 @@ from protrend.utils import NeoDatabase
 def run_database(install_labels: bool = False,
                  clear_constraints: bool = False,
                  clear_indexes: bool = False,
-                 user_name: str = 'neo4j',
-                 password: str = 'protrend',
-                 ip: str = 'localhost',
-                 port: str = '7687'):
+                 user_name: str = None,
+                 password: str = None,
+                 ip: str = None,
+                 port: str = None):
+
+    if not user_name:
+        user_name = Settings.db_user_name
+
+    if not password:
+        password = Settings.db_password
+
+    if not ip:
+        ip = Settings.db_ip
+
+    if not port:
+        port = Settings.db_port
+
     ProtrendLogger.log.info(f'Starting database {user_name} with {ip}:{port}')
     neo_db = NeoDatabase(user_name=user_name, password=password, ip=ip, port=port)
     neo_db.connect()
@@ -111,49 +124,55 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
-    run_logger('dbtbs_extract_logger')
-    # run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
+    run_logger('tcl_logger')
+    run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
 
-    # ORDER MATTERS
+    # ORDER MATTERS!!!!!!!!!!!!!
 
-    # # ----------------------------------------------------
-    # # CollecTF
-    # # ----------------------------------------------------
-    # # run_logger('collectf_logger')
-    # run_pipeline(source='collectf', version='0.0.1')
-    #
-    # # ----------------------------------------------------
-    # # RegPrecise
-    # # ----------------------------------------------------
-    # # run_logger('regprecise_logger')
-    # run_pipeline(source='regprecise', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # Abasy
-    # # ----------------------------------------------------
-    # # run_logger('abasy_logger')
-    # run_pipeline(source='abasy', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # Literature
-    # # ----------------------------------------------------
-    # # run_logger('literature_logger')
-    # run_pipeline(source='literature', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # CoryneRegNet
-    # # ----------------------------------------------------
-    # # run_logger('coryneregnet_logger')
-    # run_pipeline(source='coryneregnet', version='0.0.0')
+    # ----------------------------------------------------
+    # CollecTF
+    # ----------------------------------------------------
+    # run_logger('collectf_logger')
+    run_pipeline(source='collectf', version='0.0.1')
+
+    # ----------------------------------------------------
+    # RegPrecise
+    # ----------------------------------------------------
+    # run_logger('regprecise_logger')
+    run_pipeline(source='regprecise', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Abasy
+    # ----------------------------------------------------
+    # run_logger('abasy_logger')
+    run_pipeline(source='abasy', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Literature
+    # ----------------------------------------------------
+    # run_logger('literature_logger')
+    run_pipeline(source='literature', version='0.0.0')
+
+    # ----------------------------------------------------
+    # CoryneRegNet
+    # ----------------------------------------------------
+    # run_logger('coryneregnet_logger')
+    run_pipeline(source='coryneregnet', version='0.0.0')
 
     # ----------------------------------------------------
     # DBTBS
     # ----------------------------------------------------
     # run_logger('dbtbs_logger')
-    run_pipeline(source='dbtbs', version='0.0.4', extract=True, transform=False, connect=False, load=False)
+    run_pipeline(source='dbtbs', version='0.0.4')
 
-    # # ----------------------------------------------------
-    # # RegulonDB
-    # # ----------------------------------------------------
-    # # run_logger('regulondb_logger')
-    # run_pipeline(source='regulondb', version='0.0.0')
+    # ----------------------------------------------------
+    # RegulonDB
+    # ----------------------------------------------------
+    # run_logger('regulondb_logger')
+    run_pipeline(source='regulondb', version='0.0.0')
+
+    # ----------------------------------------------------
+    # OperonDB
+    # ----------------------------------------------------
+    # run_logger('operondb_logger')
+    run_pipeline(source='operondb', version='0.0.0')
