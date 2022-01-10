@@ -1,7 +1,6 @@
 import pandas as pd
 
-from protrend import Operon
-from protrend.model import Source, Organism, Gene
+from protrend.model import Source, Organism, Gene, Operon
 from protrend.transform import BaseSourceTransformer
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.utils import SetList

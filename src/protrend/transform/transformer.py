@@ -156,7 +156,7 @@ class Transformer(AbstractTransformer):
         if not transform_stack:
             transform_stack = self.default_transform_stack
 
-        self._transform_stack = self._build_transform_stack(transform_stack, source, version)
+        self._transform_stack = self._build_transform_stack(transform_stack, self.source, self.version)
 
         self._write_stack = []
 

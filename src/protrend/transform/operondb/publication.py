@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend import Operon
 from protrend.io import read_from_stack, read_json_frame
-from protrend.model import Publication, Organism, Gene
+from protrend.model import Publication, Organism, Gene, Operon
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan

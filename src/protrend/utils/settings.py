@@ -21,10 +21,10 @@ class Settings:
         self._request_timeout = float(config.get('etl-configuration', 'request_timeout'))
         self._request_retries = int(config.get('etl-configuration', 'request_retries'))
 
-        self._db_user_name = int(config.get('db-configuration', 'user_name'))
-        self._db_password = int(config.get('db-configuration', 'password'))
-        self._db_ip = int(config.get('db-configuration', 'ip'))
-        self._db_port = int(config.get('db-configuration', 'port'))
+        self._db_user_name = str(config.get('db-configuration', 'user_name'))
+        self._db_password = str(config.get('db-configuration', 'password'))
+        self._db_ip = str(config.get('db-configuration', 'ip'))
+        self._db_port = str(config.get('db-configuration', 'port'))
 
         self._started = False
 

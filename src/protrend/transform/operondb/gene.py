@@ -4,9 +4,8 @@ from typing import Tuple
 import pandas as pd
 from neo4j.exceptions import Neo4jError
 
-from protrend import Organism
 from protrend.io import read_from_stack, read_txt
-from protrend.model import Gene
+from protrend.model import Gene, Organism
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_list_nan
