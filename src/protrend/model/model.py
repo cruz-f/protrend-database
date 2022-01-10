@@ -236,7 +236,7 @@ class Gene(Node):
     evidence = RelationshipTo(Evidence, REL_TYPE)
     publication = RelationshipTo(Publication, REL_TYPE)
     pathway = RelationshipTo(Pathway, REL_TYPE)
-    operon = RelationshipTo(Operon, REL_TYPE, cardinality=One)
+    operon = RelationshipTo(Operon, REL_TYPE)
     organism = RelationshipTo(Organism, REL_TYPE, cardinality=One)
     regulator = RelationshipTo(Regulator, REL_TYPE)
     tfbs = RelationshipTo('TFBS', REL_TYPE)
