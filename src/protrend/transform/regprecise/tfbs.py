@@ -1,9 +1,7 @@
 import re
 from collections import defaultdict
-from statistics import mode, StatisticsError
 from typing import List, Union
 
-import numpy as np
 import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
@@ -11,9 +9,9 @@ from protrend.model import TFBS
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
-from protrend.utils import SetList, is_null
-from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, to_list, flatten_set_list,
-                                       to_set_list, to_list_nan, take_last)
+from protrend.utils import SetList
+from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, flatten_set_list,
+                                       to_set_list, to_list_nan, take_last, strand_mode, start_forward, start_reverse)
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
@@ -113,42 +111,6 @@ class TFBSTransformer(RegPreciseTransformer,
 
     @staticmethod
     def site_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
-
-        def strand_mode(item):
-
-            if is_null(item):
-                return
-
-            try:
-                m = mode(item)
-
-                if is_null(m):
-                    return
-
-                return m
-
-            except StatisticsError:
-
-                for sub_item in item:
-                    return sub_item
-
-        def start_forward(item):
-            if is_null(item):
-                return
-
-            item = to_list(item)
-
-            x = np.array(item, dtype=np.float64)
-            return np.nanmin(x)
-
-        def start_reverse(item):
-            if is_null(item):
-                return
-
-            item = to_list(item)
-
-            x = np.array(item, dtype=np.float64)
-            return np.nanmax(x)
 
         strands = []
         starts = []

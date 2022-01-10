@@ -1,7 +1,8 @@
 import re
-from collections import defaultdict
+from statistics import mode, StatisticsError
 from typing import Callable, Any, List, Union, Sequence
 
+import numpy as np
 import pandas as pd
 from w3lib.html import remove_tags
 
@@ -28,8 +29,7 @@ def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callab
 
     """
 
-    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan,
-                             operon_hash, site_hash)
+    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan, site_hash)
 
     new_columns = {}
 
@@ -209,50 +209,42 @@ def lower_case(item: str) -> str:
     return item.lower()
 
 
-def operon_name(items: List[str]) -> str:
-    if items:
-
-        names = defaultdict(int)
-
-        for item in items:
-
-            name = ''.join(letter for letter in item if letter.islower())
-
-            if len(name) > 2:
-                names[name] += 1
-
-        name = ''
-        best_score = 0
-
-        for key, val in names.items():
-
-            if val > best_score:
-                best_score = val
-                name = key
-
-        return name
-
-    return ''
-
-
-def operon_hash(items: List[str]) -> Union[None, str]:
-    if is_null(items):
-        return None
-
-    items = sorted(items)
-    item = '_'.join(items)
-
+def strand_mode(item):
     if is_null(item):
-        return None
+        return
 
-    return item
+    try:
+        m = mode(item)
+
+        if is_null(m):
+            return
+
+        return m
+
+    except StatisticsError:
+
+        for sub_item in item:
+            return sub_item
 
 
-def promoter_hash(items: List[str]) -> Union[None, str]:
-    if is_null(items):
-        return None
+def start_forward(item):
+    if is_null(item):
+        return
 
-    return '_'.join(items)
+    item = to_list(item)
+
+    x = np.array(item, dtype=np.float64)
+    return np.nanmin(x)
+
+
+def start_reverse(item):
+    if is_null(item):
+        return
+
+    item = to_list(item)
+
+    x = np.array(item, dtype=np.float64)
+    return np.nanmax(x)
 
 
 def site_hash(items: List[str]) -> Union[None, str]:
