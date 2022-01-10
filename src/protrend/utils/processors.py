@@ -29,7 +29,7 @@ def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callab
     """
 
     handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan,
-                             operon_hash, site_hash, regulatory_interaction_hash)
+                             operon_hash, site_hash)
 
     new_columns = {}
 

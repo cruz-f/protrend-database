@@ -35,14 +35,14 @@ class CollecTFPipeline(JSONPipeline):
         exporter.finish_exporting()
         file.close()
 
-        self.items_types = (TaxonomyItem,
+        self.items_types = [TaxonomyItem,
                             OrganismItem,
                             TranscriptionFactorItem,
                             RegulonItem,
                             OperonItem,
                             GeneItem,
                             TFBSItem,
-                            ExperimentalEvidenceItem)
+                            ExperimentalEvidenceItem]
 
         self.exporters = build_json_exporters(self.staging_area, self.items_types)
 

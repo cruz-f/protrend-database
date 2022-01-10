@@ -60,9 +60,9 @@ class RegulatoryInteractionTransformer(DBTBSTransformer, BaseRegulatoryInteracti
     def transform(self) -> pd.DataFrame:
         network = read_from_stack(stack=self.transform_stack, key='network',
                                   columns=TFBSTransformer.read_columns, reader=read_json_lines)
+        # noinspection DuplicatedCode
         organism = read_from_stack(stack=self.transform_stack, key='organism',
                                    columns=RegulatorTransformer.read_columns, reader=read_json_frame)
-        # noinspection DuplicatedCode
         regulator = read_from_stack(stack=self.transform_stack, key='regulator',
                                     columns=RegulatorTransformer.read_columns, reader=read_json_frame)
         gene = read_from_stack(stack=self.transform_stack, key='gene',

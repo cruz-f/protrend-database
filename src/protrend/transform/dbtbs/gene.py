@@ -32,6 +32,7 @@ class GeneTransformer(DBTBSTransformer,
 
         gene = gene.assign(name_dbtbs=gene['name'].copy())
 
+        # noinspection DuplicatedCode
         gene = apply_processors(gene, name=[rstrip, lstrip])
 
         # filter nan and duplicates

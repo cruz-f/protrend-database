@@ -123,6 +123,7 @@ class NCBIGene(BioAPI):
 
     def build_term(self) -> str:
 
+        # noinspection DuplicatedCode
         if self._locus_tag and self._taxonomy:
 
             term = f'{self._locus_tag} AND txid{self._taxonomy}[Organism:noexp]'

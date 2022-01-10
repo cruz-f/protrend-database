@@ -29,7 +29,7 @@ class RegPrecisePipeline(JSONPipeline):
         exporter.finish_exporting()
         file.close()
 
-        self.items_types = (TaxonomyItem,
+        self.items_types = [TaxonomyItem,
                             GenomeItem,
                             TranscriptionFactorItem,
                             RegulogItem,
@@ -40,7 +40,7 @@ class RegPrecisePipeline(JSONPipeline):
                             RegulonItem,
                             OperonItem,
                             GeneItem,
-                            TFBSItem)
+                            TFBSItem]
 
         self.exporters = build_json_exporters(self.staging_area, self.items_types)
 

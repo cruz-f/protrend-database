@@ -1,4 +1,4 @@
-from typing import List, Type, Dict, Tuple, TextIO
+from typing import List, Type, Dict, Tuple, TextIO, BinaryIO
 
 from scrapy import Item
 from scrapy.exporters import JsonLinesItemExporter
@@ -13,7 +13,7 @@ class JSONPipeline:
         self.version: str = version
 
         self.exporters: Dict[str, Tuple[JsonLinesItemExporter, TextIO]] = {}
-        self.items_types: Tuple[Type[Item]] = ()
+        self.items_types: Tuple = ()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -33,7 +33,7 @@ class JSONPipeline:
         return item
 
 
-def build_json_exporters(path: str, items_types: List[Type[Item]]) -> Dict[str, Tuple[JsonLinesItemExporter, TextIO]]:
+def build_json_exporters(path: str, items_types: List[Type[Item]]) -> Dict[str, Tuple[JsonLinesItemExporter, BinaryIO]]:
     exporters = {}
 
     for item in items_types:

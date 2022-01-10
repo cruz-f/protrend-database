@@ -66,6 +66,7 @@ def annotate_pathways(dtos: List['PathwayDTO'],
         raise ValueError(f'Invalid inputs for dto list size of {dtos_size} and args size of {size}')
 
     db = 'pathway'
+    # noinspection DuplicatedCode
     cache = True
     try:
         index = indexing_kegg_list(db=db, cache=cache)

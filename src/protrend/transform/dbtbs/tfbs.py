@@ -125,6 +125,7 @@ class TFBSTransformer(DBTBSTransformer,
         tfbs = read_from_stack(stack=self.transform_stack, key='tfbs', columns=self.read_columns,
                                reader=read_json_lines)
 
+        # noinspection DuplicatedCode
         organism = read_from_stack(stack=self.transform_stack, key='organism',
                                    columns=OrganismTransformer.columns, reader=read_json_frame)
 

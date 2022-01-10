@@ -72,6 +72,7 @@ class RegPreciseSpider(Spider):
             taxon_loader = ItemLoader(item=TaxonomyItem(),
                                       selector=taxon)
 
+            # noinspection DuplicatedCode
             anchor_href_xpath = ".//@href"
             taxon_loader.add_xpath("collection_id", anchor_href_xpath)
 
@@ -209,6 +210,7 @@ class RegPreciseSpider(Spider):
         regulator_family = "//*[@id='propblock']/table/tbody/tr[3]/td[2]//text()"
         regulon_loader.add_xpath("regulator_family", regulator_family)
 
+        # noinspection DuplicatedCode
         regulation_mode = "//*[@id='propblock']/table/tbody/tr[4]/td[2]//text()"
         regulon_loader.add_xpath("regulation_mode", regulation_mode)
 

@@ -67,6 +67,7 @@ def annotate_effectors(dtos: List['EffectorDTO'],
         raise ValueError(f'Invalid inputs for dto list size of {dtos_size} and args size of {size}')
 
     db = 'compound'
+    # noinspection DuplicatedCode
     cache = True
     try:
         index = indexing_kegg_list(db=db, cache=cache)

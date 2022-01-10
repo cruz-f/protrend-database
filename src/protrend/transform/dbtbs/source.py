@@ -83,6 +83,7 @@ class SourceToRegulatoryFamilyConnector(DBTBSConnector,
 class SourceConnector(DBTBSConnector, source='dbtbs', version='0.0.4', register=False):
 
     def _connect(self, target: str, external_id_col: str, external_url_col: str, key_id: str):
+        # noinspection DuplicatedCode
         source_df, target_df = self.transform_stacks(source='source',
                                                      target=target,
                                                      source_column='protrend_id',
