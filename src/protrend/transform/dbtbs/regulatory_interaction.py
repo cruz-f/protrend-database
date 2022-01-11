@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_from_stack, read_json_lines
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform import BaseRegulatoryInteractionTransformer
+from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.gene import GeneTransformer
 from protrend.transform.dbtbs.regulator import RegulatorTransformer
@@ -11,7 +11,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import (apply_processors, regulatory_effect_dbtbs, to_list_nan)
 
 
-class RegulatoryInteractionTransformer(DBTBSTransformer, BaseRegulatoryInteractionTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, DBTBSTransformer,
                                        source='dbtbs',
                                        version='0.0.4',
                                        node=RegulatoryInteraction,

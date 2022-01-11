@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_from_multi_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform import BaseRegulatoryInteractionTransformer
+from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer
@@ -12,7 +12,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_coryneregnet, rstrip, lstrip, to_int_str
 
 
-class RegulatoryInteractionTransformer(CoryneRegNetTransformer, BaseRegulatoryInteractionTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CoryneRegNetTransformer,
                                        source='coryneregnet',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,

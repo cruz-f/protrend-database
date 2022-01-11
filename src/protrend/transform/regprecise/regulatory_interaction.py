@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import RegulatoryInteraction, Gene, TFBS, Regulator, Effector, Organism
-from protrend.transform import BaseRegulatoryInteractionTransformer
+from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.effector import EffectorTransformer
 from protrend.transform.regprecise.gene import GeneTransformer
@@ -13,7 +13,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import (apply_processors, regulatory_effect_regprecise, to_list_nan)
 
 
-class RegulatoryInteractionTransformer(RegPreciseTransformer, BaseRegulatoryInteractionTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTransformer,
                                        source='regprecise',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,

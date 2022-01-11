@@ -1,10 +1,10 @@
 from protrend.model import Source, Organism, Regulator, Gene, RegulatoryInteraction
-from protrend.transform import BaseSourceTransformer
+from protrend.transform import SourceMixIn
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.utils import SetList
 
 
-class SourceTransformer(AbasyTransformer, BaseSourceTransformer,
+class SourceTransformer(SourceMixIn, AbasyTransformer,
                         source='abasy',
                         version='0.0.0',
                         node=Source,

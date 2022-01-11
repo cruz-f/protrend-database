@@ -1,10 +1,10 @@
 from protrend.model import Regulator, Organism, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import BaseOrganismTransformer
+from protrend.transform import OrganismMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.utils import SetList
 
 
-class OrganismTransformer(RegulondbTransformer, BaseOrganismTransformer,
+class OrganismTransformer(OrganismMixIn, RegulondbTransformer,
                           source='regulondb',
                           version='0.0.0',
                           node=Organism,

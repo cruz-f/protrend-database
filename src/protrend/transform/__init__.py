@@ -1,6 +1,6 @@
 from .transformer import (Transformer, MultiStackTransformer,
-                          BaseSourceTransformer, BaseOrganismTransformer,
-                          BaseRegulatoryInteractionTransformer,
+                          SourceMixIn, OrganismMixIn,
+                          RegulatoryInteractionMixIn,
                           transform_sequence)
 from .connector import Connector
 from .abasy import *

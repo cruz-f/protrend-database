@@ -1,11 +1,11 @@
 from protrend.model import Source, Organism, Regulator, Gene, RegulatoryInteraction, Effector
-from protrend.transform import BaseSourceTransformer
+from protrend.transform import SourceMixIn
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.utils import SetList
 from protrend.utils.processors import to_int_str
 
 
-class SourceTransformer(LiteratureTransformer, BaseSourceTransformer,
+class SourceTransformer(SourceMixIn, LiteratureTransformer,
                         source='literature',
                         version='0.0.0',
                         node=Source,

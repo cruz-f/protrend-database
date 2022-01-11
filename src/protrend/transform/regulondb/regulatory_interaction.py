@@ -4,7 +4,7 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, TFBS, Gene, Effector
-from protrend.transform import BaseRegulatoryInteractionTransformer, Transformer
+from protrend.transform import RegulatoryInteractionMixIn, Transformer
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
@@ -26,7 +26,7 @@ def transform_regulon_db_dataset(df: pd.DataFrame,
     return df
 
 
-class RegulatoryInteractionTransformer(RegulondbTransformer, BaseRegulatoryInteractionTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulondbTransformer,
                                        source='regulondb',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,

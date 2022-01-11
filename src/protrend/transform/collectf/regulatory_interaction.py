@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform import BaseRegulatoryInteractionTransformer
+from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
@@ -11,7 +11,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_collectf, to_list_nan
 
 
-class RegulatoryInteractionTransformer(CollectfTransformer, BaseRegulatoryInteractionTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollectfTransformer,
                                        source='collectf',
                                        version='0.0.1',
                                        node=RegulatoryInteraction,

@@ -1,11 +1,11 @@
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, Effector,
                             RegulatoryInteraction)
-from protrend.transform import BaseSourceTransformer
+from protrend.transform import SourceMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.utils import SetList, is_null
 
 
-class SourceTransformer(RegulondbTransformer, BaseSourceTransformer,
+class SourceTransformer(SourceMixIn, RegulondbTransformer,
                         source='regulondb',
                         version='0.0.0',
                         node=Source,

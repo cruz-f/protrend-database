@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.model import RegulatoryInteraction, Effector, Regulator, Gene
-from protrend.transform import BaseRegulatoryInteractionTransformer
+from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.gene import GeneTransformer
@@ -11,7 +11,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_literature, to_int_str
 
 
-class RegulatoryInteractionTransformer(LiteratureTransformer, BaseRegulatoryInteractionTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTransformer,
                                        source='literature',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,

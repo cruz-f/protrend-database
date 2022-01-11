@@ -1,10 +1,10 @@
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import BaseOrganismTransformer
+from protrend.transform import OrganismMixIn
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.utils import SetList
 
 
-class OrganismTransformer(CoryneRegNetTransformer, BaseOrganismTransformer,
+class OrganismTransformer(OrganismMixIn, CoryneRegNetTransformer,
                           source='coryneregnet',
                           version='0.0.0',
                           node=Organism,

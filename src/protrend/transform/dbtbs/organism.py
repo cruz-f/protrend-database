@@ -1,10 +1,10 @@
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import BaseOrganismTransformer
+from protrend.transform import OrganismMixIn
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.utils import SetList
 
 
-class OrganismTransformer(DBTBSTransformer, BaseOrganismTransformer,
+class OrganismTransformer(OrganismMixIn, DBTBSTransformer,
                           source='dbtbs',
                           version='0.0.4',
                           node=Organism,

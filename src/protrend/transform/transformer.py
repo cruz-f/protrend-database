@@ -659,7 +659,7 @@ class Transformer(AbstractTransformer):
 class MultiStackTransformer(Transformer, register=False):
     default_transform_stack: Dict[str, MultiStack] = {}
 
-    def __init__(self, transform_stack: Dict[str, MultiStack], **kwargs):
+    def __init__(self, transform_stack: Dict[str, MultiStack] = None, **kwargs):
         kwargs['transform_stack'] = transform_stack
         super().__init__(**kwargs)
         self._transform_stack: Dict[str, MultiStack]
@@ -757,7 +757,7 @@ def transform_sequence(sequence: SeqRecord) -> pd.DataFrame:
                                            'genbank_accession', 'uniprot_accession'])
 
 
-class BaseSourceTransformer(Transformer, register=False):
+class SourceMixIn:
     name = ['']
     type = ['']
     url = ['']
@@ -767,7 +767,7 @@ class BaseSourceTransformer(Transformer, register=False):
 
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
-    def transform(self):
+    def transform(self: Union[Transformer, 'SourceMixIn']):
         db = dict(name=self.name,
                   type=self.type,
                   url=self.url,
@@ -782,7 +782,7 @@ class BaseSourceTransformer(Transformer, register=False):
         return df
 
 
-class BaseOrganismTransformer(Transformer, register=False):
+class OrganismMixIn:
     species = ['']
     strain = ['']
     ncbi_taxonomy = [None]
@@ -797,7 +797,7 @@ class BaseOrganismTransformer(Transformer, register=False):
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
 
-    def transform(self):
+    def transform(self: Union[Transformer, 'OrganismMixIn']):
         org = dict(name=self.name,
                    species=self.species,
                    strain=self.strain,
@@ -816,7 +816,7 @@ class BaseOrganismTransformer(Transformer, register=False):
         return df
 
 
-class BaseRegulatoryInteractionTransformer(Transformer, register=False):
+class RegulatoryInteractionMixIn:
 
     @abstractmethod
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
@@ -840,7 +840,7 @@ class BaseRegulatoryInteractionTransformer(Transformer, register=False):
     def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
         pass
 
-    def _transform(self,
+    def _transform(self: Union[Transformer, 'RegulatoryInteractionMixIn'],
                    network: pd.DataFrame,
                    organism: pd.DataFrame,
                    organism_key: str,
@@ -884,7 +884,3 @@ class BaseRegulatoryInteractionTransformer(Transformer, register=False):
 
         regulatory_interaction = self.interaction_hash(regulatory_interaction)
         return regulatory_interaction
-
-    @abstractmethod
-    def transform(self):
-        pass

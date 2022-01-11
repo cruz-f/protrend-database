@@ -1,11 +1,11 @@
-from protrend.transform import BaseSourceTransformer
+from protrend.transform import SourceMixIn
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS,
                             RegulatoryInteraction)
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.utils import SetList, is_null
 
 
-class SourceTransformer(DBTBSTransformer, BaseSourceTransformer,
+class SourceTransformer(SourceMixIn, DBTBSTransformer,
                         source='dbtbs',
                         version='0.0.4',
                         node=Source,
