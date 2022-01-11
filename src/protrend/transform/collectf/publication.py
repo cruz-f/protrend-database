@@ -3,11 +3,13 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model import Publication, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.mix_ins import PublicationMixIn
+from protrend.transform.transformations import drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
 
 
-class PublicationTransformer(CollectfTransformer,
+class PublicationTransformer(PublicationMixIn, CollectfTransformer,
                              source='collectf',
                              version='0.0.1',
                              node=Publication,
@@ -20,16 +22,17 @@ class PublicationTransformer(CollectfTransformer,
     read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
                             'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
-    def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tfbs(tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = apply_processors(df=tfbs, pubmed=to_list_nan)
         tfbs = tfbs.explode(column='pubmed')
 
         tfbs = tfbs.dropna(subset=['pubmed'])
-        tfbs = self.drop_duplicates(df=tfbs, subset=['pubmed'])
+        tfbs = drop_duplicates(df=tfbs, subset=['pubmed'])
 
         tfbs = tfbs.assign(pmid=tfbs['pubmed'].copy())
 
-        tfbs = self.create_input_value(tfbs, col='pmid')
+        tfbs = create_input_value(tfbs, col='pmid')
         return tfbs
 
     def transform(self):

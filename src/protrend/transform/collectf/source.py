@@ -1,6 +1,6 @@
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, RegulatoryInteraction)
-from protrend.transform import SourceMixIn
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import to_list_nan
 

@@ -4,12 +4,14 @@ from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import TFBS
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
+from protrend.transform.mix_ins import TFBSMixIn
+from protrend.transform.transformations import select_columns, drop_empty_string, group_by
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import (apply_processors, flatten_set_list, to_set_list, to_list_nan, lstrip, rstrip,
                                        take_first)
 
 
-class TFBSTransformer(CollectfTransformer,
+class TFBSTransformer(TFBSMixIn, CollectfTransformer,
                       source='collectf',
                       version='0.0.1',
                       node=TFBS,
@@ -23,18 +25,20 @@ class TFBSTransformer(CollectfTransformer,
     read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
                             'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
-    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'uniprot_accession', 'organism_protrend_id')
+    @staticmethod
+    def transform_regulator(regulator: pd.DataFrame) -> pd.DataFrame:
+        regulator = select_columns(regulator, 'uniprot_accession', 'organism_protrend_id')
         return regulator
 
-    def transform_tfbs(self, tfbs: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tfbs(tfbs: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         tfbs = tfbs.rename(columns={'site_start': 'start', 'site_end': 'stop', 'site_strand': 'strand',
                                     'organism': 'organism_collectf'})
 
         tfbs = apply_processors(tfbs, sequence=[rstrip, lstrip], regulon=to_list_nan)
         # filter by sequence, start, stop, strand
         tfbs = tfbs.dropna(subset=['sequence', 'start', 'stop', 'strand'])
-        tfbs = self.drop_empty_string(tfbs, 'sequence')
+        tfbs = drop_empty_string(tfbs, 'sequence')
 
         # filter by organism
         tfbs = tfbs.explode(column='regulon')
@@ -43,7 +47,7 @@ class TFBSTransformer(CollectfTransformer,
 
         aggr = {'pubmed': flatten_set_list, 'regulon': to_set_list, 'operon': flatten_set_list,
                 'experimental_evidence': flatten_set_list, 'gene': flatten_set_list}
-        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_first)
+        tfbs = group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_first)
         tfbs = tfbs.rename(columns={'organism_protrend_id': 'organism'})
         return tfbs
 

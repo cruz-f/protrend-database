@@ -6,11 +6,14 @@ from protrend.bioapis import entrez_summary
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.mix_ins import OrganismMixIn
+from protrend.transform.transformations import (merge_columns, create_input_value, drop_duplicates, group_by,
+                                                drop_empty_string)
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list
 
 
-class OrganismTransformer(CollectfTransformer,
+class OrganismTransformer(OrganismMixIn, CollectfTransformer,
                           source='collectf',
                           version='0.0.1',
                           node=Organism,
@@ -42,19 +45,19 @@ class OrganismTransformer(CollectfTransformer,
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         organism = apply_processors(organism, name=[rstrip, lstrip])
         organism = organism.dropna(subset=['name'])
-        organism = self.drop_empty_string(organism, 'name')
+        organism = drop_empty_string(organism, 'name')
 
         aggregation = {'genome_accession': take_last, 'taxonomy': take_last}
-        organism = self.group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
+        organism = group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
 
         organism = apply_processors(organism, genome_accession=[rstrip, lstrip], taxonomy=to_int_str)
-        organism = self.drop_duplicates(df=organism, subset=['genome_accession', 'name'])
+        organism = drop_duplicates(df=organism, subset=['genome_accession', 'name'])
 
         nucleotide = organism['genome_accession'].to_list()
         ncbi_taxa = self.get_ncbi_taxa_from_nucleotide(nucleotide)
         organism = organism.assign(ncbi_taxonomy=ncbi_taxa)
 
-        organism = self.create_input_value(organism, col='name')
+        organism = create_input_value(organism, col='name')
         return organism
 
     def transform(self):
@@ -68,7 +71,7 @@ class OrganismTransformer(CollectfTransformer,
 
         # merge name
         df = df.assign(name_to_merge=df['name_collectf'])
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_to_merge')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_to_merge')
 
         df = apply_processors(df, ncbi_taxonomy=to_int_str, ncbi_assembly=to_int_str)
 

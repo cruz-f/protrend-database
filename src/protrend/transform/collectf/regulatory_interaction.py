@@ -2,11 +2,12 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
+from protrend.transform.transformations import select_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_collectf, to_list_nan
 
@@ -25,7 +26,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollectfTrans
                        'regulatory_interaction_hash'])
 
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = self.select_columns(network, 'tfbs_id', 'regulon', 'gene', 'mode')
+        network = select_columns(network, 'tfbs_id', 'regulon', 'gene', 'mode')
         network = apply_processors(network, regulon=to_list_nan, gene=to_list_nan)
         network = network.explode('regulon')
         network = network.explode('gene')
@@ -34,22 +35,22 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollectfTrans
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'organism_protrend_id', 'uniprot_accession')
+        organism = select_columns(organism, 'organism_protrend_id', 'uniprot_accession')
         organism = organism.rename(columns={'organism_protrend_id': 'organism', 'uniprot_accession': 'regulon'})
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'protrend_id', 'uniprot_accession')
+        regulator = select_columns(regulator, 'protrend_id', 'uniprot_accession')
         regulator = regulator.rename(columns={'protrend_id': 'regulator', 'uniprot_accession': 'regulon'})
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'protrend_id', 'locus_tag_old')
+        gene = select_columns(gene, 'protrend_id', 'locus_tag_old')
         gene = gene.rename(columns={'protrend_id': 'gene', 'locus_tag_old': 'tg_gene'})
         return gene
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        tfbs = self.select_columns(tfbs, 'tfbs_id', 'protrend_id')
+        tfbs = select_columns(tfbs, 'tfbs_id', 'protrend_id')
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
         return tfbs
 

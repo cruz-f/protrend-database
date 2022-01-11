@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model import Evidence, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_nan
 
@@ -17,11 +18,12 @@ class EvidenceTransformer(CollectfTransformer,
     columns = SetList(['protrend_id', 'name', 'description', 'exp_id', 'regulon', 'tfbs'])
     read_columns = SetList(['exp_id', 'regulon', 'tfbs'])
 
-    def transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_evidence(evidence: pd.DataFrame) -> pd.DataFrame:
         evidence = apply_processors(evidence, exp_id=[rstrip, lstrip])
         evidence = evidence.dropna(subset=['exp_id'])
-        evidence = self.drop_empty_string(evidence, 'exp_id')
-        evidence = self.drop_duplicates(df=evidence, subset=['exp_id'])
+        evidence = drop_empty_string(evidence, 'exp_id')
+        evidence = drop_duplicates(df=evidence, subset=['exp_id'])
         evidence = evidence.assign(name=evidence['exp_id'].copy(), description=None)
         return evidence
 

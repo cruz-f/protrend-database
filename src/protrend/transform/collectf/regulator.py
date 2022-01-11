@@ -8,6 +8,9 @@ from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model import Regulator
 from protrend.transform.collectf.base import CollectfTransformer
 from protrend.transform.collectf.organism import OrganismTransformer
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import (drop_empty_string, drop_duplicates, create_input_value, select_columns,
+                                                merge_columns, merge_loci)
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
@@ -37,7 +40,7 @@ def uniprot_record_locus_tag(record: SeqRecord) -> Union[str, None]:
     return None
 
 
-class RegulatorTransformer(CollectfTransformer,
+class RegulatorTransformer(GeneMixIn, CollectfTransformer,
                            source='collectf',
                            version='0.0.1',
                            node=Regulator,
@@ -48,7 +51,8 @@ class RegulatorTransformer(CollectfTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
                        'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence'
-                       'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'])
+                                                                    'organism_protrend_id', 'organism_name_collectf',
+                       'ncbi_taxonomy'])
     read_columns = SetList(['uniprot_accession', 'name', 'url', 'organism', 'operon',
                             'gene', 'tfbs', 'experimental_evidence'])
 
@@ -67,12 +71,12 @@ class RegulatorTransformer(CollectfTransformer,
     def transform_regulon(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         regulon = apply_processors(regulon, uniprot_accession=[rstrip, lstrip], name=[rstrip, lstrip])
         regulon = regulon.dropna(subset=['uniprot_accession'])
-        regulon = self.drop_empty_string(regulon, 'uniprot_accession')
-        regulon = self.drop_duplicates(df=regulon, subset=['uniprot_accession'])
+        regulon = drop_empty_string(regulon, 'uniprot_accession')
+        regulon = drop_duplicates(df=regulon, subset=['uniprot_accession'])
 
         df = pd.merge(regulon, organism, how='left', left_on='organism', right_on='organism_name_collectf')
 
-        df = self.drop_duplicates(df=df, subset=['uniprot_accession', 'organism'], perfect_match=True)
+        df = drop_duplicates(df=df, subset=['uniprot_accession', 'organism'], perfect_match=True)
 
         uniprot_accessions = df['uniprot_accession'].to_list()
         ncbi_proteins = self.get_ncbi_proteins_from_uniprot(uniprot_accessions)
@@ -80,11 +84,12 @@ class RegulatorTransformer(CollectfTransformer,
 
         df = df.assign(mechanism='transcription factor', ncbi_protein=ncbi_proteins, locus_tag=loci)
 
-        df = self.create_input_value(df=df, col='uniprot_accession')
+        df = create_input_value(df=df, col='uniprot_accession')
         return df
 
-    def transform_organism(self, organism: pd.DataFrame):
-        organism = self.select_columns(organism, 'protrend_id', 'name_collectf', 'ncbi_taxonomy')
+    @staticmethod
+    def transform_organism(organism: pd.DataFrame):
+        organism = select_columns(organism, 'protrend_id', 'name_collectf', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id',
                                             'name_collectf': 'organism_name_collectf'})
         return organism
@@ -103,18 +108,18 @@ class RegulatorTransformer(CollectfTransformer,
         df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_collectf'))
 
         # merge loci
-        df = self.merge_loci(df=df, left_suffix='_annotation', right_suffix='_collectf')
+        df = merge_loci(df=df, left_suffix='_annotation', right_suffix='_collectf')
 
         # merge name
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
 
         # merge uniprot_accession
-        df = self.merge_columns(df=df, column='uniprot_accession',
-                                left='uniprot_accession_annotation', right='uniprot_accession_collectf')
+        df = merge_columns(df=df, column='uniprot_accession',
+                           left='uniprot_accession_annotation', right='uniprot_accession_collectf')
 
         # merge ncbi_protein
-        df = self.merge_columns(df=df, column='ncbi_protein',
-                                left='ncbi_protein_annotation', right='ncbi_protein_collectf')
+        df = merge_columns(df=df, column='ncbi_protein',
+                           left='ncbi_protein_annotation', right='ncbi_protein_collectf')
 
         df = df.drop(columns=['input_value'])
 
