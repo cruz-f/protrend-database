@@ -4,13 +4,14 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, TFBS, Gene, Effector
-from protrend.transform import RegulatoryInteractionMixIn, Transformer
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.organism import OrganismTransformer
 from protrend.transform.regulondb.regulator import RegulatorTransformer
 from protrend.transform.regulondb.tfbs import TFBSTransformer
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import (apply_processors, regulatory_effect_regulondb, to_int_str)
 
@@ -19,10 +20,10 @@ def transform_regulon_db_dataset(df: pd.DataFrame,
                                  selection: List[str],
                                  duplicates: List[str],
                                  nan: List[str]) -> pd.DataFrame:
-    df = Transformer.select_columns(df, *selection)
+    df = select_columns(df, *selection)
     df = df.dropna(subset=nan)
-    df = Transformer.drop_empty_string(df, *nan)
-    df = Transformer.drop_duplicates(df, subset=duplicates, perfect_match=True)
+    df = drop_empty_string(df, *nan)
+    df = drop_duplicates(df, subset=duplicates, perfect_match=True)
     return df
 
 
@@ -225,28 +226,28 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulondbTran
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
         organism = organism.rename(columns={'protrend_id': 'organism'})
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'protrend_id', 'regulator_id')
+        regulator = select_columns(regulator, 'protrend_id', 'regulator_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'protrend_id', 'gene_id')
+        gene = select_columns(gene, 'protrend_id', 'gene_id')
         gene = gene.rename(columns={'protrend_id': 'gene'})
         return gene
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        tfbs = self.select_columns(tfbs, 'protrend_id', 'site_id')
+        tfbs = select_columns(tfbs, 'protrend_id', 'site_id')
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
         return tfbs
 
     def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
-        effector = self.select_columns(effector, 'protrend_id', 'effector_id')
+        effector = select_columns(effector, 'protrend_id', 'effector_id')
         effector = effector.rename(columns={'protrend_id': 'effector'})
         return effector
 

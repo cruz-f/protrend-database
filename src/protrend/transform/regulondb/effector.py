@@ -2,13 +2,15 @@ import pandas as pd
 
 from protrend.io import read_from_stack
 from protrend.model import Effector
+from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import (rstrip, lstrip, apply_processors, remove_html_tags,
                                        parse_effector_name_regulondb)
 
 
-class EffectorTransformer(RegulondbTransformer,
+class EffectorTransformer(EffectorMixIn, RegulondbTransformer,
                           source='regulondb',
                           version='0.0.0',
                           node=Effector,
@@ -21,18 +23,19 @@ class EffectorTransformer(RegulondbTransformer,
     read_columns = SetList(['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
                             'effector_internal_comment', 'key_id_org'])
 
-    def transform_effector(self, effector: pd.DataFrame):
+    @staticmethod
+    def transform_effector(effector: pd.DataFrame):
         effector = effector.assign(name=effector['effector_name'].copy())
 
         effector = effector.dropna(subset=['name'])
-        effector = self.drop_empty_string(effector, 'name')
-        effector = self.drop_duplicates(df=effector, subset=['name'])
+        effector = drop_empty_string(effector, 'name')
+        effector = drop_duplicates(df=effector, subset=['name'])
 
         effector = apply_processors(effector,
                                     effector_id=[rstrip, lstrip],
                                     name=[rstrip, lstrip, remove_html_tags, parse_effector_name_regulondb])
 
-        effector = self.create_input_value(effector, 'name')
+        effector = create_input_value(effector, 'name')
         return effector
 
     def transform(self):

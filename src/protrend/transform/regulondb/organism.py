@@ -1,5 +1,5 @@
 from protrend.model import Regulator, Organism, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import OrganismMixIn
+from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
 from protrend.utils import SetList
 

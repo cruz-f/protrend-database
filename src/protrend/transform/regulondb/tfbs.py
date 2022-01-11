@@ -2,13 +2,15 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import TFBS
+from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
 from protrend.transform.regulondb.organism import OrganismTransformer
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors
 
 
-class TFBSTransformer(RegulondbTransformer,
+class TFBSTransformer(TFBSMixIn, RegulondbTransformer,
                       source='regulondb',
                       version='0.0.0',
                       node=TFBS,
@@ -23,7 +25,8 @@ class TFBSTransformer(RegulondbTransformer,
     read_columns = SetList(['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                             'site_internal_comment', 'key_id_org', 'site_length'])
 
-    def transform_tfbs(self, tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tfbs(tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         tfbs = tfbs.assign(sequence=tfbs['site_sequence'].copy())
 
         # filter by nan and duplicates
@@ -42,8 +45,8 @@ class TFBSTransformer(RegulondbTransformer,
         tfbs = apply_processors(tfbs, sequence=remove_non_tfbs_sequence)
 
         tfbs = tfbs.dropna(subset=['site_id', 'sequence'])
-        tfbs = self.drop_empty_string(tfbs, 'site_id', 'sequence')
-        tfbs = self.drop_duplicates(df=tfbs, subset=['site_id', 'sequence'])
+        tfbs = drop_empty_string(tfbs, 'site_id', 'sequence')
+        tfbs = drop_duplicates(df=tfbs, subset=['site_id', 'sequence'])
 
         # adding organism
         tfbs = tfbs.reset_index(drop=True)
@@ -51,8 +54,9 @@ class TFBSTransformer(RegulondbTransformer,
         tfbs = pd.concat([tfbs, organism], axis=1)
         return tfbs
 
-    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'protrend_id')
+    @staticmethod
+    def transform_organism(organism: pd.DataFrame) -> pd.DataFrame:
+        organism = select_columns(organism, 'protrend_id')
         organism = organism.rename(columns={'protrend_id': 'organism'})
         return organism
 

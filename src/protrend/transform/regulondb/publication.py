@@ -2,12 +2,14 @@ import pandas as pd
 
 from protrend.io import read_from_stack
 from protrend.model import Publication, Regulator, TFBS, Gene, Organism, RegulatoryInteraction
+from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList, build_stack
 from protrend.utils.processors import apply_processors, to_int_str
 
 
-class PublicationTransformer(RegulondbTransformer,
+class PublicationTransformer(PublicationMixIn, RegulondbTransformer,
                              source='regulondb',
                              version='0.0.0',
                              node=Publication,
@@ -19,17 +21,18 @@ class PublicationTransformer(RegulondbTransformer,
     read_columns = SetList(['publication_id', 'reference_id', 'external_db_id', 'author', 'title', 'source',
                             'year', 'publication_note', 'publication_internal_comment'])
 
-    def transform_publication(self, publication: pd.DataFrame) -> pd.DataFrame:
-        publication = self.select_columns(publication, 'publication_id', 'reference_id', 'external_db_id', 'source')
+    @staticmethod
+    def transform_publication(publication: pd.DataFrame) -> pd.DataFrame:
+        publication = select_columns(publication, 'publication_id', 'reference_id', 'external_db_id', 'source')
         publication = publication.assign(pmid=publication['reference_id'].copy())
 
         publication = apply_processors(df=publication, pmid=to_int_str)
 
         publication = publication.dropna(subset=['pmid'])
-        publication = self.drop_empty_string(publication, 'pmid')
-        publication = self.drop_duplicates(publication, subset=['pmid'])
+        publication = drop_empty_string(publication, 'pmid')
+        publication = drop_duplicates(publication, subset=['pmid'])
 
-        publication = self.create_input_value(publication, col='pmid')
+        publication = create_input_value(publication, col='pmid')
         return publication
 
     def transform(self):

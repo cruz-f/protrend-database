@@ -5,6 +5,7 @@ import pandas as pd
 from protrend.io import read_from_stack
 from protrend.model import Evidence, RegulatoryInteraction
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
+from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan, remove_html_tags
 
@@ -24,7 +25,8 @@ class EvidenceTransformer(RegulondbTransformer,
                             'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head',
                             'example'])
 
-    def transform_evidence(self, evidence: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_evidence(evidence: pd.DataFrame) -> pd.DataFrame:
         evidence = evidence.assign(name=evidence['evidence_name'].copy(), description=evidence['evidence_note'].copy())
 
         def remove_evidence_note(item: str) -> Union[None, str]:
@@ -38,8 +40,8 @@ class EvidenceTransformer(RegulondbTransformer,
                                     description=[rstrip, lstrip, remove_evidence_note, remove_html_tags])
 
         evidence = evidence.dropna(subset=['evidence_id', 'name'])
-        evidence = self.drop_empty_string(evidence, 'evidence_id', 'name')
-        evidence = self.drop_duplicates(evidence, subset=['evidence_id', 'name'])
+        evidence = drop_empty_string(evidence, 'evidence_id', 'name')
+        evidence = drop_duplicates(evidence, subset=['evidence_id', 'name'])
 
         # dropping Author statement evidences
         mask = evidence['name'] != 'Author statement'

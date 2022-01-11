@@ -4,6 +4,7 @@ from protrend.io import read_from_stack, read_json_frame
 from protrend.model import Regulator
 from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
 from protrend.transform.regulondb.gene import GeneTransformer
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
@@ -35,10 +36,11 @@ class RegulatorTransformer(RegulondbTransformer,
     sigma_columns = SetList(['sigma_id', 'sigma_name', 'sigma_synonyms', 'sigma_gene_id', 'sigma_gene_name',
                              'sigma_coregulators', 'sigma_notes', 'sigma_sigmulon_genes', 'key_id_org'])
 
-    def transform_tf(self, tf: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-        tf = self.select_columns(tf,
-                                 'transcription_factor_id', 'transcription_factor_name',
-                                 'transcription_factor_family')
+    @staticmethod
+    def transform_tf(tf: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+        tf = select_columns(tf,
+                            'transcription_factor_id', 'transcription_factor_name',
+                            'transcription_factor_family')
 
         tf = tf.assign(name_lower=tf['transcription_factor_name'].str.lower(),
                        mechanism='transcription factor',
@@ -46,36 +48,38 @@ class RegulatorTransformer(RegulondbTransformer,
 
         tf = apply_processors(tf, name_lower=[rstrip, lstrip])
         tf = tf.dropna(subset=['name_lower'])
-        tf = self.drop_empty_string(tf, 'name_lower')
-        tf = self.drop_duplicates(df=tf, subset=['name_lower'])
+        tf = drop_empty_string(tf, 'name_lower')
+        tf = drop_duplicates(df=tf, subset=['name_lower'])
 
         tf = pd.merge(tf, gene, on='name_lower')
         return tf
 
-    def transform_sigma(self, sigma: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-        sigma = self.select_columns(sigma, 'sigma_id', 'sigma_gene_id')
+    @staticmethod
+    def transform_sigma(sigma: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+        sigma = select_columns(sigma, 'sigma_id', 'sigma_gene_id')
 
         sigma = sigma.assign(regulator_id=sigma['sigma_id'].copy(),
                              mechanism='sigma factor')
 
         sigma = apply_processors(sigma, sigma_gene_id=[rstrip, lstrip])
         sigma = sigma.dropna(subset=['sigma_gene_id'])
-        sigma = self.drop_empty_string(sigma, 'sigma_gene_id')
-        sigma = self.drop_duplicates(df=sigma, subset=['sigma_gene_id'])
+        sigma = drop_empty_string(sigma, 'sigma_gene_id')
+        sigma = drop_duplicates(df=sigma, subset=['sigma_gene_id'])
 
         sigma = pd.merge(sigma, gene, left_on='sigma_gene_id', right_on='gene_id')
         return sigma
 
-    def transform_srna(self, srna: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-        srna = self.select_columns(srna, 'srna_id', 'srna_gene_id')
+    @staticmethod
+    def transform_srna(srna: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+        srna = select_columns(srna, 'srna_id', 'srna_gene_id')
 
         srna = srna.assign(regulator_id=srna['srna_gene_id'].copy(),
                            mechanism='small RNA (sRNA)')
 
         srna = apply_processors(srna, srna_gene_id=[rstrip, lstrip])
         srna = srna.dropna(subset=['srna_gene_id'])
-        srna = self.drop_empty_string(srna, 'srna_gene_id')
-        srna = self.drop_duplicates(df=srna, subset=['srna_gene_id'])
+        srna = drop_empty_string(srna, 'srna_gene_id')
+        srna = drop_duplicates(df=srna, subset=['srna_gene_id'])
 
         srna = pd.merge(srna, gene, left_on='srna_gene_id', right_on='gene_id')
         return srna
@@ -96,10 +100,10 @@ class RegulatorTransformer(RegulondbTransformer,
         gene = read_from_stack(stack=self.transform_stack, key='gene',
                                columns=GeneTransformer.columns, reader=read_json_frame)
 
-        gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                                   'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                   'sequence', 'strand', 'start', 'stop',
-                                   'name_lower', 'gene_id')
+        gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                              'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                              'sequence', 'strand', 'start', 'stop',
+                              'name_lower', 'gene_id')
 
         tf = self.transform_tf(tf, gene)
         srna = self.transform_srna(srna, gene)

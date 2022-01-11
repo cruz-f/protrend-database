@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_from_stack
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
+from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import (apply_processors, rstrip, lstrip)
 
@@ -22,14 +23,15 @@ class RegulatoryFamilyTransformer(RegulondbTransformer,
                             'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
                             'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
 
-    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
         tf = tf.assign(name=tf['transcription_factor_family'].copy(), mechanism='transcription factor',
                        description=None)
 
         tf = apply_processors(tf, name=[rstrip, lstrip])
         tf = tf.dropna(subset=['name'])
-        tf = self.drop_empty_string(tf, 'name')
-        tf = self.drop_duplicates(df=tf, subset=['name'])
+        tf = drop_empty_string(tf, 'name')
+        tf = drop_duplicates(df=tf, subset=['name'])
 
         # removing families with _like and _
         name = tf['name'].str.replace('_like', '')
