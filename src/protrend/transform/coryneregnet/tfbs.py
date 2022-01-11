@@ -4,11 +4,13 @@ from protrend.io import read_json_frame, read_from_stack, read_from_multi_stack
 from protrend.model import TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer
+from protrend.transform.mix_ins import TFBSMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, is_null, build_stack
 from protrend.utils.processors import apply_processors
 
 
-class TFBSTransformer(CoryneRegNetTransformer,
+class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
                       source='coryneregnet',
                       version='0.0.0',
                       node=TFBS,
@@ -20,7 +22,8 @@ class TFBSTransformer(CoryneRegNetTransformer,
                        'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
                        'PMID', 'Source', 'taxonomy', 'source', 'organism'])
 
-    def transform_tfbs(self, network: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tfbs(network: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         # adding the organism protrend id
         tfbs = pd.merge(network, organism, on='taxonomy')
 
@@ -28,7 +31,7 @@ class TFBSTransformer(CoryneRegNetTransformer,
 
         # dropping nulls
         tfbs = tfbs.dropna(subset=['sequence'])
-        tfbs = self.drop_empty_string(tfbs, 'sequence')
+        tfbs = drop_empty_string(tfbs, 'sequence')
 
         # process multiple bs
         def binding_site_sequences(sequences: str) -> list:
@@ -41,10 +44,10 @@ class TFBSTransformer(CoryneRegNetTransformer,
 
         # drop duplicated interactions, namely regulator-target-binding site-organism
         tfbs = tfbs.dropna(subset=['sequence'])
-        tfbs = self.drop_empty_string(tfbs, 'sequence')
-        tfbs = self.drop_duplicates(df=tfbs,
-                                    subset=['TF_locusTag', 'TG_locusTag', 'sequence', 'organism'],
-                                    perfect_match=True)
+        tfbs = drop_empty_string(tfbs, 'sequence')
+        tfbs = drop_duplicates(df=tfbs,
+                               subset=['TF_locusTag', 'TG_locusTag', 'sequence', 'organism'],
+                               perfect_match=True)
 
         return tfbs
 
@@ -53,12 +56,13 @@ class TFBSTransformer(CoryneRegNetTransformer,
         tfbs = tfbs.assign(strand=None, start=None, stop=None, length=tfbs['sequence'].str.len())
         return tfbs
 
-    def transform_organism(self, organism_stack: dict) -> pd.DataFrame:
+    @staticmethod
+    def transform_organism(organism_stack: dict) -> pd.DataFrame:
         organism = read_from_stack(stack=organism_stack,
                                    key='organism',
                                    columns=OrganismTransformer.columns,
                                    reader=read_json_frame)
-        organism = self.select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'ncbi_taxonomy': 'taxonomy', 'protrend_id': 'organism'})
         return organism
 

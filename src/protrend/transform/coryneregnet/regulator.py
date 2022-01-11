@@ -3,11 +3,13 @@ import pandas as pd
 from protrend.io import read_from_multi_stack
 from protrend.model import Regulator
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class RegulatorTransformer(CoryneRegNetTransformer,
+class RegulatorTransformer(GeneMixIn, CoryneRegNetTransformer,
                            source='coryneregnet',
                            version='0.0.0',
                            node=Regulator,
@@ -23,8 +25,8 @@ class RegulatorTransformer(CoryneRegNetTransformer,
 
     def transform_regulator(self, network: pd.DataFrame) -> pd.DataFrame:
         regulator = network.dropna(subset=['TF_locusTag'])
-        regulator = self.drop_empty_string(regulator, 'TF_locusTag')
-        regulator = self.drop_duplicates(df=regulator, subset=['TF_locusTag'])
+        regulator = drop_empty_string(regulator, 'TF_locusTag')
+        regulator = drop_duplicates(df=regulator, subset=['TF_locusTag'])
 
         regulator = apply_processors(regulator, TF_locusTag=[rstrip, lstrip], TF_name=[rstrip, lstrip])
 
@@ -35,7 +37,7 @@ class RegulatorTransformer(CoryneRegNetTransformer,
         regulator.loc[mask, 'mechanism'] = 'sigma factor'
         regulator.loc[~mask, 'mechanism'] = 'transcription factor'
 
-        regulator = self.create_input_value(df=regulator, col='locus_tag')
+        regulator = create_input_value(df=regulator, col='locus_tag')
         return regulator
 
     def transform(self):

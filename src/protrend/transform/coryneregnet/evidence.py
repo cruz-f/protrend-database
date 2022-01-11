@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_from_multi_stack
 from protrend.model import Evidence, RegulatoryInteraction, TFBS
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
+from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 
 
@@ -18,10 +19,11 @@ class EvidenceTransformer(CoryneRegNetTransformer,
                        'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
                        'PMID', 'Source', 'taxonomy', 'source'])
 
-    def transform_evidence(self, network: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_evidence(network: pd.DataFrame) -> pd.DataFrame:
         evidence = network.dropna(subset=['Evidence'])
-        evidence = self.drop_empty_string(evidence, 'Evidence')
-        evidence = self.drop_duplicates(df=evidence, subset=['Evidence'])
+        evidence = drop_empty_string(evidence, 'Evidence')
+        evidence = drop_duplicates(df=evidence, subset=['Evidence'])
         evidence = evidence.assign(name=evidence['Evidence'], description=None)
         return evidence
 

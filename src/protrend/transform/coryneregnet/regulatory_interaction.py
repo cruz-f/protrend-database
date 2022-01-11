@@ -2,12 +2,13 @@ import pandas as pd
 
 from protrend.io import read_from_multi_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer
 from protrend.transform.coryneregnet.regulator import RegulatorTransformer
 from protrend.transform.coryneregnet.tfbs import TFBSTransformer
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_coryneregnet, rstrip, lstrip, to_int_str
 
@@ -31,8 +32,8 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CoryneRegNetT
                                    Role=[rstrip, lstrip])
 
         network = network.dropna(subset=['TF_locusTag', 'TG_locusTag'])
-        network = self.drop_empty_string(network, 'TF_locusTag', 'TG_locusTag')
-        network = self.drop_duplicates(df=network,
+        network = drop_empty_string(network, 'TF_locusTag', 'TG_locusTag')
+        network = drop_duplicates(df=network,
                                        subset=['TF_locusTag', 'TG_locusTag', 'Binding_site', 'Role'],
                                        perfect_match=True)
 
@@ -43,23 +44,23 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CoryneRegNetT
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism', 'ncbi_taxonomy': 'taxonomy'})
         organism = apply_processors(organism, taxonomy=to_int_str)
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'protrend_id', 'TF_locusTag')
+        regulator = select_columns(regulator, 'protrend_id', 'TF_locusTag')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'protrend_id', 'TG_locusTag')
+        gene = select_columns(gene, 'protrend_id', 'TG_locusTag')
         gene = gene.rename(columns={'protrend_id': 'gene'})
         return gene
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
-        tfbs = self.select_columns(tfbs, 'protrend_id', 'TF_locusTag', 'TG_locusTag', 'Binding_site', 'taxonomy')
+        tfbs = select_columns(tfbs, 'protrend_id', 'TF_locusTag', 'TG_locusTag', 'Binding_site', 'taxonomy')
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
 
         tfbs_id = tfbs['TF_locusTag'] + tfbs['TG_locusTag'] + tfbs['Binding_site'] + tfbs['taxonomy']

@@ -3,11 +3,13 @@ import pandas as pd
 from protrend.io import read_from_multi_stack
 from protrend.model import Publication, Regulator, Organism, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
+from protrend.transform.mix_ins import PublicationMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_str
 
 
-class PublicationTransformer(CoryneRegNetTransformer,
+class PublicationTransformer(PublicationMixIn, CoryneRegNetTransformer,
                              source='coryneregnet',
                              version='0.0.0',
                              node=Publication,
@@ -19,10 +21,11 @@ class PublicationTransformer(CoryneRegNetTransformer,
                        'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
                        'PMID', 'Source', 'taxonomy', 'source'])
 
-    def transform_publication(self, network: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_publication(network: pd.DataFrame) -> pd.DataFrame:
         pub = network.dropna(subset=['PMID'])
-        pub = self.drop_empty_string(pub, 'PMID')
-        pub = self.drop_duplicates(pub, subset=['PMID'])
+        pub = drop_empty_string(pub, 'PMID')
+        pub = drop_duplicates(pub, subset=['PMID'])
 
         pub = pub.assign(pmid=pub['PMID'].copy())
 
@@ -34,10 +37,10 @@ class PublicationTransformer(CoryneRegNetTransformer,
 
         pub = pub.explode('pmid')
         pub = pub.dropna(subset=['pmid'])
-        pub = self.drop_empty_string(pub, 'pmid')
-        pub = self.drop_duplicates(pub, subset=['pmid'])
+        pub = drop_empty_string(pub, 'pmid')
+        pub = drop_duplicates(pub, subset=['pmid'])
 
-        pub = self.create_input_value(pub, col='pmid')
+        pub = create_input_value(pub, col='pmid')
         return pub
 
     def transform(self):

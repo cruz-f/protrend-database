@@ -1,6 +1,6 @@
 from protrend.model import Source, Organism, Regulator, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import SourceMixIn
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
+from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList
 
 
