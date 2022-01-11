@@ -4,6 +4,7 @@ import pandas as pd
 
 from protrend.io import read_csv
 from protrend.transform import MultiStackTransformer, Connector
+from protrend.transform.transformations import merge_columns, merge_loci
 from protrend.utils import SetList, MultiStack
 
 
@@ -36,14 +37,15 @@ class CoryneRegNetTransformer(MultiStackTransformer, source='coryneregnet', vers
     def transform(self):
         pass
 
-    def merge_annotations(self, annotations: pd.DataFrame, coryneregnet: pd.DataFrame):
+    @staticmethod
+    def merge_annotations(annotations: pd.DataFrame, coryneregnet: pd.DataFrame):
         df = pd.merge(annotations, coryneregnet, on='input_value', suffixes=('_annotation', '_coryneregnet'))
 
         # merge loci
-        df = self.merge_loci(df=df, left_suffix='_annotation', right_suffix='_coryneregnet')
+        df = merge_loci(df=df, left_suffix='_annotation', right_suffix='_coryneregnet')
 
         # merge name
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_coryneregnet')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_coryneregnet')
         return df
 
 
