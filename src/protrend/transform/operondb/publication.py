@@ -2,12 +2,14 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model import Publication, Organism, Gene, Operon
+from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
 
 
-class PublicationTransformer(OperonDBTransformer,
+class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
                              source='operondb',
                              version='0.0.0',
                              node=Publication,
@@ -19,7 +21,8 @@ class PublicationTransformer(OperonDBTransformer,
                        'operon_db_id', 'name', 'function', 'genes', 'strand', 'start', 'stop',
                        'organism', 'pubmed'])
 
-    def transform_publication(self, operon: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_publication(operon: pd.DataFrame) -> pd.DataFrame:
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = operon.assign(pmid=operon['pubmed'].str.split(' '))
 
@@ -27,10 +30,10 @@ class PublicationTransformer(OperonDBTransformer,
         operon = operon.explode(column='pmid')
 
         operon = operon.dropna(subset=['pmid'])
-        operon = self.drop_empty_string(operon, 'pmid')
-        operon = self.drop_duplicates(df=operon, subset=['pmid'])
+        operon = drop_empty_string(operon, 'pmid')
+        operon = drop_duplicates(df=operon, subset=['pmid'])
 
-        operon = self.create_input_value(operon, col='pmid')
+        operon = create_input_value(operon, col='pmid')
         return operon
 
     def transform(self):

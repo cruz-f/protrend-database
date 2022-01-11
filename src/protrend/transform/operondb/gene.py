@@ -6,12 +6,14 @@ from neo4j.exceptions import Neo4jError
 
 from protrend.io import read_from_stack, read_txt
 from protrend.model import Gene, Organism
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, merge_columns, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_list_nan
 
 
-class GeneTransformer(OperonDBTransformer,
+class GeneTransformer(GeneMixIn, OperonDBTransformer,
                       source='operondb',
                       version='0.0.0',
                       node=Gene,
@@ -27,14 +29,15 @@ class GeneTransformer(OperonDBTransformer,
     conserved_columns = SetList(['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd'])
     known_columns = SetList(['koid', 'org', 'name', 'op', 'definition', 'source'])
 
-    def transform_operon(self, conserved: pd.DataFrame, known: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_operon(conserved: pd.DataFrame, known: pd.DataFrame) -> pd.DataFrame:
         conserved = conserved.dropna(subset=['coid', 'op'])
-        conserved = self.drop_empty_string(conserved, 'coid', 'op')
-        conserved = self.drop_duplicates(conserved, subset=['coid', 'op'], perfect_match=True)
+        conserved = drop_empty_string(conserved, 'coid', 'op')
+        conserved = drop_duplicates(conserved, subset=['coid', 'op'], perfect_match=True)
 
         known = known.dropna(subset=['koid', 'op'])
-        known = self.drop_empty_string(known, 'koid', 'op')
-        known = self.drop_duplicates(known, subset=['koid', 'op'], perfect_match=True)
+        known = drop_empty_string(known, 'koid', 'op')
+        known = drop_duplicates(known, subset=['koid', 'op'], perfect_match=True)
 
         conserved = conserved.assign(operon_db_id=conserved['coid'].copy(),
                                      locus_tag=conserved['op'].str.split(','))
@@ -84,7 +87,8 @@ class GeneTransformer(OperonDBTransformer,
             genes = pd.DataFrame(columns=list(self.node.node_keys()))
         return genes
 
-    def merge_operon_gene(self, operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def merge_operon_gene(operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
         operon = apply_processors(operon, locus_tag=to_list_nan)
         operon = operon.explode('locus_tag')
 
@@ -95,19 +99,20 @@ class GeneTransformer(OperonDBTransformer,
 
         operon = operon.drop(columns=['locus_tag_lower'])
 
-        operon = self.merge_columns(operon, column='locus_tag', right='locus_tag_gene',
-                                    left='locus_tag_operon')
-        operon = self.merge_columns(operon, column='ncbi_taxonomy', left='ncbi_taxonomy_gene',
-                                    right='ncbi_taxonomy_operon')
+        operon = merge_columns(operon, column='locus_tag', right='locus_tag_gene',
+                               left='locus_tag_operon')
+        operon = merge_columns(operon, column='ncbi_taxonomy', left='ncbi_taxonomy_gene',
+                               right='ncbi_taxonomy_operon')
         return operon
 
-    def transform_gene(self, operon: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    @staticmethod
+    def transform_gene(operon: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         mask = operon['protrend_id'].notna()
 
         genes_in_db = operon[mask].copy()
         genes = operon[~mask].copy()
 
-        genes = self.create_input_value(genes, 'locus_tag')
+        genes = create_input_value(genes, 'locus_tag')
         return genes_in_db, genes
 
     def transform(self):
@@ -126,7 +131,7 @@ class GeneTransformer(OperonDBTransformer,
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_operondb'))
 
         # merge loci
-        df = self.merge_columns(df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_operondb')
+        df = merge_columns(df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_operondb')
 
         df = df.drop(columns=['input_value', 'protrend_id'])
 

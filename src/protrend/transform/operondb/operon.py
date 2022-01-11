@@ -4,6 +4,7 @@ from protrend.io import read_from_stack, read_json_frame
 from protrend.model import Operon, Gene, Organism
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.transform.operondb.gene import GeneTransformer
+from protrend.transform.transformations import select_columns, group_by
 from protrend.utils import SetList
 from protrend.utils.processors import to_set_list, take_last, strand_mode, start_forward, start_reverse, to_list_nan
 
@@ -21,16 +22,17 @@ class OperonTransformer(OperonDBTransformer,
     conserved_columns = SetList(['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd'])
     known_columns = SetList(['koid', 'org', 'name', 'op', 'definition', 'source'])
 
-    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene,
-                                   'protrend_id', 'strand', 'start', 'stop',
-                                   'organism',
-                                   'operon_db_id', 'operon_name', 'operon_function', 'pubmed')
+    @staticmethod
+    def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
+        gene = select_columns(gene,
+                              'protrend_id', 'strand', 'start', 'stop',
+                              'organism',
+                              'operon_db_id', 'operon_name', 'operon_function', 'pubmed')
         gene = gene.rename(columns={'protrend_id': 'genes', 'operon_name': 'name', 'operon_function': 'function'})
 
         aggregation = {'genes': to_set_list, 'strand': to_set_list, 'start': to_set_list, 'stop': to_set_list,
                        'name': take_last, 'function': take_last, 'pubmed': take_last, 'organism': take_last}
-        operon = self.group_by(gene, column='operon_db_id', aggregation=aggregation)
+        operon = group_by(gene, column='operon_db_id', aggregation=aggregation)
         return operon
 
     @staticmethod

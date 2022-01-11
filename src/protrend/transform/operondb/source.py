@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.model import Source, Organism, Gene, Operon
-from protrend.transform import SourceMixIn
+from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.utils import SetList
 
