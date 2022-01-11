@@ -3,11 +3,14 @@ import pandas as pd
 from protrend.io import read_from_multi_stack
 from protrend.model import Gene
 from protrend.transform.abasy.base import AbasyTransformer
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import (create_input_value, drop_duplicates, drop_empty_string, merge_loci,
+                                                merge_columns)
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str
 
 
-class GeneTransformer(AbasyTransformer,
+class GeneTransformer(GeneMixIn, AbasyTransformer,
                       source='abasy',
                       version='0.0.0',
                       node=Gene,
@@ -19,10 +22,11 @@ class GeneTransformer(AbasyTransformer,
                        'Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
                        'Product_function', 'NDA_component', 'taxonomy', 'source', 'ncbi_taxonomy', 'gene_taxonomy'])
 
-    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
+    @staticmethod
+    def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
+        gene = drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
         gene = gene.dropna(subset=['Gene_name', 'taxonomy'])
-        gene = self.drop_empty_string(gene, 'Gene_name')
+        gene = drop_empty_string(gene, 'Gene_name')
 
         gene = apply_processors(gene,
                                 Gene_name=[rstrip, lstrip],
@@ -39,7 +43,7 @@ class GeneTransformer(AbasyTransformer,
                            ncbi_gene=gene['NCBI_gene_ID'].copy(),
                            uniprot_accession=gene['Uniprot_ID'].copy())
 
-        gene = self.create_input_value(df=gene, col='gene_taxonomy')
+        gene = create_input_value(df=gene, col='gene_taxonomy')
         return gene
 
     def transform(self):
@@ -51,20 +55,20 @@ class GeneTransformer(AbasyTransformer,
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_abasy'))
 
         # merge loci
-        df = self.merge_loci(df=df, left_suffix='_annotation', right_suffix='_abasy')
+        df = merge_loci(df=df, left_suffix='_annotation', right_suffix='_abasy')
 
         # merge name
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_abasy')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_abasy')
 
         # merge ncbi_gene
-        df = self.merge_columns(df=df, column='ncbi_gene', left='ncbi_gene_annotation', right='ncbi_gene_abasy')
+        df = merge_columns(df=df, column='ncbi_gene', left='ncbi_gene_annotation', right='ncbi_gene_abasy')
         pseudo_cap_mask = df['ncbi_gene'].str.startswith('PseudoCap')
         pseudo_cap_mask = pseudo_cap_mask.fillna(False)
         df.loc[pseudo_cap_mask, 'ncbi_gene'] = None
 
         # merge uniprot_accession
-        df = self.merge_columns(df=df, column='uniprot_accession', left='uniprot_accession_annotation',
-                                right='uniprot_accession_abasy')
+        df = merge_columns(df=df, column='uniprot_accession', left='uniprot_accession_annotation',
+                           right='uniprot_accession_abasy')
 
         df = df.drop(columns=['input_value'])
 

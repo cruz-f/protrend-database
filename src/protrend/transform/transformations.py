@@ -21,13 +21,13 @@ def merge_columns(df: pd.DataFrame, column: str, left: str, right: str) -> pd.Da
     return df
 
 
-def merge_loci(self, df: pd.DataFrame, left_suffix: str, right_suffix: str) -> pd.DataFrame:
+def merge_loci(df: pd.DataFrame, left_suffix: str, right_suffix: str) -> pd.DataFrame:
     # merge loci
-    df = self.merge_columns(df=df, column='locus_tag',
-                            left=f'locus_tag{left_suffix}', right=f'locus_tag{right_suffix}')
+    df = merge_columns(df=df, column='locus_tag',
+                       left=f'locus_tag{left_suffix}', right=f'locus_tag{right_suffix}')
     df = df.dropna(subset=['locus_tag'])
-    df = self.drop_empty_string(df, 'locus_tag')
-    df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
+    df = drop_empty_string(df, 'locus_tag')
+    df = drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
     return df
 
 

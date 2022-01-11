@@ -4,11 +4,13 @@ from protrend.io import read_from_stack, read_json_frame, read_from_multi_stack
 from protrend.model import Regulator
 from protrend.transform.abasy.base import AbasyTransformer
 from protrend.transform.abasy.gene import GeneTransformer
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, build_stack
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class RegulatorTransformer(AbasyTransformer,
+class RegulatorTransformer(GeneMixIn, AbasyTransformer,
                            source='abasy',
                            version='0.0.0',
                            node=Regulator,
@@ -19,10 +21,11 @@ class RegulatorTransformer(AbasyTransformer,
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
                        'id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy', 'regulator_taxonomy'])
 
-    def transform_network(self, networks: pd.DataFrame) -> pd.DataFrame:
-        networks = self.drop_duplicates(df=networks, subset=['regulator', 'taxonomy'], perfect_match=True)
+    @staticmethod
+    def transform_network(networks: pd.DataFrame) -> pd.DataFrame:
+        networks = drop_duplicates(df=networks, subset=['regulator', 'taxonomy'], perfect_match=True)
         networks = networks.dropna(subset=['regulator', 'taxonomy'])
-        networks = self.drop_empty_string(networks, 'regulator')
+        networks = drop_empty_string(networks, 'regulator')
 
         networks = apply_processors(networks, regulator=[rstrip, lstrip])
 
@@ -32,14 +35,15 @@ class RegulatorTransformer(AbasyTransformer,
                                    mechanism=None)
         return networks
 
-    def transform_gene(self, gene_stack: dict) -> pd.DataFrame:
+    @staticmethod
+    def transform_gene(gene_stack: dict) -> pd.DataFrame:
         gene = read_from_stack(stack=gene_stack,
                                key='gene',
                                columns=GeneTransformer.columns,
                                reader=read_json_frame)
-        gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                                   'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                   'sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
+        gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                              'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                              'sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
         return gene
 
     def transform(self):
@@ -53,8 +57,8 @@ class RegulatorTransformer(AbasyTransformer,
         df = pd.merge(regulator, gene, left_on='regulator_taxonomy', right_on='gene_taxonomy')
 
         df = df.dropna(subset=['locus_tag'])
-        df = self.drop_empty_string(df, 'locus_tag')
-        df = self.drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
+        df = drop_empty_string(df, 'locus_tag')
+        df = drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
 
         self.stack_transformed_nodes(df)
 

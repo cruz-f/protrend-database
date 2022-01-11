@@ -2,11 +2,12 @@ import pandas as pd
 
 from protrend.model import Organism, Regulator, Gene
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
+from protrend.transform.mix_ins import OrganismMixIn
 from protrend.utils import SetList
 from protrend.utils.processors import to_int_str
 
 
-class OrganismTransformer(AbasyTransformer,
+class OrganismTransformer(OrganismMixIn, AbasyTransformer,
                           source='abasy',
                           version='0.0.0',
                           node=Organism,

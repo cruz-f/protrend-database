@@ -2,11 +2,12 @@ import pandas as pd
 
 from protrend.io import read_from_multi_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, Organism
-from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.abasy.organism import OrganismTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, regulatory_effect_abasy
 
@@ -29,9 +30,9 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, AbasyTransfor
                                    Effect=[rstrip, lstrip])
 
         network = network.dropna(subset=['regulator', 'target', 'taxonomy', 'Effect'])
-        network = self.drop_empty_string(network, 'regulator', 'target')
-        network = self.drop_duplicates(df=network, subset=['regulator', 'target', 'taxonomy', 'Effect'],
-                                       perfect_match=True)
+        network = drop_empty_string(network, 'regulator', 'target')
+        network = drop_duplicates(df=network, subset=['regulator', 'target', 'taxonomy', 'Effect'],
+                                  perfect_match=True)
 
         regulator_taxonomy = network['regulator'] + network['taxonomy']
         gene_taxonomy = network['target'] + network['taxonomy']
@@ -42,18 +43,18 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, AbasyTransfor
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism', 'ncbi_taxonomy': 'taxonomy'})
         organism = apply_processors(organism, taxonomy=to_int_str)
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'protrend_id', 'regulator_taxonomy')
+        regulator = select_columns(regulator, 'protrend_id', 'regulator_taxonomy')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'protrend_id', 'gene_taxonomy')
+        gene = select_columns(gene, 'protrend_id', 'gene_taxonomy')
         gene = gene.rename(columns={'protrend_id': 'gene'})
         return gene
 
