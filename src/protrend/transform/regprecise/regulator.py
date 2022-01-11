@@ -2,13 +2,15 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import Regulator
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
+from protrend.transform.transformations import drop_empty_string, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str
 
 
-class RegulatorTransformer(RegPreciseTransformer,
+class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
                            source='regprecise',
                            version='0.0.0',
                            node=Regulator,
@@ -28,9 +30,10 @@ class RegulatorTransformer(RegPreciseTransformer,
                             'regulation_regulog', 'regulog', 'taxonomy', 'transcription_factor', 'tf_family',
                             'rna_family', 'effector', 'pathway', 'operon', 'tfbs', 'gene'])
 
-    def transform_regulator(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_regulator(regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         regulon = regulon.dropna(subset=['genome'])
-        regulon = self.drop_empty_string(regulon, 'genome')
+        regulon = drop_empty_string(regulon, 'genome')
         regulon = apply_processors(regulon, regulon_id=to_int_str, genome=to_int_str)
 
         # + "ncbi_taxonomy"
@@ -45,7 +48,7 @@ class RegulatorTransformer(RegPreciseTransformer,
                                  mechanism=mechanism)
         regulon = apply_processors(regulon, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
 
-        self.create_input_value(df=regulon, col='regulon_id')
+        regulon = create_input_value(df=regulon, col='regulon_id')
         return regulon
 
     def transform(self):
@@ -62,9 +65,9 @@ class RegulatorTransformer(RegPreciseTransformer,
 
         df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
-        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
+        df = merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
 
         # the small RNAs might not have any locus tag associated with during the annotation, so we will create new
         # locus tag composed by the name of sRNA plus the taxonomy identifier

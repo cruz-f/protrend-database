@@ -2,12 +2,14 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Organism
+from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str
 
 
-class OrganismTransformer(RegPreciseTransformer,
+class OrganismTransformer(OrganismMixIn, RegPreciseTransformer,
                           source='regprecise',
                           version='0.0.0',
                           node=Organism,
@@ -19,14 +21,15 @@ class OrganismTransformer(RegPreciseTransformer,
                        'genome_id', 'taxonomy', 'url', 'regulon'])
     read_columns = SetList(['genome_id', 'name', 'taxonomy', 'url', 'regulon'])
 
-    def transform_organism(self, genome: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_organism(genome: pd.DataFrame) -> pd.DataFrame:
         genome = genome.dropna(subset=['name'])
-        genome = self.drop_empty_string(genome, 'name')
-        genome = self.drop_duplicates(df=genome, subset=['name'])
+        genome = drop_empty_string(genome, 'name')
+        genome = drop_duplicates(df=genome, subset=['name'])
 
         genome = apply_processors(genome, genome_id=to_int_str, name=[rstrip, lstrip])
 
-        genome = self.create_input_value(genome, col='name')
+        genome = create_input_value(genome, col='name')
         return genome
 
     def transform(self):
@@ -38,7 +41,7 @@ class OrganismTransformer(RegPreciseTransformer,
 
         df = pd.merge(annotated_organisms, organisms, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
         df = apply_processors(df, ncbi_taxonomy=to_int_str, ncbi_assembly=to_int_str)
 

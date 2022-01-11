@@ -6,9 +6,11 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import TFBS
+from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
+from protrend.transform.transformations import select_columns, group_by, drop_empty_string
 from protrend.utils import SetList
 from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, flatten_set_list,
                                        to_set_list, to_list_nan, take_last, strand_mode, start_forward, start_reverse)
@@ -16,7 +18,7 @@ from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
 
-class TFBSTransformer(RegPreciseTransformer,
+class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
                       source='regprecise',
                       version='0.0.0',
                       node=TFBS,
@@ -78,7 +80,7 @@ class TFBSTransformer(RegPreciseTransformer,
     def transform_tfbs(self, tfbs: pd.DataFrame, gene: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         # filter by sequence and position
         tfbs = tfbs.dropna(subset=['sequence', 'position'])
-        tfbs = self.drop_empty_string(tfbs, 'sequence', 'position')
+        tfbs = drop_empty_string(tfbs, 'sequence', 'position')
 
         # + 'strand', 'start', 'ncbi_taxonomy'
         tfbs = pd.merge(tfbs, gene, on='tfbs_id')
@@ -94,11 +96,11 @@ class TFBSTransformer(RegPreciseTransformer,
                 'regulon': flatten_set_list,
                 'operon': flatten_set_list,
                 'gene': flatten_set_list}
-        tfbs = self.group_by(df=tfbs, column='tfbs_id', aggregation=aggr)
+        tfbs = group_by(df=tfbs, column='tfbs_id', aggregation=aggr)
 
         ris = tfbs.drop(columns=['sequence', 'position'])
 
-        sequences = self.select_columns(tfbs, 'tfbs_id', 'sequence', 'position')
+        sequences = select_columns(tfbs, 'tfbs_id', 'sequence', 'position')
         sequences = apply_processors(sequences, sequence=[remove_ellipsis, upper_case])
         sequences = self.transform_sequence(sequences)
 
@@ -141,8 +143,9 @@ class TFBSTransformer(RegPreciseTransformer,
         tfbs = tfbs.assign(strand=strands, start=starts, stop=stops, length=lengths)
         return tfbs
 
-    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'strand', 'start', 'tfbs', 'ncbi_taxonomy')
+    @staticmethod
+    def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
+        gene = select_columns(gene, 'strand', 'start', 'tfbs', 'ncbi_taxonomy')
         gene = gene.rename(columns={'tfbs': 'tfbs_id'})
         gene = apply_processors(gene, tfbs_id=to_list_nan)
         gene = gene.explode('tfbs_id')

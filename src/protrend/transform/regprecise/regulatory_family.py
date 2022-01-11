@@ -4,6 +4,7 @@ from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import (remove_regprecise_more, remove_multiple_white_space,
                                        rstrip, lstrip, remove_pubmed, apply_processors, to_int_str)
@@ -24,13 +25,14 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
     tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
-    def transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
-        tf_family = self.select_columns(tf_family, 'tffamily_id', 'name', 'url', 'description', 'pubmed')
+    @staticmethod
+    def transform_tf_family(tf_family: pd.DataFrame) -> pd.DataFrame:
+        tf_family = select_columns(tf_family, 'tffamily_id', 'name', 'url', 'description', 'pubmed')
 
         # noinspection DuplicatedCode
         tf_family = tf_family.dropna(subset=['name'])
-        tf_family = self.drop_empty_string(tf_family, 'name')
-        tf_family = self.drop_duplicates(df=tf_family, subset=['name'])
+        tf_family = drop_empty_string(tf_family, 'name')
+        tf_family = drop_duplicates(df=tf_family, subset=['name'])
 
         tf_family = apply_processors(tf_family,
                                      name=[rstrip, lstrip],
@@ -40,13 +42,14 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
         tf_family = tf_family.assign(mechanism='transcription factor')
         return tf_family
 
-    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        tf = self.select_columns(tf, 'collection_id', 'name', 'url', 'description', 'pubmed')
+    @staticmethod
+    def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
+        tf = select_columns(tf, 'collection_id', 'name', 'url', 'description', 'pubmed')
 
         # noinspection DuplicatedCode
         tf = tf.dropna(subset=['name'])
-        tf = self.drop_empty_string(tf, 'name')
-        tf = self.drop_duplicates(df=tf, subset=['name'])
+        tf = drop_empty_string(tf, 'name')
+        tf = drop_duplicates(df=tf, subset=['name'])
 
         tf = apply_processors(tf,
                               name=[rstrip, lstrip],
@@ -56,13 +59,14 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
         tf = tf.assign(mechanism='transcription factor')
         return tf
 
-    def transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
-        rna = self.select_columns(rna, 'riboswitch_id', 'name', 'url', 'description', 'rfam', 'pubmed')
+    @staticmethod
+    def transform_rna(rna: pd.DataFrame) -> pd.DataFrame:
+        rna = select_columns(rna, 'riboswitch_id', 'name', 'url', 'description', 'rfam', 'pubmed')
 
         # noinspection DuplicatedCode
         rna = rna.dropna(subset=['name'])
-        rna = self.drop_empty_string(rna, 'name')
-        rna = self.drop_duplicates(df=rna, subset=['name'])
+        rna = drop_empty_string(rna, 'name')
+        rna = drop_duplicates(df=rna, subset=['name'])
 
         rna = apply_processors(rna,
                                name=[rstrip, lstrip],
@@ -93,7 +97,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
         mask = df['name'] != '[Other]'
         df = df[mask]
 
-        df = self.drop_duplicates(df, subset=['name'])
+        df = drop_duplicates(df, subset=['name'])
 
         df = apply_processors(df, tffamily_id=to_int_str, riboswitch_id=to_int_str, collection_id=to_int_str)
 

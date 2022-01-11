@@ -2,14 +2,17 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import Gene
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
+from protrend.transform.transformations import (select_columns, drop_empty_string, group_by, create_input_value,
+                                                merge_columns)
 from protrend.utils import SetList
 from protrend.utils.processors import (rstrip, lstrip, apply_processors, take_last,
                                        flatten_set_list, to_int_str, to_list_nan, to_set_list)
 
 
-class GeneTransformer(RegPreciseTransformer,
+class GeneTransformer(GeneMixIn, RegPreciseTransformer,
                       source='regprecise',
                       version='0.0.0',
                       node=Gene,
@@ -23,17 +26,19 @@ class GeneTransformer(RegPreciseTransformer,
                        'ncbi_taxonomy', 'regprecise_locus_tag'])
     read_columns = SetList(['locus_tag', 'name', 'function', 'url', 'regulon', 'operon', 'tfbs'])
 
-    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'regulon_id', 'ncbi_taxonomy')
+    @staticmethod
+    def transform_regulator(regulator: pd.DataFrame) -> pd.DataFrame:
+        regulator = select_columns(regulator, 'regulon_id', 'ncbi_taxonomy')
         regulator = regulator.rename(columns={'regulon_id': 'regulon'})
         regulator = apply_processors(regulator, regulon=to_int_str, ncbi_taxonomy=to_int_str)
         return regulator
 
-    def transform_gene(self, gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_gene(gene: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
         gene = gene.assign(regprecise_locus_tag=gene['locus_tag'].copy())
 
         gene = gene.dropna(subset=['locus_tag'])
-        gene = self.drop_empty_string(gene, 'locus_tag')
+        gene = drop_empty_string(gene, 'locus_tag')
 
         gene = apply_processors(gene,
                                 locus_tag=[rstrip, lstrip], name=[rstrip, lstrip], function=[rstrip, lstrip],
@@ -41,7 +46,7 @@ class GeneTransformer(RegPreciseTransformer,
 
         aggregation = {'name': take_last, 'function': take_last, 'url': to_set_list,
                        'regprecise_locus_tag': to_set_list}
-        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
+        gene = group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
 
         gene = gene.explode('regulon')
         gene = apply_processors(gene, regulon=to_int_str)
@@ -50,9 +55,9 @@ class GeneTransformer(RegPreciseTransformer,
         gene = pd.merge(gene, regulator, on='regulon')
 
         aggregation = {'name': take_last, 'function': take_last, 'ncbi_taxonomy': take_last, 'regulon': to_set_list}
-        gene = self.group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
+        gene = group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
 
-        gene = self.create_input_value(df=gene, col='locus_tag')
+        gene = create_input_value(df=gene, col='locus_tag')
         return gene
 
     def transform(self):
@@ -70,9 +75,9 @@ class GeneTransformer(RegPreciseTransformer,
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
-        df = self.merge_columns(df=df, column='function', left='function_annotation', right='function_regprecise')
+        df = merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
+        df = merge_columns(df=df, column='function', left='function_annotation', right='function_regprecise')
 
         df = apply_processors(df, regulon=to_int_str, ncbi_taxonomy=to_int_str)
 

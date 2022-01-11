@@ -2,12 +2,14 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Effector
+from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str
 
 
-class EffectorTransformer(RegPreciseTransformer,
+class EffectorTransformer(EffectorMixIn, RegPreciseTransformer,
                           source='regprecise',
                           version='0.0.0',
                           node=Effector,
@@ -18,15 +20,16 @@ class EffectorTransformer(RegPreciseTransformer,
                        'effector_id', 'url', 'regulog'])
     read_columns = SetList(['effector_id', 'name', 'url', 'regulog'])
 
-    def transform_effector(self, effector: pd.DataFrame):
+    @staticmethod
+    def transform_effector(effector: pd.DataFrame):
         # noinspection DuplicatedCode
         effector = effector.dropna(subset=['name'])
-        effector = self.drop_empty_string(effector, 'name')
-        effector = self.drop_duplicates(df=effector, subset=['name'])
+        effector = drop_empty_string(effector, 'name')
+        effector = drop_duplicates(df=effector, subset=['name'])
 
         effector = apply_processors(effector, effector_id=to_int_str, name=[rstrip, lstrip])
 
-        effector = self.create_input_value(effector, 'name')
+        effector = create_input_value(effector, 'name')
         return effector
 
     def transform(self):

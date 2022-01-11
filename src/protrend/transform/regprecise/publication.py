@@ -2,12 +2,14 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Publication, RegulatoryFamily
+from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
+from protrend.transform.transformations import drop_empty_string, select_columns, group_by
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list
 
 
-class PublicationTransformer(RegPreciseTransformer,
+class PublicationTransformer(PublicationMixIn, RegPreciseTransformer,
                              source='regprecise',
                              version='0.0.0',
                              node=Publication,
@@ -22,27 +24,28 @@ class PublicationTransformer(RegPreciseTransformer,
     tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
     rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
-    def _transform_rfams(self, rfam: pd.DataFrame):
+    @staticmethod
+    def _transform_rfams(rfam: pd.DataFrame):
         rfam = rfam.assign(pmid=rfam['pubmed'].copy())
 
         rfam = apply_processors(rfam, pmid=to_list_nan)
         rfam = rfam.explode('pmid')
 
         rfam = rfam.dropna(subset=['pmid'])
-        rfam = self.drop_empty_string(rfam, 'pmid')
+        rfam = drop_empty_string(rfam, 'pmid')
 
         return rfam
 
     def transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
-        tf_family = self.select_columns(tf_family, 'tffamily_id', 'pubmed')
+        tf_family = select_columns(tf_family, 'tffamily_id', 'pubmed')
         return self._transform_rfams(tf_family)
 
     def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
-        tf = self.select_columns(tf, 'collection_id', 'pubmed')
+        tf = select_columns(tf, 'collection_id', 'pubmed')
         return self._transform_rfams(tf)
 
     def transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
-        rna = self.select_columns(rna, 'riboswitch_id', 'pubmed')
+        rna = select_columns(rna, 'riboswitch_id', 'pubmed')
         return self._transform_rfams(rna)
 
     def transform(self):
@@ -63,7 +66,7 @@ class PublicationTransformer(RegPreciseTransformer,
 
         aggregation = {'tffamily_id': to_set_list, 'collection_id': to_set_list, 'riboswitch_id': to_set_list,
                        'pubmed': flatten_set_list}
-        publications = self.group_by(publications, column='pmid', aggregation=aggregation)
+        publications = group_by(publications, column='pmid', aggregation=aggregation)
 
         annotated_publications = self.annotate_publications(publications)
 

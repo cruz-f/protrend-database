@@ -3,7 +3,7 @@ from typing import Dict, Callable, List
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model.model import (Source, Effector, Gene, Organism, Pathway, Regulator, RegulatoryFamily,
                                   RegulatoryInteraction, TFBS)
-from protrend.transform import SourceMixIn
+from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulatory_family import RegulatoryFamilyTransformer
 from protrend.utils import SetList

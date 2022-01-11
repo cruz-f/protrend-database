@@ -2,12 +2,14 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Pathway, Regulator
+from protrend.transform.mix_ins import PathwayMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str, to_list_nan
 
 
-class PathwayTransformer(RegPreciseTransformer,
+class PathwayTransformer(PathwayMixIn, RegPreciseTransformer,
                          source='regprecise',
                          version='0.0.0',
                          node=Pathway,
@@ -18,11 +20,12 @@ class PathwayTransformer(RegPreciseTransformer,
                        'pathway_id', 'url', 'regulog'])
     read_columns = SetList(['pathway_id', 'name', 'url', 'regulog'])
 
-    def transform_pathway(self, pathway: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_pathway(pathway: pd.DataFrame) -> pd.DataFrame:
         # noinspection DuplicatedCode
         pathway = pathway.dropna(subset=['name'])
-        pathway = self.drop_empty_string(pathway, 'name')
-        pathway = self.drop_duplicates(df=pathway, subset=['name'])
+        pathway = drop_empty_string(pathway, 'name')
+        pathway = drop_duplicates(df=pathway, subset=['name'])
 
         pathway = apply_processors(pathway, pathway_id=to_int_str, name=[rstrip, lstrip])
 
@@ -30,7 +33,7 @@ class PathwayTransformer(RegPreciseTransformer,
         mask = (pathway['name'] != 'unknown') & (pathway['name'] != 'NULL')
         pathway = pathway[mask]
 
-        pathway = self.create_input_value(pathway, 'name')
+        pathway = create_input_value(pathway, 'name')
         return pathway
 
     def transform(self):
