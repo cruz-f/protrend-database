@@ -11,14 +11,14 @@ def regulondb_reader(skiprows: int, names: Union[SetList, List[str]]) -> partial
     return partial(read_txt, skiprows=skiprows, names=names)
 
 
-class RegulondbTransformer(Transformer, source='regulondb', version='0.0.0', register=False):
+class RegulonDBTransformer(Transformer, source='regulondb', version='0.0.0', register=False):
 
     @abstractmethod
     def transform(self):
         pass
 
 
-class RegulondbConnector(Connector, source='regulondb', version='0.0.0', register=False):
+class RegulonDBConnector(Connector, source='regulondb', version='0.0.0', register=False):
 
     @abstractmethod
     def connect(self):

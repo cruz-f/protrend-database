@@ -4,13 +4,13 @@ import pandas as pd
 
 from protrend.io import read_from_stack
 from protrend.model import Evidence, RegulatoryInteraction
-from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, split_semi_colon, to_list_nan, remove_html_tags
 
 
-class EvidenceTransformer(RegulondbTransformer,
+class EvidenceTransformer(RegulonDBTransformer,
                           source='regulondb',
                           version='0.0.0',
                           node=Evidence,
@@ -59,7 +59,7 @@ class EvidenceTransformer(RegulondbTransformer,
         return evidence
 
 
-class EvidenceToRegulatoryInteractionConnector(RegulondbConnector,
+class EvidenceToRegulatoryInteractionConnector(RegulonDBConnector,
                                                source='regulondb',
                                                version='0.0.0',
                                                from_node=Evidence,

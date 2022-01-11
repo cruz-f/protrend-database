@@ -34,8 +34,8 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CoryneRegNetT
         network = network.dropna(subset=['TF_locusTag', 'TG_locusTag'])
         network = drop_empty_string(network, 'TF_locusTag', 'TG_locusTag')
         network = drop_duplicates(df=network,
-                                       subset=['TF_locusTag', 'TG_locusTag', 'Binding_site', 'Role'],
-                                       perfect_match=True)
+                                  subset=['TF_locusTag', 'TG_locusTag', 'Binding_site', 'Role'],
+                                  perfect_match=True)
 
         tfbs_id = network['TF_locusTag'] + network['TG_locusTag'] + network['Binding_site'] + network['taxonomy']
         network = network.assign(tfbs_id=tfbs_id)

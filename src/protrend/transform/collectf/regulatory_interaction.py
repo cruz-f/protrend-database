@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.collectf.gene import GeneTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.collectf.tfbs import TFBSTransformer
@@ -12,7 +12,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_collectf, to_list_nan
 
 
-class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollectfTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollecTFTransformer,
                                        source='collectf',
                                        version='0.0.1',
                                        node=RegulatoryInteraction,
@@ -82,7 +82,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollectfTrans
         return df
 
 
-class RegulatoryInteractionToRegulatorConnector(CollectfConnector,
+class RegulatoryInteractionToRegulatorConnector(CollecTFConnector,
                                                 source='collectf',
                                                 version='0.0.1',
                                                 from_node=RegulatoryInteraction,
@@ -96,7 +96,7 @@ class RegulatoryInteractionToRegulatorConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(CollectfConnector,
+class RegulatoryInteractionToGeneConnector(CollecTFConnector,
                                            source='collectf',
                                            version='0.0.1',
                                            from_node=RegulatoryInteraction,
@@ -110,7 +110,7 @@ class RegulatoryInteractionToGeneConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(CollectfConnector,
+class RegulatoryInteractionToTFBSConnector(CollecTFConnector,
                                            source='collectf',
                                            version='0.0.1',
                                            from_node=RegulatoryInteraction,
@@ -124,7 +124,7 @@ class RegulatoryInteractionToTFBSConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(CollectfConnector,
+class RegulatorToGeneConnector(CollecTFConnector,
                                source='collectf',
                                version='0.0.1',
                                from_node=Regulator,
@@ -138,7 +138,7 @@ class RegulatorToGeneConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class RegulatorToTFBSConnector(CollectfConnector,
+class RegulatorToTFBSConnector(CollecTFConnector,
                                source='collectf',
                                version='0.0.1',
                                from_node=Regulator,
@@ -152,7 +152,7 @@ class RegulatorToTFBSConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(CollectfConnector,
+class GeneToTFBSConnector(CollecTFConnector,
                           source='collectf',
                           version='0.0.1',
                           from_node=Gene,

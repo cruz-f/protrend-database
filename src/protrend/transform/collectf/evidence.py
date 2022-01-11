@@ -2,13 +2,13 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model import Evidence, TFBS, RegulatoryInteraction
-from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_nan
 
 
-class EvidenceTransformer(CollectfTransformer,
+class EvidenceTransformer(CollecTFTransformer,
                           source='collectf',
                           version='0.0.1',
                           node=Evidence,
@@ -36,7 +36,7 @@ class EvidenceTransformer(CollectfTransformer,
         return evidence
 
 
-class EvidenceConnector(CollectfConnector, register=False):
+class EvidenceConnector(CollecTFConnector, register=False):
     default_connect_stack = {'evidence': 'integrated_evidence.json',
                              'tfbs': 'integrated_tfbs.json',
                              'rin': 'integrated_regulatoryinteraction.json'}

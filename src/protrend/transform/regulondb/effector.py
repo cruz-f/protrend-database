@@ -3,14 +3,14 @@ import pandas as pd
 from protrend.io import read_from_stack
 from protrend.model import Effector
 from protrend.transform.mix_ins import EffectorMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import (rstrip, lstrip, apply_processors, remove_html_tags,
                                        parse_effector_name_regulondb)
 
 
-class EffectorTransformer(EffectorMixIn, RegulondbTransformer,
+class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
                           source='regulondb',
                           version='0.0.0',
                           node=Effector,

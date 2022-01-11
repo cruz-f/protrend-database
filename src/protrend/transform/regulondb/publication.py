@@ -3,13 +3,13 @@ import pandas as pd
 from protrend.io import read_from_stack
 from protrend.model import Publication, Regulator, TFBS, Gene, Organism, RegulatoryInteraction
 from protrend.transform.mix_ins import PublicationMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
 from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList, build_stack
 from protrend.utils.processors import apply_processors, to_int_str
 
 
-class PublicationTransformer(PublicationMixIn, RegulondbTransformer,
+class PublicationTransformer(PublicationMixIn, RegulonDBTransformer,
                              source='regulondb',
                              version='0.0.0',
                              node=Publication,
@@ -51,7 +51,7 @@ class PublicationTransformer(PublicationMixIn, RegulondbTransformer,
         return df
 
 
-class PublicationToOrganismConnector(RegulondbConnector,
+class PublicationToOrganismConnector(RegulonDBConnector,
                                      source='regulondb',
                                      version='0.0.0',
                                      from_node=Publication,
@@ -64,7 +64,7 @@ class PublicationToOrganismConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class PublicationConnector(RegulondbConnector,
+class PublicationConnector(RegulonDBConnector,
                            source='regulondb',
                            version='0.0.0',
                            register=False):

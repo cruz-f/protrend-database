@@ -1,11 +1,11 @@
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, Effector,
                             RegulatoryInteraction)
 from protrend.transform.mix_ins import SourceMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
+from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector
 from protrend.utils import SetList, is_null
 
 
-class SourceTransformer(SourceMixIn, RegulondbTransformer,
+class SourceTransformer(SourceMixIn, RegulonDBTransformer,
                         source='regulondb',
                         version='0.0.0',
                         node=Source,
@@ -26,7 +26,7 @@ class SourceTransformer(SourceMixIn, RegulondbTransformer,
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
 
-class SourceConnector(RegulondbConnector,
+class SourceConnector(RegulonDBConnector,
                       source='regulondb',
                       version='0.0.0',
                       register=False):
@@ -65,7 +65,7 @@ class SourceConnector(RegulondbConnector,
         return df
 
 
-class SourceToOrganismConnector(RegulondbConnector,
+class SourceToOrganismConnector(RegulonDBConnector,
                                 source='regulondb',
                                 version='0.0.0',
                                 from_node=Source,

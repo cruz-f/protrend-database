@@ -3,14 +3,14 @@ import pandas as pd
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import TFBS
 from protrend.transform.mix_ins import TFBSMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.regulondb.organism import OrganismTransformer
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors
 
 
-class TFBSTransformer(TFBSMixIn, RegulondbTransformer,
+class TFBSTransformer(TFBSMixIn, RegulonDBTransformer,
                       source='regulondb',
                       version='0.0.0',
                       node=TFBS,

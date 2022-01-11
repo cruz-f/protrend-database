@@ -1,10 +1,10 @@
 from protrend.model import Regulator, Organism, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.mix_ins import OrganismMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector
+from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector
 from protrend.utils import SetList
 
 
-class OrganismTransformer(OrganismMixIn, RegulondbTransformer,
+class OrganismTransformer(OrganismMixIn, RegulonDBTransformer,
                           source='regulondb',
                           version='0.0.0',
                           node=Organism,
@@ -25,7 +25,7 @@ class OrganismTransformer(OrganismMixIn, RegulondbTransformer,
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession'])
 
 
-class OrganismToRegulatorConnector(RegulondbConnector,
+class OrganismToRegulatorConnector(RegulonDBConnector,
                                    source='regulondb',
                                    version='0.0.0',
                                    from_node=Organism,
@@ -38,7 +38,7 @@ class OrganismToRegulatorConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class OrganismToGeneConnector(RegulondbConnector,
+class OrganismToGeneConnector(RegulonDBConnector,
                               source='regulondb',
                               version='0.0.0',
                               from_node=Organism,
@@ -51,7 +51,7 @@ class OrganismToGeneConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class OrganismToTFBSConnector(RegulondbConnector,
+class OrganismToTFBSConnector(RegulonDBConnector,
                               source='regulondb',
                               version='0.0.0',
                               from_node=Organism,
@@ -64,7 +64,7 @@ class OrganismToTFBSConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class OrganismToRegulatoryInteractionConnector(RegulondbConnector,
+class OrganismToRegulatoryInteractionConnector(RegulonDBConnector,
                                                source='regulondb',
                                                version='0.0.0',
                                                from_node=Organism,

@@ -23,7 +23,8 @@ class RegulatorTransformer(GeneMixIn, CoryneRegNetTransformer,
                        'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
                        'PMID', 'Source', 'taxonomy', 'source'])
 
-    def transform_regulator(self, network: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_regulator(network: pd.DataFrame) -> pd.DataFrame:
         regulator = network.dropna(subset=['TF_locusTag'])
         regulator = drop_empty_string(regulator, 'TF_locusTag')
         regulator = drop_duplicates(df=regulator, subset=['TF_locusTag'])

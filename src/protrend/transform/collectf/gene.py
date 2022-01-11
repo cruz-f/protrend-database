@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model import Gene
-from protrend.transform.collectf.base import CollectfTransformer
+from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (drop_empty_string, drop_duplicates, select_columns, create_input_value,
@@ -11,7 +11,7 @@ from protrend.utils import SetList
 from protrend.utils.processors import (to_int_str, apply_processors, rstrip, lstrip, to_list_nan)
 
 
-class GeneTransformer(GeneMixIn, CollectfTransformer,
+class GeneTransformer(GeneMixIn, CollecTFTransformer,
                       source='collectf',
                       version='0.0.1',
                       node=Gene,

@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.io import read_json_frame, read_from_stack
 from protrend.model import RegulatoryInteraction, Regulator, TFBS, Gene, Effector
 from protrend.transform.mix_ins import RegulatoryInteractionMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, RegulondbConnector, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
 from protrend.transform.regulondb.effector import EffectorTransformer
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.regulondb.organism import OrganismTransformer
@@ -27,7 +27,7 @@ def transform_regulon_db_dataset(df: pd.DataFrame,
     return df
 
 
-class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulondbTransformer,
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTransformer,
                                        source='regulondb',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,
@@ -400,7 +400,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulondbTran
         return df
 
 
-class RegulatoryInteractionToEffectorConnector(RegulondbConnector,
+class RegulatoryInteractionToEffectorConnector(RegulonDBConnector,
                                                source='regulondb',
                                                version='0.0.0',
                                                from_node=RegulatoryInteraction,
@@ -414,7 +414,7 @@ class RegulatoryInteractionToEffectorConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class RegulatoryInteractionToRegulatorConnector(RegulondbConnector,
+class RegulatoryInteractionToRegulatorConnector(RegulonDBConnector,
                                                 source='regulondb',
                                                 version='0.0.0',
                                                 from_node=RegulatoryInteraction,
@@ -428,7 +428,7 @@ class RegulatoryInteractionToRegulatorConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class RegulatoryInteractionToGeneConnector(RegulondbConnector,
+class RegulatoryInteractionToGeneConnector(RegulonDBConnector,
                                            source='regulondb',
                                            version='0.0.0',
                                            from_node=RegulatoryInteraction,
@@ -442,7 +442,7 @@ class RegulatoryInteractionToGeneConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class RegulatoryInteractionToTFBSConnector(RegulondbConnector,
+class RegulatoryInteractionToTFBSConnector(RegulonDBConnector,
                                            source='regulondb',
                                            version='0.0.0',
                                            from_node=RegulatoryInteraction,
@@ -456,7 +456,7 @@ class RegulatoryInteractionToTFBSConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class RegulatorToEffectorConnector(RegulondbConnector,
+class RegulatorToEffectorConnector(RegulonDBConnector,
                                    source='regulondb',
                                    version='0.0.0',
                                    from_node=Regulator,
@@ -470,7 +470,7 @@ class RegulatorToEffectorConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class RegulatorToGeneConnector(RegulondbConnector,
+class RegulatorToGeneConnector(RegulonDBConnector,
                                source='regulondb',
                                version='0.0.0',
                                from_node=Regulator,
@@ -484,7 +484,7 @@ class RegulatorToGeneConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class RegulatorToTFBSConnector(RegulondbConnector,
+class RegulatorToTFBSConnector(RegulonDBConnector,
                                source='regulondb',
                                version='0.0.0',
                                from_node=Regulator,
@@ -498,7 +498,7 @@ class RegulatorToTFBSConnector(RegulondbConnector,
         self.stack_json(df)
 
 
-class GeneToTFBSConnector(RegulondbConnector,
+class GeneToTFBSConnector(RegulonDBConnector,
                           source='regulondb',
                           version='0.0.0',
                           from_node=Gene,

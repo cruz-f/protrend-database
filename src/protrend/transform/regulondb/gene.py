@@ -4,13 +4,13 @@ from Bio import SeqIO
 from protrend.io import read_from_stack
 from protrend.model import Gene
 from protrend.transform.mix_ins import GeneMixIn, SequenceMixIn
-from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class GeneTransformer(SequenceMixIn, GeneMixIn, RegulondbTransformer,
+class GeneTransformer(SequenceMixIn, GeneMixIn, RegulonDBTransformer,
                       source='regulondb',
                       version='0.0.0',
                       node=Gene,

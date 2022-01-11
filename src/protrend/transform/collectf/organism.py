@@ -5,7 +5,7 @@ import pandas as pd
 from protrend.bioapis import entrez_summary
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
-from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.transformations import (merge_columns, create_input_value, drop_duplicates, group_by,
                                                 drop_empty_string)
@@ -13,7 +13,7 @@ from protrend.utils import SetList, is_null
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list
 
 
-class OrganismTransformer(OrganismMixIn, CollectfTransformer,
+class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
                           source='collectf',
                           version='0.0.1',
                           node=Organism,
@@ -81,7 +81,7 @@ class OrganismTransformer(OrganismMixIn, CollectfTransformer,
         return df
 
 
-class OrganismToRegulatorConnector(CollectfConnector,
+class OrganismToRegulatorConnector(CollecTFConnector,
                                    source='collectf',
                                    version='0.0.1',
                                    from_node=Organism,
@@ -95,7 +95,7 @@ class OrganismToRegulatorConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class OrganismToGeneConnector(CollectfConnector,
+class OrganismToGeneConnector(CollecTFConnector,
                               source='collectf',
                               version='0.0.1',
                               from_node=Organism,
@@ -109,7 +109,7 @@ class OrganismToGeneConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class OrganismToTFBSConnector(CollectfConnector,
+class OrganismToTFBSConnector(CollecTFConnector,
                               source='collectf',
                               version='0.0.1',
                               from_node=Organism,
@@ -123,7 +123,7 @@ class OrganismToTFBSConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class OrganismToRegulatoryInteractionConnector(CollectfConnector,
+class OrganismToRegulatoryInteractionConnector(CollecTFConnector,
                                                source='collectf',
                                                version='0.0.1',
                                                from_node=Organism,

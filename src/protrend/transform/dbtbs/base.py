@@ -22,10 +22,10 @@ class DBTBSTransformer(Transformer, source='dbtbs', version='0.0.4', register=Fa
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_dbtbs_merge')
 
         df = merge_columns(df=df, column='genbank_accession',
-                                left='genbank_accession_annotation', right='genbank_accession_dbtbs')
+                           left='genbank_accession_annotation', right='genbank_accession_dbtbs')
 
         df = merge_columns(df=df, column='uniprot_accession',
-                                left='uniprot_accession_annotation', right='uniprot_accession_dbtbs')
+                           left='uniprot_accession_annotation', right='uniprot_accession_dbtbs')
         return df
 
 

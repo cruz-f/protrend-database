@@ -1,7 +1,4 @@
-from .transformer import (Transformer, MultiStackTransformer,
-                          SourceMixIn, OrganismMixIn,
-                          RegulatoryInteractionMixIn,
-                          transform_sequence)
+from .transformer import Transformer, MultiStackTransformer
 from .connector import Connector
 from .abasy import *
 from .collectf import *

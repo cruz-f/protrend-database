@@ -135,8 +135,8 @@ class TFBSItem(Item):
     gene = Field()
 
 
+# noinspection DuplicatedCode
 class TranscriptionFactorItem(Item):
-    # noinspection DuplicatedCode
     collection_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
                           output_processor=TakeFirst())
 
@@ -186,8 +186,8 @@ class RegulogItem(Item):
     pathway = Field(input_processor=MapCompose(RegPreciseProcessors.process_href))
 
 
+# noinspection DuplicatedCode
 class TranscriptionFactorFamilyItem(Item):
-    # noinspection DuplicatedCode
     tffamily_id = Field(input_processor=MapCompose(RegPreciseProcessors.process_href),
                         output_processor=TakeFirst())
 

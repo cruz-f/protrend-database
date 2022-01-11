@@ -2,14 +2,14 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model import Publication, Regulator, Gene, TFBS, RegulatoryInteraction
-from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.transformations import drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
 
 
-class PublicationTransformer(PublicationMixIn, CollectfTransformer,
+class PublicationTransformer(PublicationMixIn, CollecTFTransformer,
                              source='collectf',
                              version='0.0.1',
                              node=Publication,
@@ -50,7 +50,7 @@ class PublicationTransformer(PublicationMixIn, CollectfTransformer,
         return df
 
 
-class PublicationConnector(CollectfConnector, register=False):
+class PublicationConnector(CollecTFConnector, register=False):
     default_connect_stack = {'publication': 'integrated_publication.json',
                              'rin': 'integrated_regulatoryinteraction.json'}
 

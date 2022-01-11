@@ -1,11 +1,11 @@
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, RegulatoryInteraction)
-from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import to_list_nan
 
 
-class SourceTransformer(SourceMixIn, CollectfTransformer,
+class SourceTransformer(SourceMixIn, CollecTFTransformer,
                         source='collectf',
                         version='0.0.1',
                         node=Source,
@@ -21,7 +21,7 @@ class SourceTransformer(SourceMixIn, CollectfTransformer,
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
 
-class SourceToOrganismConnector(CollectfConnector,
+class SourceToOrganismConnector(CollecTFConnector,
                                 source='collectf',
                                 version='0.0.1',
                                 from_node=Source,
@@ -61,7 +61,7 @@ class SourceToOrganismConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class SourceToRegulatoryFamilyConnector(CollectfConnector,
+class SourceToRegulatoryFamilyConnector(CollecTFConnector,
                                         source='collectf',
                                         version='0.0.1',
                                         from_node=Source,
@@ -76,7 +76,7 @@ class SourceToRegulatoryFamilyConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class SourceToRegulatorConnector(CollectfConnector,
+class SourceToRegulatorConnector(CollecTFConnector,
                                  source='collectf',
                                  version='0.0.1',
                                  from_node=Source,
@@ -116,7 +116,7 @@ class SourceToRegulatorConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class SourceToGeneConnector(CollectfConnector,
+class SourceToGeneConnector(CollecTFConnector,
                             source='collectf',
                             version='0.0.1',
                             from_node=Source,
@@ -131,7 +131,7 @@ class SourceToGeneConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class SourceToTFBSConnector(CollectfConnector,
+class SourceToTFBSConnector(CollecTFConnector,
                             source='collectf',
                             version='0.0.1',
                             from_node=Source,
@@ -146,7 +146,7 @@ class SourceToTFBSConnector(CollectfConnector,
         self.stack_json(df)
 
 
-class SourceToRegulatoryInteractionConnector(CollectfConnector,
+class SourceToRegulatoryInteractionConnector(CollecTFConnector,
                                              source='collectf',
                                              version='0.0.1',
                                              from_node=Source,

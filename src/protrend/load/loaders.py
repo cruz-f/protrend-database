@@ -5,7 +5,7 @@ class AbasyLoader(Loader, source='abasy', version='0.0.0', register=True):
     pass
 
 
-class CollectfLoader(Loader, source='collectf', version='0.0.1', register=True):
+class CollecTFLoader(Loader, source='collectf', version='0.0.1', register=True):
     pass
 
 
@@ -21,9 +21,13 @@ class LiteratureLoader(Loader, source='literature', version='0.0.0', register=Tr
     pass
 
 
+class OperonDBLoader(Loader, source='literature', version='0.0.0', register=True):
+    pass
+
+
 class RegPreciseLoader(Loader, source='regprecise', version='0.0.0', register=True):
     pass
 
 
-class RegulondbLoader(Loader, source='regulondb', version='0.0.0', register=True):
+class RegulonDBLoader(Loader, source='regulondb', version='0.0.0', register=True):
     pass

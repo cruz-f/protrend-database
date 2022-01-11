@@ -1,3 +1,3 @@
 from .loader import Loader
-from .loaders import (AbasyLoader, CollectfLoader, CoryneRegNetLoader, DBTBSLoader, LiteratureLoader, RegPreciseLoader,
-                      RegulondbLoader)
+from .loaders import (AbasyLoader, CollecTFLoader, CoryneRegNetLoader, DBTBSLoader, LiteratureLoader, RegPreciseLoader,
+                      RegulonDBLoader)

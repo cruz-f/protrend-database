@@ -2,7 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read_json_frame, read_from_stack
 from protrend.model import TFBS
-from protrend.transform.collectf.base import CollectfTransformer
+from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import select_columns, drop_empty_string, group_by
@@ -11,7 +11,7 @@ from protrend.utils.processors import (apply_processors, flatten_set_list, to_se
                                        take_first)
 
 
-class TFBSTransformer(TFBSMixIn, CollectfTransformer,
+class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
                       source='collectf',
                       version='0.0.1',
                       node=TFBS,

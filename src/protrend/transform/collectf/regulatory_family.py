@@ -2,13 +2,13 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model import RegulatoryFamily, Regulator
-from protrend.transform.collectf.base import CollectfTransformer, CollectfConnector
+from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.transformations import select_columns, group_by
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, flatten_set_list, to_list_nan
 
 
-class RegulatoryFamilyTransformer(CollectfTransformer,
+class RegulatoryFamilyTransformer(CollecTFTransformer,
                                   source='collectf',
                                   version='0.0.1',
                                   node=RegulatoryFamily,
@@ -38,7 +38,7 @@ class RegulatoryFamilyTransformer(CollectfTransformer,
         return tf
 
 
-class RegulatoryFamilyToRegulatorConnector(CollectfConnector,
+class RegulatoryFamilyToRegulatorConnector(CollecTFConnector,
                                            source='collectf',
                                            version='0.0.1',
                                            from_node=RegulatoryFamily,

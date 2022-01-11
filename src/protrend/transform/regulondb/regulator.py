@@ -2,14 +2,14 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame
 from protrend.model import Regulator
-from protrend.transform.regulondb.base import RegulondbTransformer, regulondb_reader
+from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class RegulatorTransformer(RegulondbTransformer,
+class RegulatorTransformer(RegulonDBTransformer,
                            source='regulondb',
                            version='0.0.0',
                            node=Regulator,

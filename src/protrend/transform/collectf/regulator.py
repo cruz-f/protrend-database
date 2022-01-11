@@ -6,7 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis import map_uniprot_identifiers, fetch_uniprot_record
 from protrend.io import read_from_stack, read_json_lines, read_json_frame
 from protrend.model import Regulator
-from protrend.transform.collectf.base import CollectfTransformer
+from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.organism import OrganismTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (drop_empty_string, drop_duplicates, create_input_value, select_columns,
@@ -40,7 +40,7 @@ def uniprot_record_locus_tag(record: SeqRecord) -> Union[str, None]:
     return None
 
 
-class RegulatorTransformer(GeneMixIn, CollectfTransformer,
+class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
                            source='collectf',
                            version='0.0.1',
                            node=Regulator,
