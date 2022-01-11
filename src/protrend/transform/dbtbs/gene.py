@@ -4,12 +4,13 @@ from Bio import SeqIO
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Gene
 from protrend.transform.dbtbs.base import DBTBSTransformer
-from protrend.transform import transform_sequence
+from protrend.transform.mix_ins import SequenceMixIn, GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import (rstrip, lstrip, apply_processors)
 
 
-class GeneTransformer(DBTBSTransformer,
+class GeneTransformer(GeneMixIn, SequenceMixIn, DBTBSTransformer,
                       source='dbtbs',
                       version='0.0.4',
                       node=Gene,
@@ -23,7 +24,8 @@ class GeneTransformer(DBTBSTransformer,
                        'name_lower', 'name_dbtbs'])
     read_columns = SetList(['name', 'url', 'regulation', 'pubmed', 'tf', 'tfbs'])
 
-    def transform_gene(self, gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_gene(gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
         gene = gene.explode(column='name')
         gene = gene.explode(column='url')
         gene = gene.explode(column='regulation')
@@ -37,14 +39,14 @@ class GeneTransformer(DBTBSTransformer,
 
         # filter nan and duplicates
         gene = gene.dropna(subset=['name'])
-        gene = self.drop_empty_string(gene, 'name')
-        gene = self.drop_duplicates(df=gene, subset=['name'])
+        gene = drop_empty_string(gene, 'name')
+        gene = drop_duplicates(df=gene, subset=['name'])
 
         gene = gene.assign(name_lower=gene['name'].str.lower())
 
         gene = pd.merge(gene, sequence, on='name_lower')
 
-        gene = self.create_input_value(df=gene, col='locus_tag')
+        gene = create_input_value(df=gene, col='locus_tag')
         return gene
 
     def transform(self):
@@ -54,7 +56,7 @@ class GeneTransformer(DBTBSTransformer,
 
         gb_file = self.transform_stack['sequence']
         sequence = SeqIO.read(gb_file, "genbank")
-        sequence = transform_sequence(sequence)
+        sequence = self.transform_sequence(sequence)
 
         genes = self.transform_gene(gene=gene, sequence=sequence)
         annotated_genes = self.annotate_genes(genes)

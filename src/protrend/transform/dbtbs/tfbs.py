@@ -4,11 +4,13 @@ from protrend.io import read_json_frame, read_json_lines, read_from_stack
 from protrend.model import TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.dbtbs.organism import OrganismTransformer
+from protrend.transform.mix_ins import TFBSMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import apply_processors, upper_case
 
 
-class TFBSTransformer(DBTBSTransformer,
+class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
                       source='dbtbs',
                       version='0.0.4',
                       node=TFBS,
@@ -20,7 +22,8 @@ class TFBSTransformer(DBTBSTransformer,
                        'identifier', 'url', 'regulation', 'absolute_position', 'pubmed', 'tf', 'gene'])
     read_columns = SetList(['identifier', 'url', 'regulation', 'absolute_position', 'sequence', 'pubmed', 'tf', 'gene'])
 
-    def transform_tfbs(self, tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tfbs(tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         tfbs = tfbs.explode(column='url')
         tfbs = tfbs.explode(column='regulation')
         tfbs = tfbs.explode(column='absolute_position')
@@ -30,8 +33,8 @@ class TFBSTransformer(DBTBSTransformer,
 
         # filter duplicates, nan and empty strings
         tfbs = tfbs.dropna(subset=['identifier', 'sequence', 'absolute_position'])
-        tfbs = self.drop_empty_string(tfbs, 'identifier', 'sequence', 'absolute_position')
-        tfbs = self.drop_duplicates(df=tfbs, subset=['identifier', 'sequence', 'absolute_position'], perfect_match=True)
+        tfbs = drop_empty_string(tfbs, 'identifier', 'sequence', 'absolute_position')
+        tfbs = drop_duplicates(df=tfbs, subset=['identifier', 'sequence', 'absolute_position'], perfect_match=True)
 
         # processing
         tfbs = apply_processors(tfbs, sequence=upper_case)
@@ -42,8 +45,9 @@ class TFBSTransformer(DBTBSTransformer,
         tfbs = pd.concat([tfbs, organism], axis=1)
         return tfbs
 
-    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'protrend_id')
+    @staticmethod
+    def transform_organism(organism: pd.DataFrame) -> pd.DataFrame:
+        organism = select_columns(organism, 'protrend_id')
         organism = organism.rename(columns={'protrend_id': 'organism'})
         return organism
 

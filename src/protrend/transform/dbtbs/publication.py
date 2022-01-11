@@ -4,11 +4,14 @@ from protrend.io import read_from_stack, read_json_lines
 from protrend.model import Organism, Publication, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
+from protrend.transform.mix_ins import PublicationMixIn
+from protrend.transform.transformations import (drop_empty_string, select_columns, group_by, create_input_value,
+                                                merge_columns)
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list
 
 
-class PublicationTransformer(DBTBSTransformer,
+class PublicationTransformer(PublicationMixIn, DBTBSTransformer,
                              source='dbtbs',
                              version='0.0.4',
                              node=Publication,
@@ -18,7 +21,8 @@ class PublicationTransformer(DBTBSTransformer,
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'pubmed', 'tf', 'gene', 'tfbs'])
 
-    def transform_publication(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_publication(tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = tfbs.assign(pmid=tfbs['pubmed'].copy(), tfbs=tfbs['identifier'].copy())
         tfbs = apply_processors(tfbs, pmid=to_list_nan)
 
@@ -26,13 +30,13 @@ class PublicationTransformer(DBTBSTransformer,
         tfbs = apply_processors(tfbs, pmid=to_int_str)
 
         tfbs = tfbs.dropna(subset=['pmid'])
-        tfbs = self.drop_empty_string(tfbs, 'pmid')
-        tfbs = self.select_columns(tfbs, 'pubmed', 'pmid', 'tf', 'gene', 'tfbs')
+        tfbs = drop_empty_string(tfbs, 'pmid')
+        tfbs = select_columns(tfbs, 'pubmed', 'pmid', 'tf', 'gene', 'tfbs')
 
         aggregation = {'tfbs': to_set_list}
-        tfbs = self.group_by(tfbs, column='pmid', aggregation=aggregation, default=flatten_set_list)
+        tfbs = group_by(tfbs, column='pmid', aggregation=aggregation, default=flatten_set_list)
 
-        tfbs = self.create_input_value(tfbs, col='pmid')
+        tfbs = create_input_value(tfbs, col='pmid')
         return tfbs
 
     def transform(self):
@@ -44,7 +48,7 @@ class PublicationTransformer(DBTBSTransformer,
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_dbtbs'))
 
-        df = self.merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_dbtbs')
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_dbtbs')
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         df = df.drop(columns=['input_value'])

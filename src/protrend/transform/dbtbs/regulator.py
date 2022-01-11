@@ -4,12 +4,13 @@ from Bio import SeqIO
 from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer
-from protrend.transform import transform_sequence
+from protrend.transform.mix_ins import SequenceMixIn, GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_list_nan, take_first
 
 
-class RegulatorTransformer(DBTBSTransformer,
+class RegulatorTransformer(GeneMixIn, SequenceMixIn, DBTBSTransformer,
                            source='dbtbs',
                            version='0.0.4',
                            node=Regulator,
@@ -26,15 +27,16 @@ class RegulatorTransformer(DBTBSTransformer,
     read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',
                             'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs'])
 
-    def transform_tf(self, tf: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tf(tf: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
         tf = tf.assign(name_dbtbs=tf['name'].copy())
 
         tf = apply_processors(tf, name=[rstrip, lstrip], family=[to_list_nan, take_first, rstrip, lstrip])
 
         # filter nan and duplicates
         tf = tf.dropna(subset=['name'])
-        tf = self.drop_empty_string(tf, 'name')
-        tf = self.drop_duplicates(df=tf, subset=['name'])
+        tf = drop_empty_string(tf, 'name')
+        tf = drop_duplicates(df=tf, subset=['name'])
 
         tf = tf.assign(name_lower=tf['name'].str.lower(), mechanism=None)
 
@@ -48,7 +50,7 @@ class RegulatorTransformer(DBTBSTransformer,
 
         tf = pd.merge(tf, sequence, on='name_lower')
 
-        tf = self.create_input_value(df=tf, col='locus_tag')
+        tf = create_input_value(df=tf, col='locus_tag')
         return tf
 
     def transform(self):
@@ -57,7 +59,7 @@ class RegulatorTransformer(DBTBSTransformer,
 
         gb_file = self.transform_stack['sequence']
         sequence = SeqIO.read(gb_file, "genbank")
-        sequence = transform_sequence(sequence)
+        sequence = self.transform_sequence(sequence)
 
         regulators = self.transform_tf(tf=tf, sequence=sequence)
         annotated_regulators = self.annotate_genes(regulators)

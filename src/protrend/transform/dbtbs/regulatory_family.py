@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_from_stack, read_json_lines
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
+from protrend.transform.transformations import drop_empty_string, select_columns, group_by
 from protrend.utils import SetList
 from protrend.utils.processors import (apply_processors, rstrip, lstrip, take_first, to_list_nan, to_set_list)
 
@@ -19,11 +20,12 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
     read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',
                             'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs'])
 
-    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
         tf = apply_processors(tf, family=[to_list_nan, take_first, rstrip, lstrip])
 
         tf = tf.dropna(subset=['family'])
-        tf = self.drop_empty_string(tf, 'family')
+        tf = drop_empty_string(tf, 'family')
 
         # drop not assigned
         mask = tf['family'] == 'Not assigned'
@@ -33,10 +35,10 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
         mask = tf['family'] == 'Other family'
         tf = tf[~mask]
 
-        tf = self.select_columns(tf, 'name', 'family')
+        tf = select_columns(tf, 'name', 'family')
         tf = tf.rename(columns={'name': 'tf', 'family': 'name'})
 
-        tf = self.group_by(df=tf, column='name', aggregation={'tf': to_set_list})
+        tf = group_by(df=tf, column='name', aggregation={'tf': to_set_list})
 
         tf = tf.assign(mechanism=None, rfam=None, description=None)
 
@@ -47,7 +49,6 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
         # tf mechanism
         tf_not_sigma_mask = tf['family'] != 'Sigma factors'
         tf.loc[tf_not_sigma_mask, 'mechanism'] = 'transcription factor'
-
         return tf
 
     def transform(self):

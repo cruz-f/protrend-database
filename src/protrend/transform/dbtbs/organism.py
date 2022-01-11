@@ -1,6 +1,6 @@
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
-from protrend.transform import OrganismMixIn
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
+from protrend.transform.mix_ins import OrganismMixIn
 from protrend.utils import SetList
 
 
