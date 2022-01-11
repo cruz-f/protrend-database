@@ -53,7 +53,7 @@ class Loader:
         if not load_stack:
             load_stack = self.load_stack_from_source_version()
 
-        self._connect_stack = build_load_stack(source, version, load_stack)
+        self._connect_stack = build_load_stack(self.source, self.version, load_stack)
 
     def load_stack_from_source_version(self) -> List[str]:
         load_stack = []

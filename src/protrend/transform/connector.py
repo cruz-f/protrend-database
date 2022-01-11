@@ -121,7 +121,7 @@ class Connector(AbstractConnector):
         if not connect_stack:
             connect_stack = self.default_connect_stack
 
-        self._connect_stack = build_stack(source, version, connect_stack)
+        self._connect_stack = build_stack(self.source, self.version, connect_stack)
 
         self._write_stack = []
 
