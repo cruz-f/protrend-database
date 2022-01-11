@@ -2,10 +2,11 @@ import pandas as pd
 
 from protrend.model import Gene
 from protrend.transform.literature.base import LiteratureTransformer
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.utils import SetList
 
 
-class GeneTransformer(LiteratureTransformer,
+class GeneTransformer(GeneMixIn, LiteratureTransformer,
                       source='literature',
                       version='0.0.0',
                       node=Gene,

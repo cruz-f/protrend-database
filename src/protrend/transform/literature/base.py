@@ -3,7 +3,8 @@ from abc import abstractmethod
 import pandas as pd
 
 from protrend.io import read_from_multi_stack
-from protrend.transform import MultiStackTransformer, Transformer, Connector
+from protrend.transform import MultiStackTransformer, Connector
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, merge_columns
 from protrend.utils import SetList, is_null, MultiStack
 from protrend.utils.processors import apply_processors, to_int_str, rstrip, lstrip, to_set_list
 
@@ -13,13 +14,13 @@ def read_bsub_faria_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
     df = pd.read_excel(file_path, sheet_name='S1 Ful Net V1', **kwargs)
     df.columns = [col.rstrip().lstrip() for col in df.columns]
 
-    df_sigma = Transformer.select_columns(df, 'BSU Number', 'Sigma factor number',
-                                          'Regulation sign', 'Involved Metabolite(s)')
+    df_sigma = select_columns(df, 'BSU Number', 'Sigma factor number',
+                              'Regulation sign', 'Involved Metabolite(s)')
     df_sigma = df_sigma.rename(columns={'Sigma factor number': 'Regulator number'})
     df_sigma = df_sigma.reset_index(drop=True)
 
-    df_regulator = Transformer.select_columns(df, 'BSU Number', 'Regulator number',
-                                              'Regulation sign', 'Involved Metabolite(s)')
+    df_regulator = select_columns(df, 'BSU Number', 'Regulator number',
+                                  'Regulation sign', 'Involved Metabolite(s)')
     df_regulator = df_regulator.reset_index(drop=True)
 
     df = pd.concat([df_regulator, df_sigma])
@@ -36,17 +37,17 @@ def read_bsub_faria_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
     df = apply_processors(df, **{'Regulator number': [rstrip, lstrip, to_int_str]})
 
     df = df.dropna(subset=['BSU Number', 'Regulator number', 'Regulation sign'])
-    df = Transformer.drop_empty_string(df, 'BSU Number', 'Regulator number', 'Regulation sign')
-    df = Transformer.drop_duplicates(df=df,
-                                     subset=['BSU Number', 'Regulator number',
-                                             'Regulation sign', 'Involved Metabolite(s)'],
-                                     perfect_match=True)
+    df = drop_empty_string(df, 'BSU Number', 'Regulator number', 'Regulation sign')
+    df = drop_duplicates(df=df,
+                         subset=['BSU Number', 'Regulator number',
+                                 'Regulation sign', 'Involved Metabolite(s)'],
+                         perfect_match=True)
 
     # regulators page with BSU locus_tag
     regs = pd.read_excel(file_path, sheet_name='S2 Regulators', skiprows=7, **kwargs)
     regs.columns = [col.rstrip().lstrip() for col in regs.columns]
 
-    regs = Transformer.select_columns(regs, 'BSU', 'Number', 'Mechanism')
+    regs = select_columns(regs, 'BSU', 'Number', 'Mechanism')
     regs = apply_processors(regs, **{'Number': to_int_str})
 
     # 'BSU Number', 'Regulator number', 'Regulation sign', 'Involved Metabolite(s)' + 'BSU', 'Number', 'Mechanism'
@@ -68,8 +69,8 @@ def read_ecol_fang_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
 
     df = apply_processors(df=df, TF_id=[lstrip, rstrip], gene_ids=[lstrip, rstrip])
     df = df.dropna(subset=['TF_id', 'gene_ids', 'effect'])
-    df = Transformer.drop_empty_string(df, 'TF_id', 'gene_ids', 'effect')
-    df = Transformer.drop_duplicates(df, subset=['TF_id', 'gene_ids', 'effect'], perfect_match=True)
+    df = drop_empty_string(df, 'TF_id', 'gene_ids', 'effect')
+    df = drop_duplicates(df, subset=['TF_id', 'gene_ids', 'effect'], perfect_match=True)
 
     def split_regs(item):
         if is_null(item):
@@ -86,10 +87,10 @@ def read_ecol_fang_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
     df = df.explode(column='gene_ids')
 
     df = df.dropna(subset=['TF_id', 'gene_ids', 'effect'])
-    df = Transformer.drop_empty_string(df, 'TF_id', 'gene_ids', 'effect')
-    df = Transformer.drop_duplicates(df, subset=['TF_id', 'gene_ids', 'effect'], perfect_match=True)
+    df = drop_empty_string(df, 'TF_id', 'gene_ids', 'effect')
+    df = drop_duplicates(df, subset=['TF_id', 'gene_ids', 'effect'], perfect_match=True)
 
-    df = Transformer.select_columns(df, 'TF_id', 'gene_ids', 'effect')
+    df = select_columns(df, 'TF_id', 'gene_ids', 'effect')
     columns = {'TF_id': 'regulator_locus_tag',
                'gene_ids': 'gene_locus_tag',
                'effect': 'regulatory_effect'}
@@ -101,7 +102,7 @@ def read_ecol_fang_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
 def read_mtub_turkarslan_et_al_2015(file_path: str, **kwargs) -> pd.DataFrame:
     df = pd.read_excel(file_path, **kwargs)
 
-    df = Transformer.select_columns(df, 'Transcription Factor', 'Target Gene', 'Differential Expression')
+    df = select_columns(df, 'Transcription Factor', 'Target Gene', 'Differential Expression')
 
     repeated_header_mask = df['Transcription Factor'] != 'Transcription Factor'
     df = df[repeated_header_mask]
@@ -110,9 +111,9 @@ def read_mtub_turkarslan_et_al_2015(file_path: str, **kwargs) -> pd.DataFrame:
     df = df[de_mask]
 
     df = df.dropna(subset=['Transcription Factor', 'Target Gene', 'Differential Expression'])
-    df = Transformer.drop_empty_string(df, 'Transcription Factor', 'Target Gene', 'Differential Expression')
-    df = Transformer.drop_duplicates(df, subset=['Transcription Factor', 'Target Gene', 'Differential Expression'],
-                                     perfect_match=True)
+    df = drop_empty_string(df, 'Transcription Factor', 'Target Gene', 'Differential Expression')
+    df = drop_duplicates(df, subset=['Transcription Factor', 'Target Gene', 'Differential Expression'],
+                         perfect_match=True)
 
     columns = {'Transcription Factor': 'regulator_locus_tag',
                'Target Gene': 'gene_locus_tag',
@@ -125,16 +126,16 @@ def read_mtub_turkarslan_et_al_2015(file_path: str, **kwargs) -> pd.DataFrame:
 def read_paer_vasquez_et_al_2011(file_path: str, **kwargs) -> pd.DataFrame:
     df = pd.read_excel(file_path, skiprows=3, **kwargs)
 
-    df = Transformer.select_columns(df, 'Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
-                                    'Experimental Evidence', 'PubMed Referencea', 'P. aeruginosa Strain')
+    df = select_columns(df, 'Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
+                        'Experimental Evidence', 'PubMed Referencea', 'P. aeruginosa Strain')
 
     df = df.dropna(subset=['Regulator (TF or sigma)', 'Target Gene', 'mode of regulation', 'P. aeruginosa Strain'])
-    df = Transformer.drop_empty_string(df, 'Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
-                                       'P. aeruginosa Strain')
-    df = Transformer.drop_duplicates(df=df,
-                                     subset=['Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
-                                             'P. aeruginosa Strain'],
-                                     perfect_match=True)
+    df = drop_empty_string(df, 'Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
+                           'P. aeruginosa Strain')
+    df = drop_duplicates(df=df,
+                         subset=['Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
+                                 'P. aeruginosa Strain'],
+                         perfect_match=True)
 
     df = df.explode(column='P. aeruginosa Strain')
 
@@ -225,8 +226,8 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
 
         network = apply_processors(network, locus_tag=[rstrip, lstrip])
         network = network.dropna(subset=['locus_tag'])
-        network = self.drop_empty_string(network, 'locus_tag')
-        network = self.drop_duplicates(df=network, subset=['locus_tag', 'taxonomy'], perfect_match=True)
+        network = drop_empty_string(network, 'locus_tag')
+        network = drop_duplicates(df=network, subset=['locus_tag', 'taxonomy'], perfect_match=True)
 
         filtered_networks = [self.filter_bsub_locus(network, 'locus_tag'),
                              self.filter_ecol_locus(network, 'locus_tag'),
@@ -240,11 +241,12 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
         network = network.assign(input_value=gene_input_value)
         return network
 
-    def merge_annotations(self, annotated: pd.DataFrame, original: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def merge_annotations(annotated: pd.DataFrame, original: pd.DataFrame) -> pd.DataFrame:
         df = pd.merge(annotated, original, on='input_value', suffixes=('_annotation', '_literature'))
 
-        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_literature')
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
+        df = merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_literature')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
 
         df = df.drop(columns=['input_value'])
         return df

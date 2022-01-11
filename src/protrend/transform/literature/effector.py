@@ -4,11 +4,13 @@ import pandas as pd
 
 from protrend.model import Effector
 from protrend.transform.literature.base import LiteratureTransformer
+from protrend.transform.mix_ins import EffectorMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList, is_null
 from protrend.utils.processors import apply_processors, to_list_nan
 
 
-class EffectorTransformer(LiteratureTransformer,
+class EffectorTransformer(EffectorMixIn, LiteratureTransformer,
                           source='literature',
                           version='0.0.0',
                           node=Effector,
@@ -19,15 +21,16 @@ class EffectorTransformer(LiteratureTransformer,
                        'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
                        'publication', 'taxonomy', 'source'])
 
-    def transform_effector(self, network: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_effector(network: pd.DataFrame) -> pd.DataFrame:
         network = network.assign(name=network['effector_name'].copy())
 
         network = apply_processors(network, name=to_list_nan)
         network = network.explode(column='name')
 
         network = network.dropna(subset=['name'])
-        network = self.drop_empty_string(network, 'name')
-        network = self.drop_duplicates(df=network, subset=['name'])
+        network = drop_empty_string(network, 'name')
+        network = drop_duplicates(df=network, subset=['name'])
 
         def filter_map_nan(item: str) -> Union[str, None]:
 
@@ -72,10 +75,10 @@ class EffectorTransformer(LiteratureTransformer,
         network = network.explode(column='name')
 
         network = network.dropna(subset=['name'])
-        network = self.drop_empty_string(network, 'name')
-        network = self.drop_duplicates(df=network, subset=['name'])
+        network = drop_empty_string(network, 'name')
+        network = drop_duplicates(df=network, subset=['name'])
 
-        network = self.create_input_value(network, 'name')
+        network = create_input_value(network, 'name')
         return network
 
     def transform(self):
@@ -86,7 +89,7 @@ class EffectorTransformer(LiteratureTransformer,
 
         df = pd.merge(annotated_effectors, effectors, on='input_value', suffixes=('_annotation', '_literature'))
 
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
 
         df = df.drop(columns=['input_value'])
 

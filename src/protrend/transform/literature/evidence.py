@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.model import Evidence, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_list_nan, rstrip, lstrip
 
@@ -17,15 +18,16 @@ class EvidenceTransformer(LiteratureTransformer,
                        'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
                        'publication', 'taxonomy', 'source'])
 
-    def transform_evidence(self, network: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_evidence(network: pd.DataFrame) -> pd.DataFrame:
         network = network.assign(name=network['evidence'].copy(), description=None)
 
         network = apply_processors(network, name=to_list_nan)
         network = network.explode(column='name')
 
         network = network.dropna(subset=['name'])
-        network = self.drop_empty_string(network, 'name')
-        network = self.drop_duplicates(df=network, subset=['name'])
+        network = drop_empty_string(network, 'name')
+        network = drop_duplicates(df=network, subset=['name'])
 
         def split_evidence(item: str) -> SetList:
             res = SetList()
@@ -44,8 +46,8 @@ class EvidenceTransformer(LiteratureTransformer,
         network = network.explode(column='name')
 
         network = network.dropna(subset=['name'])
-        network = self.drop_empty_string(network, 'name')
-        network = self.drop_duplicates(df=network, subset=['name'])
+        network = drop_empty_string(network, 'name')
+        network = drop_duplicates(df=network, subset=['name'])
         return network
 
     def transform(self):

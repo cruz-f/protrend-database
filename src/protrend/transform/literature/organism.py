@@ -2,10 +2,11 @@ import pandas as pd
 
 from protrend.model import Organism, Regulator, Gene, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.mix_ins import OrganismMixIn
 from protrend.utils import SetList
 
 
-class OrganismTransformer(LiteratureTransformer,
+class OrganismTransformer(OrganismMixIn, LiteratureTransformer,
                           source='literature',
                           version='0.0.0',
                           node=Organism,

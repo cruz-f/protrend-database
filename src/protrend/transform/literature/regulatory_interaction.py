@@ -1,12 +1,13 @@
 import pandas as pd
 
 from protrend.model import RegulatoryInteraction, Effector, Regulator, Gene
-from protrend.transform import RegulatoryInteractionMixIn
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.gene import GeneTransformer
 from protrend.transform.literature.organism import OrganismTransformer
 from protrend.transform.literature.regulator import RegulatorTransformer
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
+from protrend.transform.transformations import select_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, regulatory_effect_literature, to_int_str
 
@@ -24,23 +25,23 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTra
                        'publication', 'taxonomy', 'source'])
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
-        organism = self.select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism', 'ncbi_taxonomy': 'taxonomy'})
         organism = apply_processors(organism, taxonomy=to_int_str)
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = self.select_columns(regulator, 'protrend_id', 'regulator_locus_tag')
+        regulator = select_columns(regulator, 'protrend_id', 'regulator_locus_tag')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = self.select_columns(gene, 'protrend_id', 'gene_locus_tag')
+        gene = select_columns(gene, 'protrend_id', 'gene_locus_tag')
         gene = gene.rename(columns={'protrend_id': 'gene'})
         return gene
 
     def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
-        effector = self.select_columns(effector, 'protrend_id', 'effector_name')
+        effector = select_columns(effector, 'protrend_id', 'effector_name')
         effector = effector.rename(columns={'protrend_id': 'effector'})
         return effector
 

@@ -1,6 +1,6 @@
 from protrend.model import Source, Organism, Regulator, Gene, RegulatoryInteraction, Effector
-from protrend.transform import SourceMixIn
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList
 from protrend.utils.processors import to_int_str
 

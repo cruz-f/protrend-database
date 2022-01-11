@@ -2,11 +2,12 @@ import pandas as pd
 
 from protrend.model import Regulator
 from protrend.transform.literature.base import LiteratureTransformer
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors
 
 
-class RegulatorTransformer(LiteratureTransformer,
+class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
                            source='literature',
                            version='0.0.0',
                            node=Regulator,

@@ -2,11 +2,13 @@ import pandas as pd
 
 from protrend.model import Publication, Organism, Regulator, Gene, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.mix_ins import PublicationMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, rstrip, lstrip
 
 
-class PublicationTransformer(LiteratureTransformer,
+class PublicationTransformer(PublicationMixIn, LiteratureTransformer,
                              source='literature',
                              version='0.0.0',
                              node=Publication,
@@ -17,22 +19,24 @@ class PublicationTransformer(LiteratureTransformer,
                        'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
                        'publication', 'taxonomy', 'source'])
 
-    def transform_publication(self, network: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def transform_publication(network: pd.DataFrame) -> pd.DataFrame:
         network = network.assign(pmid=network['publication'].copy())
 
         network = apply_processors(network, pmid=to_list_nan)
         network = network.explode(column='pmid')
 
         network = network.dropna(subset=['pmid'])
-        network = self.drop_empty_string(network, 'pmid')
-        network = self.drop_duplicates(df=network, subset=['pmid'], perfect_match=True)
+        network = drop_empty_string(network, 'pmid')
+        network = drop_duplicates(df=network, subset=['pmid'], perfect_match=True)
 
-        network = self.create_input_value(network, col='pmid')
+        network = create_input_value(network, col='pmid')
         return network
 
     def transform(self):
         network = self.read_network()
 
+        # noinspection DuplicatedCode
         publications = self.transform_publication(network)
         annotated_publications = self.annotate_publications(publications)
 
