@@ -72,7 +72,7 @@ class SourceToEffectorConnector(SourceConnector,
     def connect(self):
         df = self._connect(target='effector', target_processors={},
                            url='url', external_identifier='effector_id', key='effector_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(SourceConnector,
@@ -87,7 +87,7 @@ class SourceToGeneConnector(SourceConnector,
         df = self._connect(target='gene', target_processors={'regulon': [to_list_nan]},
                            url='url', external_identifier='regulon', key='effector_id',
                            explode='regulon')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToOrganismConnector(SourceConnector,
@@ -101,7 +101,7 @@ class SourceToOrganismConnector(SourceConnector,
     def connect(self):
         df = self._connect(target='organism', target_processors={},
                            url='url', external_identifier='genome_id', key='genome_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToPathwayConnector(SourceConnector,
@@ -115,7 +115,7 @@ class SourceToPathwayConnector(SourceConnector,
     def connect(self):
         df = self._connect(target='pathway', target_processors={},
                            url='url', external_identifier='pathway_id', key='pathway_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatorConnector(SourceConnector,
@@ -129,7 +129,7 @@ class SourceToRegulatorConnector(SourceConnector,
     def connect(self):
         df = self._connect(target='regulator', target_processors={},
                            url='url', external_identifier='regulon_id', key='regulon_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryFamilyConnector(RegPreciseConnector,
@@ -175,7 +175,7 @@ class SourceToRegulatoryFamilyConnector(RegPreciseConnector,
         kwargs = dict(url=urls, external_identifier=external_ids, key=keys)
 
         df = self.connection_frame(source_ids=from_identifiers, target_ids=to_identifiers, kwargs=kwargs)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryInteractionConnector(SourceConnector,
@@ -189,7 +189,7 @@ class SourceToRegulatoryInteractionConnector(SourceConnector,
     def connect(self):
         df = self._connect(target='rin', target_processors={},
                            url='url', external_identifier='regulon_id', key='regulon_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToTFBSConnector(SourceConnector,
@@ -204,4 +204,4 @@ class SourceToTFBSConnector(SourceConnector,
         df = self._connect(target='tfbs', target_processors={'regulon': [to_list_nan]},
                            url='url', external_identifier='regulon', key='regulon_id',
                            explode='regulon')
-        self.stack_json(df)
+        self.stack_connections(df)

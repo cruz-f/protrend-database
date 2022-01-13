@@ -68,7 +68,7 @@ class PublicationToOrganismConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='publication', target='organism',
                                     cardinality='many_to_one')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationConnector(DBTBSConnector, register=False):
@@ -80,6 +80,8 @@ class PublicationConnector(DBTBSConnector, register=False):
                                                      target='rin',
                                                      source_column='protrend_id',
                                                      target_column=target_column,
+                                                     source_on=source_on,
+                                                     target_on=target_on,
                                                      source_processors={source_on: [to_list_nan]},
                                                      target_processors={})
         source_df = source_df.explode(source_on)
@@ -88,7 +90,7 @@ class PublicationConnector(DBTBSConnector, register=False):
                                                           source_on=source_on, target_on=target_on)
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToRegulatorConnector(PublicationConnector,

@@ -87,6 +87,8 @@ class OperonToGeneConnector(OperonDBConnector,
                                                      target='operon',
                                                      source_column='protrend_id',
                                                      target_column='genes',
+                                                     source_on='operon_db_id',
+                                                     target_on='operon_db_id',
                                                      source_processors={},
                                                      target_processors={'genes': [to_list_nan]})
         target_df = target_df.explode('genes')
@@ -95,7 +97,7 @@ class OperonToGeneConnector(OperonDBConnector,
                                                           source_on='operon_db_id', target_on='operon_db_id')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OperonToOrganismConnector(OperonDBConnector,
@@ -109,4 +111,4 @@ class OperonToOrganismConnector(OperonDBConnector,
     def connect(self):
         df = self.create_connection(source='operon', target='operon',
                                     target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

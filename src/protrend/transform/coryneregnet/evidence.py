@@ -46,7 +46,7 @@ class EvidenceToTFBSConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='evidence', target='tfbs',
                                     source_on='Evidence', target_on='Evidence')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector,
@@ -60,4 +60,4 @@ class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='evidence', target='rin',
                                     source_on='Evidence', target_on='Evidence')
-        self.stack_json(df)
+        self.stack_connections(df)

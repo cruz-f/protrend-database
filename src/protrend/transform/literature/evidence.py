@@ -71,6 +71,8 @@ class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
                                                      target='rin',
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='evidence',
+                                                     target_on='evidence',
                                                      source_processors={'evidence': [to_list_nan]},
                                                      target_processors={'evidence': [to_list_nan]})
         source_df = source_df.explode('evidence')
@@ -83,4 +85,4 @@ class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
                                                           source_on='evidence', target_on='evidence')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)

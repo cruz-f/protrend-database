@@ -411,7 +411,7 @@ class RegulatoryInteractionToEffectorConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='effector')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToRegulatorConnector(RegulonDBConnector,
@@ -425,7 +425,7 @@ class RegulatoryInteractionToRegulatorConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToGeneConnector(RegulonDBConnector,
@@ -439,7 +439,7 @@ class RegulatoryInteractionToGeneConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToTFBSConnector(RegulonDBConnector,
@@ -453,7 +453,7 @@ class RegulatoryInteractionToTFBSConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToEffectorConnector(RegulonDBConnector,
@@ -467,7 +467,7 @@ class RegulatorToEffectorConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='effector')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToGeneConnector(RegulonDBConnector,
@@ -481,7 +481,7 @@ class RegulatorToGeneConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToTFBSConnector(RegulonDBConnector,
@@ -495,7 +495,7 @@ class RegulatorToTFBSConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class GeneToTFBSConnector(RegulonDBConnector,
@@ -509,4 +509,4 @@ class GeneToTFBSConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='gene', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)

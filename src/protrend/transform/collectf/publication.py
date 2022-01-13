@@ -4,7 +4,7 @@ from protrend.io import read_from_stack, read_json_lines
 from protrend.model import Publication, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import PublicationMixIn
-from protrend.transform.transformations import drop_duplicates, create_input_value
+from protrend.transform.transformations import drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
 
@@ -43,6 +43,11 @@ class PublicationTransformer(PublicationMixIn, CollecTFTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_collectf'))
+
+        # merge pmid
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation',
+                           right='pmid_collectf')
+
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
         df = df.drop(columns=['input_value'])
 
@@ -59,6 +64,8 @@ class PublicationConnector(CollecTFConnector, register=False):
                                                      target='rin',
                                                      source_column='protrend_id',
                                                      target_column=target_column,
+                                                     source_on='pmid',
+                                                     target_on='pubmed',
                                                      source_processors={'pmid': [to_int_str]},
                                                      target_processors={'pubmed': [to_list_nan]})
         target_df = target_df.explode('pubmed')
@@ -68,7 +75,7 @@ class PublicationConnector(CollecTFConnector, register=False):
                                                           source_on='pmid', target_on='pubmed')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToRegulatorConnector(PublicationConnector,

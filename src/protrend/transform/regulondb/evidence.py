@@ -74,6 +74,8 @@ class EvidenceToRegulatoryInteractionConnector(RegulonDBConnector,
                                                      target='rin',
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='evidence_name',
+                                                     target_on='evidence',
                                                      source_processors={},
                                                      target_processors=target_processors)
         target_df = target_df.explode('evidence')
@@ -82,4 +84,4 @@ class EvidenceToRegulatoryInteractionConnector(RegulonDBConnector,
                                                           source_on='evidence_name', target_on='evidence')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)

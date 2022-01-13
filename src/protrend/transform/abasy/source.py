@@ -31,7 +31,7 @@ class SourceToOrganismConnector(AbasyConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='organism', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatorConnector(AbasyConnector,
@@ -44,7 +44,7 @@ class SourceToRegulatorConnector(AbasyConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='regulator', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(AbasyConnector,
@@ -57,7 +57,7 @@ class SourceToGeneConnector(AbasyConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='gene', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryInteractionConnector(AbasyConnector,
@@ -70,4 +70,4 @@ class SourceToRegulatoryInteractionConnector(AbasyConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='rin', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)

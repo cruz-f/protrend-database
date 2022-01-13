@@ -106,7 +106,7 @@ class RegulatoryInteractionToOrganismConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToEffectorConnector(RegPreciseConnector,
@@ -120,7 +120,7 @@ class RegulatoryInteractionToEffectorConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='effector')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToRegulatorConnector(RegPreciseConnector,
@@ -134,7 +134,7 @@ class RegulatoryInteractionToRegulatorConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToGeneConnector(RegPreciseConnector,
@@ -148,7 +148,7 @@ class RegulatoryInteractionToGeneConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToTFBSConnector(RegPreciseConnector,
@@ -162,7 +162,7 @@ class RegulatoryInteractionToTFBSConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToOrganismConnector(RegPreciseConnector,
@@ -176,7 +176,7 @@ class RegulatorToOrganismConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToEffectorConnector(RegPreciseConnector,
@@ -190,7 +190,7 @@ class RegulatorToEffectorConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='effector')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToGeneConnector(RegPreciseConnector,
@@ -204,7 +204,7 @@ class RegulatorToGeneConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToTFBSConnector(RegPreciseConnector,
@@ -218,7 +218,7 @@ class RegulatorToTFBSConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class GeneToOrganismConnector(RegPreciseConnector,
@@ -232,7 +232,7 @@ class GeneToOrganismConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='gene', target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class GeneToTFBSConnector(RegPreciseConnector,
@@ -246,7 +246,7 @@ class GeneToTFBSConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='gene', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class TFBSToOrganismConnector(RegPreciseConnector,
@@ -260,4 +260,4 @@ class TFBSToOrganismConnector(RegPreciseConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='tfbs', target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

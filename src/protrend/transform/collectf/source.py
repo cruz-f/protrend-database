@@ -58,7 +58,7 @@ class SourceToOrganismConnector(CollecTFConnector,
                       key=key)
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryFamilyConnector(CollecTFConnector,
@@ -73,7 +73,7 @@ class SourceToRegulatoryFamilyConnector(CollecTFConnector,
         df = self.create_connection(source='source',
                                     target='rfam',
                                     cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatorConnector(CollecTFConnector,
@@ -113,7 +113,7 @@ class SourceToRegulatorConnector(CollecTFConnector,
                       key=key)
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(CollecTFConnector,
@@ -128,7 +128,7 @@ class SourceToGeneConnector(CollecTFConnector,
         df = self.create_connection(source='source',
                                     target='gene',
                                     cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToTFBSConnector(CollecTFConnector,
@@ -143,7 +143,7 @@ class SourceToTFBSConnector(CollecTFConnector,
         df = self.create_connection(source='source',
                                     target='tfbs',
                                     cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryInteractionConnector(CollecTFConnector,
@@ -185,4 +185,4 @@ class SourceToRegulatoryInteractionConnector(CollecTFConnector,
                       key=key)
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
-        self.stack_json(df)
+        self.stack_connections(df)

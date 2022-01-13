@@ -75,7 +75,7 @@ class SourceToOrganismConnector(RegulonDBConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='organism')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryFamilyConnector(SourceConnector,
@@ -88,7 +88,7 @@ class SourceToRegulatoryFamilyConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='rfam', target_col='transcription_factor_id', key='transcription_factor_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatorConnector(SourceConnector,
@@ -101,7 +101,7 @@ class SourceToRegulatorConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='regulator', target_col='regulator_id', key='transcription_factor_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(SourceConnector,
@@ -114,7 +114,7 @@ class SourceToGeneConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='gene', target_col='gene_id', key='gene_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToTFBSConnector(SourceConnector,
@@ -127,7 +127,7 @@ class SourceToTFBSConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='tfbs', target_col='site_id', key='site_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToEffectorConnector(SourceConnector,
@@ -140,7 +140,7 @@ class SourceToEffectorConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='effector', target_col='effector_id', key='effector_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryInteractionConnector(SourceConnector,
@@ -153,4 +153,4 @@ class SourceToRegulatoryInteractionConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='rin', target_col='gene_id', key='gene_id')
-        self.stack_json(df)
+        self.stack_connections(df)

@@ -22,7 +22,7 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
     default_transform_stack = {'organism': 'Organism.json'}
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession',
-                       'name_collectf', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
+                       'collectf_name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
     read_columns = SetList(['name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
 
     @staticmethod
@@ -43,6 +43,8 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
         return ncbi_taxa
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = organism.assign(collectf_name=organism['name'].copy())
+
         organism = apply_processors(organism, name=[rstrip, lstrip])
         organism = organism.dropna(subset=['name'])
         organism = drop_empty_string(organism, 'name')
@@ -70,8 +72,11 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
         df = pd.merge(annotated_organisms, organisms, on='input_value', suffixes=('_annotation', '_collectf'))
 
         # merge name
-        df = df.assign(name_to_merge=df['name_collectf'])
-        df = merge_columns(df=df, column='name', left='name_annotation', right='name_to_merge')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
+
+        # merge ncbi_taxonomy
+        df = merge_columns(df=df, column='ncbi_taxonomy', left='ncbi_taxonomy_annotation',
+                           right='ncbi_taxonomy_collectf')
 
         df = apply_processors(df, ncbi_taxonomy=to_int_str, ncbi_assembly=to_int_str)
 
@@ -92,7 +97,7 @@ class OrganismToRegulatorConnector(CollecTFConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToGeneConnector(CollecTFConnector,
@@ -106,7 +111,7 @@ class OrganismToGeneConnector(CollecTFConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToTFBSConnector(CollecTFConnector,
@@ -120,7 +125,7 @@ class OrganismToTFBSConnector(CollecTFConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToRegulatoryInteractionConnector(CollecTFConnector,
@@ -134,4 +139,4 @@ class OrganismToRegulatoryInteractionConnector(CollecTFConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

@@ -7,7 +7,7 @@ import pandas as pd
 
 from protrend.io import read_from_stack, read_json_frame, write_json_frame
 from protrend.model import Node
-from protrend.utils import Settings, WriteStack, DefaultProperty, build_stack
+from protrend.utils import Settings, WriteStack, DefaultProperty, build_stack, SetList
 from protrend.utils.processors import apply_processors
 
 
@@ -207,7 +207,7 @@ class Connector(AbstractConnector):
                                  connected=file_name)
         return write_stack
 
-    def stack_json(self, df: pd.DataFrame):
+    def stack_connections(self, df: pd.DataFrame):
         name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}'
         df = df.copy()
         df = df.reset_index(drop=True)
@@ -220,11 +220,19 @@ class Connector(AbstractConnector):
                          target: str,
                          source_column: str,
                          target_column: str,
+                         source_on: str = None,
+                         target_on: str = None,
                          source_processors: Dict[str, List[Callable]] = None,
                          target_processors: Dict[str, List[Callable]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-        default_source_cols = [source_column]
-        default_target_cols = [target_column]
+        default_source_cols = SetList([source_column])
+        default_target_cols = SetList([target_column])
+
+        if source_on:
+            default_source_cols.append(source_on)
+
+        if target_on:
+            default_target_cols.append(target_on)
 
         if not source_processors:
             source_processors = {}
@@ -232,8 +240,8 @@ class Connector(AbstractConnector):
         if not target_processors:
             target_processors = {}
 
-        default_source_cols += list(source_processors.keys())
-        default_target_cols += list(target_processors.keys())
+        default_source_cols.extend(list(source_processors.keys()))
+        default_target_cols.extend(list(target_processors.keys()))
 
         source_df = read_from_stack(stack=self.connect_stack, key=source,
                                     columns=default_source_cols, reader=read_json_frame)
@@ -321,6 +329,8 @@ class Connector(AbstractConnector):
                                                      target=target,
                                                      source_column=source_column,
                                                      target_column=target_column,
+                                                     source_on=source_on,
+                                                     target_on=target_on,
                                                      source_processors=source_processors,
                                                      target_processors=target_processors)
 

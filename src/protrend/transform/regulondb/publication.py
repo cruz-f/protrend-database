@@ -61,7 +61,7 @@ class PublicationToOrganismConnector(RegulonDBConnector,
 
     def connect(self):
         df = self.create_connection(source='publication', target='organism', cardinality='many_to_one')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationConnector(RegulonDBConnector,
@@ -75,8 +75,10 @@ class PublicationConnector(RegulonDBConnector,
                                                      target=target,
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='publication_id',
+                                                     target_on='publication_id',
                                                      source_processors={},
-                                                     target_processors={})
+                                                     target_processors={target_col: []})
 
         obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
         obj_ev_pub_reader = regulondb_reader(skiprows=31, names=obj_ev_pub_cols)
@@ -105,7 +107,7 @@ class PublicationToRegulatorConnector(PublicationConnector,
 
     def connect(self):
         df = self._connect(target='regulator', obj_ev_pub_col='object_id', target_col='regulator_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToGeneConnector(PublicationConnector,
@@ -119,7 +121,7 @@ class PublicationToGeneConnector(PublicationConnector,
 
     def connect(self):
         df = self._connect(target='gene', obj_ev_pub_col='object_id', target_col='gene_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToTFBSConnector(PublicationConnector,
@@ -133,7 +135,7 @@ class PublicationToTFBSConnector(PublicationConnector,
 
     def connect(self):
         df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='site_id')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToRegulatoryInteractionConnector(PublicationConnector,
@@ -151,4 +153,4 @@ class PublicationToRegulatoryInteractionConnector(PublicationConnector,
         tfbs_df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='site_id')
         df = pd.concat([regulator_df, gene_df, tfbs_df])
         df = df.reset_index(drop=True)
-        self.stack_json(df)
+        self.stack_connections(df)

@@ -94,6 +94,8 @@ class PublicationToRegulatoryFamilyConnector(RegPreciseConnector,
                                                      target='rfam',
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='pubmed',
+                                                     target_on='pubmed',
                                                      source_processors={'pubmed': [to_list_nan]},
                                                      target_processors={'pubmed': [to_list_nan]})
         source_df = source_df.explode('pubmed')
@@ -102,4 +104,4 @@ class PublicationToRegulatoryFamilyConnector(RegPreciseConnector,
                                                           source_on='pubmed', target_on='pubmed')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)

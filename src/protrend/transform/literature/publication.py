@@ -62,7 +62,7 @@ class PublicationToOrganismConnector(LiteratureConnector,
                                     source_on='taxonomy', target_on='ncbi_taxonomy',
                                     source_processors={'taxonomy': [to_int_str]},
                                     target_processors={'ncbi_taxonomy': [to_int_str]})
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationConnector(LiteratureConnector,
@@ -75,6 +75,8 @@ class PublicationConnector(LiteratureConnector,
                                                      target=target,
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='publication',
+                                                     target_on='publication',
                                                      source_processors={'publication': [to_list_nan]},
                                                      target_processors={'publication': [to_list_nan]})
         source_df = source_df.explode('publication')
@@ -99,7 +101,7 @@ class PublicationToRegulatorConnector(PublicationConnector,
 
     def connect(self):
         df = self._connect('publication', 'regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToGeneConnector(PublicationConnector,
@@ -112,7 +114,7 @@ class PublicationToGeneConnector(PublicationConnector,
 
     def connect(self):
         df = self._connect('publication', 'gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToRegulatoryInteractionConnector(PublicationConnector,
@@ -126,4 +128,4 @@ class PublicationToRegulatoryInteractionConnector(PublicationConnector,
 
     def connect(self):
         df = self._connect('publication', 'rin')
-        self.stack_json(df)
+        self.stack_connections(df)

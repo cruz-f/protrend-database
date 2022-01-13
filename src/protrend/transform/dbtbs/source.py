@@ -32,7 +32,7 @@ class SourceToOrganismConnector(DBTBSConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='organism', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryFamilyConnector(DBTBSConnector,
@@ -77,7 +77,7 @@ class SourceToRegulatoryFamilyConnector(DBTBSConnector,
                       key=key)
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceConnector(DBTBSConnector, source='dbtbs', version='0.0.4', register=False):
@@ -124,7 +124,7 @@ class SourceToRegulatorConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='regulator', external_id_col='name_dbtbs', external_url_col='url', key_id='tfac')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(SourceConnector,
@@ -137,7 +137,7 @@ class SourceToGeneConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='gene', external_id_col='tf', external_url_col='url', key_id='tfac')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToTFBSConnector(SourceConnector,
@@ -150,7 +150,7 @@ class SourceToTFBSConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='tfbs', external_id_col='tf', external_url_col='url', key_id='tfac')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryInteractionConnector(SourceConnector,
@@ -164,4 +164,4 @@ class SourceToRegulatoryInteractionConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='ri', external_id_col='tf', external_url_col='url', key_id='tfac')
-        self.stack_json(df)
+        self.stack_connections(df)

@@ -51,6 +51,8 @@ class SourceToOrganismConnector(LiteratureConnector,
                                                      target='organism',
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='name',
+                                                     target_on='source',
                                                      source_processors={},
                                                      target_processors={'ncbi_taxonomy': [to_int_str]})
 
@@ -68,7 +70,7 @@ class SourceToOrganismConnector(LiteratureConnector,
                                                           source_on='name', target_on='source')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatorConnector(LiteratureConnector,
@@ -81,7 +83,7 @@ class SourceToRegulatorConnector(LiteratureConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='regulator', source_on='name', target_on='source')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(LiteratureConnector,
@@ -94,7 +96,7 @@ class SourceToGeneConnector(LiteratureConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='gene', source_on='name', target_on='source')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToEffectorConnector(LiteratureConnector,
@@ -107,7 +109,7 @@ class SourceToEffectorConnector(LiteratureConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='effector', source_on='name', target_on='source')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToRegulatoryInteractionConnector(LiteratureConnector,
@@ -120,4 +122,4 @@ class SourceToRegulatoryInteractionConnector(LiteratureConnector,
 
     def connect(self):
         df = self.create_connection(source='source', target='rin', source_on='name', target_on='source')
-        self.stack_json(df)
+        self.stack_connections(df)

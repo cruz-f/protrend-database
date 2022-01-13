@@ -74,7 +74,7 @@ class RegulatoryInteractionToEffectorConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='effector')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToRegulatorConnector(LiteratureConnector,
@@ -88,7 +88,7 @@ class RegulatoryInteractionToRegulatorConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToGeneConnector(LiteratureConnector,
@@ -102,7 +102,7 @@ class RegulatoryInteractionToGeneConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToEffectorConnector(LiteratureConnector,
@@ -116,7 +116,7 @@ class RegulatorToEffectorConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='effector')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToGeneConnector(LiteratureConnector,
@@ -130,4 +130,4 @@ class RegulatorToGeneConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)

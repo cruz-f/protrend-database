@@ -46,6 +46,8 @@ class EvidenceConnector(CollecTFConnector, register=False):
                                                      target=target,
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='name',
+                                                     target_on='experimental_evidence',
                                                      source_processors={},
                                                      target_processors={'experimental_evidence': [to_list_nan]})
         target_df = target_df.explode('experimental_evidence')
@@ -55,7 +57,7 @@ class EvidenceConnector(CollecTFConnector, register=False):
                                                           source_on='name', target_on='experimental_evidence')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class EvidenceToTFBSConnector(EvidenceConnector,

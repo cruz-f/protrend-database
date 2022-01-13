@@ -71,7 +71,7 @@ class PublicationToOrganismConnector(CoryneRegNetConnector,
                                     source_on='taxonomy', target_on='ncbi_taxonomy',
                                     source_processors={'taxonomy': [to_int_str]},
                                     target_processors={'ncbi_taxonomy': [to_int_str]})
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToRegulatorConnector(CoryneRegNetConnector,
@@ -85,7 +85,7 @@ class PublicationToRegulatorConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='publication', target='regulator',
                                     source_on='TF_locusTag', target_on='TF_locusTag')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToGeneConnector(CoryneRegNetConnector,
@@ -99,7 +99,7 @@ class PublicationToGeneConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='publication', target='gene',
                                     source_on='TG_locusTag', target_on='TG_locusTag')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToTFBSConnector(CoryneRegNetConnector,
@@ -113,7 +113,7 @@ class PublicationToTFBSConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='publication', target='tfbs',
                                     source_on='PMID', target_on='PMID')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class PublicationToRegulatoryInteractionConnector(CoryneRegNetConnector,
@@ -128,4 +128,4 @@ class PublicationToRegulatoryInteractionConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='publication', target='rin',
                                     source_on='PMID', target_on='PMID')
-        self.stack_json(df)
+        self.stack_connections(df)

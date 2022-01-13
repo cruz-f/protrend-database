@@ -33,7 +33,7 @@ class SourceToOrganismConnector(OperonDBConnector,
     def connect(self):
         df = self.create_connection(source='source', target='operon',
                                     target_column='organism', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceConnector(OperonDBConnector,
@@ -85,7 +85,7 @@ class SourceToOperonConnector(SourceConnector,
 
     def connect(self):
         df = self._connect('operon')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class SourceToGeneConnector(SourceConnector,
@@ -98,4 +98,4 @@ class SourceToGeneConnector(SourceConnector,
 
     def connect(self):
         df = self._connect('gene')
-        self.stack_json(df)
+        self.stack_connections(df)

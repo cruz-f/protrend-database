@@ -112,7 +112,7 @@ class OrganismToRegulatorConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToGeneConnector(LiteratureConnector,
@@ -126,7 +126,7 @@ class OrganismToGeneConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToRegulatoryInteractionConnector(LiteratureConnector,
@@ -140,4 +140,4 @@ class OrganismToRegulatoryInteractionConnector(LiteratureConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

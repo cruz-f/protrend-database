@@ -50,9 +50,8 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
-                       'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence'
-                                                                    'organism_protrend_id', 'organism_name_collectf',
-                       'ncbi_taxonomy'])
+                       'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
+                       'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'])
     read_columns = SetList(['uniprot_accession', 'name', 'url', 'organism', 'operon',
                             'gene', 'tfbs', 'experimental_evidence'])
 
@@ -74,7 +73,7 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
         regulon = drop_empty_string(regulon, 'uniprot_accession')
         regulon = drop_duplicates(df=regulon, subset=['uniprot_accession'])
 
-        df = pd.merge(regulon, organism, how='left', left_on='organism', right_on='organism_name_collectf')
+        df = pd.merge(regulon, organism, left_on='organism', right_on='organism_name_collectf')
 
         df = drop_duplicates(df=df, subset=['uniprot_accession', 'organism'], perfect_match=True)
 
@@ -89,9 +88,9 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
 
     @staticmethod
     def transform_organism(organism: pd.DataFrame):
-        organism = select_columns(organism, 'protrend_id', 'name_collectf', 'ncbi_taxonomy')
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy', 'collectf_name')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id',
-                                            'name_collectf': 'organism_name_collectf'})
+                                            'collectf_name': 'organism_name_collectf'})
         return organism
 
     def transform(self):

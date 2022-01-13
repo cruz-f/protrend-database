@@ -142,4 +142,4 @@ class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector,
             to_identifiers.extend(merged['protrend_id_regulator'].to_list())
 
         df = self.connection_frame(source_ids=from_identifiers, target_ids=to_identifiers)
-        self.stack_json(df)
+        self.stack_connections(df)

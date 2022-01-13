@@ -97,7 +97,7 @@ class RegulatoryInteractionToRegulatorConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToGeneConnector(CoryneRegNetConnector,
@@ -111,7 +111,7 @@ class RegulatoryInteractionToGeneConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToTFBSConnector(CoryneRegNetConnector,
@@ -125,7 +125,7 @@ class RegulatoryInteractionToTFBSConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToGeneConnector(CoryneRegNetConnector,
@@ -139,7 +139,7 @@ class RegulatorToGeneConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToTFBSConnector(CoryneRegNetConnector,
@@ -153,7 +153,7 @@ class RegulatorToTFBSConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class GeneToTFBSConnector(CoryneRegNetConnector,
@@ -167,4 +167,4 @@ class GeneToTFBSConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='gene', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)

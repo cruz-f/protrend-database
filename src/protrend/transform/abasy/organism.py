@@ -130,7 +130,7 @@ class OrganismToRegulatorConnector(AbasyConnector,
                                     source_on='ncbi_taxonomy', target_on='taxonomy',
                                     source_processors=source_processors,
                                     target_processors=target_processors)
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToGeneConnector(AbasyConnector,
@@ -148,4 +148,4 @@ class OrganismToGeneConnector(AbasyConnector,
                                     source_on='ncbi_taxonomy', target_on='taxonomy',
                                     source_processors=source_processors,
                                     target_processors=target_processors)
-        self.stack_json(df)
+        self.stack_connections(df)

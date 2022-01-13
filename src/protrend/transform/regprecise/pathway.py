@@ -62,6 +62,8 @@ class PathwayToRegulatorConnector(RegPreciseConnector,
                                                      target='regulator',
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='pathway_id',
+                                                     target_on='pathway',
                                                      source_processors={'pathway_id': [to_int_str]},
                                                      target_processors={'pathway': [to_list_nan]})
         target_df = target_df.explode('pathway')
@@ -71,4 +73,4 @@ class PathwayToRegulatorConnector(RegPreciseConnector,
                                                           source_on='pathway_id', target_on='pathway')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)

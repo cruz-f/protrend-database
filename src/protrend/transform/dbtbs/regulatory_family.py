@@ -73,6 +73,8 @@ class RegulatoryFamilyToRegulatorConnector(DBTBSConnector,
                                                      target='regulator',
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
+                                                     source_on='tf',
+                                                     target_on='name_dbts',
                                                      source_processors={'tf': [to_list_nan]},
                                                      target_processors={})
         source_df = source_df.explode('tf')
@@ -82,4 +84,4 @@ class RegulatoryFamilyToRegulatorConnector(DBTBSConnector,
                                                           source_on='tf', target_on='name_dbts')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-        self.stack_json(df)
+        self.stack_connections(df)

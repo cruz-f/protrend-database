@@ -75,7 +75,7 @@ class OrganismToRegulatorConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToGeneConnector(CoryneRegNetConnector,
@@ -89,7 +89,7 @@ class OrganismToGeneConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToTFBSConnector(CoryneRegNetConnector,
@@ -103,7 +103,7 @@ class OrganismToTFBSConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToRegulatoryInteractionConnector(CoryneRegNetConnector,
@@ -117,4 +117,4 @@ class OrganismToRegulatoryInteractionConnector(CoryneRegNetConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

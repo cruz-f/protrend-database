@@ -100,7 +100,7 @@ class RegulatoryInteractionToRegulatorConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToGeneConnector(DBTBSConnector,
@@ -114,7 +114,7 @@ class RegulatoryInteractionToGeneConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToTFBSConnector(DBTBSConnector,
@@ -128,7 +128,7 @@ class RegulatoryInteractionToTFBSConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToGeneConnector(DBTBSConnector,
@@ -142,7 +142,7 @@ class RegulatorToGeneConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToTFBSConnector(DBTBSConnector,
@@ -156,7 +156,7 @@ class RegulatorToTFBSConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class GeneToTFBSConnector(DBTBSConnector,
@@ -170,4 +170,4 @@ class GeneToTFBSConnector(DBTBSConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='gene', target_column='tfbs')
-        self.stack_json(df)
+        self.stack_connections(df)

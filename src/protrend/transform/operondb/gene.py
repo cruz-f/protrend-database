@@ -153,4 +153,4 @@ class GeneToOrganismConnector(OperonDBConnector,
     def connect(self):
         df = self.create_connection(source='gene', target='gene',
                                     target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

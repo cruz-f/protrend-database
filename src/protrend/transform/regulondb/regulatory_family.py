@@ -61,4 +61,4 @@ class RegulatoryFamilyToRegulatorConnector(RegulonDBConnector,
     def connect(self):
         df = self.create_connection(source='rfam', target='regulator',
                                     source_on='transcription_factor_id', target_on='transcription_factor_id')
-        self.stack_json(df)
+        self.stack_connections(df)

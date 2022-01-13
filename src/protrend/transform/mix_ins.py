@@ -129,7 +129,7 @@ class OrganismMixIn:
         )
 
         params = [param for param, value in iterator if value is not None]
-        params = ','.join(params)
+        params = ', '.join(params)
 
         ProtrendLogger.log.info(f'Annotating with the following params: {params}')
 

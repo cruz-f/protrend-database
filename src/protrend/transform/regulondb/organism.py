@@ -35,7 +35,7 @@ class OrganismToRegulatorConnector(RegulonDBConnector,
 
     def connect(self):
         df = self.create_connection(source='organism', target='regulator', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToGeneConnector(RegulonDBConnector,
@@ -48,7 +48,7 @@ class OrganismToGeneConnector(RegulonDBConnector,
 
     def connect(self):
         df = self.create_connection(source='organism', target='gene', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToTFBSConnector(RegulonDBConnector,
@@ -61,7 +61,7 @@ class OrganismToTFBSConnector(RegulonDBConnector,
 
     def connect(self):
         df = self.create_connection(source='organism', target='tfbs', cardinality='one_to_many')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class OrganismToRegulatoryInteractionConnector(RegulonDBConnector,
@@ -74,4 +74,4 @@ class OrganismToRegulatoryInteractionConnector(RegulonDBConnector,
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin', source_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)

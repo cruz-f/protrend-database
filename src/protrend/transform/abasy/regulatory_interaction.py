@@ -86,7 +86,7 @@ class RegulatoryInteractionToOrganismConnector(AbasyConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='organism')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
@@ -100,7 +100,7 @@ class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='regulator')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatoryInteractionToGeneConnector(AbasyConnector,
@@ -114,7 +114,7 @@ class RegulatoryInteractionToGeneConnector(AbasyConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
 
 
 class RegulatorToGeneConnector(AbasyConnector,
@@ -128,4 +128,4 @@ class RegulatorToGeneConnector(AbasyConnector,
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
                                     source_column='regulator', target_column='gene')
-        self.stack_json(df)
+        self.stack_connections(df)
