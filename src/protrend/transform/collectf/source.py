@@ -43,15 +43,16 @@ class SourceToOrganismConnector(CollecTFConnector,
         url = []
         ext_id = []
         key = []
-        for tax_id in target_df['taxonomy']:
-            if is_null(tax_id):
-                url.append(None)
-                ext_id.append(None)
-                key.append(None)
-            else:
-                url.append(f'http://www.collectf.org/browse/view_motif_reports_by_taxonomy/{tax_id}')
-                ext_id.append(tax_id)
-                key.append('view_motif_reports_by_taxonomy')
+        if 'taxonomy' in target_df.columns:
+            for tax_id in target_df['taxonomy']:
+                if is_null(tax_id):
+                    url.append(None)
+                    ext_id.append(None)
+                    key.append(None)
+                else:
+                    url.append(f'http://www.collectf.org/browse/view_motif_reports_by_taxonomy/{tax_id}')
+                    ext_id.append(tax_id)
+                    key.append('view_motif_reports_by_taxonomy')
 
         kwargs = dict(url=url,
                       external_identifier=ext_id,
@@ -98,15 +99,16 @@ class SourceToRegulatorConnector(CollecTFConnector,
         url = []
         ext_id = []
         key = []
-        for reg_id in target_df['uniprot_accession']:
-            if is_null(reg_id):
-                url.append(None)
-                ext_id.append(None)
-                key.append(None)
-            else:
-                url.append(f'http://www.collectf.org/uniprot/{reg_id}')
-                ext_id.append(reg_id)
-                key.append('uniprot')
+        if 'uniprot_accession' in target_df:
+            for reg_id in target_df['uniprot_accession']:
+                if is_null(reg_id):
+                    url.append(None)
+                    ext_id.append(None)
+                    key.append(None)
+                else:
+                    url.append(f'http://www.collectf.org/uniprot/{reg_id}')
+                    ext_id.append(reg_id)
+                    key.append('uniprot')
 
         kwargs = dict(url=url,
                       external_identifier=ext_id,
