@@ -46,16 +46,17 @@ class SourceConnector(RegulonDBConnector,
         urls = []
         ids = []
         keys = []
-        for target_id in target_df[target_col]:
-            if not is_null(target_id):
-                urls.append(f'http://regulondb.ccg.unam.mx/search?term={target_id}&organism=ECK12&type=All')
-                ids.append(target_id)
-                keys.append(key)
+        if target_col in target_df.columns:
+            for target_id in target_df[target_col]:
+                if not is_null(target_id):
+                    urls.append(f'http://regulondb.ccg.unam.mx/search?term={target_id}&organism=ECK12&type=All')
+                    ids.append(target_id)
+                    keys.append(key)
 
-            else:
-                urls.append(None)
-                ids.append(None)
-                keys.append(None)
+                else:
+                    urls.append(None)
+                    ids.append(None)
+                    keys.append(None)
 
         kwargs = dict(url=urls,
                       external_identifier=ids,

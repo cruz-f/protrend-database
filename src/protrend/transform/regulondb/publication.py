@@ -4,7 +4,8 @@ from protrend.io import read_from_stack
 from protrend.model import Publication, Regulator, TFBS, Gene, Organism, RegulatoryInteraction
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
-from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, create_input_value
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, create_input_value, \
+    merge_columns
 from protrend.utils import SetList, build_stack
 from protrend.utils.processors import apply_processors, to_int_str
 
@@ -44,6 +45,9 @@ class PublicationTransformer(PublicationMixIn, RegulonDBTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_regulondb'))
+
+        # merge pmid
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_regulondb')
 
         df = apply_processors(df, pmid=to_int_str)
 
