@@ -23,6 +23,9 @@ def _fetch_genes(identifiers: List[str],
                  names: List[str],
                  is_refseq: bool = False,
                  is_genbank: bool = False) -> List[Union[NCBIGene, NCBIProtein, UniProtProtein]]:
+    if not identifiers:
+        return []
+
     genes = []
 
     if identifiers[0] is None:
