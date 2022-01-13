@@ -13,7 +13,7 @@ from protrend.log import ProtrendLogger
 from .transformations import drop_duplicates, drop_empty_string
 from .transformer import Transformer
 from protrend.utils import SetList, apply_processors
-from protrend.utils.processors import regulatory_hash, to_list_nan
+from protrend.utils.processors import regulatory_hash, to_list_nan, protrend_hash
 
 
 def get_values(df, col):
@@ -225,7 +225,7 @@ class RegulatoryInteractionMixIn:
         ri_series_hash += df2['regulatory_effect'].copy()
 
         df = df.assign(regulatory_interaction_hash=ri_series_hash)
-        df = apply_processors(df, regulatory_interaction_hash=regulatory_hash)
+        df = apply_processors(df, regulatory_interaction_hash=protrend_hash)
         df = drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True)
         df = df.dropna(subset=['regulatory_interaction_hash'])
 
@@ -345,7 +345,7 @@ class TFBSMixIn:
         ri_series_hash += df2['length'].copy()
 
         df = df.assign(site_hash=ri_series_hash)
-        df = apply_processors(df, site_hash=regulatory_hash)
+        df = apply_processors(df, site_hash=protrend_hash)
         df = drop_duplicates(df=df, subset=['site_hash'])
         df = df.dropna(subset=['site_hash'])
         df = drop_empty_string(df, 'site_hash')

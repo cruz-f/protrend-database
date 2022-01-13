@@ -247,16 +247,11 @@ def start_reverse(item):
     return np.nanmax(x)
 
 
-def site_hash(items: List[str]) -> Union[None, str]:
+def protrend_hash(items: List[str]) -> Union[None, str]:
     if is_null(items):
-        return None
+        return
 
-    return '_'.join(items)
-
-
-def regulatory_hash(items: List[str]) -> Union[None, str]:
-    if is_null(items):
-        return None
+    items = [to_str(item) for item in items]
 
     return '_'.join(items)
 
