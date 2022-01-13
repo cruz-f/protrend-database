@@ -80,10 +80,10 @@ class PublicationConnector(LiteratureConnector,
                                                      source_processors={'publication': [to_list_nan]},
                                                      target_processors={'publication': [to_list_nan]})
         source_df = source_df.explode('publication')
-        source_df = apply_processors(source_df, evidence=[rstrip, lstrip])
+        source_df = apply_processors(source_df, publication=[rstrip, lstrip])
 
         target_df = target_df.explode('publication')
-        target_df = apply_processors(target_df, evidence=[rstrip, lstrip])
+        target_df = apply_processors(target_df, publication=[rstrip, lstrip])
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           source_on='publication', target_on='publication')

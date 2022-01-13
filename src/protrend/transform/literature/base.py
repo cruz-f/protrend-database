@@ -206,9 +206,10 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
         # special case of the paer_vasquez_et_al_2011 source which contains several strains in the same file,
         # thus having several organisms/taxonomy identifiers in the same file
 
-        taxonomy = network['strain'].map(self._paer_strains, na_action='ignore')
-        taxonomy = network['taxonomy'].fillna(taxonomy)
-        network = network.assign(taxonomy=taxonomy)
+        if 'strain' in network:
+            taxonomy = network['strain'].map(self._paer_strains, na_action='ignore')
+            taxonomy = network['taxonomy'].fillna(taxonomy)
+            network = network.assign(taxonomy=taxonomy)
 
         filtered_networks = [self.filter_bsub_locus(network, 'regulator_locus_tag'),
                              self.filter_ecol_locus(network, 'regulator_locus_tag'),
