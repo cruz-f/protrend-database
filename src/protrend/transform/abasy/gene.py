@@ -24,9 +24,9 @@ class GeneTransformer(GeneMixIn, AbasyTransformer,
 
     @staticmethod
     def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
-        gene = drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
         gene = gene.dropna(subset=['Gene_name', 'taxonomy'])
-        gene = drop_empty_string(gene, 'Gene_name')
+        gene = drop_empty_string(gene, 'Gene_name', 'taxonomy')
+        gene = drop_duplicates(df=gene, subset=['Gene_name', 'taxonomy'], perfect_match=True)
 
         gene = apply_processors(gene,
                                 Gene_name=[rstrip, lstrip],
@@ -73,5 +73,4 @@ class GeneTransformer(GeneMixIn, AbasyTransformer,
         df = df.drop(columns=['input_value'])
 
         self.stack_transformed_nodes(df)
-
         return df

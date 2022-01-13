@@ -98,7 +98,7 @@ class OrganismTransformer(OrganismMixIn, AbasyTransformer,
         # 'scoe': '100226',
         # 'spne': '406558',
         # 'spyo': '186103'
-        organisms_to_annotate = dict(input_values=['367830', '100226', '406558', '186103'],
+        organisms_to_annotate = dict(input_value=['367830', '100226', '406558', '186103'],
                                      ncbi_taxonomy=['367830', '100226', '406558', '186103'],
                                      name=['Staphylococcus aureus subsp. aureus USA300',
                                            'Streptomyces coelicolor A3(2)',
