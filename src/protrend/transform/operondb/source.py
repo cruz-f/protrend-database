@@ -56,17 +56,18 @@ class SourceConnector(OperonDBConnector,
         urls = []
         ids = []
         keys = []
-        for _id in target_df['operon_db_id']:
+        if 'operon_db_id' in target_df.columns:
+            for _id in target_df['operon_db_id']:
 
-            if _id.lower().startswith('k'):
-                urls.append(f'https://operondb.jp/known/{_id}')
-                ids.append(_id)
-                keys.append('known')
+                if _id.lower().startswith('k'):
+                    urls.append(f'https://operondb.jp/known/{_id}')
+                    ids.append(_id)
+                    keys.append('known')
 
-            else:
-                urls.append(f'https://operondb.jp/conserved/{_id}')
-                ids.append(_id)
-                keys.append('conserved')
+                else:
+                    urls.append(f'https://operondb.jp/conserved/{_id}')
+                    ids.append(_id)
+                    keys.append('conserved')
 
         kwargs = dict(url=urls,
                       external_identifier=ids,

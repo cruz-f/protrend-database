@@ -4,6 +4,7 @@ from protrend.io import read_from_stack, read_json_frame
 from protrend.model import Publication, Organism, Gene, Operon
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
+from protrend.transform.operondb.operon import OperonTransformer
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
@@ -37,7 +38,7 @@ class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, key='operon', columns=self.read_columns,
+        operon = read_from_stack(stack=self.transform_stack, key='operon', columns=OperonTransformer.columns,
                                  reader=read_json_frame)
 
         # noinspection DuplicatedCode

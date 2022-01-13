@@ -47,7 +47,7 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
         operon = pd.concat([conserved, known])
         operon = operon.reset_index(drop=True)
 
-        operon = operon.drop(columns=['koid', 'coi', 'op', 'mbgd'])
+        operon = operon.drop(columns=['koid', 'coid', 'op', 'mbgd'])
         operon = operon.rename(columns={'name': 'operon_name', 'definition': 'operon_function',
                                         'source': 'pubmed', 'org': 'ncbi_taxonomy'})
         return operon
