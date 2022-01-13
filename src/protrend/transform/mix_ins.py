@@ -13,7 +13,7 @@ from protrend.log import ProtrendLogger
 from .transformations import drop_duplicates, drop_empty_string
 from .transformer import Transformer
 from protrend.utils import SetList, apply_processors
-from protrend.utils.processors import regulatory_hash, to_list_nan, protrend_hash
+from protrend.utils.processors import to_list_nan, protrend_hash
 
 
 def get_values(df, col):
