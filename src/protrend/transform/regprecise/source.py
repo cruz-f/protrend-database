@@ -53,10 +53,14 @@ class SourceConnector(RegPreciseConnector,
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           cardinality='one_to_many')
 
-        size = len(target_ids)
-        kwargs = dict(url=target_df[url].to_list(),
-                      external_identifier=target_df[external_identifier].to_list(),
-                      key=[key] * size)
+        if url in target_df.columns and external_identifier in target_df.columns:
+            size = len(target_ids)
+            kwargs = dict(url=target_df[url].to_list(),
+                          external_identifier=target_df[external_identifier].to_list(),
+                          key=[key] * size)
+
+        else:
+            kwargs = {}
 
         return self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
 

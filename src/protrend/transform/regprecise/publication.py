@@ -4,7 +4,7 @@ from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Publication, RegulatoryFamily
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
-from protrend.transform.transformations import drop_empty_string, select_columns, group_by
+from protrend.transform.transformations import drop_empty_string, select_columns, group_by, create_input_value
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list
 
@@ -67,6 +67,7 @@ class PublicationTransformer(PublicationMixIn, RegPreciseTransformer,
         aggregation = {'tffamily_id': to_set_list, 'collection_id': to_set_list, 'riboswitch_id': to_set_list,
                        'pubmed': flatten_set_list}
         publications = group_by(publications, column='pmid', aggregation=aggregation)
+        publications = create_input_value(publications, col='pmid')
 
         annotated_publications = self.annotate_publications(publications)
 

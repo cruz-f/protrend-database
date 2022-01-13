@@ -75,7 +75,10 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
                 res['position'].append(new_position)
                 res['sequence'].append(new_sequence)
 
-        return pd.DataFrame(res)
+        if res:
+            return pd.DataFrame(res)
+
+        return pd.DataFrame(columns=['tfbs_id', 'position', 'sequence'])
 
     def transform_tfbs(self, tfbs: pd.DataFrame, gene: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
         # filter by sequence and position
@@ -98,13 +101,13 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
                 'gene': flatten_set_list}
         tfbs = group_by(df=tfbs, column='tfbs_id', aggregation=aggr)
 
-        ris = tfbs.drop(columns=['sequence', 'position'])
+        ri = tfbs.drop(columns=['sequence', 'position'])
 
         sequences = select_columns(tfbs, 'tfbs_id', 'sequence', 'position')
         sequences = apply_processors(sequences, sequence=[remove_ellipsis, upper_case])
         sequences = self.transform_sequence(sequences)
 
-        tfbs = pd.merge(ris, sequences, on='tfbs_id')
+        tfbs = pd.merge(ri, sequences, on='tfbs_id')
 
         # + 'organism', 'ncbi_taxonomy', 'genome'
         tfbs = pd.merge(tfbs, organism, on='ncbi_taxonomy')

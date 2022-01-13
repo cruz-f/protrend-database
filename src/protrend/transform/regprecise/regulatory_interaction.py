@@ -65,20 +65,20 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
 
     def transform(self) -> pd.DataFrame:
         network = read_from_stack(stack=self.transform_stack, key='regulator',
-                                  columns=RegulatorTransformer.read_columns, reader=read_json_frame)
+                                  columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=OrganismTransformer.read_columns, reader=read_json_frame)
+                                   columns=OrganismTransformer.columns, reader=read_json_frame)
 
         effector = read_from_stack(stack=self.transform_stack, key='effector',
-                                   columns=EffectorTransformer.read_columns, reader=read_json_frame)
+                                   columns=EffectorTransformer.columns, reader=read_json_frame)
 
         # noinspection DuplicatedCode
         regulator = read_from_stack(stack=self.transform_stack, key='regulator',
-                                    columns=RegulatorTransformer.read_columns, reader=read_json_frame)
+                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
 
         gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=GeneTransformer.read_columns, reader=read_json_frame)
+                               columns=GeneTransformer.columns, reader=read_json_frame)
 
         tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
                                columns=TFBSTransformer.columns, reader=read_json_frame)
