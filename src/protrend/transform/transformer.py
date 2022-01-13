@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 from typing import List, Type, Callable, Dict
 
+import neo4j.exceptions
 import pandas as pd
 
 from protrend.io import write_json_frame, read_from_stack, read_json_frame
@@ -363,8 +364,11 @@ class Transformer(AbstractTransformer):
         return protrend_id_decoder(sorted_nodes[0])
 
     def node_view(self) -> pd.DataFrame:
-        df = self.node.node_to_df()
-        return df
+        try:
+            return self.node.node_to_df()
+
+        except neo4j.exceptions.Neo4jError:
+            return pd.DataFrame(columns=list(self.node.node_keys()))
 
 
 class MultiStackTransformer(Transformer, register=False):
