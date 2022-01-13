@@ -28,12 +28,12 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
         tf = drop_empty_string(tf, 'family')
 
         # drop not assigned
-        mask = tf['family'] == 'Not assigned'
-        tf = tf[~mask]
+        mask = tf['family'] != 'Not assigned'
+        tf = tf[mask]
 
         # drop other family
-        mask = tf['family'] == 'Other family'
-        tf = tf[~mask]
+        mask = tf['family'] != 'Other family'
+        tf = tf[mask]
 
         tf = select_columns(tf, 'name', 'family')
         tf = tf.rename(columns={'name': 'tf', 'family': 'name'})
@@ -43,12 +43,11 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
         tf = tf.assign(mechanism=None, rfam=None, description=None)
 
         # sigma factors
-        tf_sigma_mask = tf['family'] == 'Sigma factors'
+        tf_sigma_mask = tf['name'] == 'Sigma factors'
         tf.loc[tf_sigma_mask, 'mechanism'] = 'sigma factor'
 
         # tf mechanism
-        tf_not_sigma_mask = tf['family'] != 'Sigma factors'
-        tf.loc[tf_not_sigma_mask, 'mechanism'] = 'transcription factor'
+        tf.loc[~tf_sigma_mask, 'mechanism'] = 'transcription factor'
         return tf
 
     def transform(self):

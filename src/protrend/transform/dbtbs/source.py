@@ -58,19 +58,20 @@ class SourceToRegulatoryFamilyConnector(DBTBSConnector,
         url = []
         ext_id = []
         key = []
-        for rfam_name in target_df['name']:
-            if not is_null(rfam_name) and rfam_name == 'Helix turn helix family':
-                url.append('https://dbtbs.hgc.jp/tfactable.html#HTH')
-                ext_id.append('HTH')
-                key.append('tfactable.html#')
-            elif not is_null(rfam_name) and rfam_name == 'Sigma factors':
-                url.append('https://dbtbs.hgc.jp/tfactable.html#sigma')
-                ext_id.append('sigma')
-                key.append('tfactable.html#')
-            else:
-                url.append('https://dbtbs.hgc.jp/')
-                ext_id.append(None)
-                key.append(None)
+        if 'name' in target_df.columns:
+            for rfam_name in target_df['name']:
+                if not is_null(rfam_name) and rfam_name == 'Helix turn helix family':
+                    url.append('https://dbtbs.hgc.jp/tfactable.html#HTH')
+                    ext_id.append('HTH')
+                    key.append('tfactable.html#')
+                elif not is_null(rfam_name) and rfam_name == 'Sigma factors':
+                    url.append('https://dbtbs.hgc.jp/tfactable.html#sigma')
+                    ext_id.append('sigma')
+                    key.append('tfactable.html#')
+                else:
+                    url.append('https://dbtbs.hgc.jp/')
+                    ext_id.append(None)
+                    key.append(None)
 
         kwargs = dict(url=url,
                       external_identifier=ext_id,
@@ -97,15 +98,16 @@ class SourceConnector(DBTBSConnector, source='dbtbs', version='0.0.4', register=
         url = []
         ext_id = []
         key = []
-        for reg_id, reg_url in zip(target_df[external_id_col], target_df[external_url_col]):
-            if not is_null(reg_id) and not is_null(reg_url):
-                url.append(reg_url)
-                ext_id.append(reg_id)
-                key.append(key_id)
-            else:
-                url.append(None)
-                ext_id.append(None)
-                key.append(None)
+        if external_id_col in target_df.columns and external_url_col in target_df.columns:
+            for reg_id, reg_url in zip(target_df[external_id_col], target_df[external_url_col]):
+                if not is_null(reg_id) and not is_null(reg_url):
+                    url.append(reg_url)
+                    ext_id.append(reg_id)
+                    key.append(key_id)
+                else:
+                    url.append(None)
+                    ext_id.append(None)
+                    key.append(None)
 
         kwargs = dict(url=url,
                       external_identifier=ext_id,
