@@ -43,9 +43,7 @@ def build_stack(source: str,
 
 def build_multi_stack(source: str,
                       version: str,
-                      stack_to_load: Dict[str, MultiStack],
-                      sa: bool = True,
-                      dl: bool = True) -> Dict[str, MultiStack]:
+                      stack_to_load: Dict[str, MultiStack]) -> Dict[str, MultiStack]:
     loaded_stack = {}
 
     for key, multi_stack in stack_to_load.items():
@@ -55,14 +53,8 @@ def build_multi_stack(source: str,
         new_stack = []
         for file in multi_stack.stack:
 
-            if dl:
-                file = os.path.join(Settings.data_lake, source, version, file)
-                new_stack.append(file)
-                continue
-
-            if sa:
-                file = os.path.join(Settings.staging_area, source, version, file)
-                new_stack.append(file)
+            file = os.path.join(Settings.staging_area, source, version, file)
+            new_stack.append(file)
 
         new_multi_stack.stack = new_stack
         loaded_stack[key] = new_multi_stack
