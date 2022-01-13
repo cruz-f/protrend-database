@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.model import Publication, Organism, Regulator, Gene, RegulatoryInteraction
-from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector, read_literature_networks
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
@@ -34,7 +34,7 @@ class PublicationTransformer(PublicationMixIn, LiteratureTransformer,
         return network
 
     def transform(self):
-        network = self.read_network()
+        network = read_literature_networks(source=self.source, version=self.version)
 
         # noinspection DuplicatedCode
         publications = self.transform_publication(network)

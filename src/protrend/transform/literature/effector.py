@@ -3,7 +3,7 @@ from typing import Union
 import pandas as pd
 
 from protrend.model import Effector
-from protrend.transform.literature.base import LiteratureTransformer
+from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList, is_null
@@ -82,7 +82,7 @@ class EffectorTransformer(EffectorMixIn, LiteratureTransformer,
         return network
 
     def transform(self):
-        network = self.read_network()
+        network = read_literature_networks(source=self.source, version=self.version)
 
         effectors = self.transform_effector(network)
         annotated_effectors = self.annotate_effectors(effectors)

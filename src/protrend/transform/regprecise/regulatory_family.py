@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.io.utils import read_rfam, read_regulator
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulator import RegulatorTransformer
@@ -16,17 +16,10 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
                                   node=RegulatoryFamily,
                                   order=100,
                                   register=True):
-    default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
-                               'tf': 'TranscriptionFactor.json',
-                               'rna': 'RNAFamily.json'}
     columns = SetList(['protrend_id', 'name', 'mechanism', 'rfam', 'description',
                        'tffamily_id', 'collection_id', 'riboswitch_id', 'url'])
-    tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-    tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-    rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
-    @staticmethod
-    def transform_tf_family(tf_family: pd.DataFrame) -> pd.DataFrame:
+    def transform_tf_family(self, tf_family: pd.DataFrame) -> pd.DataFrame:
         tf_family = select_columns(tf_family, 'tffamily_id', 'name', 'url', 'description', 'pubmed')
 
         # noinspection DuplicatedCode
@@ -42,8 +35,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
         tf_family = tf_family.assign(mechanism='transcription factor')
         return tf_family
 
-    @staticmethod
-    def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
+    def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
         tf = select_columns(tf, 'collection_id', 'name', 'url', 'description', 'pubmed')
 
         # noinspection DuplicatedCode
@@ -59,8 +51,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
         tf = tf.assign(mechanism='transcription factor')
         return tf
 
-    @staticmethod
-    def transform_rna(rna: pd.DataFrame) -> pd.DataFrame:
+    def transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
         rna = select_columns(rna, 'riboswitch_id', 'name', 'url', 'description', 'rfam', 'pubmed')
 
         # noinspection DuplicatedCode
@@ -78,20 +69,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
         return rna
 
     def transform(self):
-        # noinspection DuplicatedCode
-        tf_family = read_from_stack(stack=self.transform_stack, key='tf_family',
-                                    columns=self.tf_family_columns, reader=read_json_lines)
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.tf_columns, reader=read_json_lines)
-        rna = read_from_stack(stack=self.transform_stack, key='rna',
-                              columns=self.rna_columns, reader=read_json_lines)
-
-        tf_family = self.transform_tf_family(tf_family)
-        tf = self.transform_tf(tf)
-        rna = self.transform_rna(rna)
-
-        df = pd.concat([tf_family, tf, rna])
-        df = df.reset_index(drop=True)
+        df = self.transform_rfmas()
 
         # clean the other regulatory family
         mask = df['name'] != '[Other]'
@@ -111,14 +89,10 @@ class RegulatoryFamilyToRegulatorConnector(RegPreciseConnector,
                                            from_node=RegulatoryFamily,
                                            to_node=Regulator,
                                            register=True):
-    default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json',
-                             'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        source = read_from_stack(stack=self.connect_stack, key='rfam',
-                                 columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
-        target = read_from_stack(stack=self.connect_stack, key='regulator',
-                                 columns=RegulatorTransformer.columns, reader=read_json_frame)
+        source = read_rfam(source=self.source, version=self.version, columns=RegulatoryFamilyTransformer.columns)
+        target = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
         tfs_chain = [('tffamily_id', 'tf_family'),
                      ('collection_id', 'transcription_factor'),

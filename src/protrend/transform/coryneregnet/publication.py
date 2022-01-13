@@ -1,10 +1,10 @@
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
 from protrend.model import Publication, Regulator, Organism, Gene, TFBS, RegulatoryInteraction
-from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
+from protrend.transform.coryneregnet.base import (CoryneRegNetTransformer, CoryneRegNetConnector,
+                                                  read_coryneregnet_networks)
 from protrend.transform.mix_ins import PublicationMixIn
-from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_str
 
@@ -44,12 +44,16 @@ class PublicationTransformer(PublicationMixIn, CoryneRegNetTransformer,
         return pub
 
     def transform(self):
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        network = read_coryneregnet_networks(self.source, self.version)
 
         publications = self.transform_publication(network)
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_coryneregnet'))
+
+        # merge pmid
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_coryneregnet')
+
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         df = df.drop(columns=['input_value'])

@@ -1,12 +1,12 @@
 import pandas as pd
 
-from protrend.io import read_from_stack
+from protrend.io import read
 from protrend.model import Publication, Regulator, TFBS, Gene, Organism, RegulatoryInteraction
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
-from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, create_input_value, \
-    merge_columns
-from protrend.utils import SetList, build_stack
+from protrend.transform.transformations import (select_columns, drop_empty_string, drop_duplicates, create_input_value,
+                                                merge_columns)
+from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str
 
 
@@ -16,11 +16,8 @@ class PublicationTransformer(PublicationMixIn, RegulonDBTransformer,
                              node=Publication,
                              order=100,
                              register=True):
-    default_transform_stack = {'publication': 'publication.txt'}
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'publication_id', 'reference_id', 'external_db_id', 'source'])
-    read_columns = SetList(['publication_id', 'reference_id', 'external_db_id', 'author', 'title', 'source',
-                            'year', 'publication_note', 'publication_internal_comment'])
 
     @staticmethod
     def transform_publication(publication: pd.DataFrame) -> pd.DataFrame:
@@ -37,9 +34,12 @@ class PublicationTransformer(PublicationMixIn, RegulonDBTransformer,
         return publication
 
     def transform(self):
-        reader = regulondb_reader(skiprows=36, names=self.read_columns)
-        publication = read_from_stack(stack=self.transform_stack, key='publication', columns=self.read_columns,
-                                      reader=reader)
+        columns = ['publication_id', 'reference_id', 'external_db_id', 'author', 'title', 'source',
+                   'year', 'publication_note', 'publication_internal_comment']
+        reader = regulondb_reader(skiprows=36, names=columns)
+        publication = read(source=self.source, version=self.version,
+                           file='publication.txt', reader=reader,
+                           default=pd.DataFrame(columns=columns))
 
         publications = self.transform_publication(publication)
         annotated_publications = self.annotate_publications(publications)
@@ -68,11 +68,7 @@ class PublicationToOrganismConnector(RegulonDBConnector,
         self.stack_connections(df)
 
 
-class PublicationConnector(RegulonDBConnector,
-                           source='regulondb',
-                           version='0.0.0',
-                           register=False):
-    obj_ev_pub = 'object_ev_method_pub_link.txt'
+class PublicationConnector(RegulonDBConnector, register=False):
 
     def _connect(self, target: str, obj_ev_pub_col: str, target_col: str):
         source_df, target_df = self.transform_stacks(source='publication',
@@ -86,10 +82,8 @@ class PublicationConnector(RegulonDBConnector,
 
         obj_ev_pub_cols = ['object_id', 'evidence_id', 'method_id', 'publication_id']
         obj_ev_pub_reader = regulondb_reader(skiprows=31, names=obj_ev_pub_cols)
-        obj_ev_pub_stack = build_stack(self.source, self.version, stack_to_load={'obj_ev_pub': self.obj_ev_pub},
-                                       dl=False)
-        obj_ev_pub = read_from_stack(stack=obj_ev_pub_stack, key='obj_ev_pub',
-                                     columns=obj_ev_pub_cols, reader=obj_ev_pub_reader)
+        obj_ev_pub = read(source=self.source, version=self.version, file='object_ev_method_pub_link.txt',
+                          reader=obj_ev_pub_reader, default=pd.DataFrame(columns=obj_ev_pub_cols))
 
         target_df = pd.merge(obj_ev_pub, target_df, left_on=obj_ev_pub_col, right_on=target_col)
 

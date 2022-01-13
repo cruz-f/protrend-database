@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
 from protrend.model import Gene
-from protrend.transform.abasy.base import AbasyTransformer
+from protrend.transform.abasy.base import AbasyTransformer, read_abasy_genes
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (create_input_value, drop_duplicates, drop_empty_string, merge_loci,
                                                 merge_columns)
@@ -47,7 +46,7 @@ class GeneTransformer(GeneMixIn, AbasyTransformer,
         return gene
 
     def transform(self):
-        gene = read_from_multi_stack(stack=self.transform_stack, key='gene', columns=self.default_gene_columns)
+        gene = read_abasy_genes(self.source, self.version)
 
         genes = self.transform_gene(gene)
         annotated_genes = self.annotate_genes(genes)

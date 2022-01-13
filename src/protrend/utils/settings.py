@@ -81,10 +81,6 @@ class Settings:
         return self.source.joinpath('log')
 
     @property
-    def staging_area(self):
-        return self.working_directory.joinpath('staging_area')
-
-    @property
     def data_lake(self):
         return self.working_directory.joinpath('data_lake')
 

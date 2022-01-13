@@ -6,11 +6,11 @@ from typing import List, Type, Callable, Dict
 import neo4j.exceptions
 import pandas as pd
 
-from protrend.io import write_json_frame, read_from_stack, read_json_frame
+from protrend.io import write_json_frame
 from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from .transformations import drop_empty_string, drop_duplicates
-from protrend.utils import Settings, DefaultProperty, SetList, WriteStack, MultiStack, build_stack, build_multi_stack
+from protrend.utils import Settings, DefaultProperty, SetList, Stack
 from protrend.utils.processors import apply_processors
+from .transformations import drop_empty_string, drop_duplicates
 
 
 class AbstractTransformer(metaclass=ABCMeta):
@@ -75,32 +75,28 @@ class Transformer(AbstractTransformer):
     node = DefaultProperty()
     order = DefaultProperty()
 
-    default_transform_stack = {}
     columns = SetList()
-    read_columns = SetList()
 
     def __init_subclass__(cls, **kwargs):
-
         source = kwargs.get('source')
         cls.source.set_default(cls, source)
 
         version = kwargs.get('version')
         cls.version.set_default(cls, version)
 
-        node = kwargs.pop('node', None)
+        node = kwargs.get('node')
         cls.node.set_default(cls, node)
 
-        order = kwargs.pop('order', None)
+        order = kwargs.get('order')
         cls.order.set_default(cls, order)
 
-        register = kwargs.pop('register', False)
+        register = kwargs.get('register', True)
 
         if register:
             from protrend.pipeline import Pipeline
-            Pipeline.register_transformer(cls, **kwargs)
+            Pipeline.register_transformer(transformer=cls, source=source, version=version)
 
     def __init__(self,
-                 transform_stack: Dict[str, str] = None,
                  source: str = None,
                  version: str = None,
                  node: Type[Node] = None,
@@ -117,15 +113,11 @@ class Transformer(AbstractTransformer):
         Pandas is the main engine to read, process, transform and integrate data
         contained in the staging area files into structured nodes.
 
-        :type transform_stack: Dict[str, str]
         :type source: str
         :type version: str
         :type node: Type[Node]
         :type order: int
 
-        :param transform_stack: Dictionary containing the pair name and file name.
-        The key should be used to identify the file in the transform stack,
-        whereas the value should be the file name in the staging area or data lake
         :param source: The name of the data source in the staging area (e.g. regprecise, collectf, etc)
         :param version: The version of the data source in the staging area (e.g. 0.0.0, 0.0.1, etc)
         :param node: The node type associated with this transformer.
@@ -139,16 +131,7 @@ class Transformer(AbstractTransformer):
         self.node = node
         self.order = order
 
-        if not transform_stack:
-            transform_stack = self.default_transform_stack
-
-        self._transform_stack = self._build_transform_stack(transform_stack, self.source, self.version)
-
         self._write_stack = []
-
-    @staticmethod
-    def _build_transform_stack(transform_stack, source, version):
-        return build_stack(source, version, transform_stack)
 
     # --------------------------------------------------------
     # Static properties
@@ -160,10 +143,6 @@ class Transformer(AbstractTransformer):
     @property
     def node_factors_keys(self) -> List[str]:
         return list(self.node.node_factors.keys())
-
-    @property
-    def transform_stack(self) -> Dict[str, str]:
-        return self._transform_stack
 
     @property
     def write_path(self) -> str:
@@ -292,12 +271,12 @@ class Transformer(AbstractTransformer):
     # Utilities
     # ----------------------------------------
     @classmethod
-    def infer_write_stack(cls) -> WriteStack:
+    def infer_write_stack(cls) -> Stack:
         node_name = cls.node.get_default(cls).node_name()
-        write_stack = WriteStack(transformed=f'transformed_{node_name}',
-                                 integrated=f'integrated_{node_name}',
-                                 nodes=f'nodes_{node_name}',
-                                 connected=None)
+        write_stack = Stack(transformed=f'transformed_{node_name}',
+                            integrated=f'integrated_{node_name}',
+                            nodes=f'nodes_{node_name}',
+                            connected=None)
         return write_stack
 
     def empty_frame(self) -> pd.DataFrame:
@@ -367,33 +346,5 @@ class Transformer(AbstractTransformer):
         try:
             return self.node.node_to_df()
 
-        except neo4j.exceptions.Neo4jError:
+        except (neo4j.exceptions.Neo4jError, neo4j.exceptions.DriverError):
             return pd.DataFrame(columns=list(self.node.node_keys()))
-
-
-class MultiStackTransformer(Transformer, register=False):
-    default_transform_stack: Dict[str, MultiStack] = {}
-
-    def __init__(self, transform_stack: Dict[str, MultiStack] = None, **kwargs):
-        kwargs['transform_stack'] = transform_stack
-        super().__init__(**kwargs)
-        self._transform_stack: Dict[str, MultiStack]
-
-    @staticmethod
-    def _build_transform_stack(transform_stack, source, version):
-        return build_multi_stack(source, version, transform_stack)
-
-    @property
-    def transform_stack(self) -> Dict[str, MultiStack]:
-        self._transform_stack: Dict[str, MultiStack]
-
-        return self._transform_stack
-
-    def read_integrated(self, node: str, columns: List[str]) -> pd.DataFrame:
-        stack = build_stack(source=self.source, version=self.version,
-                            stack_to_load={node: f'integrated_{node}.json'}, sa=False)
-        df = read_from_stack(stack=stack,
-                             key=node,
-                             columns=columns,
-                             reader=read_json_frame)
-        return df

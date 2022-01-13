@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read_from_stack
+from protrend.io import read_json_lines, read
 from protrend.model import Organism
 from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
@@ -15,11 +15,9 @@ class OrganismTransformer(OrganismMixIn, RegPreciseTransformer,
                           node=Organism,
                           order=100,
                           register=True):
-    default_transform_stack = {'genome': 'Genome.json'}
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession',
                        'genome_id', 'taxonomy', 'url', 'regulon'])
-    read_columns = SetList(['genome_id', 'name', 'taxonomy', 'url', 'regulon'])
 
     @staticmethod
     def transform_organism(genome: pd.DataFrame) -> pd.DataFrame:
@@ -33,8 +31,9 @@ class OrganismTransformer(OrganismMixIn, RegPreciseTransformer,
         return genome
 
     def transform(self):
-        genome = read_from_stack(stack=self.transform_stack, key='genome',
-                                 columns=self.read_columns, reader=read_json_lines)
+        genome = read(source=self.source, version=self.version,
+                      file='Genome.json', reader=read_json_lines,
+                      default=pd.DataFrame(columns=['genome_id', 'name', 'taxonomy', 'url', 'regulon']))
 
         organisms = self.transform_organism(genome)
         annotated_organisms = self.annotate_organisms(organisms)

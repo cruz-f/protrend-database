@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines
+from protrend.io import read_json_lines, read
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.transformations import select_columns, group_by
@@ -14,10 +14,8 @@ class RegulatoryFamilyTransformer(CollecTFTransformer,
                                   node=RegulatoryFamily,
                                   order=100,
                                   register=True):
-    default_transform_stack = {'tf': 'TranscriptionFactor.json'}
     columns = SetList(['protrend_id', 'name', 'mechanism', 'description',
                        'regulon'])
-    read_columns = SetList(['name', 'family', 'description', 'regulon'])
 
     @staticmethod
     def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
@@ -30,8 +28,8 @@ class RegulatoryFamilyTransformer(CollecTFTransformer,
         return tf
 
     def transform(self):
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.read_columns, reader=read_json_lines)
+        tf = read(source=self.source, version=self.version, file='TranscriptionFactor.json', reader=read_json_lines,
+                  default=pd.DataFrame(columns=['name', 'family', 'description', 'regulon']))
         tf = self.transform_tf(tf)
 
         self.stack_transformed_nodes(tf)

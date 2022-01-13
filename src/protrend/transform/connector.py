@@ -5,9 +5,9 @@ from typing import List, Type, Dict, Tuple, Callable
 
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame, write_json_frame
+from protrend.io import read_json_frame, write_json_frame, read
 from protrend.model import Node
-from protrend.utils import Settings, WriteStack, DefaultProperty, build_stack, SetList
+from protrend.utils import Settings, Stack, DefaultProperty, SetList
 from protrend.utils.processors import apply_processors
 
 
@@ -46,6 +46,20 @@ class AbstractConnector(metaclass=ABCMeta):
         pass
 
 
+CONNECTOR_STACK = dict(source='integrated_source.json',
+                       effector='integrated_effector.json',
+                       evidence='integrated_evidence.json',
+                       gene='integrated_gene.json',
+                       operon='integrated_operon.jsonn',
+                       organism='integrated_organism.json',
+                       pathway='integrated_pathway.json',
+                       publication='integrated_publication.json',
+                       regulator='integrated_regulator.json',
+                       rfam='integrated_regulatoryfamily.json',
+                       rin='integrated_regulatoryinteraction.json',
+                       tfbs='integrated_tfbs.json')
+
+
 class Connector(AbstractConnector):
     """
     A connector is responsible for reading, processing, integrating and writing relationships files.
@@ -81,7 +95,6 @@ class Connector(AbstractConnector):
             Pipeline.register_connector(cls, **kwargs)
 
     def __init__(self,
-                 connect_stack: Dict[str, str] = None,
                  source: str = None,
                  version: str = None,
                  from_node: Type[Node] = None,
@@ -97,15 +110,11 @@ class Connector(AbstractConnector):
         A pandas DataFrame is the main engine to read, load, process and transform data contained in these files into
         structured relationships
 
-        :type connect_stack: Dict[str, str]
         :type source: str
         :type version: str
         :type from_node: Type[Node]
         :type to_node: Type[Node]
 
-        :param connect_stack: Dictionary containing the pair name and file name.
-        The key should be used to identify the file in the connect stack,
-        whereas the value should be the file name in the data lake
         :param source: The name of the data source in the data lake (e.g. regprecise, collectf, etc)
         :param version: The version of the data source in the data lake (e.g. 0.0.0, 0.0.1, etc)
         :param from_node: The source node type associated with this connector, and thus the source of the relation.
@@ -118,20 +127,11 @@ class Connector(AbstractConnector):
         self.from_node = from_node
         self.to_node = to_node
 
-        if not connect_stack:
-            connect_stack = self.default_connect_stack
-
-        self._connect_stack = build_stack(self.source, self.version, connect_stack)
-
         self._write_stack = []
 
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
-    @property
-    def connect_stack(self) -> Dict[str, str]:
-        return self._connect_stack
-
     @property
     def write_path(self) -> str:
         return os.path.join(Settings.data_lake, self.source, self.version)
@@ -199,12 +199,12 @@ class Connector(AbstractConnector):
     # Utilities
     # ----------------------------------------
     @classmethod
-    def infer_write_stack(cls) -> WriteStack:
+    def infer_write_stack(cls) -> Stack:
         file_name = f'connected_{cls.from_node.get_default(cls).node_name()}_{cls.to_node.get_default(cls).node_name()}'
-        write_stack = WriteStack(transformed=None,
-                                 integrated=None,
-                                 nodes=None,
-                                 connected=file_name)
+        write_stack = Stack(transformed=None,
+                            integrated=None,
+                            nodes=None,
+                            connected=file_name)
         return write_stack
 
     def stack_connections(self, df: pd.DataFrame):
@@ -243,13 +243,15 @@ class Connector(AbstractConnector):
         default_source_cols.extend(list(source_processors.keys()))
         default_target_cols.extend(list(target_processors.keys()))
 
-        source_df = read_from_stack(stack=self.connect_stack, key=source,
-                                    columns=default_source_cols, reader=read_json_frame)
+        file = CONNECTOR_STACK[source]
+        source_df = read(source=self.source, version=self.version, file=file,
+                         reader=read_json_frame, default=pd.DataFrame(columns=default_source_cols))
         source_df = apply_processors(source_df, **source_processors)
         source_df = source_df.rename(columns={source_column: 'source_col'})
 
-        target_df = read_from_stack(stack=self.connect_stack, key=target,
-                                    columns=default_target_cols, reader=read_json_frame)
+        file = CONNECTOR_STACK[target]
+        target_df = read(source=self.source, version=self.version, file=file,
+                         reader=read_json_frame, default=pd.DataFrame(columns=default_target_cols))
         target_df = apply_processors(target_df, **target_processors)
         target_df = target_df.rename(columns={target_column: 'target_col'})
 

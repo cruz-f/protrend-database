@@ -2,7 +2,7 @@ from typing import Union
 
 import pandas as pd
 
-from protrend.io import read_from_stack
+from protrend.io import read
 from protrend.model import Evidence, RegulatoryInteraction
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
@@ -16,14 +16,10 @@ class EvidenceTransformer(RegulonDBTransformer,
                           node=Evidence,
                           order=100,
                           register=True):
-    default_transform_stack = {'evidence': 'evidence.txt'}
     columns = SetList(['protrend_id', 'name', 'description',
                        'evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
                        'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head',
                        'example'])
-    read_columns = SetList(['evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
-                            'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head',
-                            'example'])
 
     @staticmethod
     def transform_evidence(evidence: pd.DataFrame) -> pd.DataFrame:
@@ -50,9 +46,14 @@ class EvidenceTransformer(RegulonDBTransformer,
         return evidence
 
     def transform(self):
-        reader = regulondb_reader(skiprows=38, names=self.read_columns)
-        evidence = read_from_stack(stack=self.transform_stack, key='evidence', columns=self.read_columns,
-                                   reader=reader)
+        columns = ['evidence_id', 'evidence_name', 'type_object', 'evidence_code', 'evidence_note',
+                   'evidence_internal_comment', 'key_id_org', 'evidence_type', 'evidence_category', 'head',
+                   'example']
+        reader = regulondb_reader(skiprows=38, names=columns)
+        evidence = read(source=self.source, version=self.version,
+                        file='evidence.txt', reader=reader,
+                        default=pd.DataFrame(columns=columns))
+
         evidence = self.transform_evidence(evidence)
 
         self.stack_transformed_nodes(evidence)

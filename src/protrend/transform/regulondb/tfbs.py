@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_json_frame, read_from_stack
+from protrend.io.utils import read_organism, read
 from protrend.model import TFBS
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
@@ -16,14 +16,9 @@ class TFBSTransformer(TFBSMixIn, RegulonDBTransformer,
                       node=TFBS,
                       order=90,
                       register=True):
-    default_transform_stack = {'site': 'site.txt',
-                               'organism': 'integrated_organism.json'}
     columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
                        'site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
                        'site_internal_comment', 'key_id_org', 'site_length'])
-
-    read_columns = SetList(['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
-                            'site_internal_comment', 'key_id_org', 'site_length'])
 
     @staticmethod
     def transform_tfbs(tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
@@ -69,13 +64,15 @@ class TFBSTransformer(TFBSMixIn, RegulonDBTransformer,
         return tfbs
 
     def transform(self):
-        reader = regulondb_reader(skiprows=35, names=self.read_columns)
-        tfbs = read_from_stack(stack=self.transform_stack, key='site', columns=self.read_columns,
-                               reader=reader)
+        columns = ['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
+                   'site_internal_comment', 'key_id_org', 'site_length']
+        reader = regulondb_reader(skiprows=35, names=columns)
+        tfbs = read(source=self.source, version=self.version,
+                    file='site.txt', reader=reader,
+                    default=pd.DataFrame(columns=columns))
 
         # noinspection DuplicatedCode
-        organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
 
         organism = self.transform_organism(organism)
 

@@ -1,8 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
 from protrend.model import Regulator
-from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
+from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, read_coryneregnet_networks
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
@@ -42,7 +41,7 @@ class RegulatorTransformer(GeneMixIn, CoryneRegNetTransformer,
         return regulator
 
     def transform(self):
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        network = read_coryneregnet_networks(self.source, self.version)
 
         regulators = self.transform_regulator(network)
         annotated_regulators = self.annotate_genes(regulators)

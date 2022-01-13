@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.model import Evidence, RegulatoryInteraction
-from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector, read_literature_networks
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_list_nan, rstrip, lstrip
@@ -51,7 +51,7 @@ class EvidenceTransformer(LiteratureTransformer,
         return network
 
     def transform(self):
-        network = self.read_network()
+        network = read_literature_networks(source=self.source, version=self.version)
         evidence = self.transform_evidence(network)
 
         self.stack_transformed_nodes(evidence)

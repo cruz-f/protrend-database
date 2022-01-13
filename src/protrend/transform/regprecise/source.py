@@ -1,6 +1,6 @@
 from typing import Dict, Callable, List
 
-from protrend.io import read_from_stack, read_json_frame
+from protrend.io.utils import read_source, read_rfam
 from protrend.model.model import (Source, Effector, Gene, Organism, Pathway, Regulator, RegulatoryFamily,
                                   RegulatoryInteraction, TFBS)
 from protrend.transform.mix_ins import SourceMixIn
@@ -146,10 +146,8 @@ class SourceToRegulatoryFamilyConnector(RegPreciseConnector,
                              'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
-        source = read_from_stack(stack=self.connect_stack, key='source',
-                                 columns=SourceTransformer.columns, reader=read_json_frame)
-        target = read_from_stack(stack=self.connect_stack, key='rfam',
-                                 columns=RegulatoryFamilyTransformer.columns, reader=read_json_frame)
+        source = read_source(source=self.source, version=self.version, columns=SourceTransformer.columns)
+        target = read_rfam(source=self.source, version=self.version, columns=RegulatoryFamilyTransformer.columns)
 
         protrend_id = source.loc[0, 'protrend_id']
 

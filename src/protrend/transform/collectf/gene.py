@@ -1,6 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines, read_json_frame
+from protrend.io import read_json_lines, read
+from protrend.io.utils import read_regulator
 from protrend.model import Gene
 from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
@@ -17,14 +18,12 @@ class GeneTransformer(GeneMixIn, CollecTFTransformer,
                       node=Gene,
                       order=80,
                       register=True):
-    default_transform_stack = {'gene': 'Gene.json', 'regulator': 'integrated_regulator.json'}
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'regulon', 'operon', 'tfbs',
                        'regulator_uniprot_accession', 'ncbi_taxonomy', 'organism_protrend_id',
                        'locus_tag_old'])
-    read_columns = SetList(['locus_tag', 'regulon', 'operon', 'tfbs'])
 
     @staticmethod
     def transform_regulator(regulator: pd.DataFrame) -> pd.DataFrame:
@@ -50,12 +49,11 @@ class GeneTransformer(GeneMixIn, CollecTFTransformer,
         return gene
 
     def transform(self):
-        # noinspection DuplicatedCode
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=self.read_columns, reader=read_json_lines)
+        gene = read(source=self.source, version=self.version,
+                    file='Gene.json', reader=read_json_lines,
+                    default=pd.DataFrame(columns=['locus_tag', 'regulon', 'operon', 'tfbs']))
 
-        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
         regulator = self.transform_regulator(regulator)
         genes = self.transform_gene(gene=gene, regulator=regulator)

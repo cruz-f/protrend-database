@@ -1,12 +1,13 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame, read_from_multi_stack
+from protrend.io import read_from_stack, read_json_frame, read
+from protrend.io.utils import read_gene
 from protrend.model import Regulator
-from protrend.transform.abasy.base import AbasyTransformer
+from protrend.transform.abasy.base import AbasyTransformer, read_abasy_networks
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
-from protrend.utils import SetList, build_stack
+from protrend.utils import SetList, build_stack, build_file_path
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
@@ -36,23 +37,18 @@ class RegulatorTransformer(GeneMixIn, AbasyTransformer,
         return networks
 
     @staticmethod
-    def transform_gene(gene_stack: dict) -> pd.DataFrame:
-        gene = read_from_stack(stack=gene_stack,
-                               key='gene',
-                               columns=GeneTransformer.columns,
-                               reader=read_json_frame)
+    def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
         gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                               'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                               'sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
         return gene
 
     def transform(self):
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        network = read_abasy_networks(self.source, self.version)
         regulator = self.transform_network(network)
 
-        gene_stack = build_stack(source=self.source, version=self.version,
-                                 stack_to_load={'gene': 'integrated_gene.json'}, sa=False)
-        gene = self.transform_gene(gene_stack)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        gene = self.transform_gene(gene)
 
         df = pd.merge(regulator, gene, left_on='regulator_taxonomy', right_on='gene_taxonomy')
 

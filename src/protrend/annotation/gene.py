@@ -169,6 +169,8 @@ def annotate_genes(dtos: List['GeneDTO'],
 
     :return: list of annotated 'GeneDTO'. This function returns the same list object for convenience
     """
+    if not dtos:
+        return dtos
 
     dtos_size = len(dtos)
 

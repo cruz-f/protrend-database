@@ -1,8 +1,8 @@
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
+from protrend.io.utils import read_organism, read_regulator, read_gene
 from protrend.model import RegulatoryInteraction, Regulator, Gene, Organism
-from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
+from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector, read_abasy_networks
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.abasy.organism import OrganismTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
@@ -59,11 +59,13 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, AbasyTransfor
         return gene
 
     def transform(self) -> pd.DataFrame:
-        # noinspection DuplicatedCode
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
-        organism = self.read_integrated(node='organism', columns=OrganismTransformer.columns)
-        regulator = self.read_integrated(node='regulator', columns=RegulatorTransformer.columns)
-        gene = self.read_integrated(node='gene', columns=GeneTransformer.columns)
+        network = read_abasy_networks(self.source, self.version)
+
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 
         df = self._transform(network=network,
                              organism=organism, organism_key='taxonomy',

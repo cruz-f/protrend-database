@@ -2,7 +2,8 @@ from typing import List
 
 import pandas as pd
 
-from protrend.io import read_json_frame, read_from_stack
+from protrend.io import read
+from protrend.io.utils import read_organism, read_regulator, read_gene, read_tfbs, read_effector
 from protrend.model import RegulatoryInteraction, Regulator, TFBS, Gene, Effector
 from protrend.transform.mix_ins import RegulatoryInteractionMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
@@ -27,64 +28,58 @@ def transform_regulon_db_dataset(df: pd.DataFrame,
     return df
 
 
+REGULONDB_STACK = dict(genetic_network=('genetic_network.txt', 43,
+                                        ['regulator_id', 'regulator_name', 'regulated_id', 'regulated_name',
+                                         'function_interaction', 'evidence', 'regulator_type', 'regulated_type']),
+                       regulatory_interaction=('regulatory_interaction.txt', 42,
+                                               ['regulatory_interaction_id', 'conformation_id', 'promoter_id',
+                                                'site_id', 'ri_function', 'center_position', 'ri_dist_first_gene',
+                                                'ri_first_gene_id', 'affinity_exp', 'regulatory_interaction_note',
+                                                'ri_internal_comment', 'key_id_org', 'ri_sequence', 'ri_orientation',
+                                                'ri_sequence_orientation']),
+                       srna_interaction=('srna_interaction.txt', 38,
+                                         ['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
+                                          'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
+                                          'srna_regulation_type', 'srna_mechanis', 'srna_note']),
+                       tf_gene=('tf_gene_interaction.txt', 43,
+                                ['regulatory_interaction_id', 'conformation_id', 'object_id', 'site_id',
+                                 'ri_function', 'center_position', 'ri_dist_first_gene', 'ri_first_gene_id',
+                                 'affinity_exp', 'regulatory_interaction_note', 'ri_internal_comment', 'key_id_org',
+                                 'ri_sequence', 'ri_orientation', 'ri_sequence_orientation', 'object_type']),
+                       tf=('transcription_factor.txt', 38,
+                           ['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
+                            'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
+                            'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence']),
+                       sigma=('sigma_tmp.txt', 36,
+                              ['sigma_id', 'sigma_name', 'sigma_synonyms', 'sigma_gene_id', 'sigma_gene_name',
+                               'sigma_coregulators', 'sigma_notes', 'sigma_sigmulon_genes', 'key_id_org']),
+                       srna=('srna_interaction.txt', 38,
+                             ['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
+                              'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
+                              'srna_regulation_type', 'srna_mechanis', 'srna_note']),
+                       target_gene=('gene.txt', 39,
+                                    ['gene_id', 'gene_name', 'gene_posleft', 'gene_posright',
+                                     'gene_strand', 'gene_sequence', 'gc_content', 'cri_score',
+                                     'gene_note', 'gene_internal_comment', 'key_id_org', 'gene_type']),
+                       site=('site.txt', 35, ['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
+                                              'site_internal_comment', 'key_id_org', 'site_length']),
+                       regulator_effector=('effector.txt', 34,
+                                           ['effector_id', 'effector_name', 'category', 'effector_type',
+                                            'effector_note', 'effector_internal_comment', 'key_id_org']),
+                       conformation=('conformation.txt', 36,
+                                     ['conformation_id', 'transcription_factor_id', 'final_state', 'conformation_note',
+                                      'interaction_type', 'conformation_internal_comment', 'key_id_org',
+                                      'conformation_type', 'apo_holo_conformation']),
+                       conformation_effector=('conformation_effector_link.txt', 29,
+                                              ['effector_id', 'conformation_id']))
+
+
 class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTransformer,
                                        source='regulondb',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,
                                        order=80,
                                        register=True):
-    default_transform_stack = {'organism': 'integrated_organism.json',
-                               'effector': 'integrated_effector.json',
-                               'regulator': 'integrated_regulator.json',
-                               'gene': 'integrated_gene.json',
-                               'tfbs': 'integrated_tfbs.json',
-                               'genetic_network': 'genetic_network.txt',
-                               'regulatory_interaction': 'regulatory_interaction.txt',
-                               'srna_interaction': 'srna_interaction.txt',
-                               'tf_gene': 'tf_gene_interaction.txt',
-                               'tf': 'transcription_factor.txt',
-                               'sigma': 'sigma_tmp.txt',
-                               'srna': 'srna_interaction.txt',
-                               'target_gene': 'gene.txt',
-                               'site': 'site.txt',
-                               'regulator_effector': 'effector.txt',
-                               'conformation': 'conformation.txt',
-                               'conformation_effector': 'conformation_effector_link.txt'}
-
-    genetic_network_columns = SetList(['regulator_id', 'regulator_name', 'regulated_id', 'regulated_name',
-                                       'function_interaction', 'evidence', 'regulator_type', 'regulated_type'])
-    regulatory_interaction_columns = SetList(['regulatory_interaction_id', 'conformation_id', 'promoter_id', 'site_id',
-                                              'ri_function', 'center_position', 'ri_dist_first_gene',
-                                              'ri_first_gene_id', 'affinity_exp', 'regulatory_interaction_note',
-                                              'ri_internal_comment', 'key_id_org', 'ri_sequence', 'ri_orientation',
-                                              'ri_sequence_orientation'])
-    srna_interaction_columns = SetList(['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
-                                        'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
-                                        'srna_regulation_type', 'srna_mechanis', 'srna_note'])
-    tf_gene_columns = SetList(['regulatory_interaction_id', 'conformation_id', 'object_id', 'site_id',
-                               'ri_function', 'center_position', 'ri_dist_first_gene', 'ri_first_gene_id',
-                               'affinity_exp', 'regulatory_interaction_note', 'ri_internal_comment', 'key_id_org',
-                               'ri_sequence', 'ri_orientation', 'ri_sequence_orientation', 'object_type'])
-    tf_columns = SetList(['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
-                          'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
-                          'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
-    sigma_columns = SetList(['sigma_id', 'sigma_name', 'sigma_synonyms', 'sigma_gene_id', 'sigma_gene_name',
-                             'sigma_coregulators', 'sigma_notes', 'sigma_sigmulon_genes', 'key_id_org'])
-    srna_columns = SetList(['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
-                            'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
-                            'srna_regulation_type', 'srna_mechanis', 'srna_note'])
-    target_gene_columns = SetList(['gene_id', 'gene_name', 'gene_posleft', 'gene_posright', 'gene_strand',
-                                   'gene_sequence', 'gc_content', 'cri_score', 'gene_note',
-                                   'gene_internal_comment', 'key_id_org', 'gene_type'])
-    site_columns = SetList(['site_id', 'site_posleft', 'site_posright', 'site_sequence', 'site_note',
-                            'site_internal_comment', 'key_id_org', 'site_length'])
-    regulator_effector_columns = SetList(['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
-                                          'effector_internal_comment', 'key_id_org'])
-    conformation_columns = SetList(['conformation_id', 'transcription_factor_id', 'final_state', 'conformation_note',
-                                    'interaction_type', 'conformation_internal_comment', 'key_id_org',
-                                    'conformation_type', 'apo_holo_conformation'])
-    conformation_effector_columns = SetList(['effector_id', 'conformation_id'])
-
     columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
                        'regulatory_interaction_hash'])
 
@@ -251,77 +246,62 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTran
         effector = effector.rename(columns={'protrend_id': 'effector'})
         return effector
 
+    def regulondb_read(self, key: str):
+        file, skiprows, columns = REGULONDB_STACK[key]
+        reader = regulondb_reader(skiprows=skiprows, names=columns)
+        return read(source=self.source, version=self.version, file=file, reader=reader,
+                    default=pd.DataFrame(columns=columns))
+
     def transform(self) -> pd.DataFrame:
-        tf_reader = regulondb_reader(skiprows=38, names=self.tf_columns)
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.tf_columns, reader=tf_reader)
+        tf = self.regulondb_read(key='tf')
         tf = transform_regulon_db_dataset(tf,
                                           selection=['transcription_factor_id'],
                                           duplicates=['transcription_factor_id'],
                                           nan=['transcription_factor_id'])
 
-        sigma_reader = regulondb_reader(skiprows=36, names=self.sigma_columns)
-        sigma = read_from_stack(stack=self.transform_stack, key='sigma',
-                                columns=self.sigma_columns, reader=sigma_reader)
+        sigma = self.regulondb_read(key='sigma')
         sigma = transform_regulon_db_dataset(sigma,
                                              selection=['sigma_id'],
                                              duplicates=['sigma_id'],
                                              nan=['sigma_id'])
 
-        srna_reader = regulondb_reader(skiprows=38, names=self.srna_columns)
-        srna = read_from_stack(stack=self.transform_stack, key='srna',
-                               columns=self.srna_columns, reader=srna_reader)
+        srna = self.regulondb_read(key='srna')
         srna = transform_regulon_db_dataset(srna,
                                             selection=['srna_gene_id'],
                                             duplicates=['srna_gene_id'],
                                             nan=['srna_gene_id'])
 
-        target_gene_reader = regulondb_reader(skiprows=39, names=self.target_gene_columns)
-        target_gene = read_from_stack(stack=self.transform_stack, key='target_gene',
-                                      columns=self.target_gene_columns, reader=target_gene_reader)
+        target_gene = self.regulondb_read(key='target_gene')
         target_gene = transform_regulon_db_dataset(target_gene,
                                                    selection=['gene_id', 'gene_name'],
                                                    duplicates=['gene_id'],
                                                    nan=['gene_id'])
 
-        site_reader = regulondb_reader(skiprows=35, names=self.site_columns)
-        site = read_from_stack(stack=self.transform_stack, key='site',
-                               columns=self.site_columns, reader=site_reader)
+        site = self.regulondb_read(key='site')
         site = transform_regulon_db_dataset(site,
                                             selection=['site_id'],
                                             duplicates=['site_id'],
                                             nan=['site_id'])
 
-        effector_reader = regulondb_reader(skiprows=34, names=self.regulator_effector_columns)
-        regulator_effector = read_from_stack(stack=self.transform_stack, key='regulator_effector',
-                                             columns=self.regulator_effector_columns, reader=effector_reader)
+        regulator_effector = self.regulondb_read(key='regulator_effector')
         regulator_effector = transform_regulon_db_dataset(regulator_effector,
                                                           selection=['effector_id'],
                                                           duplicates=['effector_id'],
                                                           nan=['effector_id'])
 
-        conformation_reader = regulondb_reader(skiprows=36, names=self.conformation_columns)
-        conformation = read_from_stack(stack=self.transform_stack, key='conformation',
-                                       columns=self.conformation_columns, reader=conformation_reader)
+        conformation = self.regulondb_read(key='conformation')
         conformation = transform_regulon_db_dataset(conformation,
                                                     selection=['conformation_id', 'transcription_factor_id'],
                                                     duplicates=['conformation_id', 'transcription_factor_id'],
                                                     nan=['conformation_id', 'transcription_factor_id'])
 
-        conformation_effector_reader = regulondb_reader(skiprows=29,
-                                                        names=self.conformation_effector_columns)
-        conformation_effector = read_from_stack(stack=self.transform_stack, key='conformation_effector',
-                                                columns=self.conformation_effector_columns,
-                                                reader=conformation_effector_reader)
+        conformation_effector = self.regulondb_read(key='conformation_effector')
         conformation_effector = transform_regulon_db_dataset(conformation_effector,
                                                              selection=['conformation_id', 'effector_id'],
                                                              duplicates=['conformation_id', 'effector_id'],
                                                              nan=['conformation_id', 'effector_id'])
 
-        genetic_network_reader = regulondb_reader(skiprows=43, names=self.genetic_network_columns)
-        genetic_network = read_from_stack(stack=self.transform_stack, key='genetic_network',
-                                          columns=self.genetic_network_columns,
-                                          reader=genetic_network_reader)
+        genetic_network = self.regulondb_read(key='genetic_network')
         genetic_network = transform_regulon_db_dataset(genetic_network,
                                                        selection=['regulator_id', 'regulator_name', 'regulated_id',
                                                                   'regulated_name', 'function_interaction',
@@ -330,10 +310,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTran
                                                                    'function_interaction'],
                                                        nan=['regulator_id', 'regulated_id', 'function_interaction'])
 
-        regulatory_interaction_reader = regulondb_reader(skiprows=42, names=self.regulatory_interaction_columns)
-        regulatory_interaction = read_from_stack(stack=self.transform_stack, key='regulatory_interaction',
-                                                 columns=self.regulatory_interaction_columns,
-                                                 reader=regulatory_interaction_reader)
+        regulatory_interaction = self.regulondb_read(key='regulatory_interaction')
         regulatory_interaction = transform_regulon_db_dataset(regulatory_interaction,
                                                               selection=['conformation_id', 'site_id', 'ri_function',
                                                                          'ri_first_gene_id'],
@@ -342,10 +319,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTran
                                                               nan=['conformation_id', 'ri_function',
                                                                    'ri_first_gene_id'])
 
-        srna_interaction_reader = regulondb_reader(skiprows=38, names=self.srna_interaction_columns)
-        srna_interaction = read_from_stack(stack=self.transform_stack, key='srna_interaction',
-                                           columns=self.srna_interaction_columns,
-                                           reader=srna_interaction_reader)
+        srna_interaction = self.regulondb_read(key='srna_interaction')
         srna_interaction = transform_regulon_db_dataset(srna_interaction,
                                                         selection=['srna_gene_id', 'srna_gene_regulated_id',
                                                                    'srna_function'],
@@ -354,10 +328,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTran
                                                         nan=['srna_gene_id', 'srna_gene_regulated_id',
                                                              'srna_function'])
 
-        tf_gene_reader = regulondb_reader(skiprows=43, names=self.tf_gene_columns)
-        tf_gene = read_from_stack(stack=self.transform_stack, key='tf_gene',
-                                  columns=self.tf_gene_columns,
-                                  reader=tf_gene_reader)
+        tf_gene = self.regulondb_read(key='tf_gene')
         tf_gene = transform_regulon_db_dataset(tf_gene,
                                                selection=['conformation_id', 'object_id', 'site_id', 'ri_function'],
                                                duplicates=['conformation_id', 'object_id', 'site_id', 'ri_function'],
@@ -376,17 +347,11 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegulonDBTran
                                      conformation=conformation,
                                      conformation_effector=conformation_effector)
 
-        # noinspection DuplicatedCode
-        organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
-        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=GeneTransformer.columns, reader=read_json_frame)
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
-        effector = read_from_stack(stack=self.transform_stack, key='effector',
-                                   columns=EffectorTransformer.columns, reader=read_json_frame)
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        tfbs = read_tfbs(source=self.source, version=self.version, columns=TFBSTransformer.columns)
+        effector = read_effector(source=self.source, version=self.version, columns=EffectorTransformer.columns)
 
         df = self._transform(network=network,
                              organism=organism, organism_key='ncbi_taxonomy',

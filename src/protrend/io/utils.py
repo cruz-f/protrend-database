@@ -2,53 +2,64 @@ from typing import Dict, Callable, Sequence
 
 import pandas as pd
 
-from protrend.utils import MultiStack
+from .json import read_json_frame
+from protrend.utils import build_file_path
 
 
-def _default_df(columns) -> pd.DataFrame:
-    columns = list(columns)
-    return pd.DataFrame(columns=columns)
+def read(source: str,
+         version: str,
+         file: str,
+         reader: Callable,
+         kwargs: Dict = None,
+         default: pd.DataFrame = None) -> pd.DataFrame:
+    if not kwargs:
+        kwargs = {}
 
-
-def read_from_stack(stack: Dict[str, str],
-                    key: str,
-                    columns: Sequence[str],
-                    reader: Callable) -> pd.DataFrame:
-
-    try:
-        file_path = stack[key]
-        return reader(file_path)
-
-    except (OSError, KeyError):
-
-        return _default_df(columns)
-
-
-def read_from_multi_stack(stack: Dict[str, MultiStack],
-                          key: str,
-                          columns: Sequence[str]) -> pd.DataFrame:
+    file_path = build_file_path(source=source, version=version, file=file)
 
     try:
-        multi_stack = stack[key]
+        return reader(file_path, **kwargs)
 
-        dfs = []
-        for file, taxon, source, reader in zip(multi_stack.stack, multi_stack.taxa,
-                                               multi_stack.source, multi_stack.reader):
-            df = reader(file)
-            df = df.assign(taxonomy=taxon, source=source)
-            dfs.append(df)
+    except OSError:
 
-        return pd.concat(dfs)
+        return default
 
-    except (OSError, KeyError):
 
-        df = _default_df(columns)
+def read_source(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_source.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
 
-        default_cols = {}
-        if 'taxonomy' not in df.columns:
-            default_cols['taxonomy'] = None
-        if 'source' not in df.columns:
-            default_cols['source'] = None
 
-        df = df.assign(**default_cols)
-        return df
+def read_organism(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_organism.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_regulator(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_regulator.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_gene(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_gene.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_tfbs(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_tfbs.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_effector(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_effector.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_rfam(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_regulatoryfamily.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_operon(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='integrated_operon.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))

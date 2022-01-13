@@ -1,10 +1,10 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read_from_stack
 from protrend.model import Publication, RegulatoryFamily
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
-from protrend.transform.transformations import drop_empty_string, select_columns, group_by, create_input_value
+from protrend.transform.transformations import (drop_empty_string, select_columns, group_by, create_input_value,
+                                                merge_columns)
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list
 
@@ -15,14 +15,8 @@ class PublicationTransformer(PublicationMixIn, RegPreciseTransformer,
                              node=Publication,
                              order=100,
                              register=True):
-    default_transform_stack = {'tf_family': 'TranscriptionFactorFamily.json',
-                               'tf': 'TranscriptionFactor.json',
-                               'rna': 'RNAFamily.json'}
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'tffamily_id', 'collection_id', 'riboswitch_id', 'pubmed'])
-    tf_family_columns = SetList(['tffamily_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-    tf_columns = SetList(['collection_id', 'name', 'url', 'description', 'pubmed', 'regulog'])
-    rna_columns = SetList(['riboswitch_id', 'name', 'url', 'description', 'pubmed', 'rfam', 'regulog'])
 
     @staticmethod
     def _transform_rfams(rfam: pd.DataFrame):
@@ -49,20 +43,7 @@ class PublicationTransformer(PublicationMixIn, RegPreciseTransformer,
         return self._transform_rfams(rna)
 
     def transform(self):
-        # noinspection DuplicatedCode
-        tf_family = read_from_stack(stack=self.transform_stack, key='tf_family',
-                                    columns=self.tf_family_columns, reader=read_json_lines)
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.tf_columns, reader=read_json_lines)
-        rna = read_from_stack(stack=self.transform_stack, key='rna',
-                              columns=self.rna_columns, reader=read_json_lines)
-
-        tf_family = self.transform_tf_family(tf_family)
-        tf = self.transform_tf(tf)
-        rna = self.transform_rna(rna)
-
-        publications = pd.concat([tf_family, tf, rna])
-        publications = publications.reset_index(drop=True)
+        publications = self.transform_rfmas()
 
         aggregation = {'tffamily_id': to_set_list, 'collection_id': to_set_list, 'riboswitch_id': to_set_list,
                        'pubmed': flatten_set_list}
@@ -72,6 +53,10 @@ class PublicationTransformer(PublicationMixIn, RegPreciseTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_regprecise'))
+
+        # merge pmid
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation',
+                           right='pmid_regprecise')
 
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 

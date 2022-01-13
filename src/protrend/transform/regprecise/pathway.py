@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read_from_stack
+from protrend.io import read_json_lines, read
 from protrend.model import Pathway, Regulator
 from protrend.transform.mix_ins import PathwayMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
@@ -15,10 +15,8 @@ class PathwayTransformer(PathwayMixIn, RegPreciseTransformer,
                          node=Pathway,
                          order=100,
                          register=True):
-    default_transform_stack = {'pathway': 'Pathway.json'}
     columns = SetList(['protrend_id', 'name', 'kegg_pathways',
                        'pathway_id', 'url', 'regulog'])
-    read_columns = SetList(['pathway_id', 'name', 'url', 'regulog'])
 
     @staticmethod
     def transform_pathway(pathway: pd.DataFrame) -> pd.DataFrame:
@@ -37,8 +35,9 @@ class PathwayTransformer(PathwayMixIn, RegPreciseTransformer,
         return pathway
 
     def transform(self):
-        pathway = read_from_stack(stack=self.transform_stack, key='pathway',
-                                  columns=self.read_columns, reader=read_json_lines)
+        pathway = read(source=self.source, version=self.version,
+                       file='Pathway.json', reader=read_json_lines,
+                       default=pd.DataFrame(columns=['pathway_id', 'name', 'url', 'regulog']))
 
         pathways = self.transform_pathway(pathway)
         annotated_pathways = self.annotate_pathways(pathways)

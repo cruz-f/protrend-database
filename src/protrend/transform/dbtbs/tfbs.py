@@ -1,6 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_json_frame, read_json_lines, read_from_stack
+from protrend.io import read_json_lines
+from protrend.io.utils import read_organism, read
 from protrend.model import TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.dbtbs.organism import OrganismTransformer
@@ -16,11 +17,8 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
                       node=TFBS,
                       order=90,
                       register=True):
-    default_transform_stack = {'tfbs': 'TFBS.json',
-                               'organism': 'integrated_organism.json'}
     columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
                        'identifier', 'url', 'regulation', 'absolute_position', 'pubmed', 'tf', 'gene'])
-    read_columns = SetList(['identifier', 'url', 'regulation', 'absolute_position', 'sequence', 'pubmed', 'tf', 'gene'])
 
     @staticmethod
     def transform_tfbs(tfbs: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
@@ -126,12 +124,12 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs', columns=self.read_columns,
-                               reader=read_json_lines)
+        tfbs = read(source=self.source, version=self.version, file='TFBS.json',
+                    reader=read_json_lines,
+                    default=pd.DataFrame(columns=['identifier', 'url', 'regulation', 'absolute_position', 'sequence',
+                                                  'pubmed', 'tf', 'gene']))
 
-        # noinspection DuplicatedCode
-        organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
 
         organism = self.transform_organism(organism)
 

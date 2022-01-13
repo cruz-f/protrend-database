@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines
+from protrend.io import read_json_lines, read
 from protrend.model import Organism, Publication, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.dbtbs.tfbs import TFBSTransformer
@@ -17,7 +17,6 @@ class PublicationTransformer(PublicationMixIn, DBTBSTransformer,
                              node=Publication,
                              order=100,
                              register=True):
-    default_transform_stack = {'tfbs': 'TFBS.json'}
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'pubmed', 'tf', 'gene', 'tfbs'])
 
@@ -40,8 +39,8 @@ class PublicationTransformer(PublicationMixIn, DBTBSTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_lines)
+        tfbs = read(source=self.source, version=self.version, file='TFBS.json', reader=read_json_lines,
+                    default=pd.DataFrame(columns=TFBSTransformer.columns))
 
         publications = self.transform_publication(tfbs)
         annotated_publications = self.annotate_publications(publications)

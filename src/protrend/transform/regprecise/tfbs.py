@@ -4,7 +4,8 @@ from typing import List, Union
 
 import pandas as pd
 
-from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.io import read_json_lines, read
+from protrend.io.utils import read_organism, read_gene
 from protrend.model import TFBS
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
@@ -24,11 +25,7 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
                       node=TFBS,
                       order=70,
                       register=True):
-    default_transform_stack = {'tfbs': 'TFBS.json',
-                               'organism': 'integrated_organism.json', 'gene': 'integrated_gene.json'}
-    columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
-                       ])
-    read_columns = SetList(['position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon', 'operon', 'gene'])
+    columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash'])
 
     @staticmethod
     def split_sequence(position, sequence):
@@ -155,12 +152,12 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
         return gene
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=self.read_columns, reader=read_json_lines)
-        organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=GeneTransformer.columns, reader=read_json_frame)
+        tfbs = read(source=self.source, version=self.version,
+                    file='TFBS.json', reader=read_json_lines,
+                    default=pd.DataFrame(columns=['position', 'score', 'sequence', 'tfbs_id', 'url', 'regulon',
+                                                  'operon', 'gene']))
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 
         gene = self.transform_gene(gene)
         organism = self.transform_organism(organism)

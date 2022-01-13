@@ -3,14 +3,14 @@ from abc import abstractmethod
 from protrend.transform import Transformer, Connector
 
 
-class OperonDBTransformer(Transformer, source='operondb', version='0.0.0', register=False):
+class OperonDBTransformer(Transformer, register=False):
 
     @abstractmethod
     def transform(self):
         pass
 
 
-class OperonDBConnector(Connector, source='operondb', version='0.0.0', register=False):
+class OperonDBConnector(Connector, register=False):
 
     @abstractmethod
     def connect(self):

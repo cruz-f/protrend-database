@@ -13,7 +13,7 @@ class CoryneRegNetLoader(Loader, source='coryneregnet', version='0.0.0', registe
     pass
 
 
-class DBTBSLoader(Loader, source='dbtbs', version='0.0.3', register=True):
+class DBTBSLoader(Loader, source='dbtbs', version='0.0.4', register=True):
     pass
 
 

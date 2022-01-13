@@ -1,12 +1,12 @@
 import pandas as pd
 
-from protrend.io import read_json_frame, read_from_stack, read_from_multi_stack
+from protrend.io.utils import read_organism
 from protrend.model import TFBS
-from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
+from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, read_coryneregnet_networks
 from protrend.transform.coryneregnet.organism import OrganismTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
-from protrend.utils import SetList, is_null, build_stack
+from protrend.utils import SetList, is_null
 from protrend.utils.processors import apply_processors
 
 
@@ -57,21 +57,16 @@ class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
         return tfbs
 
     @staticmethod
-    def transform_organism(organism_stack: dict) -> pd.DataFrame:
-        organism = read_from_stack(stack=organism_stack,
-                                   key='organism',
-                                   columns=OrganismTransformer.columns,
-                                   reader=read_json_frame)
+    def transform_organism(organism: pd.DataFrame) -> pd.DataFrame:
         organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'ncbi_taxonomy': 'taxonomy', 'protrend_id': 'organism'})
         return organism
 
     def transform(self):
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        network = read_coryneregnet_networks(self.source, self.version)
 
-        organism_stack = build_stack(source=self.source, version=self.version,
-                                     stack_to_load={'organism': 'integrated_organism.json'}, sa=False)
-        organism = self.transform_organism(organism_stack)
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+        organism = self.transform_organism(organism)
 
         tfbs = self.transform_tfbs(network, organism)
         tfbs = self.site_coordinates(tfbs)

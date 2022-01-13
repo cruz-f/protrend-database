@@ -4,7 +4,8 @@ import pandas as pd
 from Bio.SeqRecord import SeqRecord
 
 from protrend.bioapis import map_uniprot_identifiers, fetch_uniprot_record
-from protrend.io import read_from_stack, read_json_lines, read_json_frame
+from protrend.io import read_json_lines, read
+from protrend.io.utils import read_organism
 from protrend.model import Regulator
 from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.organism import OrganismTransformer
@@ -46,14 +47,11 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
                            node=Regulator,
                            order=90,
                            register=True):
-    default_transform_stack = {'regulon': 'Regulon.json', 'organism': 'integrated_organism.json'}
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
                        'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
                        'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'])
-    read_columns = SetList(['uniprot_accession', 'name', 'url', 'organism', 'operon',
-                            'gene', 'tfbs', 'experimental_evidence'])
 
     @staticmethod
     def get_ncbi_proteins_from_uniprot(uniprot_accessions: List[str]) -> List[Union[str, None]]:
@@ -94,11 +92,12 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
         return organism
 
     def transform(self):
-        regulon = read_from_stack(stack=self.transform_stack, key='regulon',
-                                  columns=self.read_columns, reader=read_json_lines)
+        regulon = read(source=self.source, version=self.version,
+                       file='Regulon.json', reader=read_json_lines,
+                       default=pd.DataFrame(columns=['uniprot_accession', 'name', 'url', 'organism', 'operon',
+                                                     'gene', 'tfbs', 'experimental_evidence']))
 
-        organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=OrganismTransformer.columns, reader=read_json_frame)
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
 
         organism = self.transform_organism(organism)
         regulators = self.transform_regulon(regulon, organism)

@@ -86,7 +86,7 @@ class OrganismTransformer(OrganismMixIn, LiteratureTransformer,
         # 'paer_PAK': '1009714',
         # 'paer_PA14': '652611',
         # 'paer_PA103': '1081927',
-        organisms_to_annotate = dict(input_values=['1009714', '652611', '1081927'],
+        organisms_to_annotate = dict(input_value=['1009714', '652611', '1081927'],
                                      ncbi_taxonomy=['1009714', '652611', '1081927'],
                                      name=['Pseudomonas aeruginosa PAK', 'Pseudomonas aeruginosa PA14',
                                            'Pseudomonas aeruginosa PA103'])

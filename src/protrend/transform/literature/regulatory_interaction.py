@@ -1,7 +1,8 @@
 import pandas as pd
 
+from protrend.io.utils import read_organism, read_regulator, read_gene, read_effector
 from protrend.model import RegulatoryInteraction, Effector, Regulator, Gene
-from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector
+from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector, read_literature_networks
 from protrend.transform.literature.effector import EffectorTransformer
 from protrend.transform.literature.gene import GeneTransformer
 from protrend.transform.literature.organism import OrganismTransformer
@@ -23,6 +24,9 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTra
                        'regulator_locus_tag', 'gene_locus_tag',
                        'regulatory_effect', 'evidence', 'effector', 'mechanism',
                        'publication', 'taxonomy', 'source'])
+
+    def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
+        return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
@@ -46,11 +50,11 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTra
         return effector
 
     def transform(self) -> pd.DataFrame:
-        network = self.read_network()
-        organism = self.read_integrated(node='organism', columns=OrganismTransformer.columns)
-        regulator = self.read_integrated(node='regulator', columns=RegulatorTransformer.columns)
-        gene = self.read_integrated(node='gene', columns=GeneTransformer.columns)
-        effector = self.read_integrated(node='effector', columns=EffectorTransformer.columns)
+        network = read_literature_networks(source=self.source, version=self.version)
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        effector = read_effector(source=self.source, version=self.version, columns=EffectorTransformer.columns)
 
         df = self._transform(network=network,
                              organism=organism, organism_key='taxonomy',

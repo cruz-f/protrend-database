@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack
+from protrend.io import read
 from protrend.model import Effector
 from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
@@ -20,8 +20,6 @@ class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
     columns = SetList(['protrend_id', 'name', 'kegg_compounds',
                        'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
                        'effector_internal_comment', 'key_id_org'])
-    read_columns = SetList(['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
-                            'effector_internal_comment', 'key_id_org'])
 
     @staticmethod
     def transform_effector(effector: pd.DataFrame):
@@ -39,9 +37,12 @@ class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
         return effector
 
     def transform(self):
-        reader = regulondb_reader(skiprows=34, names=self.read_columns)
-        effector = read_from_stack(stack=self.transform_stack, key='effector', columns=self.read_columns,
-                                   reader=reader)
+        columns = ['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
+                   'effector_internal_comment', 'key_id_org']
+        reader = regulondb_reader(skiprows=34, names=columns)
+        effector = read(source=self.source, version=self.version,
+                        file='effector.txt', reader=reader,
+                        default=pd.DataFrame(columns=columns))
 
         effector = self.transform_effector(effector)
         annotated_effectors = self.annotate_effectors(effector)

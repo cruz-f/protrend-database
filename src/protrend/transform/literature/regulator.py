@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.model import Regulator
-from protrend.transform.literature.base import LiteratureTransformer
+from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors
@@ -72,7 +72,7 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
         return network
 
     def transform(self):
-        network = self.read_network()
+        network = read_literature_networks(source=self.source, version=self.version)
 
         regulators = self.transform_regulator(network)
         annotated_regulators = self.annotate_genes(regulators)

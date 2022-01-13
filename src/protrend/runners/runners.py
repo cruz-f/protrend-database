@@ -124,8 +124,8 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
-    run_logger('tcl_logger')
-    run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
+    run_logger('tc_logger')
+    # run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
 
     # ORDER MATTERS!!!!!!!!!!!!!
 
@@ -133,46 +133,46 @@ if __name__ == "__main__":
     # CollecTF
     # ----------------------------------------------------
     # run_logger('collectf_logger')
-    run_pipeline(source='collectf', version='0.0.1')
+    run_pipeline(source='collectf', version='0.0.1', load=False)
 
     # ----------------------------------------------------
     # RegPrecise
     # ----------------------------------------------------
     # run_logger('regprecise_logger')
-    run_pipeline(source='regprecise', version='0.0.0')
+    run_pipeline(source='regprecise', version='0.0.0', load=False)
 
     # ----------------------------------------------------
     # Abasy
     # ----------------------------------------------------
     # run_logger('abasy_logger')
-    run_pipeline(source='abasy', version='0.0.0')
+    run_pipeline(source='abasy', version='0.0.0', load=False)
 
     # ----------------------------------------------------
     # Literature
     # ----------------------------------------------------
     # run_logger('literature_logger')
-    run_pipeline(source='literature', version='0.0.0')
+    run_pipeline(source='literature', version='0.0.0', load=False)
 
     # ----------------------------------------------------
     # CoryneRegNet
     # ----------------------------------------------------
     # run_logger('coryneregnet_logger')
-    run_pipeline(source='coryneregnet', version='0.0.0')
+    run_pipeline(source='coryneregnet', version='0.0.0', load=False)
 
     # ----------------------------------------------------
     # DBTBS
     # ----------------------------------------------------
     # run_logger('dbtbs_logger')
-    run_pipeline(source='dbtbs', version='0.0.4')
+    run_pipeline(source='dbtbs', version='0.0.4', load=False)
 
     # ----------------------------------------------------
     # RegulonDB
     # ----------------------------------------------------
     # run_logger('regulondb_logger')
-    run_pipeline(source='regulondb', version='0.0.0')
+    run_pipeline(source='regulondb', version='0.0.0', load=False)
 
     # ----------------------------------------------------
     # OperonDB
     # ----------------------------------------------------
     # run_logger('operondb_logger')
-    run_pipeline(source='operondb', version='0.0.0')
+    run_pipeline(source='operondb', version='0.0.0', load=False)

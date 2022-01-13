@@ -1,22 +1,20 @@
 import pandas as pd
-from Bio import SeqIO
 
-from protrend.io import read_from_stack
+from protrend.io import read, read_genbank
 from protrend.model import Gene
-from protrend.transform.mix_ins import GeneMixIn, SequenceMixIn
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class GeneTransformer(SequenceMixIn, GeneMixIn, RegulonDBTransformer,
+class GeneTransformer(GeneMixIn, RegulonDBTransformer,
                       source='regulondb',
                       version='0.0.0',
                       node=Gene,
                       order=100,
                       register=True):
-    default_transform_stack = {'gene': 'gene.txt', 'sequence': 'sequence.gb'}
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
@@ -24,9 +22,6 @@ class GeneTransformer(SequenceMixIn, GeneMixIn, RegulonDBTransformer,
                        'gene_id', 'gene_name', 'gene_posleft', 'gene_posright', 'gene_strand',
                        'gene_sequence', 'gc_content', 'cri_score', 'gene_note',
                        'gene_internal_comment', 'key_id_org', 'gene_type'])
-    read_columns = SetList(['gene_id', 'gene_name', 'gene_posleft', 'gene_posright', 'gene_strand',
-                            'gene_sequence', 'gc_content', 'cri_score', 'gene_note',
-                            'gene_internal_comment', 'key_id_org', 'gene_type'])
 
     @staticmethod
     def transform_gene(gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
@@ -48,14 +43,16 @@ class GeneTransformer(SequenceMixIn, GeneMixIn, RegulonDBTransformer,
         return gene
 
     def transform(self):
-        reader = regulondb_reader(skiprows=39, names=self.read_columns)
-        # noinspection DuplicatedCode
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=self.read_columns, reader=reader)
+        columns = ['gene_id', 'gene_name', 'gene_posleft', 'gene_posright', 'gene_strand',
+                   'gene_sequence', 'gc_content', 'cri_score', 'gene_note',
+                   'gene_internal_comment', 'key_id_org', 'gene_type']
+        reader = regulondb_reader(skiprows=39, names=columns)
+        gene = read(source=self.source, version=self.version, file='gene.txt', reader=reader,
+                    default=pd.DataFrame(columns=columns))
 
-        gb_file = self.transform_stack['sequence']
-        sequence = SeqIO.read(gb_file, "genbank")
-        sequence = self.transform_sequence(sequence)
+        sequence = read(source=self.source, version=self.version, file='sequence.gb', reader=read_genbank,
+                        default=pd.DataFrame(columns=['name_lower', 'locus_tag', 'genbank_accession',
+                                                      'uniprot_accession']))
 
         genes = self.transform_gene(gene=gene, sequence=sequence)
         annotated_genes = self.annotate_genes(genes)

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
+from protrend.io.utils import read_gene
 from protrend.model import Operon, Gene, Organism
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.transform.operondb.gene import GeneTransformer
@@ -15,12 +15,8 @@ class OperonTransformer(OperonDBTransformer,
                         node=Operon,
                         order=90,
                         register=True):
-    default_transform_stack = {'gene': 'integrated_gene.json'}
-
     columns = SetList(['protrend_id', 'operon_db_id', 'name', 'function', 'genes', 'strand', 'start', 'stop',
                        'organism', 'pubmed'])
-    conserved_columns = SetList(['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd'])
-    known_columns = SetList(['koid', 'org', 'name', 'op', 'definition', 'source'])
 
     @staticmethod
     def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
@@ -64,8 +60,7 @@ class OperonTransformer(OperonDBTransformer,
         return operon
 
     def transform(self):
-        gene = read_from_stack(stack=self.transform_stack, key='gene', columns=GeneTransformer.columns,
-                               reader=read_json_frame)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 
         operon = self.transform_gene(gene)
         operon = self.operon_coordinates(operon)

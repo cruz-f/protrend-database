@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
+from protrend.io.utils import read_operon
 from protrend.model import Publication, Organism, Gene, Operon
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
@@ -16,7 +16,6 @@ class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
                              node=Publication,
                              order=80,
                              register=True):
-    default_transform_stack = {'operon': 'integrated_operon.json'}
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'operon',
                        'operon_db_id', 'name', 'function', 'genes', 'strand', 'start', 'stop',
@@ -38,8 +37,7 @@ class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
         return operon
 
     def transform(self):
-        operon = read_from_stack(stack=self.transform_stack, key='operon', columns=OperonTransformer.columns,
-                                 reader=read_json_frame)
+        operon = read_operon(source=self.source, version=self.version, columns=OperonTransformer.columns)
 
         # noinspection DuplicatedCode
         publications = self.transform_publication(operon)

@@ -8,7 +8,27 @@ from tqdm import tqdm
 from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
-from protrend.utils import DefaultProperty, build_load_stack
+from protrend.utils import DefaultProperty, build_file_path
+
+
+def load_stack_from_source_version(source, version) -> List[str]:
+    load_stack = []
+
+    from protrend.pipeline import Pipeline
+    transformers = Pipeline.default_transformers.get((source, version), [])
+    connectors = Pipeline.default_connectors.get((source, version), [])
+
+    for transformer in transformers:
+        write_stack = transformer.infer_write_stack()
+        nodes = build_file_path(source=source, version=version, file=write_stack.nodes)
+        load_stack.append(nodes)
+
+    for connector in connectors:
+        write_stack = connector.infer_write_stack()
+        connections = build_file_path(source=source, version=version, file=write_stack.connected)
+        load_stack.append(connections)
+
+    return load_stack
 
 
 class Loader:
@@ -30,7 +50,6 @@ class Loader:
             Pipeline.register_loader(cls, **kwargs)
 
     def __init__(self,
-                 load_stack: List[str] = None,
                  source: str = None,
                  version: str = None):
 
@@ -38,46 +57,14 @@ class Loader:
         The load object must implements loading procedures for a set of data lake files.
         Using these files, the loader will create or update existing nodes in the neo4j database.
 
-        :type load_stack: List[str]
         :type source: str
         :type version: str
 
-        :param load_stack: List containing the files. The value should be the file name in the data lake
         :param source: The name of the data source in the data lake (e.g. regprecise, collectf, etc)
         :param version: The version of the data source in the data lake (e.g. 0.0.0, 0.0.1, etc)
         """
-        self._load_stack = []
         self.source = source
         self.version = version
-
-        if not load_stack:
-            load_stack = self.load_stack_from_source_version()
-
-        self._connect_stack = build_load_stack(self.source, self.version, load_stack)
-
-    def load_stack_from_source_version(self) -> List[str]:
-        load_stack = []
-
-        from protrend.pipeline import Pipeline
-        transformers = Pipeline.default_transformers.get((self.source, self.version), [])
-        connectors = Pipeline.default_connectors.get((self.source, self.version), [])
-
-        for transformer in transformers:
-            write_stack = transformer.infer_write_stack()
-            load_stack.append(write_stack.nodes)
-
-        for connector in connectors:
-            write_stack = connector.infer_write_stack()
-            load_stack.append(write_stack.connected)
-
-        return load_stack
-
-    # --------------------------------------------------------
-    # Static properties
-    # --------------------------------------------------------
-    @property
-    def load_stack(self) -> List[str]:
-        return self._load_stack
 
     # --------------------------------------------------------
     # Loader API
@@ -91,7 +78,9 @@ class Loader:
         :return:
         """
 
-        for file_path in self.load_stack:
+        load_stack = load_stack_from_source_version(self.source, self.version)
+
+        for file_path in load_stack:
 
             if os.path.exists(file_path):
                 df = read_json_frame(file_path)

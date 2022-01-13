@@ -1,28 +1,25 @@
 import pandas as pd
-from Bio import SeqIO
 
-from protrend.io import read_json_lines, read_from_stack
+from protrend.io import read_json_lines, read, read_genbank
 from protrend.model import Gene
 from protrend.transform.dbtbs.base import DBTBSTransformer
-from protrend.transform.mix_ins import SequenceMixIn, GeneMixIn
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
-from protrend.utils.processors import (rstrip, lstrip, apply_processors)
+from protrend.utils.processors import rstrip, lstrip, apply_processors
 
 
-class GeneTransformer(GeneMixIn, SequenceMixIn, DBTBSTransformer,
+class GeneTransformer(GeneMixIn, DBTBSTransformer,
                       source='dbtbs',
                       version='0.0.4',
                       node=Gene,
                       order=100,
                       register=True):
-    default_transform_stack = {'gene': 'Gene.json', 'sequence': 'sequence.gb'}
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'url', 'regulation', 'pubmed', 'tf', 'tfbs',
                        'name_lower', 'name_dbtbs'])
-    read_columns = SetList(['name', 'url', 'regulation', 'pubmed', 'tf', 'tfbs'])
 
     @staticmethod
     def transform_gene(gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
@@ -50,13 +47,12 @@ class GeneTransformer(GeneMixIn, SequenceMixIn, DBTBSTransformer,
         return gene
 
     def transform(self):
-        # noinspection DuplicatedCode
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=self.read_columns, reader=read_json_lines)
+        gene = read(source=self.source, version=self.version, file='Gene.json', reader=read_json_lines,
+                    default=pd.DataFrame(columns=['name', 'url', 'regulation', 'pubmed', 'tf', 'tfbs']))
 
-        gb_file = self.transform_stack['sequence']
-        sequence = SeqIO.read(gb_file, "genbank")
-        sequence = self.transform_sequence(sequence)
+        sequence = read(source=self.source, version=self.version, file='sequence.gb', reader=read_genbank,
+                        default=pd.DataFrame(columns=['name_lower', 'locus_tag', 'genbank_accession',
+                                                      'uniprot_accession']))
 
         genes = self.transform_gene(gene=gene, sequence=sequence)
         annotated_genes = self.annotate_genes(genes)

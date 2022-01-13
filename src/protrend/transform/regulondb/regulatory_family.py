@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack
+from protrend.io import read
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
@@ -14,14 +14,10 @@ class RegulatoryFamilyTransformer(RegulonDBTransformer,
                                   node=RegulatoryFamily,
                                   order=100,
                                   register=True):
-    default_transform_stack = {'tf': 'transcription_factor.txt'}
     columns = SetList(['protrend_id', 'name', 'mechanism', 'description',
                        'transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
                        'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
                        'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
-    read_columns = SetList(['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
-                            'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
-                            'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
 
     @staticmethod
     def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
@@ -41,11 +37,15 @@ class RegulatoryFamilyTransformer(RegulonDBTransformer,
         return tf
 
     def transform(self):
-        tf_reader = regulondb_reader(skiprows=38, names=self.read_columns)
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.read_columns, reader=tf_reader)
-        tf = self.transform_tf(tf)
+        columns = ['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
+                   'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
+                   'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence']
+        reader = regulondb_reader(skiprows=38, names=columns)
+        tf = read(source=self.source, version=self.version,
+                  file='transcription_factor.txt', reader=reader,
+                  default=pd.DataFrame(columns=columns))
 
+        tf = self.transform_tf(tf)
         self.stack_transformed_nodes(tf)
         return tf
 

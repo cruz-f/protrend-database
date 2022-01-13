@@ -1,7 +1,7 @@
 import pandas as pd
 
 from protrend.model import Gene
-from protrend.transform.literature.base import LiteratureTransformer
+from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.utils import SetList
 
@@ -23,7 +23,7 @@ class GeneTransformer(GeneMixIn, LiteratureTransformer,
         return self._transform_gene(network, col='gene_locus_tag')
 
     def transform(self):
-        network = self.read_network()
+        network = read_literature_networks(source=self.source, version=self.version)
 
         genes = self.transform_gene(network)
         annotated_genes = self.annotate_genes(genes)

@@ -1,19 +1,17 @@
 from abc import abstractmethod
-from collections import defaultdict
-from typing import Union, Callable, Dict, List
+from typing import Union, Callable
 
 import pandas as pd
-from Bio.SeqRecord import SeqRecord
 
 from protrend.annotation import (GeneDTO, annotate_genes,
                                  OrganismDTO, annotate_organisms,
                                  PublicationDTO, annotate_publications,
                                  EffectorDTO, annotate_effectors, PathwayDTO, annotate_pathways)
 from protrend.log import ProtrendLogger
-from .transformations import drop_duplicates, drop_empty_string
-from .transformer import Transformer
 from protrend.utils import SetList, apply_processors
 from protrend.utils.processors import to_list_nan, protrend_hash
+from .transformations import drop_duplicates, drop_empty_string
+from .transformer import Transformer
 
 
 def get_values(df, col):
@@ -351,79 +349,3 @@ class TFBSMixIn:
         df = drop_empty_string(df, 'site_hash')
 
         return df
-
-
-# ----------------------------------------
-# Transform GenBank Record
-# ----------------------------------------
-def get_gene_name(qualifiers: Dict) -> Union[str, None]:
-    gene: List[str] = qualifiers.get('gene', [None])
-
-    if gene[0]:
-        return gene[0].lower()
-
-    return
-
-
-def get_locus(qualifiers: Dict) -> Union[str, None]:
-    locus: List[str] = qualifiers.get('locus_tag', [None])
-
-    if locus[0]:
-        return locus[0].lower()
-
-    return
-
-
-def get_genbank(qualifiers: Dict) -> Union[str, None]:
-    gb: List[str] = qualifiers.get('protein_id', [None])
-
-    if gb[0]:
-        return gb[0]
-
-    return
-
-
-def get_uniprot(qualifiers: Dict) -> Union[str, None]:
-    xrefs: List[str] = qualifiers.get('db_xref', [])
-
-    for xref in xrefs:
-
-        if 'UniProtKB/Swiss-Prot:' in xref:
-            return xref.replace('UniProtKB/Swiss-Prot:', '').rstrip().lstrip()
-
-    return
-
-
-class SequenceMixIn:
-
-    @staticmethod
-    def transform_sequence(sequence: SeqRecord) -> pd.DataFrame:
-
-        sequence_idx = defaultdict(SetList)
-
-        for feature in sequence.features:
-
-            if feature.type == 'CDS':
-
-                gene_name = get_gene_name(feature.qualifiers)
-
-                if gene_name:
-                    sequence_idx[gene_name].append(gene_name)
-
-                    locus = get_locus(feature.qualifiers)
-                    sequence_idx[gene_name].append(locus)
-
-                    gb_acc = get_genbank(feature.qualifiers)
-                    sequence_idx[gene_name].append(gb_acc)
-
-                    uniprot_acc = get_uniprot(feature.qualifiers)
-                    sequence_idx[gene_name].append(uniprot_acc)
-
-        # filter out duplicated gene names
-        sequence_idx = {i: val for i, val in enumerate(sequence_idx.values())
-                        if len(val) == 4}
-
-        return pd.DataFrame.from_dict(sequence_idx,
-                                      orient='index',
-                                      columns=['name_lower', 'locus_tag',
-                                               'genbank_accession', 'uniprot_accession'])

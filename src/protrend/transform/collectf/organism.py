@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 
 from protrend.bioapis import entrez_summary
-from protrend.io import read_json_lines, read_from_stack
+from protrend.io import read_json_lines, read
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import OrganismMixIn
@@ -19,11 +19,9 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
                           node=Organism,
                           order=100,
                           register=True):
-    default_transform_stack = {'organism': 'Organism.json'}
     columns = SetList(['protrend_id', 'name', 'species', 'strain', 'ncbi_taxonomy', 'refseq_accession', 'refseq_ftp',
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession',
                        'collectf_name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
-    read_columns = SetList(['name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
 
     @staticmethod
     def get_ncbi_taxa_from_nucleotide(nucleotide: List[str]):
@@ -63,8 +61,9 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
         return organism
 
     def transform(self):
-        organism = read_from_stack(stack=self.transform_stack, key='organism',
-                                   columns=self.read_columns, reader=read_json_lines)
+        organism = read(source=self.source, version=self.version,
+                        file='Organism.json', reader=read_json_lines,
+                        default=pd.DataFrame(columns=['name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs']))
 
         organisms = self.transform_organism(organism)
         annotated_organisms = self.annotate_organisms(organisms)

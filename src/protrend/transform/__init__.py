@@ -1,4 +1,4 @@
-from .transformer import Transformer, MultiStackTransformer
+from .transformer import Transformer
 from .connector import Connector
 from .abasy import *
 from .collectf import *

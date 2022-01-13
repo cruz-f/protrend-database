@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines
+from protrend.io import read_json_lines, read
 from protrend.model import Publication, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import PublicationMixIn
@@ -15,12 +15,9 @@ class PublicationTransformer(PublicationMixIn, CollecTFTransformer,
                              node=Publication,
                              order=100,
                              register=True):
-    default_transform_stack = {'tfbs': 'TFBS.json'}
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
                        'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
-    read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
-                            'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
     @staticmethod
     def transform_tfbs(tfbs: pd.DataFrame) -> pd.DataFrame:
@@ -36,8 +33,12 @@ class PublicationTransformer(PublicationMixIn, CollecTFTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=self.read_columns, reader=read_json_lines)
+        tfbs = read(source=self.source, version=self.version,
+                    file='TFBS.json', reader=read_json_lines,
+                    default=pd.DataFrame(
+                        columns=['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
+                                 'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
+                    )
 
         publications = self.transform_tfbs(tfbs)
         annotated_publications = self.annotate_publications(publications)

@@ -59,6 +59,9 @@ def annotate_effectors(dtos: List['EffectorDTO'],
 
     :return: list of annotated EffectorDTO. This function returns the same list object for convenience
     """
+    if not dtos:
+        return dtos
+
     dtos_size = len(dtos)
 
     size = args_length(names)

@@ -63,6 +63,9 @@ def annotate_organisms(dtos: List['OrganismDTO'],
 
     :return: list of annotated 'OrganismDTO'. This function returns the same list object for convenience
     """
+    if not dtos:
+        return dtos
+
     dtos_size = len(dtos)
 
     size = args_length(identifiers, names)

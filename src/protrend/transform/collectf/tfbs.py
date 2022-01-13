@@ -1,6 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read_json_frame, read_from_stack
+from protrend.io import read_json_lines
+from protrend.io.utils import read_regulator, read
 from protrend.model import TFBS
 from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
@@ -17,13 +18,10 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
                       node=TFBS,
                       order=80,
                       register=True):
-    default_transform_stack = {'tfbs': 'TFBS.json', 'regulator': 'integrated_regulator.json'}
     columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
                        'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
                        'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence',
                        'uniprot_accession'])
-    read_columns = SetList(['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
-                            'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence'])
 
     @staticmethod
     def transform_regulator(regulator: pd.DataFrame) -> pd.DataFrame:
@@ -81,11 +79,15 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=self.read_columns, reader=read_json_lines)
+        tfbs = read(source=self.source, version=self.version, file='tfbs',
+                    reader=read_json_lines,
+                    default=pd.DataFrame(
+                        columns=['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
+                                 'pubmed', 'organism', 'regulon', 'operon', 'gene',
+                                 'experimental_evidence'])
+                    )
 
-        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
-                                    columns=RegulatorTransformer.columns, reader=read_json_frame)
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
         regulator = self.transform_regulator(regulator)
         tfbs = self.transform_tfbs(tfbs=tfbs, regulator=regulator)

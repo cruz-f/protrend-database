@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines
+from protrend.io import read, read_json_lines
 from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.transformations import drop_empty_string, select_columns, group_by
@@ -14,11 +14,8 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
                                   node=RegulatoryFamily,
                                   order=100,
                                   register=True):
-    default_transform_stack = {'tf': 'TranscriptionFactor.json'}
     columns = SetList(['protrend_id', 'name', 'mechanism', 'description',
                        'tf', 'family'])
-    read_columns = SetList(['name', 'family', 'domain', 'domain_description', 'description', 'url',
-                            'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs'])
 
     @staticmethod
     def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
@@ -51,8 +48,9 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
         return tf
 
     def transform(self):
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.read_columns, reader=read_json_lines)
+        tf = read(source=self.source, version=self.version, file='TranscriptionFactor.json', reader=read_json_lines,
+                  default=pd.DataFrame(columns=['name', 'family', 'domain', 'domain_description', 'description', 'url',
+                                                'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs']))
         tf = self.transform_tf(tf)
 
         self.stack_transformed_nodes(tf)

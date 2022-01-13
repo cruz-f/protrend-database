@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_lines
+from protrend.io import read_json_lines, read
 from protrend.model import Evidence, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
@@ -14,9 +14,7 @@ class EvidenceTransformer(CollecTFTransformer,
                           node=Evidence,
                           order=100,
                           register=True):
-    default_transform_stack = {'evidence': 'ExperimentalEvidence.json'}
     columns = SetList(['protrend_id', 'name', 'description', 'exp_id', 'regulon', 'tfbs'])
-    read_columns = SetList(['exp_id', 'regulon', 'tfbs'])
 
     @staticmethod
     def transform_evidence(evidence: pd.DataFrame) -> pd.DataFrame:
@@ -28,8 +26,9 @@ class EvidenceTransformer(CollecTFTransformer,
         return evidence
 
     def transform(self):
-        evidence = read_from_stack(stack=self.transform_stack, key='evidence',
-                                   columns=self.read_columns, reader=read_json_lines)
+        evidence = read(source=self.source, version=self.version,
+                        file='ExperimentalEvidence.json', reader=read_json_lines,
+                        default=pd.DataFrame(columns=['exp_id', 'regulon', 'tfbs']))
         evidence = self.transform_evidence(evidence)
 
         self.stack_transformed_nodes(evidence)

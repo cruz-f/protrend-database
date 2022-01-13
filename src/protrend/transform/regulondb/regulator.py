@@ -1,6 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
+from protrend.io import read
+from protrend.io.utils import read_gene
 from protrend.model import Regulator
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.regulondb.gene import GeneTransformer
@@ -15,10 +16,6 @@ class RegulatorTransformer(RegulonDBTransformer,
                            node=Regulator,
                            order=90,
                            register=True):
-    default_transform_stack = {'tf': 'transcription_factor.txt',
-                               'srna': 'srna_interaction.txt',
-                               'sigma': 'sigma_tmp.txt',
-                               'gene': 'integrated_gene.json'}
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
@@ -26,15 +23,6 @@ class RegulatorTransformer(RegulonDBTransformer,
                        'transcription_factor_id', 'transcription_factor_name', 'transcription_factor_family',
                        'srna_id', 'srna_gene_id',
                        'sigma_id', 'sigma_gene_id'])
-
-    tf_columns = SetList(['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
-                          'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
-                          'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence'])
-    srna_columns = SetList(['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
-                            'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
-                            'srna_regulation_type', 'srna_mechanis', 'srna_note'])
-    sigma_columns = SetList(['sigma_id', 'sigma_name', 'sigma_synonyms', 'sigma_gene_id', 'sigma_gene_name',
-                             'sigma_coregulators', 'sigma_notes', 'sigma_sigmulon_genes', 'key_id_org'])
 
     @staticmethod
     def transform_tf(tf: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
@@ -85,21 +73,27 @@ class RegulatorTransformer(RegulonDBTransformer,
         return srna
 
     def transform(self):
-        tf_reader = regulondb_reader(skiprows=38, names=self.tf_columns)
-        tf = read_from_stack(stack=self.transform_stack, key='tf',
-                             columns=self.tf_columns, reader=tf_reader)
+        tf_columns = ['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
+                      'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
+                      'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence']
+        tf_reader = regulondb_reader(skiprows=38, names=tf_columns)
+        tf = read(source=self.source, version=self.version, file='transcription_factor.txt', reader=tf_reader,
+                  default=pd.DataFrame(columns=tf_columns))
 
-        srna_reader = regulondb_reader(skiprows=38, names=self.srna_columns)
-        srna = read_from_stack(stack=self.transform_stack, key='srna',
-                               columns=self.srna_columns, reader=srna_reader)
+        srna_columns = ['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
+                        'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
+                        'srna_regulation_type', 'srna_mechanis', 'srna_note']
+        srna_reader = regulondb_reader(skiprows=38, names=tf_columns)
+        srna = read(source=self.source, version=self.version, file='srna_interaction.txt', reader=srna_reader,
+                    default=pd.DataFrame(columns=srna_columns))
 
-        sigma_reader = regulondb_reader(skiprows=36, names=self.sigma_columns)
-        sigma = read_from_stack(stack=self.transform_stack, key='sigma',
-                                columns=self.sigma_columns, reader=sigma_reader)
+        sigma_columns = ['sigma_id', 'sigma_name', 'sigma_synonyms', 'sigma_gene_id', 'sigma_gene_name',
+                         'sigma_coregulators', 'sigma_notes', 'sigma_sigmulon_genes', 'key_id_org']
+        sigma_reader = regulondb_reader(skiprows=36, names=sigma_columns)
+        sigma = read(source=self.source, version=self.version, file='sigma_tmp.txt', reader=sigma_reader,
+                     default=pd.DataFrame(columns=srna_columns))
 
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=GeneTransformer.columns, reader=read_json_frame)
-
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
         gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                               'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                               'sequence', 'strand', 'start', 'stop',

@@ -6,7 +6,7 @@ from protrend.transform import Transformer, Connector
 from protrend.transform.transformations import merge_columns
 
 
-class DBTBSTransformer(Transformer, source='dbtbs', version='0.0.4', register=False):
+class DBTBSTransformer(Transformer, register=False):
 
     @abstractmethod
     def transform(self):
@@ -29,7 +29,7 @@ class DBTBSTransformer(Transformer, source='dbtbs', version='0.0.4', register=Fa
         return df
 
 
-class DBTBSConnector(Connector, source='dbtbs', version='0.0.4', register=False):
+class DBTBSConnector(Connector, register=False):
 
     @abstractmethod
     def connect(self):

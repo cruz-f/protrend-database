@@ -1,8 +1,8 @@
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
 from protrend.model import Evidence, RegulatoryInteraction, TFBS
-from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
+from protrend.transform.coryneregnet.base import (CoryneRegNetTransformer, CoryneRegNetConnector,
+                                                  read_coryneregnet_networks)
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
 
@@ -28,7 +28,7 @@ class EvidenceTransformer(CoryneRegNetTransformer,
         return evidence
 
     def transform(self):
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
+        network = read_coryneregnet_networks(self.source, self.version)
         df = self.transform_evidence(network)
 
         self.stack_transformed_nodes(df)

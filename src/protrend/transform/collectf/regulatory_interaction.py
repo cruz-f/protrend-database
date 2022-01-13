@@ -1,6 +1,7 @@
 import pandas as pd
 
-from protrend.io import read_json_frame, read_json_lines, read_from_stack
+from protrend.io import read_json_lines, read
+from protrend.io.utils import read_regulator, read_gene, read_tfbs
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.collectf.gene import GeneTransformer
@@ -18,10 +19,6 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollecTFTrans
                                        node=RegulatoryInteraction,
                                        order=70,
                                        register=True):
-    default_transform_stack = {'regulator': 'integrated_regulator.json',
-                               'gene': 'integrated_gene.json',
-                               'tfbs': 'integrated_tfbs.json',
-                               'network': 'TFBS.json'}
     columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
                        'regulatory_interaction_hash'])
 
@@ -55,21 +52,16 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollecTFTrans
         return tfbs
 
     def transform(self) -> pd.DataFrame:
-        network = read_from_stack(stack=self.transform_stack, key='network',
-                                  columns=TFBSTransformer.read_columns, reader=read_json_lines)
+        network = read(source=self.source, version=self.version, file='TFBS.json',
+                       reader=read_json_lines, default=pd.DataFrame(columns=TFBSTransformer.columns))
 
-        organism = read_from_stack(stack=self.transform_stack, key='regulator',
-                                   columns=RegulatorTransformer.read_columns, reader=read_json_frame)
+        organism = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
-        # noinspection DuplicatedCode
-        regulator = read_from_stack(stack=self.transform_stack, key='regulator',
-                                    columns=RegulatorTransformer.read_columns, reader=read_json_frame)
+        regulator = organism.copy()
 
-        gene = read_from_stack(stack=self.transform_stack, key='gene',
-                               columns=GeneTransformer.read_columns, reader=read_json_frame)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 
-        tfbs = read_from_stack(stack=self.transform_stack, key='tfbs',
-                               columns=TFBSTransformer.columns, reader=read_json_frame)
+        tfbs = read_tfbs(source=self.source, version=self.version, columns=TFBSTransformer.columns)
 
         df = self._transform(network=network,
                              organism=organism, organism_key='regulon',

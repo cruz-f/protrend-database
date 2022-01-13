@@ -2,36 +2,40 @@ from abc import abstractmethod
 
 import pandas as pd
 
-from protrend.io import read_csv
-from protrend.transform import MultiStackTransformer, Connector
+from protrend import Transformer
+from protrend.io import read_csv, read
+from protrend.transform import Connector
 from protrend.transform.transformations import merge_columns, merge_loci
-from protrend.utils import SetList, MultiStack
 
 
-class CoryneRegNetTransformer(MultiStackTransformer, source='coryneregnet', version='0.0.0', register=False):
-    _taxa = ['224308',
-             '196627',
-             '511145',
-             '83332']
-    _source = ['coryneregnet'] * 4
-    _net_reader = [read_csv] * 4
+CORYNEREGNET_NETWORK = ['bsub_regulation.csv',
+                        'cglu_regulation.csv',
+                        'ecol_regulation.csv',
+                        'mtub_regulation.csv']
 
-    default_transform_stack = {
-        'network': MultiStack(
-            stack=['bsub_regulation.csv',
-                   'cglu_regulation.csv',
-                   'ecol_regulation.csv',
-                   'mtub_regulation.csv'],
-            taxa=_taxa,
-            source=_source,
-            reader=_net_reader
-        ),
-    }
+CORYNEREGNET_TAXA = ['224308',
+                     '196627',
+                     '511145',
+                     '83332']
 
-    default_network_columns = SetList(['TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
-                                       'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
-                                       'PMID', 'Source'])
+
+def read_coryneregnet_networks(source: str, version: str) -> pd.DataFrame:
+    default = pd.DataFrame(columns=['TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
+                                    'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
+                                    'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
+                                    'PMID', 'Source'])
+    dfs = []
+    for file, taxon in zip(CORYNEREGNET_NETWORK, CORYNEREGNET_TAXA):
+        df = read(source=source, version=version, file=file, reader=read_csv, default=default.copy())
+        df = df.assign(taxonomy=taxon, source='coryneregnet')
+        dfs.append(df)
+
+    final_df = pd.concat(dfs)
+    final_df = final_df.reset_index(drop=True)
+    return final_df
+
+
+class CoryneRegNetTransformer(Transformer, register=False):
 
     @abstractmethod
     def transform(self):
@@ -49,7 +53,7 @@ class CoryneRegNetTransformer(MultiStackTransformer, source='coryneregnet', vers
         return df
 
 
-class CoryneRegNetConnector(Connector, source='coryneregnet', version='0.0.0', register=False):
+class CoryneRegNetConnector(Connector, register=False):
 
     @abstractmethod
     def connect(self):

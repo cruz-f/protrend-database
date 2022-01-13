@@ -2,9 +2,9 @@ from collections import defaultdict
 from typing import Tuple
 
 import pandas as pd
-from neo4j.exceptions import Neo4jError
+from neo4j.exceptions import Neo4jError, DriverError
 
-from protrend.io import read_from_stack, read_txt
+from protrend.io import read_txt, read
 from protrend.model import Gene, Organism
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
@@ -19,15 +19,11 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
                       node=Gene,
                       order=100,
                       register=True):
-    default_transform_stack = {'conserved': 'conserved_operon.txt', 'known': 'known_operon.txt'}
-
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'organism', 'ncbi_taxonomy',
                        'operon_db_id', 'operon_name', 'operon_function', 'pubmed'])
-    conserved_columns = SetList(['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd'])
-    known_columns = SetList(['koid', 'org', 'name', 'op', 'definition', 'source'])
 
     @staticmethod
     def transform_operon(conserved: pd.DataFrame, known: pd.DataFrame) -> pd.DataFrame:
@@ -83,7 +79,7 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
 
             genes = pd.DataFrame.from_dict(genes)
 
-        except Neo4jError:
+        except (Neo4jError, DriverError):
             genes = pd.DataFrame(columns=list(self.node.node_keys()))
         return genes
 
@@ -116,10 +112,12 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
         return genes_in_db, genes
 
     def transform(self):
-        conserved = read_from_stack(stack=self.transform_stack, key='conserved', columns=self.conserved_columns,
-                                    reader=read_txt)
-        known = read_from_stack(stack=self.transform_stack, key='known', columns=self.known_columns,
-                                reader=read_txt)
+        conserved_columns = ['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd']
+        known_columns = ['koid', 'org', 'name', 'op', 'definition', 'source']
+        conserved = read(source=self.source, version=self.version, file='conserved_operon.txt', reader=read_txt,
+                         default=pd.DataFrame(columns=conserved_columns))
+        known = read(source=self.source, version=self.version, file='known_operon.txt', reader=read_txt,
+                     default=pd.DataFrame(columns=known_columns))
 
         operon = self.transform_operon(conserved, known)
         gene = self.fetch_gene()

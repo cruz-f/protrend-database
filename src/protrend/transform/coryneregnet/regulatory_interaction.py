@@ -1,8 +1,9 @@
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
+from protrend.io.utils import read_organism, read_regulator, read_gene, read_tfbs
 from protrend.model import RegulatoryInteraction, Regulator, Gene, TFBS
-from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
+from protrend.transform.coryneregnet.base import (CoryneRegNetTransformer, CoryneRegNetConnector,
+                                                  read_coryneregnet_networks)
 from protrend.transform.coryneregnet.gene import GeneTransformer
 from protrend.transform.coryneregnet.organism import OrganismTransformer
 from protrend.transform.coryneregnet.regulator import RegulatorTransformer
@@ -68,12 +69,15 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CoryneRegNetT
         return tfbs
 
     def transform(self) -> pd.DataFrame:
-        # noinspection DuplicatedCode
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
-        organism = self.read_integrated(node='organism', columns=OrganismTransformer.columns)
-        regulator = self.read_integrated(node='regulator', columns=RegulatorTransformer.columns)
-        gene = self.read_integrated(node='gene', columns=GeneTransformer.columns)
-        tfbs = self.read_integrated(node='tfbs', columns=TFBSTransformer.columns)
+        network = read_coryneregnet_networks(self.source, self.version)
+
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+
+        tfbs = read_tfbs(source=self.source, version=self.version, columns=TFBSTransformer.columns)
 
         df = self._transform(network=network,
                              organism=organism, organism_key='taxonomy',

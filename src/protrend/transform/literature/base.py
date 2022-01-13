@@ -2,10 +2,10 @@ from abc import abstractmethod
 
 import pandas as pd
 
-from protrend.io import read_from_multi_stack
-from protrend.transform import MultiStackTransformer, Connector
+from protrend.io import read
+from protrend.transform import Transformer, Connector
 from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, merge_columns
-from protrend.utils import SetList, is_null, MultiStack
+from protrend.utils import is_null
 from protrend.utils.processors import apply_processors, to_int_str, rstrip, lstrip, to_set_list
 
 
@@ -165,61 +165,119 @@ def read_paer_vasquez_et_al_2011(file_path: str, **kwargs) -> pd.DataFrame:
     return df
 
 
-class LiteratureTransformer(MultiStackTransformer, source='literature', version='0.0.0', register=False):
-    _stack = ['faria_2016.xlsx',
-              'fang_2017.xlsx',
-              'turkarslan_2015.xls',
-              'vasquez_2011.xls']
-    _taxa = ['224308',
-             '511145',
-             '83332',
-             None]
-    _paer_strains = {'PAO1': '208964',
-                     'PA103': '1081927',
-                     'PA14': '652611',
-                     'PAK': '1009714'}
-    _source = ['bsub_faria_et_al_2017',
-               'ecol_fang_et_al_2017',
-               'mtub_turkarslan_et_al_2015',
-               'paer_vasquez_et_al_2011']
-    _net_reader = [read_bsub_faria_et_al_2017,
-                   read_ecol_fang_et_al_2017,
-                   read_mtub_turkarslan_et_al_2015,
-                   read_paer_vasquez_et_al_2011]
+def filter_bsub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    df = df.copy()
+    mask = (df[col].str.startswith('BSU')) & (df['source'] == 'bsub_faria_et_al_2017')
+    df = df[mask]
+    df = df.reset_index(drop=True)
+    return df
 
-    default_transform_stack = {
-        'network': MultiStack(
-            stack=_stack,
-            taxa=_taxa,
-            source=_source,
-            reader=_net_reader
-        ),
-    }
 
-    default_network_columns = SetList(['regulator_locus_tag', 'gene_locus_tag',
-                                       'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
-                                       'publication', 'taxonomy', 'source'])
+def filter_ecol_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    df = df.copy()
+    mask = (df[col].str.startswith('b')) & (df['source'] == 'ecol_fang_et_al_2017')
+    df = df[mask]
+    df = df.reset_index(drop=True)
+    return df
 
-    def read_network(self) -> pd.DataFrame:
-        network = read_from_multi_stack(stack=self.transform_stack, key='network', columns=self.default_network_columns)
 
-        # special case of the paer_vasquez_et_al_2011 source which contains several strains in the same file,
-        # thus having several organisms/taxonomy identifiers in the same file
+def filter_mtub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    df = df.copy()
+    mask = (df[col].str.startswith('R')) & (df['source'] == 'mtub_turkarslan_et_al_2015')
+    df = df[mask]
+    df = df.reset_index(drop=True)
+    return df
 
-        if 'strain' in network:
-            taxonomy = network['strain'].map(self._paer_strains, na_action='ignore')
-            taxonomy = network['taxonomy'].fillna(taxonomy)
-            network = network.assign(taxonomy=taxonomy)
 
-        filtered_networks = [self.filter_bsub_locus(network, 'regulator_locus_tag'),
-                             self.filter_ecol_locus(network, 'regulator_locus_tag'),
-                             self.filter_mtub_locus(network, 'regulator_locus_tag'),
-                             self.filter_paer(network, 'regulator_locus_tag')]
-        network = pd.concat(filtered_networks)
-        network = network.reset_index(drop=True)
-        return network
+def filter_paer(df: pd.DataFrame, _: str) -> pd.DataFrame:
+    df = df.copy()
+    mask = df['source'] == 'paer_vasquez_et_al_2011'
+    df = df[mask]
+    df = df.reset_index(drop=True)
+    return df
 
-    def _transform_gene(self, network: pd.DataFrame, col: str) -> pd.DataFrame:
+
+def filter_paer_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    df = df.copy()
+    mask = (df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
+    df = df[mask]
+    df = df.reset_index(drop=True)
+    return df
+
+
+def filter_paer_names(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    # several loci in the paer_vasquez source are actually gene names,
+    # so they should be reallocated to the name collum
+    df = df.copy()
+    mask = (~ df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
+    df = df[mask]
+    df = df.rename(columns={col: 'name'})
+    df = df.assign(**{col: None})
+    df = df.reset_index(drop=True)
+    return df
+
+
+LITERATURE_NETWORKS = ['faria_2016.xlsx',
+                       'fang_2017.xlsx',
+                       'turkarslan_2015.xls',
+                       'vasquez_2011.xls']
+
+LITERATURE_TAXA = ['224308',
+                   '511145',
+                   '83332',
+                   None]
+
+LITERATURE_SOURCES = ['bsub_faria_et_al_2017',
+                      'ecol_fang_et_al_2017',
+                      'mtub_turkarslan_et_al_2015',
+                      'paer_vasquez_et_al_2011']
+
+LITERATURE_READERS = [read_bsub_faria_et_al_2017,
+                      read_ecol_fang_et_al_2017,
+                      read_mtub_turkarslan_et_al_2015,
+                      read_paer_vasquez_et_al_2011]
+
+_PAER_STRAINS = {'PAO1': '208964',
+                 'PA103': '1081927',
+                 'PA14': '652611',
+                 'PAK': '1009714'}
+
+
+def read_literature_networks(source: str, version: str) -> pd.DataFrame:
+    default = pd.DataFrame(columns=['regulator_locus_tag', 'gene_locus_tag',
+                                    'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
+                                    'publication', 'taxonomy', 'source'])
+    dfs = []
+    for file, taxon, d_source, reader in zip(LITERATURE_NETWORKS, LITERATURE_TAXA,
+                                             LITERATURE_SOURCES, LITERATURE_READERS):
+        df = read(source=source, version=version, file=file, reader=reader, default=default.copy())
+        df = df.assign(taxonomy=taxon, source=d_source)
+        dfs.append(df)
+
+    network = pd.concat(dfs)
+    network = network.reset_index(drop=True)
+
+    # special case of the paer_vasquez_et_al_2011 source which contains several strains in the same file,
+    # thus having several organisms/taxonomy identifiers in the same file
+
+    if 'strain' in network:
+        taxonomy = network['strain'].map(_PAER_STRAINS, na_action='ignore')
+        taxonomy = network['taxonomy'].fillna(taxonomy)
+        network = network.assign(taxonomy=taxonomy)
+
+    filtered_networks = [filter_bsub_locus(network, 'regulator_locus_tag'),
+                         filter_ecol_locus(network, 'regulator_locus_tag'),
+                         filter_mtub_locus(network, 'regulator_locus_tag'),
+                         filter_paer(network, 'regulator_locus_tag')]
+    network = pd.concat(filtered_networks)
+    network = network.reset_index(drop=True)
+    return network
+
+
+class LiteratureTransformer(Transformer, register=False):
+
+    @staticmethod
+    def _transform_gene(network: pd.DataFrame, col: str) -> pd.DataFrame:
         network = network.assign(locus_tag=network[col].copy(), name=None)
 
         network = apply_processors(network, locus_tag=to_set_list)
@@ -230,11 +288,11 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
         network = drop_empty_string(network, 'locus_tag')
         network = drop_duplicates(df=network, subset=['locus_tag', 'taxonomy'], perfect_match=True)
 
-        filtered_networks = [self.filter_bsub_locus(network, 'locus_tag'),
-                             self.filter_ecol_locus(network, 'locus_tag'),
-                             self.filter_mtub_locus(network, 'locus_tag'),
-                             self.filter_paer_locus(network, 'locus_tag'),
-                             self.filter_paer_names(network, 'locus_tag')]
+        filtered_networks = [filter_bsub_locus(network, 'locus_tag'),
+                             filter_ecol_locus(network, 'locus_tag'),
+                             filter_mtub_locus(network, 'locus_tag'),
+                             filter_paer_locus(network, 'locus_tag'),
+                             filter_paer_names(network, 'locus_tag')]
         network = pd.concat(filtered_networks)
         network = network.reset_index(drop=True)
 
@@ -252,58 +310,12 @@ class LiteratureTransformer(MultiStackTransformer, source='literature', version=
         df = df.drop(columns=['input_value'])
         return df
 
-    @staticmethod
-    def filter_bsub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        df = df.copy()
-        mask = (df[col].str.startswith('BSU')) & (df['source'] == 'bsub_faria_et_al_2017')
-        df = df[mask]
-        return df
-
-    @staticmethod
-    def filter_ecol_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        df = df.copy()
-        mask = (df[col].str.startswith('b')) & (df['source'] == 'ecol_fang_et_al_2017')
-        df = df[mask]
-        return df
-
-    @staticmethod
-    def filter_mtub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        df = df.copy()
-        mask = (df[col].str.startswith('R')) & (df['source'] == 'mtub_turkarslan_et_al_2015')
-        df = df[mask]
-        return df
-
-    @staticmethod
-    def filter_paer(df: pd.DataFrame, _: str) -> pd.DataFrame:
-        df = df.copy()
-        mask = df['source'] == 'paer_vasquez_et_al_2011'
-        df = df[mask]
-        return df
-
-    @staticmethod
-    def filter_paer_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        df = df.copy()
-        mask = (df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
-        df = df[mask]
-        return df
-
-    @staticmethod
-    def filter_paer_names(df: pd.DataFrame, col: str) -> pd.DataFrame:
-        # several loci in the paer_vasquez source are actually gene names,
-        # so they should be reallocated to the name collum
-        df = df.copy()
-        mask = (~ df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
-        df = df[mask]
-        df = df.rename(columns={col: 'name'})
-        df = df.assign(**{col: None})
-        return df
-
     @abstractmethod
     def transform(self):
         pass
 
 
-class LiteratureConnector(Connector, source='literature', version='0.0.0', register=False):
+class LiteratureConnector(Connector, register=False):
 
     @abstractmethod
     def connect(self):

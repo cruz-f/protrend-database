@@ -1,6 +1,6 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read_from_stack
+from protrend.io import read_json_lines, read
 from protrend.model import Effector
 from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
@@ -18,7 +18,6 @@ class EffectorTransformer(EffectorMixIn, RegPreciseTransformer,
     default_transform_stack = {'effector': 'Effector.json'}
     columns = SetList(['protrend_id', 'name', 'kegg_compounds',
                        'effector_id', 'url', 'regulog'])
-    read_columns = SetList(['effector_id', 'name', 'url', 'regulog'])
 
     @staticmethod
     def transform_effector(effector: pd.DataFrame):
@@ -33,8 +32,9 @@ class EffectorTransformer(EffectorMixIn, RegPreciseTransformer,
         return effector
 
     def transform(self):
-        effector = read_from_stack(stack=self.transform_stack, key='effector', columns=self.read_columns,
-                                   reader=read_json_lines)
+        effector = read(source=self.source, version=self.version,
+                        file='Effector.json', reader=read_json_lines,
+                        default=pd.DataFrame(columns=['effector_id', 'name', 'url', 'regulog']))
 
         effectors = self.transform_effector(effector)
         annotated_effectors = self.annotate_effectors(effectors)
