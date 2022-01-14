@@ -3,6 +3,7 @@ from typing import List
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search
 from protrend.utils.miscellaneous import is_null
+from protrend.utils.processors import to_int_str
 
 
 class NCBIGene(BioAPI):
@@ -18,7 +19,7 @@ class NCBIGene(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
-        taxonomy = str(taxonomy)
+        taxonomy = to_int_str(taxonomy)
 
         if is_null(locus_tag):
             locus_tag = ''

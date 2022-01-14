@@ -36,7 +36,7 @@ class NCBIProtein(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
-        taxonomy = str(taxonomy)
+        taxonomy = to_int_str(taxonomy)
 
         if is_null(locus_tag):
             locus_tag = ''
@@ -218,7 +218,7 @@ class UniProtProtein(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
-        taxonomy = str(taxonomy)
+        taxonomy = to_int_str(taxonomy)
 
         # E. coli taxonomy identifier for uniprot is 83333 rather than 511145
         if taxonomy == '511145':
