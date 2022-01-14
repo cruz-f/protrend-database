@@ -152,7 +152,7 @@ class Operon(Node):
 class Organism(Node):
     entity = 'ORG'
     node_factors = {'ncbi_taxonomy': [to_int_str, lower_case, rstrip, lstrip, to_nan],
-                    'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
+                    'name': [to_str, rstrip, lstrip, to_nan]}
 
     # properties
     name = StringProperty(required=True)
@@ -177,8 +177,8 @@ class Organism(Node):
 
 class Regulator(Node):
     entity = 'REG'
-    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
-                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
+    node_factors = {'uniprot_accession': [to_str, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, rstrip, lstrip, to_nan]}
 
     # properties
     locus_tag = StringProperty(required=True)
@@ -212,8 +212,8 @@ class Regulator(Node):
 
 class Gene(Node):
     entity = 'GEN'
-    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
-                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
+    node_factors = {'uniprot_accession': [to_str, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, rstrip, lstrip, to_nan]}
 
     # properties
     locus_tag = StringProperty(required=True)
