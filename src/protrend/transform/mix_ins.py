@@ -86,8 +86,10 @@ class GeneMixIn:
                        ncbi_genes=ncbi_genes)
 
         genes_dict = [dto.to_dict() for dto in genes]
-
         genes_df = pd.DataFrame(genes_dict)
+
+        if genes_df.empty:
+            return genes_df
 
         strand_mask = (genes_df['strand'] != 'reverse') & (genes_df['strand'] != 'forward')
         genes_df.loc[strand_mask, 'strand'] = None

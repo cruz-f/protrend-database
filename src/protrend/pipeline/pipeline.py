@@ -187,9 +187,7 @@ class Pipeline:
 
         for loader in self.loaders:
             try:
-                ProtrendLogger.log.info(f'Starting loader: {loader.__class__.__name__} with the following files:')
-                for file_path in loader.load_stack:
-                    ProtrendLogger.log.info(f'{file_path}')
+                ProtrendLogger.log.info(f'Starting loader: {loader.__class__.__name__}')
 
                 loader.load()
 
