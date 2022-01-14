@@ -107,7 +107,6 @@ class OrganismToRegulatorConnector(LiteratureConnector,
                                    from_node=Organism,
                                    to_node=Regulator,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -121,7 +120,6 @@ class OrganismToGeneConnector(LiteratureConnector,
                               from_node=Organism,
                               to_node=Gene,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -135,7 +133,6 @@ class OrganismToRegulatoryInteractionConnector(LiteratureConnector,
                                                from_node=Organism,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',

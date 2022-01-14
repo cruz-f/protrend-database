@@ -61,7 +61,6 @@ class PublicationToOrganismConnector(RegulonDBConnector,
                                      from_node=Publication,
                                      to_node=Organism,
                                      register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
         df = self.create_connection(source='publication', target='organism', cardinality='many_to_one')
@@ -100,8 +99,6 @@ class PublicationToRegulatorConnector(PublicationConnector,
                                       from_node=Publication,
                                       to_node=Regulator,
                                       register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         df = self._connect(target='regulator', obj_ev_pub_col='object_id', target_col='regulator_id')
@@ -114,8 +111,6 @@ class PublicationToGeneConnector(PublicationConnector,
                                  from_node=Publication,
                                  to_node=Gene,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self._connect(target='gene', obj_ev_pub_col='object_id', target_col='gene_id')
@@ -128,8 +123,6 @@ class PublicationToTFBSConnector(PublicationConnector,
                                  from_node=Publication,
                                  to_node=TFBS,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
         df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='site_id')
@@ -142,8 +135,6 @@ class PublicationToRegulatoryInteractionConnector(PublicationConnector,
                                                   from_node=Publication,
                                                   to_node=RegulatoryInteraction,
                                                   register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'rin': 'integrated_tfbs.json'}
 
     def connect(self):
         regulator_df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='regulator_id')

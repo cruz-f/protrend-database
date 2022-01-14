@@ -75,7 +75,6 @@ class OperonToGeneConnector(OperonDBConnector,
                             from_node=Operon,
                             to_node=Gene,
                             register=True):
-    default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='operon',
@@ -101,7 +100,6 @@ class OperonToOrganismConnector(OperonDBConnector,
                                 from_node=Operon,
                                 to_node=Organism,
                                 register=True):
-    default_connect_stack = {'operon': 'integrated_operon.json'}
 
     def connect(self):
         df = self.create_connection(source='operon', target='operon',

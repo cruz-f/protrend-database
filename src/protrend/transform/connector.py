@@ -72,8 +72,6 @@ class Connector(AbstractConnector):
     from_node = DefaultProperty()
     to_node = DefaultProperty()
 
-    default_connect_stack: Dict[str, str] = {}
-
     def __init_subclass__(cls, **kwargs):
 
         source = kwargs.get('source')
@@ -287,7 +285,7 @@ class Connector(AbstractConnector):
             source_ids = df['source_col'].to_list()
 
             target_ids = df['target_col'].dropna().to_list()
-            target_ids *= len(target_ids)
+            target_ids *= len(source_ids)
 
         else:
             source_ids = []

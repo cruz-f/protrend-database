@@ -7,7 +7,7 @@ from protrend.transform.coryneregnet.organism import OrganismTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, is_null
-from protrend.utils.processors import apply_processors
+from protrend.utils.processors import apply_processors, to_int_str
 
 
 class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
@@ -24,6 +24,8 @@ class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
 
     @staticmethod
     def transform_tfbs(network: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+        network = apply_processors(network, taxonomy=to_int_str)
+
         # adding the organism protrend id
         tfbs = pd.merge(network, organism, on='taxonomy')
 
@@ -60,6 +62,7 @@ class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
     def transform_organism(organism: pd.DataFrame) -> pd.DataFrame:
         organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
         organism = organism.rename(columns={'ncbi_taxonomy': 'taxonomy', 'protrend_id': 'organism'})
+        organism = apply_processors(organism, taxonomy=to_int_str)
         return organism
 
     def transform(self):

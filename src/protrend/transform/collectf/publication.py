@@ -57,8 +57,6 @@ class PublicationTransformer(PublicationMixIn, CollecTFTransformer,
 
 
 class PublicationConnector(CollecTFConnector, register=False):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'rin': 'integrated_regulatoryinteraction.json'}
 
     def _connect(self, target_column: str):
         source_df, target_df = self.transform_stacks(source='publication',

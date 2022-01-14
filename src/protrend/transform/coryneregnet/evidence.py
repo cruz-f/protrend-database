@@ -41,7 +41,6 @@ class EvidenceToTFBSConnector(CoryneRegNetConnector,
                               from_node=Evidence,
                               to_node=TFBS,
                               register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
         df = self.create_connection(source='evidence', target='tfbs',
@@ -55,7 +54,6 @@ class EvidenceToRegulatoryInteractionConnector(CoryneRegNetConnector,
                                                from_node=Evidence,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='evidence', target='rin',

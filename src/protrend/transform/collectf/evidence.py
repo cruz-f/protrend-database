@@ -36,9 +36,6 @@ class EvidenceTransformer(CollecTFTransformer,
 
 
 class EvidenceConnector(CollecTFConnector, register=False):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'tfbs': 'integrated_tfbs.json',
-                             'rin': 'integrated_regulatoryinteraction.json'}
 
     def _connect(self, source: str, target: str):
         source_df, target_df = self.transform_stacks(source=source,

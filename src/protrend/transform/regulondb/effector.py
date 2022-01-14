@@ -4,7 +4,7 @@ from protrend.io import read
 from protrend.model import Effector
 from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
-from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import (rstrip, lstrip, apply_processors, remove_html_tags,
                                        parse_effector_name_regulondb)
@@ -16,7 +16,6 @@ class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
                           node=Effector,
                           order=100,
                           register=True):
-    default_transform_stack = {'effector': 'effector.txt'}
     columns = SetList(['protrend_id', 'name', 'kegg_compounds',
                        'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
                        'effector_internal_comment', 'key_id_org'])
@@ -48,6 +47,8 @@ class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
         annotated_effectors = self.annotate_effectors(effector)
 
         df = pd.merge(annotated_effectors, effector, on='input_value', suffixes=('_annotation', '_regulondb'))
+
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_regulondb')
 
         df = df.drop(columns=['input_value'])
 

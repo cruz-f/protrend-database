@@ -73,7 +73,6 @@ class RegulatoryInteractionToEffectorConnector(LiteratureConnector,
                                                from_node=RegulatoryInteraction,
                                                to_node=Effector,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -87,7 +86,6 @@ class RegulatoryInteractionToRegulatorConnector(LiteratureConnector,
                                                 from_node=RegulatoryInteraction,
                                                 to_node=Regulator,
                                                 register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -101,7 +99,6 @@ class RegulatoryInteractionToGeneConnector(LiteratureConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=Gene,
                                            register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -115,7 +112,6 @@ class RegulatorToEffectorConnector(LiteratureConnector,
                                    from_node=Regulator,
                                    to_node=Effector,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -129,7 +125,6 @@ class RegulatorToGeneConnector(LiteratureConnector,
                                from_node=Regulator,
                                to_node=Gene,
                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',

@@ -62,7 +62,6 @@ class PublicationToOrganismConnector(DBTBSConnector,
                                      from_node=Publication,
                                      to_node=Organism,
                                      register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
         df = self.create_connection(source='publication', target='organism',
@@ -71,8 +70,6 @@ class PublicationToOrganismConnector(DBTBSConnector,
 
 
 class PublicationConnector(DBTBSConnector, register=False):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'rin': 'integrated_regulatoryinteraction.json'}
 
     def _connect(self, target_column: str, source_on: str, target_on: str):
         source_df, target_df = self.transform_stacks(source='publication',

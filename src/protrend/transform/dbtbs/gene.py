@@ -19,7 +19,7 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'url', 'regulation', 'pubmed', 'tf', 'tfbs',
-                       'name_lower', 'name_dbtbs'])
+                       'dbtbs_name'])
 
     @staticmethod
     def transform_gene(gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
@@ -29,9 +29,8 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
         gene = gene.explode(column='tf')
         gene = gene.explode(column='tfbs')
 
-        gene = gene.assign(name_dbtbs=gene['name'].copy())
+        gene = gene.assign(dbtbs_name=gene['name'].copy())
 
-        # noinspection DuplicatedCode
         gene = apply_processors(gene, name=[rstrip, lstrip])
 
         # filter nan and duplicates
@@ -42,6 +41,7 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
         gene = gene.assign(name_lower=gene['name'].str.lower())
 
         gene = pd.merge(gene, sequence, on='name_lower')
+        gene = gene.drop(columns=['name_lower'])
 
         gene = create_input_value(df=gene, col='locus_tag')
         return gene

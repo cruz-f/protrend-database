@@ -18,8 +18,7 @@ class DBTBSTransformer(Transformer, register=False):
 
         df = merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_dbtbs')
 
-        df = df.assign(name_dbtbs_merge=df['name_dbtbs'].copy())
-        df = merge_columns(df=df, column='name', left='name_annotation', right='name_dbtbs_merge')
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_dbtbs')
 
         df = merge_columns(df=df, column='genbank_accession',
                            left='genbank_accession_annotation', right='genbank_accession_dbtbs')

@@ -54,7 +54,6 @@ class PathwayToRegulatorConnector(RegPreciseConnector,
                                   from_node=Pathway,
                                   to_node=Regulator,
                                   register=True):
-    default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='pathway',

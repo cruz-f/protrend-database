@@ -13,7 +13,7 @@ from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (drop_empty_string, drop_duplicates, create_input_value, select_columns,
                                                 merge_columns, merge_loci)
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, rstrip, lstrip
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_nan
 
 
 def map_accession(acc: str, mapping: pd.DataFrame) -> Union[str, None]:
@@ -38,7 +38,7 @@ def uniprot_record_locus_tag(record: SeqRecord) -> Union[str, None]:
         for locus in loci:
             return locus
 
-    return None
+    return
 
 
 class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
@@ -86,6 +86,8 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
 
     @staticmethod
     def transform_organism(organism: pd.DataFrame):
+        organism = apply_processors(organism, collectf_name=to_list_nan)
+        organism = organism.explode('collectf_name')
         organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy', 'collectf_name')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id',
                                             'collectf_name': 'organism_name_collectf'})

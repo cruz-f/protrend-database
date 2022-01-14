@@ -83,7 +83,6 @@ class RegulatoryInteractionToOrganismConnector(AbasyConnector,
                                                from_node=RegulatoryInteraction,
                                                to_node=Organism,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -97,7 +96,6 @@ class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
                                                 from_node=RegulatoryInteraction,
                                                 to_node=Regulator,
                                                 register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -111,7 +109,6 @@ class RegulatoryInteractionToGeneConnector(AbasyConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=Gene,
                                            register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -125,7 +122,6 @@ class RegulatorToGeneConnector(AbasyConnector,
                                from_node=Regulator,
                                to_node=Gene,
                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',

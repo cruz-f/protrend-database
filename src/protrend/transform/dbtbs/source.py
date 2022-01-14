@@ -28,7 +28,6 @@ class SourceToOrganismConnector(DBTBSConnector,
                                 from_node=Source,
                                 to_node=Organism,
                                 register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='organism', cardinality='one_to_many')
@@ -41,8 +40,6 @@ class SourceToRegulatoryFamilyConnector(DBTBSConnector,
                                         from_node=Source,
                                         to_node=RegulatoryFamily,
                                         register=True):
-    default_connect_stack = {'source': 'integrated_source.json',
-                             'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='source',
@@ -81,7 +78,7 @@ class SourceToRegulatoryFamilyConnector(DBTBSConnector,
         self.stack_connections(df)
 
 
-class SourceConnector(DBTBSConnector, source='dbtbs', version='0.0.4', register=False):
+class SourceConnector(DBTBSConnector, register=False):
 
     def _connect(self, target: str, external_id_col: str, external_url_col: str, key_id: str):
         # noinspection DuplicatedCode
@@ -122,10 +119,9 @@ class SourceToRegulatorConnector(SourceConnector,
                                  from_node=Source,
                                  to_node=Regulator,
                                  register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
-        df = self._connect(target='regulator', external_id_col='name_dbtbs', external_url_col='url', key_id='tfac')
+        df = self._connect(target='regulator', external_id_col='dbtbs_name', external_url_col='url', key_id='tfac')
         self.stack_connections(df)
 
 
@@ -135,7 +131,6 @@ class SourceToGeneConnector(SourceConnector,
                             from_node=Source,
                             to_node=Gene,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self._connect(target='gene', external_id_col='tf', external_url_col='url', key_id='tfac')
@@ -148,7 +143,6 @@ class SourceToTFBSConnector(SourceConnector,
                             from_node=Source,
                             to_node=TFBS,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
         df = self._connect(target='tfbs', external_id_col='tf', external_url_col='url', key_id='tfac')
@@ -161,9 +155,7 @@ class SourceToRegulatoryInteractionConnector(SourceConnector,
                                              from_node=Source,
                                              to_node=RegulatoryInteraction,
                                              register=True):
-    default_connect_stack = {'source': 'integrated_source.json',
-                             'ri': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
-        df = self._connect(target='ri', external_id_col='tf', external_url_col='url', key_id='tfac')
+        df = self._connect(target='rin', external_id_col='tf', external_url_col='url', key_id='tfac')
         self.stack_connections(df)

@@ -80,7 +80,8 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
             genes = pd.DataFrame.from_dict(genes)
 
         except (Neo4jError, DriverError):
-            genes = pd.DataFrame(columns=list(self.node.node_keys()))
+            cols = list(self.node.node_keys()) + ['ncbi_taxonomy', 'organism']
+            genes = pd.DataFrame(columns=cols)
         return genes
 
     @staticmethod
@@ -146,7 +147,6 @@ class GeneToOrganismConnector(OperonDBConnector,
                               from_node=Gene,
                               to_node=Organism,
                               register=True):
-    default_connect_stack = {'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self.create_connection(source='gene', target='gene',

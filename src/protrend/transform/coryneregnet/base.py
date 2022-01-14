@@ -2,9 +2,8 @@ from abc import abstractmethod
 
 import pandas as pd
 
-from protrend import Transformer
 from protrend.io import read_csv, read
-from protrend.transform import Connector
+from protrend.transform import Transformer, Connector
 from protrend.transform.transformations import merge_columns, merge_loci
 
 

@@ -72,8 +72,6 @@ class PublicationToRegulatoryFamilyConnector(RegPreciseConnector,
                                              from_node=Publication,
                                              to_node=RegulatoryFamily,
                                              register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='publication',

@@ -63,7 +63,6 @@ class RegulatoryFamilyToRegulatorConnector(DBTBSConnector,
                                            from_node=RegulatoryFamily,
                                            to_node=Regulator,
                                            register=True):
-    default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='rfam',
@@ -71,14 +70,14 @@ class RegulatoryFamilyToRegulatorConnector(DBTBSConnector,
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
                                                      source_on='tf',
-                                                     target_on='name_dbts',
+                                                     target_on='dbtbs_name',
                                                      source_processors={'tf': [to_list_nan]},
                                                      target_processors={})
         source_df = source_df.explode('tf')
         source_df = apply_processors(source_df, tf=[rstrip, lstrip])
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
-                                                          source_on='tf', target_on='name_dbts')
+                                                          source_on='tf', target_on='dbtbs_name')
 
         df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
         self.stack_connections(df)

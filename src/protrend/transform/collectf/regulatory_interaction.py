@@ -23,8 +23,9 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CollecTFTrans
                        'regulatory_interaction_hash'])
 
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = select_columns(network, 'tfbs_id', 'regulon', 'gene', 'mode')
-        network = apply_processors(network, regulon=to_list_nan, gene=to_list_nan)
+        network = select_columns(network, 'tfbs_id', 'regulon', 'gene', 'mode', 'pubmed', 'experimental_evidence')
+        network = apply_processors(network, regulon=to_list_nan, gene=to_list_nan, pubmed=to_list_nan,
+                                   experimental_evidence=to_list_nan)
         network = network.explode('regulon')
         network = network.explode('gene')
         network = network.dropna(subset=['regulon', 'gene'])
@@ -80,7 +81,6 @@ class RegulatoryInteractionToRegulatorConnector(CollecTFConnector,
                                                 from_node=RegulatoryInteraction,
                                                 to_node=Regulator,
                                                 register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -94,7 +94,6 @@ class RegulatoryInteractionToGeneConnector(CollecTFConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=Gene,
                                            register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -108,7 +107,6 @@ class RegulatoryInteractionToTFBSConnector(CollecTFConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=TFBS,
                                            register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -122,7 +120,6 @@ class RegulatorToGeneConnector(CollecTFConnector,
                                from_node=Regulator,
                                to_node=Gene,
                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -136,7 +133,6 @@ class RegulatorToTFBSConnector(CollecTFConnector,
                                from_node=Regulator,
                                to_node=TFBS,
                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -150,7 +146,6 @@ class GeneToTFBSConnector(CollecTFConnector,
                           from_node=Gene,
                           to_node=TFBS,
                           register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',

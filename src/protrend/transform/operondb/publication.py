@@ -58,7 +58,6 @@ class PublicationToOrganismConnector(OperonDBConnector,
                                      from_node=Publication,
                                      to_node=Organism,
                                      register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json'}
 
     def connect(self):
         df = self.create_connection(source='publication', target='publication', target_column='organism')
@@ -71,7 +70,6 @@ class PublicationToOperonConnector(OperonDBConnector,
                                    from_node=Publication,
                                    to_node=Operon,
                                    register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json'}
 
     def connect(self):
         df = self.create_connection(source='publication', target='publication', target_column='operon')
@@ -84,7 +82,6 @@ class PublicationToGeneConnector(OperonDBConnector,
                                  from_node=Publication,
                                  to_node=Gene,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='publication',

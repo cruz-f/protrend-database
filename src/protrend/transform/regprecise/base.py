@@ -5,6 +5,8 @@ import pandas as pd
 from protrend.io import read, read_json_lines
 from protrend.transform import Transformer, Connector
 from protrend.transform.transformations import merge_columns, select_columns
+from protrend.utils import apply_processors
+from protrend.utils.processors import to_int_str
 
 
 class RegPreciseTransformer(Transformer, register=False):
@@ -22,6 +24,8 @@ class RegPreciseTransformer(Transformer, register=False):
     def transform_organism(organism: pd.DataFrame) -> pd.DataFrame:
         # see regulator transform organism method
         organism = select_columns(organism, 'protrend_id', 'name', 'ncbi_taxonomy', 'genome_id')
+
+        organism = apply_processors(organism, genome_id=to_int_str, ncbi_taxonomy=to_int_str)
 
         taxonomy = organism['ncbi_taxonomy'].fillna(organism['name'])
         organism = organism.assign(ncbi_taxonomy=taxonomy)

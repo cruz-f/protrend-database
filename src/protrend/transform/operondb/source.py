@@ -28,7 +28,6 @@ class SourceToOrganismConnector(OperonDBConnector,
                                 from_node=Source,
                                 to_node=Organism,
                                 register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='operon',
@@ -36,10 +35,7 @@ class SourceToOrganismConnector(OperonDBConnector,
         self.stack_connections(df)
 
 
-class SourceConnector(OperonDBConnector,
-                      source='operondb',
-                      version='0.0.0',
-                      register=False):
+class SourceConnector(OperonDBConnector, register=False):
 
     def _connect(self, target: str) -> pd.DataFrame:
         # noinspection DuplicatedCode
@@ -82,7 +78,6 @@ class SourceToOperonConnector(SourceConnector,
                               from_node=Source,
                               to_node=Operon,
                               register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'operon': 'integrated_operon.json'}
 
     def connect(self):
         df = self._connect('operon')
@@ -95,7 +90,6 @@ class SourceToGeneConnector(SourceConnector,
                             from_node=Source,
                             to_node=Gene,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self._connect('gene')

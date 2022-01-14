@@ -20,11 +20,11 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
                        'family', 'domain', 'domain_description', 'description', 'url',
                        'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs',
-                       'name_lower', 'name_dbts'])
+                       'dbtbs_name'])
 
     @staticmethod
     def transform_tf(tf: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
-        tf = tf.assign(name_dbtbs=tf['name'].copy())
+        tf = tf.assign(dbtbs_name=tf['name'].copy())
 
         tf = apply_processors(tf, name=[rstrip, lstrip], family=[to_list_nan, take_first, rstrip, lstrip])
 
@@ -44,6 +44,7 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
         tf.loc[tf_not_sigma_mask, 'mechanism'] = 'transcription factor'
 
         tf = pd.merge(tf, sequence, on='name_lower')
+        tf = tf.drop(columns=['name_lower'])
 
         tf = create_input_value(df=tf, col='locus_tag')
         return tf

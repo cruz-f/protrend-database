@@ -126,14 +126,14 @@ def read_mtub_turkarslan_et_al_2015(file_path: str, **kwargs) -> pd.DataFrame:
 def read_paer_vasquez_et_al_2011(file_path: str, **kwargs) -> pd.DataFrame:
     df = pd.read_excel(file_path, skiprows=3, **kwargs)
 
-    df = select_columns(df, 'Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
+    df = select_columns(df, 'Regulator (TF or sigma)', 'Target gene', 'mode of regulation',
                         'Experimental Evidence', 'PubMed Referencea', 'P. aeruginosa Strain')
 
-    df = df.dropna(subset=['Regulator (TF or sigma)', 'Target Gene', 'mode of regulation', 'P. aeruginosa Strain'])
-    df = drop_empty_string(df, 'Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
+    df = df.dropna(subset=['Regulator (TF or sigma)', 'Target gene', 'mode of regulation', 'P. aeruginosa Strain'])
+    df = drop_empty_string(df, 'Regulator (TF or sigma)', 'Target gene', 'mode of regulation',
                            'P. aeruginosa Strain')
     df = drop_duplicates(df=df,
-                         subset=['Regulator (TF or sigma)', 'Target Gene', 'mode of regulation',
+                         subset=['Regulator (TF or sigma)', 'Target gene', 'mode of regulation',
                                  'P. aeruginosa Strain'],
                          perfect_match=True)
 

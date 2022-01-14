@@ -84,7 +84,6 @@ class RegulatoryInteractionToOrganismConnector(RegPreciseConnector,
                                                from_node=RegulatoryInteraction,
                                                to_node=Organism,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -98,7 +97,6 @@ class RegulatoryInteractionToEffectorConnector(RegPreciseConnector,
                                                from_node=RegulatoryInteraction,
                                                to_node=Effector,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -112,7 +110,6 @@ class RegulatoryInteractionToRegulatorConnector(RegPreciseConnector,
                                                 from_node=RegulatoryInteraction,
                                                 to_node=Regulator,
                                                 register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -126,7 +123,6 @@ class RegulatoryInteractionToGeneConnector(RegPreciseConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=Gene,
                                            register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -140,7 +136,6 @@ class RegulatoryInteractionToTFBSConnector(RegPreciseConnector,
                                            from_node=RegulatoryInteraction,
                                            to_node=TFBS,
                                            register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -154,7 +149,6 @@ class RegulatorToOrganismConnector(RegPreciseConnector,
                                    from_node=Regulator,
                                    to_node=Organism,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -168,7 +162,6 @@ class RegulatorToEffectorConnector(RegPreciseConnector,
                                    from_node=Regulator,
                                    to_node=Effector,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -182,7 +175,6 @@ class RegulatorToGeneConnector(RegPreciseConnector,
                                from_node=Regulator,
                                to_node=Gene,
                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -196,7 +188,6 @@ class RegulatorToTFBSConnector(RegPreciseConnector,
                                from_node=Regulator,
                                to_node=TFBS,
                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -210,7 +201,6 @@ class GeneToOrganismConnector(RegPreciseConnector,
                               from_node=Gene,
                               to_node=Organism,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -224,7 +214,6 @@ class GeneToTFBSConnector(RegPreciseConnector,
                           from_node=Gene,
                           to_node=TFBS,
                           register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -238,7 +227,6 @@ class TFBSToOrganismConnector(RegPreciseConnector,
                               from_node=TFBS,
                               to_node=Organism,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',

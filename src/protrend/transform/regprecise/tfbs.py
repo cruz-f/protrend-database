@@ -167,3 +167,4 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
         tfbs = self.site_hash(tfbs)
 
         self.stack_transformed_nodes(tfbs)
+        return tfbs

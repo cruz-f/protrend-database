@@ -10,7 +10,8 @@ from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.transformations import (merge_columns, create_input_value, drop_duplicates, group_by,
                                                 drop_empty_string)
 from protrend.utils import SetList, is_null
-from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list, \
+    to_set_list
 
 
 class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
@@ -47,7 +48,7 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
         organism = organism.dropna(subset=['name'])
         organism = drop_empty_string(organism, 'name')
 
-        aggregation = {'genome_accession': take_last, 'taxonomy': take_last}
+        aggregation = {'genome_accession': take_last, 'taxonomy': take_last, 'collectf_name': to_set_list}
         organism = group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
 
         organism = apply_processors(organism, genome_accession=[rstrip, lstrip], taxonomy=to_int_str)
@@ -91,7 +92,6 @@ class OrganismToRegulatorConnector(CollecTFConnector,
                                    from_node=Organism,
                                    to_node=Regulator,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -105,7 +105,6 @@ class OrganismToGeneConnector(CollecTFConnector,
                               from_node=Organism,
                               to_node=Gene,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -119,7 +118,6 @@ class OrganismToTFBSConnector(CollecTFConnector,
                               from_node=Organism,
                               to_node=TFBS,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -133,7 +131,6 @@ class OrganismToRegulatoryInteractionConnector(CollecTFConnector,
                                                from_node=Organism,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',

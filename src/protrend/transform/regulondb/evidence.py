@@ -66,8 +66,6 @@ class EvidenceToRegulatoryInteractionConnector(RegulonDBConnector,
                                                from_node=Evidence,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json',
-                             'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         target_processors = {'evidence': [rstrip, lstrip, split_semi_colon, to_list_nan]}

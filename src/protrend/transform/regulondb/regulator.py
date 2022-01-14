@@ -73,6 +73,12 @@ class RegulatorTransformer(RegulonDBTransformer,
         return srna
 
     def transform(self):
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                              'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                              'sequence', 'strand', 'start', 'stop',
+                              'name_lower', 'gene_id')
+
         tf_columns = ['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',
                       'transcription_factor_family', 'tf_internal_comment', 'key_id_org',
                       'transcription_factor_note', 'connectivity_class', 'sensing_class', 'consensus_sequence']
@@ -83,7 +89,7 @@ class RegulatorTransformer(RegulonDBTransformer,
         srna_columns = ['srna_id', 'srna_gene_id', 'srna_gene_regulated_id', 'srna_tu_regulated_id',
                         'srna_function', 'srna_posleft', 'srna_posright', 'srna_sequence',
                         'srna_regulation_type', 'srna_mechanis', 'srna_note']
-        srna_reader = regulondb_reader(skiprows=38, names=tf_columns)
+        srna_reader = regulondb_reader(skiprows=38, names=srna_columns)
         srna = read(source=self.source, version=self.version, file='srna_interaction.txt', reader=srna_reader,
                     default=pd.DataFrame(columns=srna_columns))
 
@@ -91,13 +97,7 @@ class RegulatorTransformer(RegulonDBTransformer,
                          'sigma_coregulators', 'sigma_notes', 'sigma_sigmulon_genes', 'key_id_org']
         sigma_reader = regulondb_reader(skiprows=36, names=sigma_columns)
         sigma = read(source=self.source, version=self.version, file='sigma_tmp.txt', reader=sigma_reader,
-                     default=pd.DataFrame(columns=srna_columns))
-
-        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
-        gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                              'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                              'sequence', 'strand', 'start', 'stop',
-                              'name_lower', 'gene_id')
+                     default=pd.DataFrame(columns=sigma_columns))
 
         tf = self.transform_tf(tf, gene)
         srna = self.transform_srna(srna, gene)

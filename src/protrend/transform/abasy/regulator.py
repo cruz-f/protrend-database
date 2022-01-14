@@ -1,13 +1,12 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame, read
 from protrend.io.utils import read_gene
 from protrend.model import Regulator
 from protrend.transform.abasy.base import AbasyTransformer, read_abasy_networks
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
-from protrend.utils import SetList, build_stack, build_file_path
+from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 

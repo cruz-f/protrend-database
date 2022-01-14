@@ -28,10 +28,7 @@ class SourceTransformer(SourceMixIn, RegPreciseTransformer,
     columns = SetList(['protrend_id', 'name', 'type', 'url', 'doi', 'authors', 'description'])
 
 
-class SourceConnector(RegPreciseConnector,
-                      source='regprecise',
-                      version='0.0.0',
-                      register=False):
+class SourceConnector(RegPreciseConnector, register=False):
 
     def _connect(self,
                  target: str,
@@ -71,7 +68,6 @@ class SourceToEffectorConnector(SourceConnector,
                                 from_node=Source,
                                 to_node=Effector,
                                 register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'effector': 'integrated_effector.json'}
 
     def connect(self):
         df = self._connect(target='effector', target_processors={},
@@ -85,7 +81,6 @@ class SourceToGeneConnector(SourceConnector,
                             from_node=Source,
                             to_node=Gene,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self._connect(target='gene', target_processors={'regulon': [to_list_nan]},
@@ -100,7 +95,6 @@ class SourceToOrganismConnector(SourceConnector,
                                 from_node=Source,
                                 to_node=Organism,
                                 register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
         df = self._connect(target='organism', target_processors={},
@@ -114,7 +108,6 @@ class SourceToPathwayConnector(SourceConnector,
                                from_node=Source,
                                to_node=Pathway,
                                register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'pathway': 'integrated_pathway.json'}
 
     def connect(self):
         df = self._connect(target='pathway', target_processors={},
@@ -128,7 +121,6 @@ class SourceToRegulatorConnector(SourceConnector,
                                  from_node=Source,
                                  to_node=Regulator,
                                  register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         df = self._connect(target='regulator', target_processors={},
@@ -142,8 +134,6 @@ class SourceToRegulatoryFamilyConnector(RegPreciseConnector,
                                         from_node=Source,
                                         to_node=RegulatoryFamily,
                                         register=True):
-    default_connect_stack = {'source': 'integrated_source.json',
-                             'rfam': 'integrated_regulatoryfamily.json'}
 
     def connect(self):
         source = read_source(source=self.source, version=self.version, columns=SourceTransformer.columns)
@@ -186,7 +176,6 @@ class SourceToRegulatoryInteractionConnector(SourceConnector,
                                              from_node=Source,
                                              to_node=RegulatoryInteraction,
                                              register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self._connect(target='rin', target_processors={},
@@ -200,7 +189,6 @@ class SourceToTFBSConnector(SourceConnector,
                             from_node=Source,
                             to_node=TFBS,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
         df = self._connect(target='tfbs', target_processors={'regulon': [to_list_nan]},

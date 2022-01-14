@@ -28,7 +28,6 @@ class SourceToOrganismConnector(CoryneRegNetConnector,
                                 from_node=Source,
                                 to_node=Organism,
                                 register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='organism', cardinality='one_to_many')
@@ -41,7 +40,6 @@ class SourceToRegulatorConnector(CoryneRegNetConnector,
                                  from_node=Source,
                                  to_node=Regulator,
                                  register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='regulator', cardinality='one_to_many')
@@ -54,7 +52,6 @@ class SourceToGeneConnector(CoryneRegNetConnector,
                             from_node=Source,
                             to_node=Gene,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='gene', cardinality='one_to_many')
@@ -67,7 +64,6 @@ class SourceToTFBSConnector(CoryneRegNetConnector,
                             from_node=Source,
                             to_node=TFBS,
                             register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'tfbs': 'integrated_tfbs.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='tfbs', cardinality='one_to_many')
@@ -80,7 +76,6 @@ class SourceToRegulatoryInteractionConnector(CoryneRegNetConnector,
                                              from_node=Source,
                                              to_node=RegulatoryInteraction,
                                              register=True):
-    default_connect_stack = {'source': 'integrated_source.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='source', target='rin', cardinality='one_to_many')

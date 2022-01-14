@@ -55,7 +55,6 @@ class PublicationToOrganismConnector(LiteratureConnector,
                                      from_node=Publication,
                                      to_node=Organism,
                                      register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'organism': 'integrated_organism.json'}
 
     def connect(self):
         df = self.create_connection(source='publication', target='organism',
@@ -65,10 +64,7 @@ class PublicationToOrganismConnector(LiteratureConnector,
         self.stack_connections(df)
 
 
-class PublicationConnector(LiteratureConnector,
-                           source='literature',
-                           version='0.0.0',
-                           register=False):
+class PublicationConnector(LiteratureConnector, register=False):
 
     def _connect(self, source: str, target: str) -> pd.DataFrame:
         source_df, target_df = self.transform_stacks(source=source,
@@ -97,7 +93,6 @@ class PublicationToRegulatorConnector(PublicationConnector,
                                       from_node=Publication,
                                       to_node=Regulator,
                                       register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         df = self._connect('publication', 'regulator')
@@ -110,7 +105,6 @@ class PublicationToGeneConnector(PublicationConnector,
                                  from_node=Publication,
                                  to_node=Gene,
                                  register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
         df = self._connect('publication', 'gene')
@@ -123,8 +117,6 @@ class PublicationToRegulatoryInteractionConnector(PublicationConnector,
                                                   from_node=Publication,
                                                   to_node=RegulatoryInteraction,
                                                   register=True):
-    default_connect_stack = {'publication': 'integrated_publication.json',
-                             'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self._connect('publication', 'rin')

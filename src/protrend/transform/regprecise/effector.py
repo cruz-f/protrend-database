@@ -15,7 +15,6 @@ class EffectorTransformer(EffectorMixIn, RegPreciseTransformer,
                           node=Effector,
                           order=100,
                           register=True):
-    default_transform_stack = {'effector': 'Effector.json'}
     columns = SetList(['protrend_id', 'name', 'kegg_compounds',
                        'effector_id', 'url', 'regulog'])
 

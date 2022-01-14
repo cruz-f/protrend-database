@@ -64,7 +64,6 @@ class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
                                                from_node=Evidence,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'evidence': 'integrated_evidence.json', 'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='evidence',

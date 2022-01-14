@@ -56,7 +56,6 @@ class RegulatoryFamilyToRegulatorConnector(RegulonDBConnector,
                                            from_node=RegulatoryFamily,
                                            to_node=Regulator,
                                            register=True):
-    default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         df = self.create_connection(source='rfam', target='regulator',

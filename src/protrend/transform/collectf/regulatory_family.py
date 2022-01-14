@@ -42,7 +42,6 @@ class RegulatoryFamilyToRegulatorConnector(CollecTFConnector,
                                            from_node=RegulatoryFamily,
                                            to_node=Regulator,
                                            register=True):
-    default_connect_stack = {'rfam': 'integrated_regulatoryfamily.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='rfam',

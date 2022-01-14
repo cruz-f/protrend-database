@@ -121,7 +121,6 @@ class OrganismToRegulatorConnector(AbasyConnector,
                                    from_node=Organism,
                                    to_node=Regulator,
                                    register=True):
-    default_connect_stack = {'organism': 'integrated_organism.json', 'regulator': 'integrated_regulator.json'}
 
     def connect(self):
         source_processors = {'ncbi_taxonomy': [to_int_str]}
@@ -139,7 +138,6 @@ class OrganismToGeneConnector(AbasyConnector,
                               from_node=Organism,
                               to_node=Gene,
                               register=True):
-    default_connect_stack = {'organism': 'integrated_organism.json', 'gene': 'integrated_gene.json'}
 
     def connect(self):
         source_processors = {'ncbi_taxonomy': [to_int_str]}

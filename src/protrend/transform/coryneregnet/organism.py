@@ -70,7 +70,6 @@ class OrganismToRegulatorConnector(CoryneRegNetConnector,
                                    from_node=Organism,
                                    to_node=Regulator,
                                    register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -84,7 +83,6 @@ class OrganismToGeneConnector(CoryneRegNetConnector,
                               from_node=Organism,
                               to_node=Gene,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -98,7 +96,6 @@ class OrganismToTFBSConnector(CoryneRegNetConnector,
                               from_node=Organism,
                               to_node=TFBS,
                               register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
@@ -112,7 +109,6 @@ class OrganismToRegulatoryInteractionConnector(CoryneRegNetConnector,
                                                from_node=Organism,
                                                to_node=RegulatoryInteraction,
                                                register=True):
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
 
     def connect(self):
         df = self.create_connection(source='rin', target='rin',
