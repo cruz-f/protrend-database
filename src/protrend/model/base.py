@@ -8,9 +8,8 @@ from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, String
                       IntegerProperty, ArrayProperty)
 from tqdm import tqdm
 
-from .utils import choices, help_text, _sort_nodes
-from protrend.utils.processors import to_str, rstrip, lstrip, lower_case, to_nan
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
+from .utils import choices, help_text, _sort_nodes
 
 
 class BaseNode(StructuredNode):
@@ -252,8 +251,6 @@ class BaseNode(StructuredNode):
 
 
 class RequiredNameMixIn:
-    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
-
     # properties
     name = StringProperty(required=True, max_length=250, help_text=help_text.required_name)
 
@@ -269,9 +266,6 @@ class PositionMixIn:
 
 
 class GeneMixIn:
-    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
-                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
-
     # properties
     locus_tag = StringProperty(required=True, max_length=50, help_text=help_text.locus_tag)
     uniprot_accession = StringProperty(max_length=50, help_text=help_text.uniprot_accession)

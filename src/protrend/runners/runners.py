@@ -136,44 +136,44 @@ if __name__ == "__main__":
     # # run_logger('collectf_logger')
     run_pipeline(source='collectf', version='0.0.1')
 
-    # ----------------------------------------------------
-    # RegPrecise
-    # ----------------------------------------------------
+    # # ----------------------------------------------------
+    # # RegPrecise
+    # # ----------------------------------------------------
     # # run_logger('regprecise_logger')
-    # run_pipeline(source='regprecise', version='0.0.0', transform=False, connect=True)
+    run_pipeline(source='regprecise', version='0.0.0')
     #
     # # ----------------------------------------------------
     # # Abasy
     # # ----------------------------------------------------
     # # run_logger('abasy_logger')
-    # run_pipeline(source='abasy', version='0.0.0', transform=False, connect=False)
+    run_pipeline(source='abasy', version='0.0.0')
     #
     # # ----------------------------------------------------
     # # Literature
     # # ----------------------------------------------------
     # # run_logger('literature_logger')
-    # run_pipeline(source='literature', version='0.0.0', transform=False, connect=False)
+    run_pipeline(source='literature', version='0.0.0')
     #
     # # ----------------------------------------------------
     # # CoryneRegNet
     # # ----------------------------------------------------
     # # run_logger('coryneregnet_logger')
-    # run_pipeline(source='coryneregnet', version='0.0.0', transform=False, connect=False)
+    run_pipeline(source='coryneregnet', version='0.0.0')
     #
     # # ----------------------------------------------------
     # # DBTBS
     # # ----------------------------------------------------
     # # run_logger('dbtbs_logger')
-    # run_pipeline(source='dbtbs', version='0.0.4', transform=False, connect=False)
+    run_pipeline(source='dbtbs', version='0.0.4')
     #
     # # ----------------------------------------------------
     # # RegulonDB
     # # ----------------------------------------------------
     # # run_logger('regulondb_logger')
-    # run_pipeline(source='regulondb', version='0.0.0', transform=False, connect=False)
+    run_pipeline(source='regulondb', version='0.0.0')
     #
     # # ----------------------------------------------------
     # # OperonDB
     # # ----------------------------------------------------
     # # run_logger('operondb_logger')
-    # run_pipeline(source='operondb', version='0.0.0')
+    run_pipeline(source='operondb', version='0.0.0')

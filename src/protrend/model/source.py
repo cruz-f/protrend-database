@@ -1,5 +1,6 @@
 from neomodel import StringProperty, RelationshipTo, ArrayProperty
 
+from protrend.utils.processors import to_str, lower_case, rstrip, lstrip, to_nan
 from .base import BaseNode, RequiredNameMixIn
 from .relationships import REL_TYPE, SourceRelationship
 from .utils import help_text, choices
@@ -7,6 +8,7 @@ from .utils import help_text, choices
 
 class Source(BaseNode, RequiredNameMixIn):
     entity = 'SRC'
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     type = StringProperty(required=True, choices=choices.data_source_type,

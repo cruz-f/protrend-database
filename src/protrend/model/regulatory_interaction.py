@@ -25,7 +25,7 @@ class RegulatoryInteraction(BaseNode):
     evidence = RelationshipTo('.evidence.Evidence', REL_TYPE)
     publication = RelationshipTo('.publication.Publication', REL_TYPE)
     data_effector = RelationshipTo('.effector.Effector', REL_TYPE, cardinality=One)
-    data_organism = RelationshipTo('organism.Organism', REL_TYPE, cardinality=One)
+    data_organism = RelationshipTo('.organism.Organism', REL_TYPE, cardinality=One)
     data_regulator = RelationshipTo('.regulator.Regulator', REL_TYPE, cardinality=One)
     data_gene = RelationshipTo('.gene.Gene', REL_TYPE, cardinality=One)
     data_tfbs = RelationshipTo('.tfbs.TFBS', REL_TYPE, cardinality=One)

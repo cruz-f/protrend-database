@@ -1,23 +1,11 @@
-from typing import Union, Type, Tuple, List
+from typing import Union, Type, Tuple, List, TYPE_CHECKING
 
 from neomodel import RelationshipManager, StructuredRel, StringProperty
 
-from protrend import BaseNode
+import protrend.utils.constants as constants
 
-FORWARD = 'FORWARD'
-REVERSE = 'REVERSE'
-UNKNOWN = 'UNKNOWN'
-TRANSCRIPTION_FACTOR = 'TRANSCRIPTION FACTOR'
-TRANSCRIPTION_ATTENUATOR = 'TRANSCRIPTION ATTENUATOR'
-TRANSCRIPTION_TERMINATOR = 'TRANSCRIPTION TERMINATOR'
-SIGMA_FACTOR = 'SIGMA FACTOR'
-SMALL_RNA = 'SMALL RNA (sRNA)'
-ACTIVATION = 'ACTIVATION'
-REPRESSION = 'REPRESSION'
-DUAL = 'DUAL'
-LITERATURE = 'LITERATURE'
-DATABASE = 'DATABASE'
-CURATION = 'CURATION'
+if TYPE_CHECKING:
+    from .base import BaseNode
 
 
 # noinspection PyPep8Naming
@@ -74,15 +62,23 @@ class help_text:
 
 # noinspection PyPep8Naming
 class choices:
-    strand = {FORWARD: 'forward', REVERSE: 'reverse', UNKNOWN: 'unknown'}
-    mechanism = {TRANSCRIPTION_FACTOR: 'transcription factor', TRANSCRIPTION_ATTENUATOR: 'transcription attenuator',
-                 TRANSCRIPTION_TERMINATOR: 'transcription terminator', SIGMA_FACTOR: 'sigma factor',
-                 SMALL_RNA: 'small RNA (sRNA)', UNKNOWN: 'unknown'}
-    regulatory_effect = {ACTIVATION: 'activation', REPRESSION: 'repression', DUAL: 'dual', UNKNOWN: 'unknown'}
-    data_source_type = {LITERATURE: 'literature', DATABASE: 'database', CURATION: 'curation'}
+    strand = {constants.FORWARD: 'forward', constants.REVERSE: 'reverse', constants.UNKNOWN: 'unknown'}
+    mechanism = {constants.TRANSCRIPTION_FACTOR: 'transcription factor',
+                 constants.TRANSCRIPTION_ATTENUATOR: 'transcription attenuator',
+                 constants.TRANSCRIPTION_TERMINATOR: 'transcription terminator',
+                 constants.SIGMA_FACTOR: 'sigma factor',
+                 constants.SMALL_RNA: 'small RNA (sRNA)',
+                 constants.UNKNOWN: 'unknown'}
+    regulatory_effect = {constants.ACTIVATION: 'activation',
+                         constants.REPRESSION: 'repression',
+                         constants.DUAL: 'dual',
+                         constants.UNKNOWN: 'unknown'}
+    data_source_type = {constants.LITERATURE: 'literature',
+                        constants.DATABASE: 'database',
+                        constants.CURATION: 'curation'}
 
 
-def _sort_nodes(node: BaseNode):
+def _sort_nodes(node: 'BaseNode'):
     return protrend_id_decoder(node.protrend_id)
 
 
@@ -98,15 +94,16 @@ def protrend_id_decoder(protrend_id: Union[str, StringProperty]) -> int:
     return int(integer)
 
 
-def get_node_by_name(name: str, default=None) -> Union[Type[BaseNode], None]:
+def get_node_by_name(name: str, default=None) -> Union[Type['BaseNode'], None]:
+    from protrend.model.base import BaseNode
     return BaseNode.node_register.get(name, default)
 
 
-def _find_to_node(relationship: RelationshipManager) -> Type[BaseNode]:
+def _find_to_node(relationship: RelationshipManager) -> Type['BaseNode']:
     return relationship.definition['node_class']
 
 
-def get_nodes_relationships(from_node: Type[BaseNode], to_node: Type[BaseNode]) -> Tuple[List[str], List[str]]:
+def get_nodes_relationships(from_node: Type['BaseNode'], to_node: Type['BaseNode']) -> Tuple[List[str], List[str]]:
     from_node_rels = from_node.node_relationships()
     from_node_matches = []
     for attr, relationship in from_node_rels.items():
@@ -126,7 +123,7 @@ def get_nodes_relationships(from_node: Type[BaseNode], to_node: Type[BaseNode]) 
     return from_node_matches, to_node_matches
 
 
-def connect_nodes(from_node: BaseNode, to_node: BaseNode, relationship: str, kwargs: dict) -> bool:
+def connect_nodes(from_node: 'BaseNode', to_node: 'BaseNode', relationship: str, kwargs: dict) -> bool:
     relationship: RelationshipManager = getattr(from_node, relationship, None)
     relationship_model: StructuredRel = relationship.definition['model']
 

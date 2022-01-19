@@ -13,6 +13,7 @@ from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.transformations import select_columns, group_by, drop_empty_string
 from protrend.utils import SetList
+from protrend.utils.constants import FORWARD, REVERSE
 from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, flatten_set_list_nan,
                                        to_set_list, to_list_nan, take_last, strand_mode, start_forward, start_reverse)
 
@@ -123,11 +124,11 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
             length = len(sequence)
             strand = strand_mode(strand)
 
-            if strand == 'forward':
+            if strand == FORWARD:
                 start = start_forward(start) + position
                 stop = start + length
 
-            elif strand == 'reverse':
+            elif strand == REVERSE:
                 start = start_reverse(start) - position
                 stop = start + length
 

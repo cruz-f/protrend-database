@@ -6,6 +6,7 @@ from protrend.transform.regprecise.base import RegPreciseTransformer, RegPrecise
 from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
+from protrend.utils.constants import TRANSCRIPTION_FACTOR, SMALL_RNA
 from protrend.utils.processors import (remove_regprecise_more, remove_multiple_white_space,
                                        rstrip, lstrip, remove_pubmed, apply_processors, to_int_str)
 
@@ -32,7 +33,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
                                      description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space,
                                                   rstrip, lstrip])
 
-        tf_family = tf_family.assign(mechanism='transcription factor')
+        tf_family = tf_family.assign(mechanism=TRANSCRIPTION_FACTOR)
         return tf_family
 
     def transform_tf(self, tf: pd.DataFrame) -> pd.DataFrame:
@@ -48,7 +49,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
                               description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space,
                                            rstrip, lstrip])
 
-        tf = tf.assign(mechanism='transcription factor')
+        tf = tf.assign(mechanism=TRANSCRIPTION_FACTOR)
         return tf
 
     def transform_rna(self, rna: pd.DataFrame) -> pd.DataFrame:
@@ -65,7 +66,7 @@ class RegulatoryFamilyTransformer(RegPreciseTransformer,
                                description=[remove_regprecise_more, remove_pubmed, remove_multiple_white_space, rstrip,
                                             lstrip])
 
-        rna = rna.assign(mechanism='small RNA (sRNA)')
+        rna = rna.assign(mechanism=SMALL_RNA)
         return rna
 
     def transform(self):

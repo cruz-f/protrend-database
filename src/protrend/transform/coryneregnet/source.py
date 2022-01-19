@@ -2,6 +2,7 @@ from protrend.model import Source, Organism, Regulator, Gene, TFBS, RegulatoryIn
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, CoryneRegNetConnector
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList
+from protrend.utils.constants import DATABASE
 
 
 class SourceTransformer(SourceMixIn, CoryneRegNetTransformer,
@@ -11,7 +12,7 @@ class SourceTransformer(SourceMixIn, CoryneRegNetTransformer,
                         order=100,
                         register=True):
     name = ['coryneregnet']
-    type = ['database']
+    type = [DATABASE]
     url = ['https://www.exbio.wzw.tum.de/coryneregnet/']
     doi = ['10.1038/s41597-020-0484-9']
     authors = [['Mariana Teixeira Dornelles Parise', 'Doglas Parise', 'Rodrigo Bentes Kato',

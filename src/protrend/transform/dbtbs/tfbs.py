@@ -8,7 +8,8 @@ from protrend.transform.dbtbs.organism import OrganismTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, is_null
-from protrend.utils.processors import apply_processors, upper_case
+from protrend.utils.constants import REVERSE, FORWARD, UNKNOWN
+from protrend.utils.processors import apply_processors, upper_case, to_str
 
 
 class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
@@ -38,9 +39,7 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
         tfbs = apply_processors(tfbs, sequence=upper_case)
 
         # adding organism
-        tfbs = tfbs.reset_index(drop=True)
-        organism = organism.reset_index(drop=True)
-        tfbs = pd.concat([tfbs, organism], axis=1)
+        tfbs = tfbs.assign(organism=organism.loc[0, 'organism'])
         return tfbs
 
     @staticmethod
@@ -95,7 +94,7 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
 
         def sequence_strand(item):
             if is_null(item):
-                return
+                return UNKNOWN
 
             if isinstance(item, str):
                 try:
@@ -106,14 +105,14 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
                     diff = seq_stop - seq_start
 
                     if diff < 0:
-                        return 'reverse'
+                        return REVERSE
 
-                    return 'forward'
+                    return FORWARD
 
                 except ValueError:
-                    return
+                    return UNKNOWN
 
-            return
+            return UNKNOWN
 
         length = tfbs['sequence'].map(sequence_len, na_action='ignore')
         start = tfbs['absolute_position'].map(sequence_start, na_action='ignore')

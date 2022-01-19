@@ -7,6 +7,7 @@ from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList
+from protrend.utils.constants import UNKNOWN
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
@@ -32,7 +33,7 @@ class RegulatorTransformer(GeneMixIn, AbasyTransformer,
         regulator_taxonomy = networks['regulator'] + networks['taxonomy']
 
         networks = networks.assign(regulator_taxonomy=regulator_taxonomy,
-                                   mechanism=None)
+                                   mechanism=UNKNOWN)
         return networks
 
     @staticmethod

@@ -4,6 +4,7 @@ from protrend.model import Source, Organism, Gene, Operon
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.utils import SetList
+from protrend.utils.constants import DATABASE
 
 
 class SourceTransformer(SourceMixIn, OperonDBTransformer,
@@ -13,7 +14,7 @@ class SourceTransformer(SourceMixIn, OperonDBTransformer,
                         order=100,
                         register=True):
     name = ['operondb']
-    type = ['database']
+    type = [DATABASE]
     url = ['https://operondb.jp/']
     doi = ['10.1093/nar/gkq1090']
     authors = [['Shujiro Okuda', 'Akiyasu C Yoshizawa']]

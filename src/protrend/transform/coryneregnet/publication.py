@@ -30,7 +30,7 @@ class PublicationTransformer(PublicationMixIn, CoryneRegNetTransformer,
         pub = pub.assign(pmid=pub['PMID'].copy())
 
         def split_pmid(item: str) -> list:
-            items = item.split(',')
+            items = item.split(';')
             return [item.lstrip().rstrip() for item in items]
 
         pub = apply_processors(pub, pmid=[to_str, split_pmid])

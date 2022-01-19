@@ -1,7 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import List, Type, Callable, Dict
+from typing import List, Type, Callable, Dict, Tuple
 
 import neo4j.exceptions
 import pandas as pd
@@ -137,12 +137,8 @@ class Transformer(AbstractTransformer):
     # Static properties
     # --------------------------------------------------------
     @property
-    def node_factors(self) -> Dict[str, Callable]:
+    def node_factors(self) -> Dict[str, List[Callable]]:
         return self.node.node_factors
-
-    @property
-    def node_factors_keys(self) -> List[str]:
-        return list(self.node.node_factors.keys())
 
     @property
     def write_path(self) -> str:
@@ -153,32 +149,7 @@ class Transformer(AbstractTransformer):
     # --------------------------------------------------------
     def __str__(self):
         return f'{self.__class__.__name__}: {self.source} - {self.version} - ' \
-               f'{self.node.node_name()} - {self.node_factors_keys}'
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __eq__(self, other: 'Transformer'):
-
-        other_values = {other.__class__.__name__, other.source, other.version, other.node.node_name(),
-                        other.node_factors_keys}
-
-        if self.__class__.__name__ not in other_values:
-            return False
-
-        if self.source not in other_values:
-            return False
-
-        if self.version not in other_values:
-            return False
-
-        if self.node.node_name() not in other_values:
-            return False
-
-        if self.node_factors not in other_values:
-            return False
-
-        return True
+               f'{self.node.node_name()} - {list(self.node_factors.keys())}'
 
     # --------------------------------------------------------
     # Transformer API
@@ -219,20 +190,16 @@ class Transformer(AbstractTransformer):
         """
         # take a db snapshot for the current node and ensure uniqueness
         view = self.node_view()
-        view = self.standardize_factors(df=view)
-        view = drop_empty_string(view, *self.node_factors_keys)
-        view = drop_duplicates(df=view, subset=self.node_factors_keys)
+        view, _ = self.factors_normalization(df=view)
 
         # ensure uniqueness
-        df = self.standardize_factors(df=df)
-        df = drop_empty_string(df, *self.node_factors_keys)
-        df = drop_duplicates(df=df, subset=self.node_factors_keys)
+        df, factorized_cols = self.factors_normalization(df=df)
 
         # assign the integration and load columns
         df = df.assign(protrend_id=None, load=None, what='nodes')
 
         # try to integrate the new nodes by the node factors
-        for factor in self.node_factors_keys:
+        for factor in factorized_cols:
             mapper = view.dropna(subset=[factor])
             mapper = mapper.set_index(factor)
             mapper = mapper['protrend_id']
@@ -253,6 +220,8 @@ class Transformer(AbstractTransformer):
 
         batch_ids = self.protrend_identifiers_batch(last_node_idx=last_node_idx, size=batch_size)
         df.loc[mask, 'protrend_id'] = batch_ids
+
+        df = df.drop(columns=factorized_cols)
 
         self.stack_integrated_nodes(df)
         self.stack_nodes(df)
@@ -330,9 +299,24 @@ class Transformer(AbstractTransformer):
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
 
-    def standardize_factors(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = apply_processors(df, **self.node_factors)
-        return df
+    def factors_normalization(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+        # renaming the factors
+        to_assign = {}
+        to_process = {}
+        new_cols = []
+
+        for i, (factor, processing_fns) in enumerate(self.node_factors.items()):
+            new_col = f'node_factor_{i}'
+
+            to_assign[new_col] = df[factor].copy()
+            to_process[new_col] = processing_fns.copy()
+            new_cols.append(new_col)
+
+        df = df.assign(**to_assign)
+        df = apply_processors(df, **to_process)
+        df = drop_empty_string(df, *new_cols)
+        df = drop_duplicates(df=df, subset=new_cols)
+        return df, new_cols
 
     def protrend_identifiers_batch(self, last_node_idx: int, size: int) -> List[str]:
 

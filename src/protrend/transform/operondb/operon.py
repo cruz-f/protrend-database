@@ -6,6 +6,7 @@ from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnec
 from protrend.transform.operondb.gene import GeneTransformer
 from protrend.transform.transformations import select_columns, group_by
 from protrend.utils import SetList
+from protrend.utils.constants import FORWARD, REVERSE
 from protrend.utils.processors import to_set_list, take_last, strand_mode, start_forward, start_reverse, to_list_nan
 
 
@@ -40,11 +41,11 @@ class OperonTransformer(OperonDBTransformer,
 
             strand = strand_mode(strand)
 
-            if strand == 'forward':
+            if strand == FORWARD:
                 start = start_forward(start)
                 stop = start_reverse(stop)
 
-            elif strand == 'reverse':
+            elif strand == REVERSE:
                 start = start_reverse(start)
                 stop = start_forward(stop)
 

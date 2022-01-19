@@ -2,6 +2,7 @@ from protrend.model import Source, Organism, Regulator, Gene, RegulatoryInteract
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList
+from protrend.utils.constants import DATABASE
 
 
 class SourceTransformer(SourceMixIn, AbasyTransformer,
@@ -11,7 +12,7 @@ class SourceTransformer(SourceMixIn, AbasyTransformer,
                         order=100,
                         register=True):
     name = ['abasy']
-    type = ['database']
+    type = [DATABASE]
     url = ['https://abasy.ccg.unam.mx']
     doi = ['10.1016/j.csbj.2020.05.015']
     authors = [['Juan M. Escorcia-Rodríguez, AndreasTauch, Julio A. Freyre-Gonzáleza']]

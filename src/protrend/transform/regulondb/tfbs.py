@@ -7,6 +7,7 @@ from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_re
 from protrend.transform.regulondb.organism import OrganismTransformer
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList
+from protrend.utils.constants import FORWARD
 from protrend.utils.processors import apply_processors
 
 
@@ -58,7 +59,7 @@ class TFBSTransformer(TFBSMixIn, RegulonDBTransformer,
     @staticmethod
     def site_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = tfbs.assign(length=tfbs['sequence'].str.len(),
-                           strand='forward',
+                           strand=FORWARD,
                            start=tfbs['site_posleft'].copy(),
                            stop=tfbs['site_posright'].copy())
         return tfbs

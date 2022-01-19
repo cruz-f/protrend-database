@@ -1,13 +1,15 @@
 from neomodel import RelationshipTo, One
 
+from protrend.utils.processors import to_str, lower_case, rstrip, lstrip, to_nan
 from .base import BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn
 from .relationships import REL_TYPE, SourceRelationship
 
 
 class Gene(BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn):
-
     # base
     entity = 'GEN'
+    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties inherited from GeneMixIn, SequenceMixIn, PositionMixIn
 

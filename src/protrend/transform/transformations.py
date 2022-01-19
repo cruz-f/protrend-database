@@ -50,24 +50,26 @@ def group_by(df: pd.DataFrame,
 
 
 def drop_empty_string(df: pd.DataFrame, *cols: str) -> pd.DataFrame:
-    n_rows, _ = df.shape
+    if df.empty:
+        return df.copy()
 
-    mask = pd.Series([False] * n_rows)
+    df = df.copy()
 
-    cols_mask = [df[col] != '' for col in cols]
+    for col in cols:
+        mask = df[col] != ''
+        df = df[mask].copy()
+        df = df.reset_index(drop=True)
 
-    if cols_mask:
-        mask = pd.concat(cols_mask, axis=1)
-        mask = mask.all(axis=1)
-
-    new_df = df[mask].copy()
-    return new_df
+    return df.reset_index(drop=True)
 
 
 def drop_duplicates(df: pd.DataFrame,
                     subset: List[str],
                     perfect_match: bool = False,
                     preserve_nan: bool = True) -> pd.DataFrame:
+    if df.empty:
+        return df.copy()
+
     if perfect_match and preserve_nan:
 
         df = df[(~df.duplicated(subset=subset)) | df[subset].isnull().any(axis=1)]

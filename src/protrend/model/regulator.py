@@ -1,5 +1,6 @@
 from neomodel import StringProperty, RelationshipTo, One
 
+from protrend.utils.processors import to_str, lower_case, rstrip, lstrip, to_nan
 from .base import BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn
 from .relationships import REL_TYPE, SourceRelationship
 from .utils import choices, help_text
@@ -8,6 +9,8 @@ from .utils import choices, help_text
 class Regulator(BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn):
     # base
     entity = 'REG'
+    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     mechanism = StringProperty(required=True, choices=choices.mechanism,

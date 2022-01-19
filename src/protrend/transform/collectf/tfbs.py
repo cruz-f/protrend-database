@@ -8,6 +8,7 @@ from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import select_columns, drop_empty_string, group_by
 from protrend.utils import SetList, is_null
+from protrend.utils.constants import FORWARD, REVERSE, UNKNOWN
 from protrend.utils.processors import (apply_processors, flatten_set_list_nan, to_set_list, to_list_nan, lstrip, rstrip,
                                        take_first)
 
@@ -57,12 +58,12 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
                 return
 
             if item == '1':
-                return 'forward'
+                return FORWARD
 
             elif item == '-1':
-                return 'reverse'
+                return REVERSE
 
-            return
+            return UNKNOWN
 
         def sequence_len(item):
             if is_null(item):

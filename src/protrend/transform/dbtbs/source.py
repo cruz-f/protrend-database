@@ -3,6 +3,7 @@ from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene,
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList, is_null
+from protrend.utils.constants import DATABASE
 
 
 class SourceTransformer(SourceMixIn, DBTBSTransformer,
@@ -12,7 +13,7 @@ class SourceTransformer(SourceMixIn, DBTBSTransformer,
                         order=100,
                         register=True):
     name = ['dbtbs']
-    type = ['database']
+    type = [DATABASE]
     url = ['https://dbtbs.hgc.jp/']
     doi = ['10.1093/nar/gkm910']
     authors = [['Nicolas Sierro', 'Yuko Makita', 'Michiel de Hoon', 'Kenta Nakai']]

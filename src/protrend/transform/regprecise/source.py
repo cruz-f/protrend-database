@@ -7,6 +7,7 @@ from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulatory_family import RegulatoryFamilyTransformer
 from protrend.utils import SetList
+from protrend.utils.constants import DATABASE
 from protrend.utils.processors import to_list_nan, take_first
 
 
@@ -17,7 +18,7 @@ class SourceTransformer(SourceMixIn, RegPreciseTransformer,
                         order=100,
                         register=True):
     name = ['regprecise']
-    type = ['database']
+    type = [DATABASE]
     url = ['https://regprecise.lbl.gov/']
     doi = ['10.1186/1471-2164-14-745']
     authors = [['Pavel S Novichkov', 'Alexey E Kazakov', 'Dmitry A Ravcheev', 'Semen A Leyn', 'Galina Y Kovaleva',

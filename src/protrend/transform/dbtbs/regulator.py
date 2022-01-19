@@ -6,6 +6,7 @@ from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
+from protrend.utils.constants import UNKNOWN, SIGMA_FACTOR, TRANSCRIPTION_FACTOR
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_list_nan, take_first
 
 
@@ -33,15 +34,15 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
         tf = drop_empty_string(tf, 'name')
         tf = drop_duplicates(df=tf, subset=['name'])
 
-        tf = tf.assign(name_lower=tf['name'].str.lower(), mechanism=None)
+        tf = tf.assign(name_lower=tf['name'].str.lower(), mechanism=UNKNOWN)
 
         # sigma factors
         tf_sigma_mask = tf['family'] == 'Sigma factors'
-        tf.loc[tf_sigma_mask, 'mechanism'] = 'sigma factor'
+        tf.loc[tf_sigma_mask, 'mechanism'] = SIGMA_FACTOR
 
         # tf mechanism
         tf_not_sigma_mask = tf['family'] != 'Sigma factors'
-        tf.loc[tf_not_sigma_mask, 'mechanism'] = 'transcription factor'
+        tf.loc[tf_not_sigma_mask, 'mechanism'] = TRANSCRIPTION_FACTOR
 
         tf = pd.merge(tf, sequence, on='name_lower')
         tf = tf.drop(columns=['name_lower'])

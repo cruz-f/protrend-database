@@ -13,6 +13,7 @@ from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (drop_empty_string, drop_duplicates, create_input_value, select_columns,
                                                 merge_columns, merge_loci)
 from protrend.utils import SetList
+from protrend.utils.constants import TRANSCRIPTION_FACTOR
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_nan
 
 
@@ -79,7 +80,7 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
         ncbi_proteins = self.get_ncbi_proteins_from_uniprot(uniprot_accessions)
         loci = self.get_locus_tag_from_uniprot(uniprot_accessions)
 
-        df = df.assign(mechanism='transcription factor', ncbi_protein=ncbi_proteins, locus_tag=loci)
+        df = df.assign(mechanism=TRANSCRIPTION_FACTOR, ncbi_protein=ncbi_proteins, locus_tag=loci)
 
         df = create_input_value(df=df, col='uniprot_accession')
         return df

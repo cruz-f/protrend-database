@@ -7,7 +7,7 @@ from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnec
 from protrend.transform.operondb.operon import OperonTransformer
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, to_int_str, to_list_nan
+from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_str
 
 
 class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
@@ -23,6 +23,7 @@ class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
 
     @staticmethod
     def transform_publication(operon: pd.DataFrame) -> pd.DataFrame:
+        operon = apply_processors(operon, pubmed=to_str)
         operon = operon.rename(columns={'protrend_id': 'operon'})
         operon = operon.assign(pmid=operon['pubmed'].str.split(' '))
 

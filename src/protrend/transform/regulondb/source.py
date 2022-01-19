@@ -3,6 +3,7 @@ from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene,
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector
 from protrend.utils import SetList, is_null
+from protrend.utils.constants import DATABASE
 
 
 class SourceTransformer(SourceMixIn, RegulonDBTransformer,
@@ -12,7 +13,7 @@ class SourceTransformer(SourceMixIn, RegulonDBTransformer,
                         order=100,
                         register=True):
     name = ['regulondb']
-    type = ['database']
+    type = [DATABASE]
     url = ['http://regulondb.ccg.unam.mx/']
     doi = ['10.1093/nar/gky1077']
     authors = [['Alberto Santos-Zavaleta', 'Heladia Salgado', 'Socorro Gama-Castro', 'Mishael Sánchez-Pérez',

@@ -12,6 +12,7 @@ from protrend.utils import SetList, apply_processors
 from protrend.utils.processors import to_list_nan, protrend_hash
 from .transformations import drop_duplicates, drop_empty_string
 from .transformer import Transformer
+from protrend.utils.constants import UNKNOWN, REVERSE, FORWARD
 
 
 def get_values(df, col):
@@ -91,8 +92,8 @@ class GeneMixIn:
         if genes_df.empty:
             return genes_df
 
-        strand_mask = (genes_df['strand'] != 'reverse') & (genes_df['strand'] != 'forward')
-        genes_df.loc[strand_mask, 'strand'] = None
+        strand_mask = (genes_df['strand'] != REVERSE) & (genes_df['strand'] != FORWARD)
+        genes_df.loc[strand_mask, 'strand'] = UNKNOWN
 
         return genes_df
 

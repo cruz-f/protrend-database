@@ -68,6 +68,10 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
         df = merge_columns(df=df, column='uniprot_accession',
                            left='uniprot_accession_annotation', right='uniprot_accession_regulondb')
 
+        df = df.dropna(subset=['locus_tag'])
+        df = drop_empty_string(df, 'locus_tag')
+        df = drop_duplicates(df, subset=['locus_tag'])
+
         df = df.drop(columns=['input_value'])
 
         self.stack_transformed_nodes(df)

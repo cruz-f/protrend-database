@@ -7,6 +7,7 @@ import pandas as pd
 from w3lib.html import remove_tags
 
 from protrend.utils import SetList
+from protrend.utils.constants import UNKNOWN, ACTIVATION, REPRESSION, DUAL
 from protrend.utils.miscellaneous import is_null
 
 more_pattern = re.compile(r'\s\smore\s\s\s')
@@ -224,13 +225,13 @@ def lower_case(item: str) -> str:
 
 def strand_mode(item):
     if is_null(item):
-        return
+        return UNKNOWN
 
     try:
         m = mode(item)
 
         if is_null(m):
-            return
+            return UNKNOWN
 
         return m
 
@@ -372,109 +373,109 @@ def regulatory_effect_regprecise(items: Sequence[str]) -> Union[None, str]:
     new_items = {item.replace(' ', '') for item in items if not is_null(item)}
 
     if len(new_items) == 0:
-        return 'unknown'
+        return UNKNOWN
 
     if len(new_items) > 1:
-        return 'dual'
+        return DUAL
 
     if 'repressor' in new_items:
-        return 'repression'
+        return REPRESSION
 
     if 'activator' in new_items:
-        return 'activation'
+        return ACTIVATION
 
-    return 'dual'
+    return DUAL
 
 
 def regulatory_effect_collectf(item: str) -> Union[None, str]:
     if is_null(item):
-        return 'unknown'
+        return UNKNOWN
 
     if item.lower() == 'rep':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == 'act':
-        return 'activation'
+        return ACTIVATION
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def regulatory_effect_regulondb(item: str) -> Union[None, str]:
     if is_null(item):
-        return 'unknown'
+        return UNKNOWN
 
     if item.lower() == '-' or item.lower() == 'repressor':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == '+' or item.lower() == 'activator':
-        return 'activation'
+        return ACTIVATION
 
-    if item.lower() == '+-' or item.lower() == 'dual':
-        return 'dual'
+    if item.lower() == '+-' or item.lower() == DUAL:
+        return DUAL
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def regulatory_effect_dbtbs(item: str) -> Union[None, str]:
     if is_null(item):
-        return 'unknown'
+        return UNKNOWN
 
     item = item.rstrip().lstrip()
 
     if item.lower() == 'negative':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == 'positive':
-        return 'activation'
+        return ACTIVATION
 
     if item.lower() == 'promoter' or item.lower() == 'promorter':
-        return 'activation'
+        return ACTIVATION
 
     if item.lower() == 'pos/neg':
-        return 'dual'
+        return DUAL
 
     if item.lower() == 'positive (siga promoter); negative (sige promoter)':
-        return 'dual'
+        return DUAL
 
     if item.lower() == 'negative (sige promoter)':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == 'negative at high mn(ii) concentration':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == 'positive at low mn(ii) concentration':
-        return 'activation'
+        return ACTIVATION
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def regulatory_effect_coryneregnet(item: str) -> Union[None, str]:
     if is_null(item):
-        return 'unknown'
+        return UNKNOWN
 
     if item.lower() == 'repressor':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == 'activator':
-        return 'activation'
+        return ACTIVATION
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def regulatory_effect_abasy(item: str) -> Union[None, str]:
     if is_null(item):
-        return 'unknown'
+        return UNKNOWN
 
     if item.lower() == '-':
-        return 'repression'
+        return REPRESSION
 
     if item.lower() == '+':
-        return 'activation'
+        return ACTIVATION
 
     if item.lower() == '?':
-        return 'unknown'
+        return UNKNOWN
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def _parse_regulatory_effect_literature_bsub(item: str):
@@ -491,20 +492,20 @@ def _parse_regulatory_effect_literature_bsub(item: str):
             is_positive = True
 
     if is_positive and is_negative:
-        return 'dual'
+        return DUAL
 
     if is_positive:
-        return 'activation'
+        return ACTIVATION
 
     if is_negative:
-        return 'repression'
+        return REPRESSION
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def regulatory_effect_literature(item: str) -> Union[None, str]:
     if is_null(item):
-        return 'unknown'
+        return UNKNOWN
 
     item = item.rstrip().lstrip().lower()
 
@@ -512,18 +513,18 @@ def regulatory_effect_literature(item: str) -> Union[None, str]:
         return _parse_regulatory_effect_literature_bsub(item)
 
     if item == '+' or item == 'ind':
-        return 'activation'
+        return ACTIVATION
 
     if item == '-' or item == 'rep':
-        return 'repression'
+        return REPRESSION
 
     if item == '?' or item == '.':
-        return 'unknown'
+        return UNKNOWN
 
     if item == 'd':
-        return 'dual'
+        return DUAL
 
-    return 'unknown'
+    return UNKNOWN
 
 
 def parse_effector_name_regulondb(item: str) -> Union[None, str]:

@@ -3,8 +3,10 @@ import pandas as pd
 from protrend.model import Regulator
 from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors
+from protrend.utils.constants import SIGMA_FACTOR, TRANSCRIPTION_FACTOR, UNKNOWN, TRANSCRIPTION_TERMINATOR, SMALL_RNA
+from protrend.utils.processors import apply_processors, to_str, to_int_str
 
 
 class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
@@ -20,39 +22,39 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
                        'regulatory_effect', 'evidence', 'effector_name',
                        'publication', 'taxonomy', 'source'])
 
-    regulator_mechanisms = {"sigma factor": "sigma factor",
-                            "sigma factor - ECF type": "sigma factor",
-                            "TF": "transcription factor",
-                            "TF-TC": "transcription factor",
-                            "TF+M": "transcription factor",
-                            "TF+unk": "transcription factor",
-                            "TF+PP": "transcription factor",
-                            "TF+PP+M": "transcription factor",
-                            "TF+P": "transcription factor",
-                            "TF+P+M": "transcription factor",
-                            "TF+S": "transcription factor",
-                            "TF-proteolyse": "transcription factor",
-                            "TF+unstability": "transcription factor",
-                            "TF+M+unk": "transcription factor",
-                            "TF+ADN-M": "transcription factor",
-                            "P-PTC": "unknown",
-                            "P-AT+PTS ": "transcription terminator",
-                            "P-AT+M": "transcription terminator",
-                            "P": "unknown",
-                            "Riboswitch": "unknown",
-                            "RNA switch": "unknown",
-                            "Rna-BPA": "unknown",
-                            "small regulatory RNA": "small RNA (sRNA)",
-                            "small RNA - translation": "small RNA (sRNA)",
-                            "RNA-anti antiterminator": "transcription terminator",
-                            "anti-sense RNA": "unknown",
-                            "unk": "unknown",
-                            "Translation regulation": "unknown",
-                            "silico-TF+M": "transcription factor",
-                            "silico-TF+unk": "transcription factor",
-                            "silico RNA switch": "small RNA (sRNA)",
-                            "silico-riboswitch": "small RNA (sRNA)",
-                            "silico-TF+TC": "transcription factor"}
+    regulator_mechanisms = {"sigma factor": SIGMA_FACTOR,
+                            "sigma factor - ECF type": SIGMA_FACTOR,
+                            "TF": TRANSCRIPTION_FACTOR,
+                            "TF-TC": TRANSCRIPTION_FACTOR,
+                            "TF+M": TRANSCRIPTION_FACTOR,
+                            "TF+unk": TRANSCRIPTION_FACTOR,
+                            "TF+PP": TRANSCRIPTION_FACTOR,
+                            "TF+PP+M": TRANSCRIPTION_FACTOR,
+                            "TF+P": TRANSCRIPTION_FACTOR,
+                            "TF+P+M": TRANSCRIPTION_FACTOR,
+                            "TF+S": TRANSCRIPTION_FACTOR,
+                            "TF-proteolyse": TRANSCRIPTION_FACTOR,
+                            "TF+unstability": TRANSCRIPTION_FACTOR,
+                            "TF+M+unk": TRANSCRIPTION_FACTOR,
+                            "TF+ADN-M": TRANSCRIPTION_FACTOR,
+                            "P-PTC": UNKNOWN,
+                            "P-AT+PTS ": TRANSCRIPTION_TERMINATOR,
+                            "P-AT+M": TRANSCRIPTION_TERMINATOR,
+                            "P": UNKNOWN,
+                            "Riboswitch": UNKNOWN,
+                            "RNA switch": UNKNOWN,
+                            "Rna-BPA": UNKNOWN,
+                            "small regulatory RNA": SMALL_RNA,
+                            "small RNA - translation": SMALL_RNA,
+                            "RNA-anti antiterminator": TRANSCRIPTION_TERMINATOR,
+                            "anti-sense RNA": UNKNOWN,
+                            "unk": UNKNOWN,
+                            "Translation regulation": UNKNOWN,
+                            "silico-TF+M": TRANSCRIPTION_FACTOR,
+                            "silico-TF+unk": TRANSCRIPTION_FACTOR,
+                            "silico RNA switch": SMALL_RNA,
+                            "silico-riboswitch": SMALL_RNA,
+                            "silico-TF+TC": TRANSCRIPTION_FACTOR}
 
     def transform_regulator(self, network: pd.DataFrame) -> pd.DataFrame:
         network = self._transform_gene(network, col='regulator_locus_tag')
@@ -78,6 +80,23 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
         annotated_regulators = self.annotate_genes(regulators)
 
         df = self.merge_annotations(annotated_regulators, regulators)
+
+        # the small RNAs might not have any locus tag associated with during the annotation, so we will create new
+        # locus tag composed by the name of sRNA plus the taxonomy identifier
+        fake_ncbi = df['taxonomy'].copy()
+        fake_name = df['name'].copy()
+        fake_str = ' for organism '
+        df = df.assign(fake_name=fake_name, fake_str=fake_str, fake_ncbi=fake_ncbi)
+        df = apply_processors(df, fake_name=to_str, fake_str=to_str, fake_ncbi=to_int_str)
+        fake_loci = df['fake_name'] + df['fake_str'] + df['fake_ncbi']
+
+        loci = df['locus_tag'].fillna(fake_loci)
+        df = df.assign(locus_tag=loci)
+        df = df.drop(columns=['fake_name', 'fake_str', 'fake_ncbi'])
+
+        df = df.dropna(subset=['locus_tag'])
+        df = drop_empty_string(df, 'locus_tag')
+        df = drop_duplicates(df, subset=['locus_tag'])
 
         self.stack_transformed_nodes(df)
         return df

@@ -2,6 +2,7 @@ from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene,
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.utils import SetList, is_null
+from protrend.utils.constants import DATABASE
 from protrend.utils.processors import to_list_nan
 
 
@@ -12,7 +13,7 @@ class SourceTransformer(SourceMixIn, CollecTFTransformer,
                         order=100,
                         register=True):
     name = ['collectf']
-    type = ['database']
+    type = [DATABASE]
     url = ['http://collectf.org/']
     doi = ['10.1093/nar/gkt1123']
     authors = [['Sefa Kiliç', 'Elliot R White', 'Dinara M Sagitova', 'Joseph P Cornish', 'Ivan Erill']]

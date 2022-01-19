@@ -5,6 +5,7 @@ from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer, DBTBSConnector
 from protrend.transform.transformations import drop_empty_string, select_columns, group_by
 from protrend.utils import SetList
+from protrend.utils.constants import UNKNOWN, SIGMA_FACTOR, TRANSCRIPTION_FACTOR
 from protrend.utils.processors import (apply_processors, rstrip, lstrip, take_first, to_list_nan, to_set_list)
 
 
@@ -37,14 +38,14 @@ class RegulatoryFamilyTransformer(DBTBSTransformer,
 
         tf = group_by(df=tf, column='name', aggregation={'tf': to_set_list})
 
-        tf = tf.assign(mechanism=None, rfam=None, description=None)
+        tf = tf.assign(mechanism=None, rfam=None, description=UNKNOWN)
 
         # sigma factors
         tf_sigma_mask = tf['name'] == 'Sigma factors'
-        tf.loc[tf_sigma_mask, 'mechanism'] = 'sigma factor'
+        tf.loc[tf_sigma_mask, 'mechanism'] = SIGMA_FACTOR
 
         # tf mechanism
-        tf.loc[~tf_sigma_mask, 'mechanism'] = 'transcription factor'
+        tf.loc[~tf_sigma_mask, 'mechanism'] = TRANSCRIPTION_FACTOR
         return tf
 
     def transform(self):

@@ -5,6 +5,7 @@ from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, read_c
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
+from protrend.utils.constants import TRANSCRIPTION_FACTOR, SIGMA_FACTOR
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
@@ -34,8 +35,8 @@ class RegulatorTransformer(GeneMixIn, CoryneRegNetTransformer,
                                      ncbi_taxonomy=regulator['taxonomy'].copy(), mechanism=None)
 
         mask = regulator['Is_sigma_factor'] == 'yes'
-        regulator.loc[mask, 'mechanism'] = 'sigma factor'
-        regulator.loc[~mask, 'mechanism'] = 'transcription factor'
+        regulator.loc[mask, 'mechanism'] = SIGMA_FACTOR
+        regulator.loc[~mask, 'mechanism'] = TRANSCRIPTION_FACTOR
 
         regulator = create_input_value(df=regulator, col='locus_tag')
         return regulator

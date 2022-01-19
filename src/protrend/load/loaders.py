@@ -21,7 +21,7 @@ class LiteratureLoader(Loader, source='literature', version='0.0.0', register=Tr
     pass
 
 
-class OperonDBLoader(Loader, source='literature', version='0.0.0', register=True):
+class OperonDBLoader(Loader, source='operondb', version='0.0.0', register=True):
     pass
 
 

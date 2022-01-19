@@ -7,6 +7,7 @@ from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_re
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
+from protrend.utils.constants import TRANSCRIPTION_FACTOR, SIGMA_FACTOR, SMALL_RNA
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
@@ -31,7 +32,7 @@ class RegulatorTransformer(RegulonDBTransformer,
                             'transcription_factor_family')
 
         tf = tf.assign(name_lower=tf['transcription_factor_name'].str.lower(),
-                       mechanism='transcription factor',
+                       mechanism=TRANSCRIPTION_FACTOR,
                        regulator_id=tf['transcription_factor_id'].copy())
 
         tf = apply_processors(tf, name_lower=[rstrip, lstrip])
@@ -47,7 +48,7 @@ class RegulatorTransformer(RegulonDBTransformer,
         sigma = select_columns(sigma, 'sigma_id', 'sigma_gene_id')
 
         sigma = sigma.assign(regulator_id=sigma['sigma_id'].copy(),
-                             mechanism='sigma factor')
+                             mechanism=SIGMA_FACTOR)
 
         sigma = apply_processors(sigma, sigma_gene_id=[rstrip, lstrip])
         sigma = sigma.dropna(subset=['sigma_gene_id'])
@@ -62,7 +63,7 @@ class RegulatorTransformer(RegulonDBTransformer,
         srna = select_columns(srna, 'srna_id', 'srna_gene_id')
 
         srna = srna.assign(regulator_id=srna['srna_gene_id'].copy(),
-                           mechanism='small RNA (sRNA)')
+                           mechanism=SMALL_RNA)
 
         srna = apply_processors(srna, srna_gene_id=[rstrip, lstrip])
         srna = srna.dropna(subset=['srna_gene_id'])

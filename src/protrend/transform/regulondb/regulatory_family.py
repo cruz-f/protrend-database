@@ -5,6 +5,7 @@ from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.regulondb.base import RegulonDBTransformer, RegulonDBConnector, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
+from protrend.utils.constants import TRANSCRIPTION_FACTOR
 from protrend.utils.processors import (apply_processors, rstrip, lstrip)
 
 
@@ -21,7 +22,7 @@ class RegulatoryFamilyTransformer(RegulonDBTransformer,
 
     @staticmethod
     def transform_tf(tf: pd.DataFrame) -> pd.DataFrame:
-        tf = tf.assign(name=tf['transcription_factor_family'].copy(), mechanism='transcription factor',
+        tf = tf.assign(name=tf['transcription_factor_family'].copy(), mechanism=TRANSCRIPTION_FACTOR,
                        description=None)
 
         tf = apply_processors(tf, name=[rstrip, lstrip])
