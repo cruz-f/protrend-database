@@ -372,7 +372,7 @@ def regulatory_effect_regprecise(items: Sequence[str]) -> Union[None, str]:
     new_items = {item.replace(' ', '') for item in items if not is_null(item)}
 
     if len(new_items) == 0:
-        return
+        return 'unknown'
 
     if len(new_items) > 1:
         return 'dual'
@@ -388,7 +388,7 @@ def regulatory_effect_regprecise(items: Sequence[str]) -> Union[None, str]:
 
 def regulatory_effect_collectf(item: str) -> Union[None, str]:
     if is_null(item):
-        return
+        return 'unknown'
 
     if item.lower() == 'rep':
         return 'repression'
@@ -396,12 +396,12 @@ def regulatory_effect_collectf(item: str) -> Union[None, str]:
     if item.lower() == 'act':
         return 'activation'
 
-    return
+    return 'unknown'
 
 
 def regulatory_effect_regulondb(item: str) -> Union[None, str]:
     if is_null(item):
-        return
+        return 'unknown'
 
     if item.lower() == '-' or item.lower() == 'repressor':
         return 'repression'
@@ -412,12 +412,12 @@ def regulatory_effect_regulondb(item: str) -> Union[None, str]:
     if item.lower() == '+-' or item.lower() == 'dual':
         return 'dual'
 
-    return
+    return 'unknown'
 
 
 def regulatory_effect_dbtbs(item: str) -> Union[None, str]:
     if is_null(item):
-        return
+        return 'unknown'
 
     item = item.rstrip().lstrip()
 
@@ -445,12 +445,12 @@ def regulatory_effect_dbtbs(item: str) -> Union[None, str]:
     if item.lower() == 'positive at low mn(ii) concentration':
         return 'activation'
 
-    return
+    return 'unknown'
 
 
 def regulatory_effect_coryneregnet(item: str) -> Union[None, str]:
     if is_null(item):
-        return
+        return 'unknown'
 
     if item.lower() == 'repressor':
         return 'repression'
@@ -458,12 +458,12 @@ def regulatory_effect_coryneregnet(item: str) -> Union[None, str]:
     if item.lower() == 'activator':
         return 'activation'
 
-    return
+    return 'unknown'
 
 
 def regulatory_effect_abasy(item: str) -> Union[None, str]:
     if is_null(item):
-        return
+        return 'unknown'
 
     if item.lower() == '-':
         return 'repression'
@@ -474,7 +474,7 @@ def regulatory_effect_abasy(item: str) -> Union[None, str]:
     if item.lower() == '?':
         return 'unknown'
 
-    return
+    return 'unknown'
 
 
 def _parse_regulatory_effect_literature_bsub(item: str):
@@ -504,7 +504,7 @@ def _parse_regulatory_effect_literature_bsub(item: str):
 
 def regulatory_effect_literature(item: str) -> Union[None, str]:
     if is_null(item):
-        return
+        return 'unknown'
 
     item = item.rstrip().lstrip().lower()
 
@@ -523,7 +523,7 @@ def regulatory_effect_literature(item: str) -> Union[None, str]:
     if item == 'd':
         return 'dual'
 
-    return
+    return 'unknown'
 
 
 def parse_effector_name_regulondb(item: str) -> Union[None, str]:
