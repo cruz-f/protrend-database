@@ -1,21 +1,23 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict, Any, Union, Type, Tuple
+from typing import List, Dict, Any, Union, Type
 
 import pandas as pd
 import pytz
-from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager)
-from neomodel.relationship import StructuredRel
+from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager,
+                      IntegerProperty, ArrayProperty)
 from tqdm import tqdm
 
+from .utils import choices, help_text, _sort_nodes
+from protrend.utils.processors import to_str, rstrip, lstrip, lower_case, to_nan
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
 
 
-class Node(StructuredNode):
+class BaseNode(StructuredNode):
     __abstract_node__ = True
 
     uid = UniqueIdProperty()
-    protrend_id = StringProperty(required=True)
+    protrend_id = StringProperty(required=True, unique_index=True)
     created = DateTimeProperty(default_now=True)
     updated = DateTimeProperty(default_now=True)
 
@@ -24,7 +26,7 @@ class Node(StructuredNode):
     entity = 'PRT'
     node_factors = {}
 
-    node_register: Dict[str, Type['Node']] = {}
+    node_register: Dict[str, Type['BaseNode']] = {}
 
     def __init_subclass__(cls, **kwargs):
         cls.node_register[cls.node_name()] = cls
@@ -57,7 +59,7 @@ class Node(StructuredNode):
         return cls.node_properties().items()
 
     @classmethod
-    def last_node(cls) -> Union['Node', None]:
+    def last_node(cls) -> Union['BaseNode', None]:
         nodes = cls.nodes.all()
         if nodes:
             sorted_nodes = sorted(nodes, key=_sort_nodes, reverse=True)
@@ -71,7 +73,7 @@ class Node(StructuredNode):
     @classmethod
     def node_from_dict(cls,
                        *nodes: Dict[str, Any],
-                       save: bool = False) -> List['Node']:
+                       save: bool = False) -> List['BaseNode']:
 
         structured_nodes = []
         node_keys = list(cls.node_keys())
@@ -95,7 +97,7 @@ class Node(StructuredNode):
     @classmethod
     def node_update_from_dict(cls,
                               *nodes: Dict[str, Any],
-                              save: bool = False) -> List['Node']:
+                              save: bool = False) -> List['BaseNode']:
 
         structured_nodes = []
         node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
@@ -127,7 +129,7 @@ class Node(StructuredNode):
         return structured_nodes
 
     @classmethod
-    def node_to_dict(cls, to: str = 'dict') -> Union[Dict[str, Any], Dict[str, 'Node']]:
+    def node_to_dict(cls, to: str = 'dict') -> Union[Dict[str, Any], Dict[str, 'BaseNode']]:
 
         if to == 'dict':
             res = defaultdict(list)
@@ -154,7 +156,7 @@ class Node(StructuredNode):
     @classmethod
     def node_from_df(cls,
                      nodes: pd.DataFrame,
-                     save: bool = False) -> List['Node']:
+                     save: bool = False) -> List['BaseNode']:
 
         structured_nodes = []
         node_keys = list(cls.node_keys())
@@ -179,7 +181,7 @@ class Node(StructuredNode):
     @classmethod
     def node_update_from_df(cls,
                             nodes: pd.DataFrame,
-                            save: bool = False) -> List['Node']:
+                            save: bool = False) -> List['BaseNode']:
 
         structured_nodes = []
         node_keys = [key for key in cls.node_keys() if key != cls.identifying_property]
@@ -249,59 +251,35 @@ class Node(StructuredNode):
         return pd.DataFrame(data=data, columns=self.keys())
 
 
-def _sort_nodes(node: Node):
-    return protrend_id_decoder(node.protrend_id)
+class RequiredNameMixIn:
+    node_factors = {'name': [to_str, lower_case, rstrip, lstrip, to_nan]}
+
+    # properties
+    name = StringProperty(required=True, max_length=250, help_text=help_text.required_name)
 
 
-def protrend_id_encoder(header: str, entity: str, integer: Union[str, int]) -> str:
-    integer = int(integer)
-
-    return f'{header}.{entity}.{integer:07}'
+class SequenceMixIn:
+    sequence = StringProperty(help_text=help_text.sequence)
 
 
-def protrend_id_decoder(protrend_id: Union[str, StringProperty]) -> int:
-    prt, entity, integer = protrend_id.split('.')
-
-    return int(integer)
-
-
-def get_node_by_name(name: str, default=None) -> Union[Type[Node], None]:
-    return Node.node_register.get(name, default)
+class PositionMixIn:
+    strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
+    start = IntegerProperty(help_text=help_text.start)
+    stop = IntegerProperty(help_text=help_text.stop)
 
 
-def _find_to_node(relationship: RelationshipManager) -> Type[Node]:
-    return relationship.definition['node_class']
+class GeneMixIn:
+    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
-
-def get_nodes_relationships(from_node: Type[Node], to_node: Type[Node]) -> Tuple[List[str], List[str]]:
-    from_node_rels = from_node.node_relationships()
-    from_node_matches = []
-    for attr, relationship in from_node_rels.items():
-
-        this_to_node = _find_to_node(relationship)
-        if this_to_node.node_name() == to_node.node_name():
-            from_node_matches.append(attr)
-
-    to_node_rels = to_node.node_relationships()
-    to_node_matches = []
-    for attr, relationship in to_node_rels.items():
-
-        this_from_node = _find_to_node(relationship)
-        if this_from_node.node_name() == from_node.node_name():
-            to_node_matches.append(attr)
-
-    return from_node_matches, to_node_matches
-
-
-def connect_nodes(from_node: Node, to_node: Node, relationship: str, kwargs: dict) -> bool:
-    relationship: RelationshipManager = getattr(from_node, relationship, None)
-    relationship_model: StructuredRel = relationship.definition['model']
-
-    if kwargs:
-        kwargs = {key: val for key, val in kwargs.items()
-                  if hasattr(relationship_model, key)}
-
-    else:
-        kwargs = {}
-
-    return relationship.connect(to_node, kwargs)
+    # properties
+    locus_tag = StringProperty(required=True, max_length=50, help_text=help_text.locus_tag)
+    uniprot_accession = StringProperty(max_length=50, help_text=help_text.uniprot_accession)
+    name = StringProperty(max_length=50, help_text=help_text.gene_name)
+    synonyms = ArrayProperty(StringProperty(), help_text=help_text.synonyms)
+    function = StringProperty(help_text=help_text.function)
+    description = StringProperty(help_text=help_text.description)
+    ncbi_gene = IntegerProperty(max_length=50, help_text=help_text.ncbi_gene)
+    ncbi_protein = IntegerProperty(max_length=50, help_text=help_text.ncbi_protein)
+    genbank_accession = StringProperty(max_length=50, help_text=help_text.genbank_accession)
+    refseq_accession = StringProperty(max_length=50, help_text=help_text.refseq_accession)

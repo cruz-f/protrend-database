@@ -39,7 +39,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, AbasyTransfor
 
         network = network.assign(regulator_taxonomy=regulator_taxonomy,
                                  gene_taxonomy=gene_taxonomy)
-        network = network.rename(columns={'Effect': 'regulatory_effect'})
+        network = network.rename(columns={'Effect': 'regulatory_effect', 'regulator': 'regulator_abasy'})
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:

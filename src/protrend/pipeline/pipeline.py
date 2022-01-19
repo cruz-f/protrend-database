@@ -245,7 +245,7 @@ class Pipeline:
 
     @classmethod
     def for_tc(cls, source: str, version: str) -> 'Pipeline':
-        transformers, connectors, loaders = cls._for_tcl(source=source, version=version)
+        transformers, connectors = cls._for_tc(source=source, version=version)
         return cls(transformers=transformers, connectors=connectors)
 
     @classmethod

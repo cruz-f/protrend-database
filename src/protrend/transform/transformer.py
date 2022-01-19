@@ -7,8 +7,8 @@ import neo4j.exceptions
 import pandas as pd
 
 from protrend.io import write_json_frame
-from protrend.model.node import Node, protrend_id_decoder, protrend_id_encoder
-from protrend.utils import Settings, DefaultProperty, SetList, Stack
+from protrend.model import BaseNode, protrend_id_decoder, protrend_id_encoder
+from protrend.utils import Settings, DefaultProperty, SetList
 from protrend.utils.processors import apply_processors
 from .transformations import drop_empty_string, drop_duplicates
 
@@ -99,7 +99,7 @@ class Transformer(AbstractTransformer):
     def __init__(self,
                  source: str = None,
                  version: str = None,
-                 node: Type[Node] = None,
+                 node: Type[BaseNode] = None,
                  order: int = None):
 
         """
@@ -115,7 +115,7 @@ class Transformer(AbstractTransformer):
 
         :type source: str
         :type version: str
-        :type node: Type[Node]
+        :type node: Type[BaseNode]
         :type order: int
 
         :param source: The name of the data source in the staging area (e.g. regprecise, collectf, etc)
@@ -271,13 +271,9 @@ class Transformer(AbstractTransformer):
     # Utilities
     # ----------------------------------------
     @classmethod
-    def infer_write_stack(cls) -> Stack:
+    def nodes_file(cls):
         node_name = cls.node.get_default(cls).node_name()
-        write_stack = Stack(transformed=f'transformed_{node_name}',
-                            integrated=f'integrated_{node_name}',
-                            nodes=f'nodes_{node_name}',
-                            connected=None)
-        return write_stack
+        return f'nodes_{node_name}.json'
 
     def empty_frame(self) -> pd.DataFrame:
         cols = [col for col in self.columns if col != 'protrend_id']
@@ -296,13 +292,16 @@ class Transformer(AbstractTransformer):
         self._write_stack.append(json_partial)
 
     def stack_nodes(self, df: pd.DataFrame):
+        df = df.copy()
+        df = df.reset_index(drop=True)
+
         if df.empty:
             df = self.integrated_empty_frame()
 
         else:
             df.loc[:, 'node'] = self.node.node_name()
 
-        node_cols = self.node_factors_keys + ['load', 'what', 'node']
+        node_cols = list(self.node.node_keys()) + ['load', 'what', 'node']
         cols_to_drop = [col for col in df.columns if col not in node_cols]
         df = df.drop(columns=cols_to_drop)
 
@@ -310,6 +309,9 @@ class Transformer(AbstractTransformer):
         self.stack_json(df_name, df)
 
     def stack_integrated_nodes(self, df: pd.DataFrame):
+        df = df.copy()
+        df = df.reset_index(drop=True)
+
         if df.empty:
             df = self.integrated_empty_frame()
 
@@ -320,6 +322,9 @@ class Transformer(AbstractTransformer):
         self.stack_json(df_name, df)
 
     def stack_transformed_nodes(self, df: pd.DataFrame):
+        df = df.copy()
+        df = df.reset_index(drop=True)
+
         if df.empty:
             df = self.empty_frame()
         df_name = f'transformed_{self.node.node_name()}'

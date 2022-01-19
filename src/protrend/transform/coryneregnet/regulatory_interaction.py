@@ -62,6 +62,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, CoryneRegNetT
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = select_columns(tfbs, 'protrend_id', 'TF_locusTag', 'TG_locusTag', 'Binding_site', 'taxonomy')
+        tfbs = apply_processors(tfbs, taxonomy=to_int_str)
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
 
         tfbs_id = tfbs['TF_locusTag'] + tfbs['TG_locusTag'] + tfbs['Binding_site'] + tfbs['taxonomy']

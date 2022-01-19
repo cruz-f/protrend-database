@@ -3,7 +3,7 @@ import pandas as pd
 from protrend.model import Publication, Organism, Regulator, Gene, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector, read_literature_networks
 from protrend.transform.mix_ins import PublicationMixIn
-from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, rstrip, lstrip
 
@@ -41,6 +41,8 @@ class PublicationTransformer(PublicationMixIn, LiteratureTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_literature'))
+
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_literature')
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         df = df.drop(columns=['input_value'])
@@ -73,8 +75,8 @@ class PublicationConnector(LiteratureConnector, register=False):
                                                      target_column='protrend_id',
                                                      source_on='publication',
                                                      target_on='publication',
-                                                     source_processors={'publication': [to_list_nan]},
-                                                     target_processors={'publication': [to_list_nan]})
+                                                     source_processors={'publication': [to_list_nan, to_int_str]},
+                                                     target_processors={'publication': [to_list_nan, to_int_str]})
         source_df = source_df.explode('publication')
         source_df = apply_processors(source_df, publication=[rstrip, lstrip])
 

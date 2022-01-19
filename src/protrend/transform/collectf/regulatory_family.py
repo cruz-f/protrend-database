@@ -5,7 +5,7 @@ from protrend.model import RegulatoryFamily, Regulator
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.transformations import select_columns, group_by
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, rstrip, lstrip, flatten_set_list, to_list_nan
+from protrend.utils.processors import apply_processors, rstrip, lstrip, flatten_set_list_nan, to_list_nan
 
 
 class RegulatoryFamilyTransformer(CollecTFTransformer,
@@ -22,7 +22,7 @@ class RegulatoryFamilyTransformer(CollecTFTransformer,
         tf = apply_processors(tf, family=[rstrip, lstrip], regulon=to_list_nan)
         tf = select_columns(tf, 'family', 'regulon')
 
-        tf = group_by(df=tf, column='family', aggregation={}, default=flatten_set_list)
+        tf = group_by(df=tf, column='family', aggregation={}, default=flatten_set_list_nan)
         tf = tf.rename(columns={'family': 'name'})
         tf = tf.assign(mechanism='transcription factor', description=None)
         return tf

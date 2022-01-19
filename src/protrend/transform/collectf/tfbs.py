@@ -8,7 +8,7 @@ from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import select_columns, drop_empty_string, group_by
 from protrend.utils import SetList, is_null
-from protrend.utils.processors import (apply_processors, flatten_set_list, to_set_list, to_list_nan, lstrip, rstrip,
+from protrend.utils.processors import (apply_processors, flatten_set_list_nan, to_set_list, to_list_nan, lstrip, rstrip,
                                        take_first)
 
 
@@ -43,8 +43,8 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
 
         tfbs = pd.merge(tfbs, regulator, left_on='regulon', right_on='uniprot_accession')
 
-        aggr = {'pubmed': flatten_set_list, 'regulon': to_set_list, 'operon': flatten_set_list,
-                'experimental_evidence': flatten_set_list, 'gene': flatten_set_list}
+        aggr = {'pubmed': flatten_set_list_nan, 'regulon': to_set_list, 'operon': flatten_set_list_nan,
+                'experimental_evidence': flatten_set_list_nan, 'gene': flatten_set_list_nan}
         tfbs = group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_first)
         tfbs = tfbs.rename(columns={'organism_protrend_id': 'organism'})
         return tfbs
@@ -79,7 +79,7 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
         return tfbs
 
     def transform(self):
-        tfbs = read(source=self.source, version=self.version, file='tfbs',
+        tfbs = read(source=self.source, version=self.version, file='TFBS.json',
                     reader=read_json_lines,
                     default=pd.DataFrame(
                         columns=['tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',

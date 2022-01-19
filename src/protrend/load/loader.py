@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
-from protrend.model.node import get_node_by_name, get_nodes_relationships, connect_nodes
+from protrend.model import get_node_by_name, get_nodes_relationships, connect_nodes
 from protrend.utils import DefaultProperty, build_file_path
 
 
@@ -19,13 +19,13 @@ def load_stack_from_source_version(source, version) -> List[str]:
     connectors = Pipeline.default_connectors.get((source, version), [])
 
     for transformer in transformers:
-        write_stack = transformer.infer_write_stack()
-        nodes = build_file_path(source=source, version=version, file=write_stack.nodes)
+        file = transformer.nodes_file()
+        nodes = build_file_path(source=source, version=version, file=file)
         load_stack.append(nodes)
 
     for connector in connectors:
-        write_stack = connector.infer_write_stack()
-        connections = build_file_path(source=source, version=version, file=write_stack.connected)
+        file = connector.connected_file()
+        connections = build_file_path(source=source, version=version, file=file)
         load_stack.append(connections)
 
     return load_stack

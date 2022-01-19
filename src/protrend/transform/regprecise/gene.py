@@ -10,7 +10,7 @@ from protrend.transform.transformations import (select_columns, drop_empty_strin
                                                 merge_columns)
 from protrend.utils import SetList
 from protrend.utils.processors import (rstrip, lstrip, apply_processors, take_last,
-                                       flatten_set_list, to_int_str, to_list_nan, to_set_list)
+                                       flatten_set_list_nan, to_int_str, to_list_nan, to_set_list)
 
 
 class GeneTransformer(GeneMixIn, RegPreciseTransformer,
@@ -45,7 +45,7 @@ class GeneTransformer(GeneMixIn, RegPreciseTransformer,
 
         aggregation = {'name': take_last, 'function': take_last, 'url': to_set_list,
                        'regprecise_locus_tag': to_set_list}
-        gene = group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
+        gene = group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list_nan)
 
         gene = gene.explode('regulon')
         gene = apply_processors(gene, regulon=to_int_str)
@@ -54,7 +54,7 @@ class GeneTransformer(GeneMixIn, RegPreciseTransformer,
         gene = pd.merge(gene, regulator, on='regulon')
 
         aggregation = {'name': take_last, 'function': take_last, 'ncbi_taxonomy': take_last, 'regulon': to_set_list}
-        gene = group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list)
+        gene = group_by(df=gene, column='locus_tag', aggregation=aggregation, default=flatten_set_list_nan)
 
         gene = create_input_value(df=gene, col='locus_tag')
         return gene

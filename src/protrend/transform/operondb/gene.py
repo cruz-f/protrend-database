@@ -13,6 +13,20 @@ from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_list_nan
 
 
+def _get_organism_from_gene(gene_node):
+    organism_relationships = gene_node.organism.all()
+
+    if organism_relationships:
+        organism = organism_relationships[0]
+
+        if organism.ncbi_taxonomy:
+            return organism.protrend_id, organism.ncbi_taxonomy
+
+        return organism.protrend_id, organism.name
+
+    return None, None
+
+
 class GeneTransformer(GeneMixIn, OperonDBTransformer,
                       source='operondb',
                       version='0.0.0',
@@ -49,20 +63,6 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
         return operon
 
     def fetch_gene(self) -> pd.DataFrame:
-
-        def get_organism(gene_node):
-            organism_relationships = gene_node.organism.all()
-
-            if organism_relationships:
-                organism = organism_relationships[0]
-
-                if organism.ncbi_taxonomy:
-                    return organism.protrend_id, organism.ncbi_taxonomy
-
-                return organism.protrend_id, organism.name
-
-            return None, None
-
         try:
             genes = defaultdict(list)
             nodes = self.node.nodes.all()
@@ -73,16 +73,21 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
                     val = node_properties.get(key, None)
                     genes[key].append(val)
 
-                organism_id, organism_taxonomy = get_organism(node)
+                organism_id, organism_taxonomy = _get_organism_from_gene(node)
                 genes['organism'].append(organism_id)
                 genes['ncbi_taxonomy'].append(organism_taxonomy)
 
-            genes = pd.DataFrame.from_dict(genes)
+            df = pd.DataFrame.from_dict(genes)
+
+            if df.empty:
+                cols = list(self.node.node_keys()) + ['ncbi_taxonomy', 'organism']
+                df = pd.DataFrame(columns=cols)
+
+            return df
 
         except (Neo4jError, DriverError):
             cols = list(self.node.node_keys()) + ['ncbi_taxonomy', 'organism']
-            genes = pd.DataFrame(columns=cols)
-        return genes
+            return pd.DataFrame(columns=cols)
 
     @staticmethod
     def merge_operon_gene(operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:

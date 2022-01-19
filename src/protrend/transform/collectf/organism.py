@@ -10,7 +10,7 @@ from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.transformations import (merge_columns, create_input_value, drop_duplicates, group_by,
                                                 drop_empty_string)
 from protrend.utils import SetList, is_null
-from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list, \
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list_nan, \
     to_set_list
 
 
@@ -49,7 +49,7 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
         organism = drop_empty_string(organism, 'name')
 
         aggregation = {'genome_accession': take_last, 'taxonomy': take_last, 'collectf_name': to_set_list}
-        organism = group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list)
+        organism = group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list_nan)
 
         organism = apply_processors(organism, genome_accession=[rstrip, lstrip], taxonomy=to_int_str)
         organism = drop_duplicates(df=organism, subset=['genome_accession', 'name'])

@@ -36,6 +36,11 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
                                           'effector': 'effector_id', 'gene': 'tg_gene', 'tfbs': 'tfbs_id'})
         return network
 
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = select_columns(organism, 'protrend_id', 'genome_id')
+        organism = organism.rename(columns={'protrend_id': 'organism', 'genome_id': 'genome'})
+        return organism
+
     def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
         effector = select_columns(effector, 'protrend_id', 'effector_id')
         effector = effector.rename(columns={'protrend_id': 'effector'})

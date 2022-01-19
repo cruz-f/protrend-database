@@ -7,13 +7,14 @@ from protrend.pipeline import Pipeline
 from protrend.utils import NeoDatabase
 
 
-def run_database(install_labels: bool = False,
-                 clear_constraints: bool = False,
-                 clear_indexes: bool = False,
-                 user_name: str = None,
+def run_database(user_name: str = None,
                  password: str = None,
                  ip: str = None,
-                 port: str = None):
+                 port: str = None,
+                 install_all_labels: bool = False,
+                 clear_db: bool = False,
+                 constraints: bool = False,
+                 indexes: bool = False):
 
     if not user_name:
         user_name = Settings.db_user_name
@@ -27,17 +28,17 @@ def run_database(install_labels: bool = False,
     if not port:
         port = Settings.db_port
 
-    ProtrendLogger.log.info(f'Starting database {user_name} with {ip}:{port}')
+    ProtrendLogger.log.info(f'Connecting to database {user_name} with {ip}:{port}')
     neo_db = NeoDatabase(user_name=user_name, password=password, ip=ip, port=port)
     neo_db.connect()
 
-    if install_labels:
+    if clear_db:
+        ProtrendLogger.log.info(f'Database cleansing with constraints: {constraints} and indexes: {indexes}')
+        neo_db.clear_db(clear_constraints=constraints, clear_indexes=indexes)
+
+    if install_all_labels:
         ProtrendLogger.log.info(f'Installing new database labels')
         neo_db.auto_install_labels()
-
-    if clear_constraints or clear_indexes:
-        ProtrendLogger.log.info(f'Clearing old database constraints or indexes')
-        neo_db.clear_db(clear_constraints=clear_constraints, clear_indexes=clear_indexes)
 
     return
 
@@ -124,55 +125,55 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
-    run_logger('tc_logger')
-    # run_database(install_labels=True, clear_constraints=True, clear_indexes=True)
+    run_logger('tcl_logger')
+    run_database(install_all_labels=True, clear_db=True, constraints=True, indexes=True)
 
     # ORDER MATTERS!!!!!!!!!!!!!
 
-    # ----------------------------------------------------
-    # CollecTF
-    # ----------------------------------------------------
-    # run_logger('collectf_logger')
-    run_pipeline(source='collectf', version='0.0.1', load=False)
+    # # ----------------------------------------------------
+    # # CollecTF
+    # # ----------------------------------------------------
+    # # run_logger('collectf_logger')
+    run_pipeline(source='collectf', version='0.0.1')
 
     # ----------------------------------------------------
     # RegPrecise
     # ----------------------------------------------------
-    # run_logger('regprecise_logger')
-    run_pipeline(source='regprecise', version='0.0.0', load=False)
-
-    # ----------------------------------------------------
-    # Abasy
-    # ----------------------------------------------------
-    # run_logger('abasy_logger')
-    run_pipeline(source='abasy', version='0.0.0', load=False)
-
-    # ----------------------------------------------------
-    # Literature
-    # ----------------------------------------------------
-    # run_logger('literature_logger')
-    run_pipeline(source='literature', version='0.0.0', load=False)
-
-    # ----------------------------------------------------
-    # CoryneRegNet
-    # ----------------------------------------------------
-    # run_logger('coryneregnet_logger')
-    run_pipeline(source='coryneregnet', version='0.0.0', load=False)
-
-    # ----------------------------------------------------
-    # DBTBS
-    # ----------------------------------------------------
-    # run_logger('dbtbs_logger')
-    run_pipeline(source='dbtbs', version='0.0.4', load=False)
-
-    # ----------------------------------------------------
-    # RegulonDB
-    # ----------------------------------------------------
-    # run_logger('regulondb_logger')
-    run_pipeline(source='regulondb', version='0.0.0', load=False)
-
-    # ----------------------------------------------------
-    # OperonDB
-    # ----------------------------------------------------
-    # run_logger('operondb_logger')
-    run_pipeline(source='operondb', version='0.0.0', load=False)
+    # # run_logger('regprecise_logger')
+    # run_pipeline(source='regprecise', version='0.0.0', transform=False, connect=True)
+    #
+    # # ----------------------------------------------------
+    # # Abasy
+    # # ----------------------------------------------------
+    # # run_logger('abasy_logger')
+    # run_pipeline(source='abasy', version='0.0.0', transform=False, connect=False)
+    #
+    # # ----------------------------------------------------
+    # # Literature
+    # # ----------------------------------------------------
+    # # run_logger('literature_logger')
+    # run_pipeline(source='literature', version='0.0.0', transform=False, connect=False)
+    #
+    # # ----------------------------------------------------
+    # # CoryneRegNet
+    # # ----------------------------------------------------
+    # # run_logger('coryneregnet_logger')
+    # run_pipeline(source='coryneregnet', version='0.0.0', transform=False, connect=False)
+    #
+    # # ----------------------------------------------------
+    # # DBTBS
+    # # ----------------------------------------------------
+    # # run_logger('dbtbs_logger')
+    # run_pipeline(source='dbtbs', version='0.0.4', transform=False, connect=False)
+    #
+    # # ----------------------------------------------------
+    # # RegulonDB
+    # # ----------------------------------------------------
+    # # run_logger('regulondb_logger')
+    # run_pipeline(source='regulondb', version='0.0.0', transform=False, connect=False)
+    #
+    # # ----------------------------------------------------
+    # # OperonDB
+    # # ----------------------------------------------------
+    # # run_logger('operondb_logger')
+    # run_pipeline(source='operondb', version='0.0.0')

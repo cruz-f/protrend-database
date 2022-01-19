@@ -211,8 +211,8 @@ def filter_paer_names(df: pd.DataFrame, col: str) -> pd.DataFrame:
     df = df.copy()
     mask = (~ df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
     df = df[mask]
-    df = df.rename(columns={col: 'name'})
-    df = df.assign(**{col: None})
+    names = df[col].copy()
+    df = df.assign(**{col: None, 'name': names})
     df = df.reset_index(drop=True)
     return df
 
@@ -278,6 +278,9 @@ class LiteratureTransformer(Transformer, register=False):
 
     @staticmethod
     def _transform_gene(network: pd.DataFrame, col: str) -> pd.DataFrame:
+        network = network.dropna(subset=[col])
+        network = drop_empty_string(network, col)
+
         network = network.assign(locus_tag=network[col].copy(), name=None)
 
         network = apply_processors(network, locus_tag=to_set_list)
@@ -296,8 +299,8 @@ class LiteratureTransformer(Transformer, register=False):
         network = pd.concat(filtered_networks)
         network = network.reset_index(drop=True)
 
-        gene_input_value = network['locus_tag'] + network['taxonomy']
-        network = network.assign(input_value=gene_input_value)
+        input_value = network[col] + network['taxonomy']
+        network = network.assign(input_value=input_value)
         return network
 
     @staticmethod

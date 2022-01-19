@@ -1,13 +1,13 @@
 from typing import Dict, Callable, List
 
 from protrend.io.utils import read_source, read_rfam
-from protrend.model.model import (Source, Effector, Gene, Organism, Pathway, Regulator, RegulatoryFamily,
-                                  RegulatoryInteraction, TFBS)
+from protrend.model import (Source, Effector, Gene, Organism, Pathway, Regulator, RegulatoryFamily,
+                            RegulatoryInteraction, TFBS)
 from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.regulatory_family import RegulatoryFamilyTransformer
 from protrend.utils import SetList
-from protrend.utils.processors import to_list_nan
+from protrend.utils.processors import to_list_nan, take_first
 
 
 class SourceTransformer(SourceMixIn, RegPreciseTransformer,
@@ -35,17 +35,13 @@ class SourceConnector(RegPreciseConnector, register=False):
                  target_processors: Dict[str, List[Callable]],
                  url: str,
                  external_identifier: str,
-                 key: str,
-                 explode: str = None):
+                 key: str):
         source_df, target_df = self.transform_stacks(source='source',
                                                      target=target,
                                                      source_column='protrend_id',
                                                      target_column='protrend_id',
                                                      source_processors={},
                                                      target_processors=target_processors)
-
-        if explode:
-            target_df = target_df.explode(explode)
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           cardinality='one_to_many')
@@ -83,9 +79,8 @@ class SourceToGeneConnector(SourceConnector,
                             register=True):
 
     def connect(self):
-        df = self._connect(target='gene', target_processors={'regulon': [to_list_nan]},
-                           url='url', external_identifier='regulon', key='effector_id',
-                           explode='regulon')
+        df = self._connect(target='gene', target_processors={'regulon': [to_list_nan, take_first]},
+                           url='url', external_identifier='regulon', key='effector_id')
         self.stack_connections(df)
 
 
@@ -191,7 +186,6 @@ class SourceToTFBSConnector(SourceConnector,
                             register=True):
 
     def connect(self):
-        df = self._connect(target='tfbs', target_processors={'regulon': [to_list_nan]},
-                           url='url', external_identifier='regulon', key='regulon_id',
-                           explode='regulon')
+        df = self._connect(target='tfbs', target_processors={'regulon': [to_list_nan, take_first]},
+                           url='url', external_identifier='regulon', key='regulon_id')
         self.stack_connections(df)

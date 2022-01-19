@@ -137,8 +137,8 @@ class PublicationToRegulatoryInteractionConnector(PublicationConnector,
                                                   register=True):
 
     def connect(self):
-        regulator_df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='regulator_id')
-        gene_df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='gene_id')
+        regulator_df = self._connect(target='regulator', obj_ev_pub_col='object_id', target_col='regulator_id')
+        gene_df = self._connect(target='gene', obj_ev_pub_col='object_id', target_col='gene_id')
         tfbs_df = self._connect(target='tfbs', obj_ev_pub_col='object_id', target_col='site_id')
         df = pd.concat([regulator_df, gene_df, tfbs_df])
         df = df.reset_index(drop=True)

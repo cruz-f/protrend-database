@@ -13,7 +13,7 @@ from protrend.transform.regprecise.gene import GeneTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.transformations import select_columns, group_by, drop_empty_string
 from protrend.utils import SetList
-from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, flatten_set_list,
+from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, flatten_set_list_nan,
                                        to_set_list, to_list_nan, take_last, strand_mode, start_forward, start_reverse)
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
@@ -93,9 +93,9 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
                 'score': take_last,
                 'sequence': take_last,
                 'url': take_last,
-                'regulon': flatten_set_list,
-                'operon': flatten_set_list,
-                'gene': flatten_set_list}
+                'regulon': flatten_set_list_nan,
+                'operon': flatten_set_list_nan,
+                'gene': flatten_set_list_nan}
         tfbs = group_by(df=tfbs, column='tfbs_id', aggregation=aggr)
 
         ri = tfbs.drop(columns=['sequence', 'position'])

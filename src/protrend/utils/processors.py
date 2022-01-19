@@ -29,7 +29,7 @@ def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callab
 
     """
 
-    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan, protrend_hash)
+    handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan, flatten_set_list_nan, protrend_hash)
 
     new_columns = {}
 
@@ -120,7 +120,7 @@ def to_set_list(item: Any) -> SetList:
 
 def to_nan(item: Any) -> Union[None, Any]:
     if is_null(item):
-        return None
+        return
 
     return item
 
@@ -141,10 +141,23 @@ def to_list_nan(item: Any) -> list:
 
 
 def flatten_list(items):
-    return [i for arg in items for i in arg]
+    try:
+        res = []
+        for item in items:
+            try:
+                for sub_item in item:
+                    res.append(sub_item)
+
+            except TypeError:
+                continue
+
+        return res
+
+    except TypeError:
+        return []
 
 
-def flatten_set_list(items):
+def flatten_set_list_nan(items):
     flatten_lst = flatten_list(items=items)
     return SetList(flatten_lst)
 
@@ -155,13 +168,13 @@ def take_last(items: Sequence[Any]) -> Any:
             return items.iloc[-1]
 
         except IndexError:
-            return None
+            return
 
     try:
         return items[-1]
 
     except IndexError:
-        return None
+        return
 
 
 def take_first(items: Sequence[Any]) -> Any:

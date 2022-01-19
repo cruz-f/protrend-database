@@ -6,8 +6,8 @@ from typing import List, Type, Dict, Tuple, Callable
 import pandas as pd
 
 from protrend.io import read_json_frame, write_json_frame, read
-from protrend.model import Node
-from protrend.utils import Settings, Stack, DefaultProperty, SetList
+from protrend.model import BaseNode
+from protrend.utils import Settings, DefaultProperty, SetList
 from protrend.utils.processors import apply_processors
 
 
@@ -95,8 +95,8 @@ class Connector(AbstractConnector):
     def __init__(self,
                  source: str = None,
                  version: str = None,
-                 from_node: Type[Node] = None,
-                 to_node: Type[Node] = None):
+                 from_node: Type[BaseNode] = None,
+                 to_node: Type[BaseNode] = None):
         """
         The connector object uses results obtained during the transformation procedures
         for a given neomodel node entity.
@@ -110,7 +110,7 @@ class Connector(AbstractConnector):
 
         :type source: str
         :type version: str
-        :type from_node: Type[Node]
+        :type from_node: Type[BaseNode]
         :type to_node: Type[Node]
 
         :param source: The name of the data source in the data lake (e.g. regprecise, collectf, etc)
@@ -197,19 +197,16 @@ class Connector(AbstractConnector):
     # Utilities
     # ----------------------------------------
     @classmethod
-    def infer_write_stack(cls) -> Stack:
-        file_name = f'connected_{cls.from_node.get_default(cls).node_name()}_{cls.to_node.get_default(cls).node_name()}'
-        write_stack = Stack(transformed=None,
-                            integrated=None,
-                            nodes=None,
-                            connected=file_name)
-        return write_stack
+    def connected_file(cls):
+        from_node_name = cls.from_node.get_default(cls).node_name()
+        to_node_name = cls.to_node.get_default(cls).node_name()
+        return f'connected_{from_node_name}_{to_node_name}.json'
 
     def stack_connections(self, df: pd.DataFrame):
-        name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}'
         df = df.copy()
         df = df.reset_index(drop=True)
-        fp = os.path.join(self.write_path, f'{name}.json')
+        file_name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}.json'
+        fp = os.path.join(self.write_path, file_name)
         json_partial = partial(write_json_frame, file_path=fp, df=df)
         self._write_stack.append(json_partial)
 

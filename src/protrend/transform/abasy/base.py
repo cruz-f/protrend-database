@@ -61,10 +61,6 @@ def _read_abasy_network(file_path: str) -> pd.DataFrame:
     return network_df
 
 
-def _read_abasy_genes() -> partial:
-    return partial(read_csv, sep='\t')
-
-
 def read_abasy_networks(source: str, version: str) -> pd.DataFrame:
     default = pd.DataFrame(columns=['id', 'regulator', 'target', 'Effect', 'Evidence'])
     return _read_abasy(ABASY_NETWORK, source, version, _read_abasy_network, default)
@@ -73,7 +69,8 @@ def read_abasy_networks(source: str, version: str) -> pd.DataFrame:
 def read_abasy_genes(source: str, version: str) -> pd.DataFrame:
     default = pd.DataFrame(columns=['Gene_name', 'Locus_tag', 'NCBI_gene_ID', 'Uniprot_ID', 'Synonyms',
                                     'Product_function', 'NDA_component'])
-    return _read_abasy(ABASY_GENES, source, version, _read_abasy_genes, default)
+    reader = partial(read_csv, sep='\t')
+    return _read_abasy(ABASY_GENES, source, version, reader, default)
 
 
 class AbasyTransformer(Transformer, register=False):

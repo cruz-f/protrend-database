@@ -8,7 +8,7 @@ from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.transformations import (drop_empty_string, select_columns, group_by, create_input_value,
                                                 merge_columns)
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list
+from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_set_list, flatten_set_list_nan
 
 
 class PublicationTransformer(PublicationMixIn, DBTBSTransformer,
@@ -33,7 +33,7 @@ class PublicationTransformer(PublicationMixIn, DBTBSTransformer,
         tfbs = select_columns(tfbs, 'pubmed', 'pmid', 'tf', 'gene', 'tfbs')
 
         aggregation = {'tfbs': to_set_list}
-        tfbs = group_by(tfbs, column='pmid', aggregation=aggregation, default=flatten_set_list)
+        tfbs = group_by(tfbs, column='pmid', aggregation=aggregation, default=flatten_set_list_nan)
 
         tfbs = create_input_value(tfbs, col='pmid')
         return tfbs

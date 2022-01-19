@@ -42,13 +42,13 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, DBTBSTransfor
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = select_columns(regulator, 'protrend_id', 'name_dbts')
-        regulator = regulator.rename(columns={'protrend_id': 'regulator', 'name_dbtbs': 'tf'})
+        regulator = select_columns(regulator, 'protrend_id', 'dbtbs_name')
+        regulator = regulator.rename(columns={'protrend_id': 'regulator', 'dbtbs_name': 'tf'})
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
-        gene = select_columns(gene, 'protrend_id', 'name_dbtbs')
-        gene = gene.rename(columns={'protrend_id': 'gene', 'name_dbtbs': 'tg_gene'})
+        gene = select_columns(gene, 'protrend_id', 'dbtbs_name')
+        gene = gene.rename(columns={'protrend_id': 'gene', 'dbtbs_name': 'tg_gene'})
         return gene
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
