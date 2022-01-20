@@ -268,11 +268,14 @@ class RegulatoryInteractionMixIn:
                    effector_key: str = None,
                    regulatory_effect_processor: Callable = None) -> pd.DataFrame:
         network = self.transform_network(network)
+
         organism = self.transform_organism(organism)
         regulator = self.transform_regulator(regulator)
         gene = self.transform_gene(gene)
+
         if tfbs is not None:
             tfbs = self.transform_tfbs(tfbs)
+
         if effector is not None:
             effector = self.transform_effector(effector)
 

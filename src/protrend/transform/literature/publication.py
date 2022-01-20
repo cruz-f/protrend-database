@@ -75,13 +75,13 @@ class PublicationConnector(LiteratureConnector, register=False):
                                                      target_column='protrend_id',
                                                      source_on='publication',
                                                      target_on='publication',
-                                                     source_processors={'publication': [to_list_nan, to_int_str]},
-                                                     target_processors={'publication': [to_list_nan, to_int_str]})
+                                                     source_processors={'publication': [to_list_nan]},
+                                                     target_processors={'publication': [to_list_nan]})
         source_df = source_df.explode('publication')
-        source_df = apply_processors(source_df, publication=[rstrip, lstrip])
+        source_df = apply_processors(source_df, publication=[to_int_str, rstrip, lstrip])
 
         target_df = target_df.explode('publication')
-        target_df = apply_processors(target_df, publication=[rstrip, lstrip])
+        target_df = apply_processors(target_df, publication=[to_int_str, rstrip, lstrip])
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           source_on='publication', target_on='publication')

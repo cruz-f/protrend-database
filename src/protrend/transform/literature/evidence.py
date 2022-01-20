@@ -4,7 +4,7 @@ from protrend.model import Evidence, RegulatoryInteraction
 from protrend.transform.literature.base import LiteratureTransformer, LiteratureConnector, read_literature_networks
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, to_list_nan, rstrip, lstrip
+from protrend.utils.processors import apply_processors, to_list_nan, rstrip, lstrip, to_str
 
 
 class EvidenceTransformer(LiteratureTransformer,
@@ -75,10 +75,10 @@ class EvidenceToRegulatoryInteractionConnector(LiteratureConnector,
                                                      source_processors={'evidence': [to_list_nan]},
                                                      target_processors={'evidence': [to_list_nan]})
         source_df = source_df.explode('evidence')
-        source_df = apply_processors(source_df, evidence=[rstrip, lstrip])
+        source_df = apply_processors(source_df, evidence=[to_str, rstrip, lstrip])
 
         target_df = target_df.explode('evidence')
-        target_df = apply_processors(target_df, evidence=[rstrip, lstrip])
+        target_df = apply_processors(target_df, evidence=[to_str, rstrip, lstrip])
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           source_on='evidence', target_on='evidence')

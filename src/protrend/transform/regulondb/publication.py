@@ -1,3 +1,5 @@
+from typing import Union
+
 import pandas as pd
 
 from protrend.io import read
@@ -8,6 +10,13 @@ from protrend.transform.transformations import (select_columns, drop_empty_strin
                                                 merge_columns)
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str
+
+
+def _validate_pmid(item: str) -> Union[str, None]:
+    try:
+        return str(int(item))
+    except ValueError:
+        return
 
 
 class PublicationTransformer(PublicationMixIn, RegulonDBTransformer,
@@ -29,6 +38,9 @@ class PublicationTransformer(PublicationMixIn, RegulonDBTransformer,
         publication = publication.dropna(subset=['pmid'])
         publication = drop_empty_string(publication, 'pmid')
         publication = drop_duplicates(publication, subset=['pmid'])
+
+        publication = apply_processors(publication, pmid=_validate_pmid)
+        publication = publication.dropna(subset=['pmid'])
 
         publication = create_input_value(publication, col='pmid')
         return publication

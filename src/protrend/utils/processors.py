@@ -31,6 +31,9 @@ def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callab
     """
 
     handle_nan_processors = (null_to_str, null_to_none, to_nan, to_list_nan, flatten_set_list_nan, protrend_hash)
+    regulatory_effect_processors = (regulatory_effect_abasy, regulatory_effect_collectf, regulatory_effect_coryneregnet,
+                                    regulatory_effect_dbtbs, regulatory_effect_literature, regulatory_effect_literature,
+                                    regulatory_effect_regprecise, regulatory_effect_regulondb)
 
     new_columns = {}
 
@@ -41,7 +44,7 @@ def apply_processors(df: pd.DataFrame, **processors: Union[Callable, List[Callab
 
         for fn in processor:
 
-            if fn in handle_nan_processors:
+            if fn in handle_nan_processors or fn in regulatory_effect_processors:
                 ds = ds.map(fn)
 
             else:
@@ -369,25 +372,28 @@ def parse_collectf_description(item: List[str]) -> str:
     return ''.join(to_concat)
 
 
-def regulatory_effect_regprecise(items: Sequence[str]) -> Union[None, str]:
-    new_items = {item.replace(' ', '') for item in items if not is_null(item)}
-
-    if len(new_items) == 0:
+def regulatory_effect_regprecise(item: str) -> str:
+    if is_null(item):
         return UNKNOWN
 
-    if len(new_items) > 1:
-        return DUAL
+    item = item.lstrip().rstrip()
 
-    if 'repressor' in new_items:
+    if 'repressor' == item:
         return REPRESSION
 
-    if 'activator' in new_items:
+    if 'activator' == item:
         return ACTIVATION
 
-    return DUAL
+    if 'dual' == item:
+        return DUAL
+
+    if 'activator' in item and 'repressor' in item:
+        return DUAL
+
+    return UNKNOWN
 
 
-def regulatory_effect_collectf(item: str) -> Union[None, str]:
+def regulatory_effect_collectf(item: str) -> str:
     if is_null(item):
         return UNKNOWN
 
@@ -400,7 +406,7 @@ def regulatory_effect_collectf(item: str) -> Union[None, str]:
     return UNKNOWN
 
 
-def regulatory_effect_regulondb(item: str) -> Union[None, str]:
+def regulatory_effect_regulondb(item: str) -> str:
     if is_null(item):
         return UNKNOWN
 
@@ -416,7 +422,7 @@ def regulatory_effect_regulondb(item: str) -> Union[None, str]:
     return UNKNOWN
 
 
-def regulatory_effect_dbtbs(item: str) -> Union[None, str]:
+def regulatory_effect_dbtbs(item: str) -> str:
     if is_null(item):
         return UNKNOWN
 
@@ -449,7 +455,7 @@ def regulatory_effect_dbtbs(item: str) -> Union[None, str]:
     return UNKNOWN
 
 
-def regulatory_effect_coryneregnet(item: str) -> Union[None, str]:
+def regulatory_effect_coryneregnet(item: str) -> str:
     if is_null(item):
         return UNKNOWN
 
@@ -462,7 +468,7 @@ def regulatory_effect_coryneregnet(item: str) -> Union[None, str]:
     return UNKNOWN
 
 
-def regulatory_effect_abasy(item: str) -> Union[None, str]:
+def regulatory_effect_abasy(item: str) -> str:
     if is_null(item):
         return UNKNOWN
 
@@ -503,7 +509,7 @@ def _parse_regulatory_effect_literature_bsub(item: str):
     return UNKNOWN
 
 
-def regulatory_effect_literature(item: str) -> Union[None, str]:
+def regulatory_effect_literature(item: str) -> str:
     if is_null(item):
         return UNKNOWN
 

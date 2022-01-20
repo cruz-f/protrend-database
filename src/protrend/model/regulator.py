@@ -1,4 +1,4 @@
-from neomodel import StringProperty, RelationshipTo, One
+from neomodel import StringProperty, RelationshipTo, One, ZeroOrOne
 
 from protrend.utils.processors import to_str, lower_case, rstrip, lstrip, to_nan
 from .base import BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn
@@ -24,8 +24,8 @@ class Regulator(BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn):
     publication = RelationshipTo('.publication.Publication', REL_TYPE)
     pathway = RelationshipTo('.pathway.Pathway', REL_TYPE)
     effector = RelationshipTo('.effector.Effector', REL_TYPE)
-    regulatory_family = RelationshipTo('.regulatory_family.RegulatoryFamily', REL_TYPE, cardinality=One)
-    organism = RelationshipTo('.organism.Organism', REL_TYPE, cardinality=One)
+    regulatory_family = RelationshipTo('.regulatory_family.RegulatoryFamily', REL_TYPE, cardinality=ZeroOrOne)
+    organism = RelationshipTo('.organism.Organism', REL_TYPE, cardinality=ZeroOrOne)
     gene = RelationshipTo('.gene.Gene', REL_TYPE)
     tfbs = RelationshipTo('.tfbs.TFBS', REL_TYPE)
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', REL_TYPE)

@@ -9,6 +9,27 @@ from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_str
 
 
+def _split_pmid(item: str) -> list:
+    if ',' in item and ';' in item:
+        sep = None
+
+    elif ';' in item:
+        sep = ';'
+
+    elif ',' in item:
+        sep = ','
+
+    else:
+        sep = None
+
+    if sep is None:
+        return []
+
+    else:
+        items = item.split(sep)
+        return [item.lstrip().rstrip() for item in items]
+
+
 class PublicationTransformer(PublicationMixIn, CoryneRegNetTransformer,
                              source='coryneregnet',
                              version='0.0.0',
@@ -29,11 +50,7 @@ class PublicationTransformer(PublicationMixIn, CoryneRegNetTransformer,
 
         pub = pub.assign(pmid=pub['PMID'].copy())
 
-        def split_pmid(item: str) -> list:
-            items = item.split(';')
-            return [item.lstrip().rstrip() for item in items]
-
-        pub = apply_processors(pub, pmid=[to_str, split_pmid])
+        pub = apply_processors(pub, pmid=[to_str, _split_pmid])
 
         pub = pub.explode('pmid')
         pub = pub.dropna(subset=['pmid'])

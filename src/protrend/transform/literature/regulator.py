@@ -4,7 +4,7 @@ from protrend.model import Regulator
 from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates
-from protrend.utils import SetList
+from protrend.utils import SetList, is_null
 from protrend.utils.constants import SIGMA_FACTOR, TRANSCRIPTION_FACTOR, UNKNOWN, TRANSCRIPTION_TERMINATOR, SMALL_RNA
 from protrend.utils.processors import apply_processors, to_str, to_int_str
 
@@ -68,9 +68,11 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
             if item in regulator_mechanisms:
                 return regulator_mechanisms[item]
 
-            return 'unknown'
+            return UNKNOWN
 
         network = apply_processors(network, mechanism=map_filter_mechanism)
+        mechanism = network['mechanism'].fillna(UNKNOWN)
+        network = network.assign(mechanism=mechanism)
         return network
 
     def transform(self):
