@@ -2,7 +2,7 @@ from neomodel import StringProperty, ArrayProperty, RelationshipTo, One
 
 from protrend.utils.processors import to_str, rstrip, lstrip, lower_case, to_nan
 from .base import BaseNode, PositionMixIn
-from .relationships import REL_TYPE, SourceRelationship
+from .relationships import REL_TYPE, SourceRelationship, BaseRelationship
 from .utils import help_text
 
 
@@ -21,7 +21,7 @@ class Operon(BaseNode, PositionMixIn):
 
     # relationships
     data_source = RelationshipTo('.source.Source', REL_TYPE, cardinality=One, model=SourceRelationship)
-    evidence = RelationshipTo('.evidence.Evidence', REL_TYPE, cardinality=One)
-    publication = RelationshipTo('.publication.Publication', REL_TYPE)
-    organism = RelationshipTo('.organism.Organism', REL_TYPE, cardinality=One)
-    gene = RelationshipTo('.gene.Gene', REL_TYPE)
+    evidence = RelationshipTo('.evidence.Evidence', REL_TYPE, cardinality=One, model=BaseRelationship)
+    publication = RelationshipTo('.publication.Publication', REL_TYPE, model=BaseRelationship)
+    organism = RelationshipTo('.organism.Organism', REL_TYPE, cardinality=One, model=BaseRelationship)
+    gene = RelationshipTo('.gene.Gene', REL_TYPE, model=BaseRelationship)

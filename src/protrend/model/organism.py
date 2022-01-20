@@ -2,7 +2,7 @@ from neomodel import StringProperty, IntegerProperty, RelationshipTo
 
 from protrend.utils.processors import to_str, rstrip, lstrip, lower_case, to_nan, to_int_str
 from .base import BaseNode
-from .relationships import REL_TYPE, SourceRelationship
+from .relationships import REL_TYPE, SourceRelationship, BaseRelationship
 from .utils import help_text
 
 
@@ -26,8 +26,9 @@ class Organism(BaseNode):
 
     # relationships
     data_source = RelationshipTo('.source.Source', REL_TYPE, model=SourceRelationship)
-    operon = RelationshipTo('.operon.Operon', REL_TYPE)
-    regulator = RelationshipTo('.regulator.Regulator', REL_TYPE)
-    gene = RelationshipTo('.gene.Gene', REL_TYPE)
-    tfbs = RelationshipTo('.tfbs.TFBS', REL_TYPE)
-    regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', REL_TYPE)
+    operon = RelationshipTo('.operon.Operon', REL_TYPE, model=BaseRelationship)
+    regulator = RelationshipTo('.regulator.Regulator', REL_TYPE, model=BaseRelationship)
+    gene = RelationshipTo('.gene.Gene', REL_TYPE, model=BaseRelationship)
+    tfbs = RelationshipTo('.tfbs.TFBS', REL_TYPE, model=BaseRelationship)
+    regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', REL_TYPE,
+                                            model=BaseRelationship)

@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 # noinspection PyPep8Naming
 class help_text:
     protrend_id = 'Universal identifier of the ProTReND database'
+    created = 'Time tag for the item creation'
+    updated = 'Time tag of the item last alteration'
     synonyms = 'A list of synonyms for this gene'
     locus_tag = 'The locus tag for this gene'
     uniprot_accession = 'The UniProt accession for this protein'

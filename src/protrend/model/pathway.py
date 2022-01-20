@@ -2,7 +2,7 @@ from neomodel import ArrayProperty, StringProperty, RelationshipTo
 
 from protrend.utils.processors import to_str, lower_case, rstrip, lstrip, to_nan
 from .base import BaseNode, RequiredNameMixIn
-from .relationships import REL_TYPE, SourceRelationship
+from .relationships import REL_TYPE, SourceRelationship, BaseRelationship
 from .utils import help_text
 
 
@@ -15,5 +15,5 @@ class Pathway(BaseNode, RequiredNameMixIn):
 
     # relationships
     data_source = RelationshipTo('.source.Source', REL_TYPE, model=SourceRelationship)
-    regulator = RelationshipTo('.regulator.Regulator', REL_TYPE)
-    gene = RelationshipTo('.gene.Gene', REL_TYPE)
+    regulator = RelationshipTo('.regulator.Regulator', REL_TYPE, model=BaseRelationship)
+    gene = RelationshipTo('.gene.Gene', REL_TYPE, model=BaseRelationship)
