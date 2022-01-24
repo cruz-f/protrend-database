@@ -1,6 +1,7 @@
 from neomodel import StructuredRel, DateTimeProperty, StringProperty
 
-REL_TYPE = 'HAS'
+BASE_REL_TYPE = 'HAS'
+SOURCE_REL_TYPE = 'OWNER'
 
 
 class BaseRelationship(StructuredRel):

@@ -2,7 +2,7 @@ from neomodel import StringProperty, RelationshipTo, ZeroOrOne
 
 from protrend.utils.processors import to_str, lower_case, rstrip, lstrip, to_nan
 from .base import BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn
-from .relationships import REL_TYPE, SourceRelationship, BaseRelationship
+from .relationships import SourceRelationship, BaseRelationship, BASE_REL_TYPE, SOURCE_REL_TYPE
 from .utils import choices, help_text
 
 
@@ -19,15 +19,15 @@ class Regulator(BaseNode, GeneMixIn, SequenceMixIn, PositionMixIn):
     # properties inherited from GeneMixIn, SequenceMixIn, PositionMixIn
 
     # relationships
-    data_source = RelationshipTo('.source.Source', REL_TYPE, model=SourceRelationship)
-    evidence = RelationshipTo('.evidence.Evidence', REL_TYPE, model=BaseRelationship)
-    publication = RelationshipTo('.publication.Publication', REL_TYPE, model=BaseRelationship)
-    pathway = RelationshipTo('.pathway.Pathway', REL_TYPE, model=BaseRelationship)
-    effector = RelationshipTo('.effector.Effector', REL_TYPE, model=BaseRelationship)
-    regulatory_family = RelationshipTo('.regulatory_family.RegulatoryFamily', REL_TYPE, cardinality=ZeroOrOne,
+    data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, model=SourceRelationship)
+    evidence = RelationshipTo('.evidence.Evidence', BASE_REL_TYPE, model=BaseRelationship)
+    publication = RelationshipTo('.publication.Publication', BASE_REL_TYPE, model=BaseRelationship)
+    pathway = RelationshipTo('.pathway.Pathway', BASE_REL_TYPE, model=BaseRelationship)
+    effector = RelationshipTo('.effector.Effector', BASE_REL_TYPE, model=BaseRelationship)
+    regulatory_family = RelationshipTo('.regulatory_family.RegulatoryFamily', BASE_REL_TYPE, cardinality=ZeroOrOne,
                                        model=BaseRelationship)
-    organism = RelationshipTo('.organism.Organism', REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
-    gene = RelationshipTo('.gene.Gene', REL_TYPE, model=BaseRelationship)
-    tfbs = RelationshipTo('.tfbs.TFBS', REL_TYPE, model=BaseRelationship)
-    regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', REL_TYPE,
+    organism = RelationshipTo('.organism.Organism', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
+    gene = RelationshipTo('.gene.Gene', BASE_REL_TYPE, model=BaseRelationship)
+    tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=BaseRelationship)
+    regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', BASE_REL_TYPE,
                                             model=BaseRelationship)

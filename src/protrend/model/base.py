@@ -250,9 +250,10 @@ class BaseNode(StructuredNode):
         return pd.DataFrame(data=data, columns=self.keys())
 
 
-class RequiredNameMixIn:
+class NameMixIn:
     # properties
-    name = StringProperty(required=True, max_length=250, help_text=help_text.required_name)
+    name = StringProperty(required=True, unique_index=True, max_length=250, help_text=help_text.required_name)
+    name_factor = StringProperty(required=True, unique_index=True, max_length=250, help_text=help_text.required_name)
 
 
 class SequenceMixIn:
@@ -267,8 +268,11 @@ class PositionMixIn:
 
 class GeneMixIn:
     # properties
-    locus_tag = StringProperty(required=True, max_length=50, help_text=help_text.locus_tag)
+    locus_tag = StringProperty(required=True, unique_index=True, max_length=50, help_text=help_text.locus_tag)
+    locus_tag_factor = StringProperty(required=True, unique_index=True, max_length=50,
+                                      help_text=help_text.required_name)
     uniprot_accession = StringProperty(max_length=50, help_text=help_text.uniprot_accession)
+    uniprot_accession_factor = StringProperty(max_length=50, help_text=help_text.uniprot_accession)
     name = StringProperty(max_length=50, help_text=help_text.gene_name)
     synonyms = ArrayProperty(StringProperty(), help_text=help_text.synonyms)
     function = StringProperty(help_text=help_text.function)
