@@ -51,7 +51,7 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
 
         conserved = conserved.assign(operon_db_id=conserved['coid'].copy(),
                                      locus_tag=conserved['op'].str.split(','))
-        known = known.assign(operon_db_id=known['koid'],
+        known = known.assign(operon_db_id=known['koid'].copy(),
                              locus_tag=known['op'].str.split(','))
 
         operon = pd.concat([conserved, known])
@@ -97,6 +97,11 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
         operon = operon.assign(locus_tag_lower=operon['locus_tag'].str.lower())
         gene = gene.assign(locus_tag_lower=gene['locus_tag'].str.lower())
 
+        operon_genes = pd.merge(operon, gene, on='locus_tag_lower', suffixes=('_operon', '_gene'))
+        operons_to_keep = operon_genes['operon_db_id'].unique()
+        operons_to_keep = pd.DataFrame({'operon_db_id': operons_to_keep})
+
+        operon = pd.merge(operon, operons_to_keep, on='operon_db_id')
         operon = pd.merge(operon, gene, how='left', on='locus_tag_lower', suffixes=('_operon', '_gene'))
 
         operon = operon.drop(columns=['locus_tag_lower'])
