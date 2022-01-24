@@ -45,9 +45,8 @@ class TFBSTransformer(TFBSMixIn, RegulonDBTransformer,
         tfbs = drop_duplicates(df=tfbs, subset=['site_id', 'sequence'])
 
         # adding organism
-        tfbs = tfbs.reset_index(drop=True)
-        organism = organism.reset_index(drop=True)
-        tfbs = pd.concat([tfbs, organism], axis=1)
+        organism_id = organism.loc[0, 'organism']
+        tfbs = tfbs.assign(organism=organism_id)
         return tfbs
 
     @staticmethod
