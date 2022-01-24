@@ -188,9 +188,8 @@ class Transformer(AbstractTransformer):
         :param df: transformed pandas DataFrame
         :return: it creates a new pandas DataFrame of the integrated data
         """
-        # take a db snapshot for the current node and ensure uniqueness
+        # take a db snapshot for the current node
         view = self.node_view()
-        view, _ = self.factors_normalization(df=view)
 
         # ensure uniqueness
         df, factorized_cols = self.factors_normalization(df=df)
@@ -220,8 +219,6 @@ class Transformer(AbstractTransformer):
 
         batch_ids = self.protrend_identifiers_batch(last_node_idx=last_node_idx, size=batch_size)
         df.loc[mask, 'protrend_id'] = batch_ids
-
-        df = df.drop(columns=factorized_cols)
 
         self.stack_integrated_nodes(df)
         self.stack_nodes(df)
@@ -305,8 +302,8 @@ class Transformer(AbstractTransformer):
         to_process = {}
         new_cols = []
 
-        for i, (factor, processing_fns) in enumerate(self.node_factors.items()):
-            new_col = f'node_factor_{i}'
+        for factor, processing_fns in self.node_factors.items():
+            new_col = f'{factor}_factor'
 
             to_assign[new_col] = df[factor].copy()
             to_process[new_col] = processing_fns.copy()

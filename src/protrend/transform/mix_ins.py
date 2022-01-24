@@ -225,10 +225,10 @@ class RegulatoryInteractionMixIn:
         ri_series_hash += df2['effector'].copy()
         ri_series_hash += df2['regulatory_effect'].copy()
 
-        df = df.assign(regulatory_interaction_hash=ri_series_hash)
-        df = apply_processors(df, regulatory_interaction_hash=protrend_hash)
-        df = drop_duplicates(df=df, subset=['regulatory_interaction_hash'], perfect_match=True)
-        df = df.dropna(subset=['regulatory_interaction_hash'])
+        df = df.assign(interaction_hash=ri_series_hash)
+        df = apply_processors(df, interaction_hash=protrend_hash)
+        df = drop_duplicates(df=df, subset=['interaction_hash'], perfect_match=True)
+        df = df.dropna(subset=['interaction_hash'])
 
         return df
 

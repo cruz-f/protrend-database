@@ -8,10 +8,11 @@ from .utils import help_text, choices
 
 class RegulatoryInteraction(BaseNode):
     entity = 'RIN'
-    node_factors = {'regulatory_interaction_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
+    node_factors = {'interaction_hash': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
-    regulatory_interaction_hash = StringProperty(required=True, unique_index=True, max_length=600)
+    interaction_hash = StringProperty(required=True, unique_index=True, max_length=600)
+    interaction_hash_factor = StringProperty(required=True, unique_index=True, max_length=600)
     organism = StringProperty(required=True, max_length=100, help_text=help_text.organism_id)
     regulator = StringProperty(required=True, max_length=100, help_text=help_text.regulator_id)
     gene = StringProperty(required=True, max_length=100, help_text=help_text.gene_id)
