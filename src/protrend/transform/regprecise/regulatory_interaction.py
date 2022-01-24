@@ -1,6 +1,7 @@
 import pandas as pd
 
-from protrend.io.utils import read_regulator, read_organism, read_gene, read_tfbs, read_effector
+from protrend.io import read_json_lines
+from protrend.io.utils import read_regulator, read_organism, read_gene, read_tfbs, read_effector, read
 from protrend.model import RegulatoryInteraction, Gene, TFBS, Regulator, Effector, Organism
 from protrend.transform.mix_ins import RegulatoryInteractionMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
@@ -11,7 +12,7 @@ from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformations import select_columns, drop_empty_string
 from protrend.utils import SetList
-from protrend.utils.processors import (apply_processors, regulatory_effect_regprecise, to_list_nan)
+from protrend.utils.processors import (apply_processors, regulatory_effect_regprecise, to_list_nan, to_int_str)
 
 
 class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTransformer,
@@ -23,22 +24,42 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
     columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
                        'regulatory_interaction_hash'])
 
+    @staticmethod
+    def build_network(regulon: pd.DataFrame, target_gene: pd.DataFrame) -> pd.DataFrame:
+        target_gene = select_columns(target_gene, 'locus_tag', 'regulon', 'tfbs', 'url')
+        target_gene = target_gene.rename(columns={'regulon': 'regulon_id'})
+        target_gene = target_gene.dropna(subset=['locus_tag', 'regulon_id', 'tfbs'])
+        target_gene = drop_empty_string(target_gene, 'locus_tag', 'regulon_id', 'tfbs')
+        target_gene = apply_processors(target_gene, regulon_id=to_list_nan, tfbs=to_list_nan)
+
+        target_gene = target_gene.explode('regulon_id')
+        target_gene = target_gene.explode('tfbs')
+        target_gene = apply_processors(target_gene, regulon_id=to_int_str)
+
+        regulon = select_columns(regulon, 'regulon_id', 'genome', 'regulation_mode', 'effector')
+        regulon = regulon.dropna(subset=['regulon_id', 'genome'])
+        regulon = drop_empty_string(regulon, 'regulon_id', 'genome')
+
+        regulon = apply_processors(regulon, effector=to_list_nan)
+        regulon = regulon.explode('effector')
+        regulon = apply_processors(regulon, regulon_id=to_int_str, genome=to_int_str, effector=to_int_str)
+
+        network = pd.merge(target_gene, regulon, on='regulon_id')
+        return network
+
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
-        network = select_columns(network, 'regulon_id', 'genome', 'url', 'regulation_mode', 'effector',
-                                 'tfbs', 'gene')
-        network = apply_processors(network, effector=to_list_nan, tfbs=to_list_nan, gene=to_list_nan)
-        network = network.explode('effector')
-        network = network.explode('tfbs')
-        network = network.explode('gene')
-        network = network.dropna(subset=['regulon_id', 'gene'])
-        network = drop_empty_string(network, 'regulon_id', 'gene')
+        network = network.dropna(subset=['regulon_id', 'locus_tag'])
+        network = drop_empty_string(network, 'regulon_id', 'locus_tag')
         network = network.rename(columns={'regulation_mode': 'regulatory_effect',
-                                          'effector': 'effector_id', 'gene': 'tg_gene', 'tfbs': 'tfbs_id'})
+                                          'effector': 'effector_id',
+                                          'genome': 'genome_id',
+                                          'locus_tag': 'tg_gene',
+                                          'tfbs': 'tfbs_id'})
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         organism = select_columns(organism, 'protrend_id', 'genome_id')
-        organism = organism.rename(columns={'protrend_id': 'organism', 'genome_id': 'genome'})
+        organism = organism.rename(columns={'protrend_id': 'organism'})
         return organism
 
     def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
@@ -64,15 +85,32 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
         return tfbs
 
     def transform(self) -> pd.DataFrame:
-        network = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+        target_gene = read(source=self.source, version=self.version,
+                           file='Gene.json', reader=read_json_lines,
+                           default=pd.DataFrame(columns=['locus_tag', 'name', 'function', 'url',
+                                                         'regulon', 'operon', 'tfbs']))
+
+        regulon = read(source=self.source, version=self.version,
+                       file='Regulon.json', reader=read_json_lines,
+                       default=pd.DataFrame(columns=['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+                                                     'regulator_locus_tag',
+                                                     'regulator_family', 'regulation_mode', 'biological_process',
+                                                     'regulation_effector',
+                                                     'regulation_regulog', 'regulog', 'taxonomy',
+                                                     'transcription_factor', 'tf_family',
+                                                     'rna_family', 'effector', 'pathway', 'operon', 'tfbs', 'gene']))
+
+        network = self.build_network(regulon=regulon, target_gene=target_gene)
+
+        # noinspection DuplicatedCode
         organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
-        regulator = network.copy()
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
         gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
         tfbs = read_tfbs(source=self.source, version=self.version, columns=TFBSTransformer.columns)
         effector = read_effector(source=self.source, version=self.version, columns=EffectorTransformer.columns)
 
         df = self._transform(network=network,
-                             organism=organism, organism_key='genome',
+                             organism=organism, organism_key='genome_id',
                              regulator=regulator, regulator_key='regulon_id',
                              gene=gene, gene_key='tg_gene',
                              tfbs=tfbs, tfbs_key='tfbs_id',
