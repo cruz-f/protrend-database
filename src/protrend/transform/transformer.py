@@ -10,7 +10,7 @@ from protrend.io import write_json_frame
 from protrend.model import BaseNode, protrend_id_decoder, protrend_id_encoder
 from protrend.utils import Settings, DefaultProperty, SetList
 from protrend.utils.processors import apply_processors
-from .transformations import drop_empty_string, drop_duplicates
+from .transformations import drop_duplicates
 
 
 class AbstractTransformer(metaclass=ABCMeta):
@@ -311,8 +311,7 @@ class Transformer(AbstractTransformer):
 
         df = df.assign(**to_assign)
         df = apply_processors(df, **to_process)
-        df = drop_empty_string(df, *new_cols)
-        df = drop_duplicates(df=df, subset=new_cols)
+        df = drop_duplicates(df=df, subset=new_cols, perfect_match=True)
         return df, new_cols
 
     def protrend_identifiers_batch(self, last_node_idx: int, size: int) -> List[str]:

@@ -44,8 +44,6 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
                                  regulator_name=regulon['name'].copy(),
                                  mechanism=mechanism)
         regulon = apply_processors(regulon, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
-        regulon = regulon.dropna(subset=['locus_tag'])
-        regulon = drop_empty_string(regulon, 'locus_tag')
 
         regulon = create_input_value(df=regulon, col='regulon_id')
         return regulon
@@ -76,7 +74,7 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
         # locus tag composed by the name of sRNA plus the taxonomy identifier
         fake_ncbi = df['ncbi_taxonomy'].copy()
         fake_name = df['name'].copy()
-        fake_str = ' for organism '
+        fake_str = '_for_organism_'
         df = df.assign(fake_name=fake_name, fake_str=fake_str, fake_ncbi=fake_ncbi)
         df = apply_processors(df, fake_name=to_str, fake_str=to_str, fake_ncbi=to_int_str)
         fake_loci = df['fake_name'] + df['fake_str'] + df['fake_ncbi']
