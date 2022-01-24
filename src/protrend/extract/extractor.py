@@ -69,5 +69,5 @@ class Extractor(AbstractExtractor):
     def extract(self):
         src_path = Settings.source.parent
         sys.path.insert(0, str(src_path))
-        staging_area = str(Settings.staging_area)
-        return run_spider(spider=self.source, staging_area=staging_area, version=self.version)
+        data_lake = str(Settings.data_lake)
+        return run_spider(spider=self.source, data_lake=data_lake, version=self.version)

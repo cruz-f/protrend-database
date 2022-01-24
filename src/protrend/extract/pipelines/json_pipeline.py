@@ -7,9 +7,9 @@ from scrapy.exporters import JsonLinesItemExporter
 class JSONPipeline:
 
     def __init__(self,
-                 staging_area: str,
+                 data_lake: str,
                  version: str):
-        self.staging_area: str = staging_area
+        self.data_lake: str = data_lake
         self.version: str = version
 
         self.exporters: Dict[str, Tuple[JsonLinesItemExporter, TextIO]] = {}
@@ -17,10 +17,10 @@ class JSONPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        staging_area = crawler.settings.get('staging_area')
+        data_lake = crawler.settings.get('data_lake')
         version = crawler.settings.get('version')
 
-        return cls(staging_area=staging_area,
+        return cls(data_lake=data_lake,
                    version=version)
 
     def open_spider(self, spider):
