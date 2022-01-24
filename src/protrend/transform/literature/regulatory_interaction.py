@@ -22,8 +22,8 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTra
     columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
                        'regulatory_interaction_hash',
                        'regulator_locus_tag', 'gene_locus_tag',
-                       'regulatory_effect', 'evidence', 'effector', 'mechanism',
-                       'publication', 'taxonomy', 'source'])
+                       'regulatory_effect', 'effector', 'mechanism',
+                       'taxonomy', 'source'])
 
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
         return network

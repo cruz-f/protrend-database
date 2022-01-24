@@ -60,7 +60,6 @@ def read_bsub_faria_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
                'Mechanism': 'mechanism',
                'Involved Metabolite(s)': 'effector_name'}
     df = df.rename(columns=columns)
-    df = df.assign(evidence=None, publication=None)
     return df
 
 
@@ -95,7 +94,7 @@ def read_ecol_fang_et_al_2017(file_path: str, **kwargs) -> pd.DataFrame:
                'gene_ids': 'gene_locus_tag',
                'effect': 'regulatory_effect'}
     df = df.rename(columns=columns)
-    df = df.assign(evidence=None, effector_name=None, mechanism=None, publication=None)
+    df = df.assign(effector_name=None, mechanism=None)
     return df
 
 
@@ -119,7 +118,7 @@ def read_mtub_turkarslan_et_al_2015(file_path: str, **kwargs) -> pd.DataFrame:
                'Target Gene': 'gene_locus_tag',
                'Differential Expression': 'regulatory_effect'}
     df = df.rename(columns=columns)
-    df = df.assign(evidence=None, effector_name=None, mechanism=None, publication=None)
+    df = df.assign(effector_name=None, mechanism=None)
     return df
 
 
@@ -189,64 +188,27 @@ def filter_mtub_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
     return df
 
 
-def filter_paer(df: pd.DataFrame, _: str) -> pd.DataFrame:
-    df = df.copy()
-    mask = df['source'] == 'paer_vasquez_et_al_2011'
-    df = df[mask]
-    df = df.reset_index(drop=True)
-    return df
-
-
-def filter_paer_locus(df: pd.DataFrame, col: str) -> pd.DataFrame:
-    df = df.copy()
-    mask = (df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
-    df = df[mask]
-    df = df.reset_index(drop=True)
-    return df
-
-
-def filter_paer_names(df: pd.DataFrame, col: str) -> pd.DataFrame:
-    # several loci in the paer_vasquez source are actually gene names,
-    # so they should be reallocated to the name collum
-    df = df.copy()
-    mask = (~ df[col].str.startswith('PA')) & (df['source'] == 'paer_vasquez_et_al_2011')
-    df = df[mask]
-    names = df[col].copy()
-    df = df.assign(**{col: None, 'name': names})
-    df = df.reset_index(drop=True)
-    return df
-
-
 LITERATURE_NETWORKS = ['faria_2016.xlsx',
                        'fang_2017.xlsx',
-                       'turkarslan_2015.xls',
-                       'vasquez_2011.xls']
+                       'turkarslan_2015.xls']
 
 LITERATURE_TAXA = ['224308',
                    '511145',
-                   '83332',
-                   None]
+                   '83332']
 
 LITERATURE_SOURCES = ['bsub_faria_et_al_2017',
                       'ecol_fang_et_al_2017',
-                      'mtub_turkarslan_et_al_2015',
-                      'paer_vasquez_et_al_2011']
+                      'mtub_turkarslan_et_al_2015']
 
 LITERATURE_READERS = [read_bsub_faria_et_al_2017,
                       read_ecol_fang_et_al_2017,
-                      read_mtub_turkarslan_et_al_2015,
-                      read_paer_vasquez_et_al_2011]
-
-_PAER_STRAINS = {'PAO1': '208964',
-                 'PA103': '1081927',
-                 'PA14': '652611',
-                 'PAK': '1009714'}
+                      read_mtub_turkarslan_et_al_2015]
 
 
 def read_literature_networks(source: str, version: str) -> pd.DataFrame:
     default = pd.DataFrame(columns=['regulator_locus_tag', 'gene_locus_tag',
-                                    'regulatory_effect', 'evidence', 'effector_name', 'mechanism',
-                                    'publication', 'taxonomy', 'source'])
+                                    'regulatory_effect', 'effector_name', 'mechanism',
+                                    'taxonomy', 'source'])
     dfs = []
     for file, taxon, d_source, reader in zip(LITERATURE_NETWORKS, LITERATURE_TAXA,
                                              LITERATURE_SOURCES, LITERATURE_READERS):
@@ -257,18 +219,9 @@ def read_literature_networks(source: str, version: str) -> pd.DataFrame:
     network = pd.concat(dfs)
     network = network.reset_index(drop=True)
 
-    # special case of the paer_vasquez_et_al_2011 source which contains several strains in the same file,
-    # thus having several organisms/taxonomy identifiers in the same file
-
-    if 'strain' in network:
-        taxonomy = network['strain'].map(_PAER_STRAINS, na_action='ignore')
-        taxonomy = network['taxonomy'].fillna(taxonomy)
-        network = network.assign(taxonomy=taxonomy)
-
     filtered_networks = [filter_bsub_locus(network, 'regulator_locus_tag'),
                          filter_ecol_locus(network, 'regulator_locus_tag'),
-                         filter_mtub_locus(network, 'regulator_locus_tag'),
-                         filter_paer(network, 'regulator_locus_tag')]
+                         filter_mtub_locus(network, 'regulator_locus_tag')]
     network = pd.concat(filtered_networks)
     network = network.reset_index(drop=True)
     return network
@@ -290,14 +243,6 @@ class LiteratureTransformer(Transformer, register=False):
         network = network.dropna(subset=['locus_tag'])
         network = drop_empty_string(network, 'locus_tag')
         network = drop_duplicates(df=network, subset=['locus_tag', 'taxonomy'], perfect_match=True)
-
-        filtered_networks = [filter_bsub_locus(network, 'locus_tag'),
-                             filter_ecol_locus(network, 'locus_tag'),
-                             filter_mtub_locus(network, 'locus_tag'),
-                             filter_paer_locus(network, 'locus_tag'),
-                             filter_paer_names(network, 'locus_tag')]
-        network = pd.concat(filtered_networks)
-        network = network.reset_index(drop=True)
 
         input_value = network[col] + network['taxonomy']
         network = network.assign(input_value=input_value)

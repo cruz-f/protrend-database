@@ -3,10 +3,9 @@ import pandas as pd
 from protrend.model import Regulator
 from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import GeneMixIn
-from protrend.transform.transformations import drop_empty_string, drop_duplicates
-from protrend.utils import SetList, is_null
+from protrend.utils import SetList
 from protrend.utils.constants import SIGMA_FACTOR, TRANSCRIPTION_FACTOR, UNKNOWN, TRANSCRIPTION_TERMINATOR, SMALL_RNA
-from protrend.utils.processors import apply_processors, to_str, to_int_str
+from protrend.utils.processors import apply_processors
 
 
 class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
@@ -19,8 +18,8 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop', 'mechanism',
                        'regulator_locus_tag', 'gene_locus_tag',
-                       'regulatory_effect', 'evidence', 'effector_name',
-                       'publication', 'taxonomy', 'source'])
+                       'regulatory_effect', 'effector_name',
+                       'taxonomy', 'source'])
 
     regulator_mechanisms = {"sigma factor": SIGMA_FACTOR,
                             "sigma factor - ECF type": SIGMA_FACTOR,
@@ -82,23 +81,6 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
         annotated_regulators = self.annotate_genes(regulators)
 
         df = self.merge_annotations(annotated_regulators, regulators)
-
-        # the small RNAs might not have any locus tag associated with during the annotation, so we will create new
-        # locus tag composed by the name of sRNA plus the taxonomy identifier
-        fake_ncbi = df['taxonomy'].copy()
-        fake_name = df['name'].copy()
-        fake_str = ' for organism '
-        df = df.assign(fake_name=fake_name, fake_str=fake_str, fake_ncbi=fake_ncbi)
-        df = apply_processors(df, fake_name=to_str, fake_str=to_str, fake_ncbi=to_int_str)
-        fake_loci = df['fake_name'] + df['fake_str'] + df['fake_ncbi']
-
-        loci = df['locus_tag'].fillna(fake_loci)
-        df = df.assign(locus_tag=loci)
-        df = df.drop(columns=['fake_name', 'fake_str', 'fake_ncbi'])
-
-        df = df.dropna(subset=['locus_tag'])
-        df = drop_empty_string(df, 'locus_tag')
-        df = drop_duplicates(df, subset=['locus_tag'])
 
         self.stack_transformed_nodes(df)
         return df

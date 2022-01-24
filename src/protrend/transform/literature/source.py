@@ -58,11 +58,7 @@ class SourceToOrganismConnector(LiteratureConnector,
 
         taxa_to_source = {'224308': 'bsub_faria_et_al_2017',
                           '511145': 'ecol_fang_et_al_2017',
-                          '83332': 'mtub_turkarslan_et_al_2015',
-                          '208964': 'paer_vasquez_et_al_2011',
-                          '1009714': 'paer_vasquez_et_al_2011',
-                          '652611': 'paer_vasquez_et_al_2011',
-                          '1081927': 'paer_vasquez_et_al_2011'}
+                          '83332': 'mtub_turkarslan_et_al_2015'}
         organism_source = target_df['ncbi_taxonomy'].map(taxa_to_source)
         target_df = target_df.assign(source=organism_source)
 
