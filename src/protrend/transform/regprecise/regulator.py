@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from protrend.io import read_json_lines, read
@@ -68,6 +69,9 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
         df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_regprecise'))
 
         df = merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
+        loci = df['locus_tag'].replace('', np.nan)
+        df = df.assign(locus_tag=loci)
+
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
         # the small RNAs might not have any locus tag associated with during the annotation, so we will create new

@@ -10,7 +10,7 @@ from protrend.io import write_json_frame
 from protrend.model import BaseNode, protrend_id_decoder, protrend_id_encoder
 from protrend.utils import Settings, DefaultProperty, SetList
 from protrend.utils.processors import apply_processors
-from .transformations import drop_duplicates
+from .transformations import drop_duplicates, drop_empty_string
 
 
 class AbstractTransformer(metaclass=ABCMeta):
@@ -199,9 +199,14 @@ class Transformer(AbstractTransformer):
 
         # try to integrate the new nodes by the node factors
         for factor in factorized_cols:
+            # It should not be the case, but there may be some duplicated records in the database and empty values.
+            # So we must prevent this
             mapper = view.dropna(subset=[factor])
+            mapper = drop_empty_string(mapper, factor)
+            mapper = drop_duplicates(mapper, subset=[factor])
             mapper = mapper.set_index(factor)
             mapper = mapper['protrend_id']
+
             to_fill = df[factor].map(mapper)
             filled = df['protrend_id'].fillna(to_fill)
             df = df.assign(protrend_id=filled)
@@ -311,7 +316,7 @@ class Transformer(AbstractTransformer):
 
         df = df.assign(**to_assign)
         df = apply_processors(df, **to_process)
-        df = drop_duplicates(df=df, subset=new_cols, perfect_match=True)
+        df = drop_duplicates(df=df, subset=new_cols)
         return df, new_cols
 
     def protrend_identifiers_batch(self, last_node_idx: int, size: int) -> List[str]:

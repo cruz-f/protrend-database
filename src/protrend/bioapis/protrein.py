@@ -335,7 +335,7 @@ class UniProtProtein(BioAPI):
     def _filter_by_taxonomy(self, query: pd.DataFrame) -> pd.DataFrame:
 
         if self._taxonomy:
-            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False)
+            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False, regex=False)
 
             if tax_mask.any():
                 query = query[tax_mask]

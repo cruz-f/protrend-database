@@ -81,7 +81,7 @@ class SourceToGeneConnector(SourceConnector,
 
     def connect(self):
         df = self._connect(target='gene', target_processors={'regulon': [to_list_nan, take_first]},
-                           url='url', external_identifier='regulon', key='effector_id')
+                           url='url', external_identifier='regulon', key='regulon_id')
         self.stack_connections(df)
 
 

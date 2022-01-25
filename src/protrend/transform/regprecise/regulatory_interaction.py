@@ -12,7 +12,7 @@ from protrend.transform.regprecise.regulator import RegulatorTransformer
 from protrend.transform.regprecise.tfbs import TFBSTransformer
 from protrend.transform.transformations import select_columns, drop_empty_string
 from protrend.utils import SetList
-from protrend.utils.processors import (apply_processors, regulatory_effect_regprecise, to_list_nan, to_int_str)
+from protrend.utils.processors import (apply_processors, regulatory_effect_regprecise, to_list_nan, to_int_str, to_str)
 
 
 class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTransformer,
@@ -40,9 +40,8 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
         regulon = regulon.dropna(subset=['regulon_id', 'genome'])
         regulon = drop_empty_string(regulon, 'regulon_id', 'genome')
 
-        regulon = apply_processors(regulon, effector=to_list_nan)
+        regulon = apply_processors(regulon, regulon_id=to_int_str, effector=to_list_nan)
         regulon = regulon.explode('effector')
-        regulon = apply_processors(regulon, regulon_id=to_int_str, genome=to_int_str, effector=to_int_str)
 
         network = pd.merge(target_gene, regulon, on='regulon_id')
         return network
@@ -55,21 +54,26 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
                                           'genome': 'genome_id',
                                           'locus_tag': 'tg_gene',
                                           'tfbs': 'tfbs_id'})
+        network = apply_processors(network, effector_id=to_int_str, genome_id=to_int_str, tg_gene=to_str,
+                                   tfbs_id=to_str)
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         organism = select_columns(organism, 'protrend_id', 'genome_id')
         organism = organism.rename(columns={'protrend_id': 'organism'})
+        organism = apply_processors(organism, genome_id=to_int_str)
         return organism
 
     def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
         effector = select_columns(effector, 'protrend_id', 'effector_id')
         effector = effector.rename(columns={'protrend_id': 'effector'})
+        effector = apply_processors(effector, effector_id=to_int_str)
         return effector
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
         regulator = select_columns(regulator, 'protrend_id', 'regulon_id')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
+        regulator = apply_processors(regulator, regulon_id=to_int_str)
         return regulator
 
     def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
@@ -77,11 +81,13 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTra
         gene = apply_processors(gene, regprecise_locus_tag=to_list_nan)
         gene = gene.explode('regprecise_locus_tag')
         gene = gene.rename(columns={'protrend_id': 'gene', 'regprecise_locus_tag': 'tg_gene'})
+        gene = apply_processors(gene, tg_gene=to_str)
         return gene
 
     def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = select_columns(tfbs, 'protrend_id', 'tfbs_id')
         tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
+        tfbs = apply_processors(tfbs, tfbs_id=to_str)
         return tfbs
 
     def transform(self) -> pd.DataFrame:
