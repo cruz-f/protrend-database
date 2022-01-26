@@ -1,13 +1,15 @@
 import pandas as pd
 
-from protrend.io.utils import read_gene
+from protrend.io import read_txt
+from protrend.io.utils import read_gene, read
 from protrend.model import Operon, Gene, Organism
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.transform.operondb.gene import GeneTransformer
-from protrend.transform.transformations import select_columns, group_by
+from protrend.transform.transformations import select_columns, group_by, drop_empty_string
 from protrend.utils import SetList
 from protrend.utils.constants import FORWARD, REVERSE
-from protrend.utils.processors import to_set_list, take_last, strand_mode, start_forward, start_reverse, to_list_nan
+from protrend.utils.processors import to_set_list, take_last, strand_mode, start_forward, start_reverse, to_list_nan, \
+    apply_processors
 
 
 class OperonTransformer(OperonDBTransformer,
@@ -17,19 +19,27 @@ class OperonTransformer(OperonDBTransformer,
                         order=90,
                         register=True):
     columns = SetList(['protrend_id', 'operon_db_id', 'name', 'function', 'genes', 'strand', 'start', 'stop',
-                       'organism', 'pubmed'])
+                       'organism', 'source'])
 
     @staticmethod
-    def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
-        gene = select_columns(gene,
-                              'protrend_id', 'strand', 'start', 'stop',
-                              'organism',
-                              'operon_db_id', 'operon_name', 'operon_function', 'pubmed')
-        gene = gene.rename(columns={'protrend_id': 'genes', 'operon_name': 'name', 'operon_function': 'function'})
+    def transform_gene(operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
+        gene = select_columns(gene, 'protrend_id', 'strand', 'start', 'stop',
+                              'organism', 'operon_db_id')
+        gene = apply_processors(gene, operon_db_id=to_list_nan)
+        gene = gene.explode('operon_db_id')
+        gene = gene.rename(columns={'protrend_id': 'genes'})
+
+        operon = select_columns(operon, 'operon_db_id', 'name', 'definition', 'source')
+        operon = operon.rename(columns={'definition': 'function'})
+
+        operon = pd.merge(operon, gene, on='operon_db_id')
 
         aggregation = {'genes': to_set_list, 'strand': to_set_list, 'start': to_set_list, 'stop': to_set_list,
-                       'name': take_last, 'function': take_last, 'pubmed': take_last, 'organism': take_last}
-        operon = group_by(gene, column='operon_db_id', aggregation=aggregation)
+                       'name': take_last, 'function': take_last, 'source': take_last, 'organism': take_last}
+        operon = group_by(operon, column='operon_db_id', aggregation=aggregation)
+
+        operon = operon.dropna(subset=['operon_db_id'])
+        operon = drop_empty_string(operon, 'operon_db_id')
         return operon
 
     @staticmethod
@@ -61,9 +71,18 @@ class OperonTransformer(OperonDBTransformer,
         return operon
 
     def transform(self):
+        conserved_columns = ['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd']
+        known_columns = ['koid', 'org', 'name', 'op', 'definition', 'source']
+        conserved = read(source=self.source, version=self.version, file='conserved_operon.txt', reader=read_txt,
+                         default=pd.DataFrame(columns=conserved_columns))
+        known = read(source=self.source, version=self.version, file='known_operon.txt', reader=read_txt,
+                     default=pd.DataFrame(columns=known_columns))
+
+        operon = self.transform_operon(conserved=conserved, known=known)
+
         gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 
-        operon = self.transform_gene(gene)
+        operon = self.transform_gene(operon, gene)
         operon = self.operon_coordinates(operon)
 
         self.stack_transformed_nodes(operon)
@@ -79,14 +98,14 @@ class OperonToGeneConnector(OperonDBConnector,
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='operon',
-                                                     target='operon',
+                                                     target='gene',
                                                      source_column='protrend_id',
-                                                     target_column='genes',
+                                                     target_column='protrend_id',
                                                      source_on='operon_db_id',
                                                      target_on='operon_db_id',
                                                      source_processors={},
-                                                     target_processors={'genes': [to_list_nan]})
-        target_df = target_df.explode('genes')
+                                                     target_processors={'operon_db_id': [to_list_nan]})
+        target_df = target_df.explode('operon_db_id')
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           source_on='operon_db_id', target_on='operon_db_id')

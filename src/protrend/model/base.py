@@ -268,8 +268,8 @@ class PositionMixIn:
 
 class GeneMixIn:
     # properties
-    locus_tag = StringProperty(required=True, unique_index=True, max_length=50, help_text=help_text.locus_tag)
-    locus_tag_factor = StringProperty(required=True, unique_index=True, max_length=50,
+    locus_tag = StringProperty(required=True, unique_index=True, max_length=100, help_text=help_text.locus_tag)
+    locus_tag_factor = StringProperty(required=True, unique_index=True, max_length=100,
                                       help_text=help_text.required_name)
     uniprot_accession = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)
     uniprot_accession_factor = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)

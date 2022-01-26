@@ -5,7 +5,7 @@ from protrend.model import Publication, Organism, Gene, Operon
 from protrend.transform.mix_ins import PublicationMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.transform.operondb.operon import OperonTransformer
-from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, to_int_str, to_list_nan, to_str
 
@@ -19,13 +19,18 @@ class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
     columns = SetList(['protrend_id', 'pmid', 'doi', 'title', 'author', 'year',
                        'operon',
                        'operon_db_id', 'name', 'function', 'genes', 'strand', 'start', 'stop',
-                       'organism', 'pubmed'])
+                       'organism', 'source'])
 
     @staticmethod
     def transform_publication(operon: pd.DataFrame) -> pd.DataFrame:
-        operon = apply_processors(operon, pubmed=to_str)
+        operon = apply_processors(operon, source=to_str)
+
+        # only the known operons have valid pmid
+        mask = operon['operon_db_id'].str.startswith('K')
+        operon = operon[mask].copy()
+
         operon = operon.rename(columns={'protrend_id': 'operon'})
-        operon = operon.assign(pmid=operon['pubmed'].str.split(' '))
+        operon = operon.assign(pmid=operon['source'].str.split(' '))
 
         operon = apply_processors(operon, pmid=to_list_nan)
         operon = operon.explode(column='pmid')
@@ -45,6 +50,8 @@ class PublicationTransformer(PublicationMixIn, OperonDBTransformer,
         annotated_publications = self.annotate_publications(publications)
 
         df = pd.merge(annotated_publications, publications, on='input_value', suffixes=('_annotation', '_literature'))
+        df = merge_columns(df=df, column='pmid', left='pmid_annotation', right='pmid_literature')
+
         df = apply_processors(df, pmid=to_int_str, year=to_int_str)
 
         df = df.drop(columns=['input_value'])
@@ -86,14 +93,14 @@ class PublicationToGeneConnector(OperonDBConnector,
 
     def connect(self):
         source_df, target_df = self.transform_stacks(source='publication',
-                                                     target='publication',
+                                                     target='gene',
                                                      source_column='protrend_id',
-                                                     target_column='genes',
+                                                     target_column='protrend_id',
                                                      source_on='operon_db_id',
                                                      target_on='operon_db_id',
                                                      source_processors={},
-                                                     target_processors={'genes': [to_list_nan]})
-        target_df = target_df.explode('genes')
+                                                     target_processors={'operon_db_id': [to_list_nan]})
+        target_df = target_df.explode('operon_db_id')
 
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           source_on='operon_db_id', target_on='operon_db_id')

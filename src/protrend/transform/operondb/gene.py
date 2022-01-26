@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Tuple
 
 import pandas as pd
 from neo4j.exceptions import Neo4jError, DriverError
@@ -8,9 +7,10 @@ from protrend.io import read_txt, read
 from protrend.model import Gene, Organism
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
-from protrend.transform.transformations import drop_empty_string, drop_duplicates, merge_columns, create_input_value
+from protrend.transform.transformations import (drop_empty_string, merge_columns, create_input_value, group_by,
+                                                select_columns)
 from protrend.utils import SetList
-from protrend.utils.processors import apply_processors, to_list_nan
+from protrend.utils.processors import apply_processors, to_int_str, flatten_set_list_nan, rstrip, lstrip, to_set_list
 
 
 def _get_organism_from_gene(gene_node):
@@ -37,41 +37,16 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'sequence', 'strand', 'start', 'stop',
                        'organism', 'ncbi_taxonomy',
-                       'operon_db_id', 'operon_name', 'operon_function', 'pubmed'])
-
-    @staticmethod
-    def transform_operon(conserved: pd.DataFrame, known: pd.DataFrame) -> pd.DataFrame:
-        conserved = conserved.dropna(subset=['coid', 'op'])
-        conserved = drop_empty_string(conserved, 'coid', 'op')
-        conserved = drop_duplicates(conserved, subset=['coid', 'op'], perfect_match=True)
-
-        known = known.dropna(subset=['koid', 'op'])
-        known = drop_empty_string(known, 'koid', 'op')
-        known = drop_duplicates(known, subset=['koid', 'op'], perfect_match=True)
-
-        conserved = conserved.assign(operon_db_id=conserved['coid'].copy(),
-                                     locus_tag=conserved['op'].str.split(','))
-        known = known.assign(operon_db_id=known['koid'].copy(),
-                             locus_tag=known['op'].str.split(','))
-
-        operon = pd.concat([conserved, known])
-        operon = operon.reset_index(drop=True)
-
-        operon = operon.drop(columns=['koid', 'coid', 'op', 'mbgd'])
-        operon = operon.rename(columns={'name': 'operon_name', 'definition': 'operon_function',
-                                        'source': 'pubmed', 'org': 'ncbi_taxonomy'})
-        return operon
+                       'operon_db_id'])
 
     def fetch_gene(self) -> pd.DataFrame:
+        cols = ['locus_tag', 'ncbi_taxonomy', 'organism']
         try:
             genes = defaultdict(list)
             nodes = self.node.nodes.all()
             for node in nodes:
-                node_properties = node.properties
-
-                for key in self.node.node_keys():
-                    val = node_properties.get(key, None)
-                    genes[key].append(val)
+                val = getattr(node, 'locus_tag')
+                genes['locus_tag'].append(val)
 
                 organism_id, organism_taxonomy = _get_organism_from_gene(node)
                 genes['organism'].append(organism_id)
@@ -80,47 +55,41 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
             df = pd.DataFrame.from_dict(genes)
 
             if df.empty:
-                cols = list(self.node.node_keys()) + ['ncbi_taxonomy', 'organism']
-                df = pd.DataFrame(columns=cols)
+                return pd.DataFrame(columns=cols)
 
             return df
 
         except (Neo4jError, DriverError):
-            cols = list(self.node.node_keys()) + ['ncbi_taxonomy', 'organism']
             return pd.DataFrame(columns=cols)
 
     @staticmethod
     def merge_operon_gene(operon: pd.DataFrame, gene: pd.DataFrame) -> pd.DataFrame:
-        operon = apply_processors(operon, locus_tag=to_list_nan)
+        operon = operon.assign(locus_tag=operon['operon_genes'].copy())
         operon = operon.explode('locus_tag')
+        operon = operon.assign(locus_tag=operon['locus_tag'].str.lower())
 
-        operon = operon.assign(locus_tag_lower=operon['locus_tag'].str.lower())
-        gene = gene.assign(locus_tag_lower=gene['locus_tag'].str.lower())
+        gene = gene.assign(locus_tag=gene['locus_tag'].str.lower())
 
-        operon_genes = pd.merge(operon, gene, on='locus_tag_lower', suffixes=('_operon', '_gene'))
-        operons_to_keep = operon_genes['operon_db_id'].unique()
-        operons_to_keep = pd.DataFrame({'operon_db_id': operons_to_keep})
+        operon_gene = pd.merge(operon, gene, on='locus_tag')
+        operon_gene = operon_gene.drop(columns=['locus_tag'])
+        operon_gene = operon_gene.rename(columns={'operon_genes': 'locus_tag'})
 
-        operon = pd.merge(operon, operons_to_keep, on='operon_db_id')
-        operon = pd.merge(operon, gene, how='left', on='locus_tag_lower', suffixes=('_operon', '_gene'))
-
-        operon = operon.drop(columns=['locus_tag_lower'])
-
-        operon = merge_columns(operon, column='locus_tag', right='locus_tag_gene',
-                               left='locus_tag_operon')
-        operon = merge_columns(operon, column='ncbi_taxonomy', left='ncbi_taxonomy_gene',
-                               right='ncbi_taxonomy_operon')
-        return operon
+        aggregation = {'locus_tag': flatten_set_list_nan}
+        operon_gene = group_by(operon_gene, column='operon_db_id', aggregation=aggregation)
+        return operon_gene
 
     @staticmethod
-    def transform_gene(operon: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        mask = operon['protrend_id'].notna()
+    def transform_gene(operon_gene: pd.DataFrame) -> pd.DataFrame:
+        genes = operon_gene.explode('locus_tag')
+        genes = apply_processors(genes, locus_tag=[lstrip, rstrip], ncbi_taxonomy=to_int_str)
 
-        genes_in_db = operon[mask].copy()
-        genes = operon[~mask].copy()
+        aggregation = {'operon_db_id': to_set_list}
+        genes = group_by(genes, column='locus_tag', aggregation=aggregation)
+        genes = genes.dropna(subset=['locus_tag'])
+        genes = drop_empty_string(genes, 'locus_tag')
 
         genes = create_input_value(genes, 'locus_tag')
-        return genes_in_db, genes
+        return genes
 
     def transform(self):
         conserved_columns = ['coid', 'org', 'name', 'op', 'definition', 'source', 'mbgd']
@@ -131,10 +100,13 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
                      default=pd.DataFrame(columns=known_columns))
 
         operon = self.transform_operon(conserved, known)
-        gene = self.fetch_gene()
-        operon = self.merge_operon_gene(operon, gene)
+        operon = select_columns(operon, 'operon_db_id', 'operon_genes')
 
-        genes_in_db, genes = self.transform_gene(operon)
+        gene = self.fetch_gene()
+
+        operon_gene = self.merge_operon_gene(operon, gene)
+
+        genes = self.transform_gene(operon_gene)
         annotated_genes = self.annotate_genes(genes)
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_operondb'))
@@ -142,10 +114,7 @@ class GeneTransformer(GeneMixIn, OperonDBTransformer,
         # merge loci
         df = merge_columns(df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_operondb')
 
-        df = df.drop(columns=['input_value', 'protrend_id'])
-
-        df = pd.concat([df, genes_in_db])
-        df = df.reset_index(drop=True)
+        df = df.drop(columns=['input_value'])
 
         self.stack_transformed_nodes(df)
         return df
