@@ -190,6 +190,7 @@ class Transformer(AbstractTransformer):
         """
         # take a db snapshot for the current node
         view = self.node_view()
+        view = self.view_normalization(view)
 
         # ensure uniqueness
         df, factorized_cols = self.factors_normalization(df=df)
@@ -300,6 +301,18 @@ class Transformer(AbstractTransformer):
             df = self.empty_frame()
         df_name = f'transformed_{self.node.node_name()}'
         self.stack_json(df_name, df)
+
+    def view_normalization(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+
+        to_process = {}
+        for factor, processing_fns in self.node_factors.items():
+            col = f'{factor}_factor'
+
+            to_process[col] = processing_fns.copy()
+
+        df = apply_processors(df, **to_process)
+        return df
 
     def factors_normalization(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
         # renaming the factors

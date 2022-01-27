@@ -3,7 +3,6 @@ from protrend.transform.mix_ins import SourceMixIn
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.utils import SetList
 from protrend.utils.constants import DATABASE
-from protrend.utils.processors import to_list_nan
 
 
 class SourceTransformer(SourceMixIn, OperonDBTransformer,
@@ -90,42 +89,6 @@ class SourceToGeneConnector(OperonDBConnector,
                             register=True):
 
     def connect(self):
-        source_df, target_df = self.transform_stacks(source='source',
-                                                     target='gene',
-                                                     source_column='protrend_id',
-                                                     target_column='protrend_id',
-                                                     source_processors={},
-                                                     target_processors={'operon_db_id': [to_list_nan]})
-
-        target_df = target_df.explode('operon_db_id')
-
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
-                                                          cardinality='one_to_many')
-
-        if 'operon_db_id' in target_df.columns:
-
-            urls = []
-            ids = []
-            keys = []
-            for _id in target_df['operon_db_id']:
-
-                if _id.lower().startswith('k'):
-                    urls.append(f'https://operondb.jp/known/{_id}')
-                    ids.append(_id)
-                    keys.append('known')
-
-                else:
-                    urls.append(f'https://operondb.jp/conserved/{_id}')
-                    ids.append(_id)
-                    keys.append('conserved')
-
-            kwargs = dict(url=urls,
-                          external_identifier=ids,
-                          key=keys)
-
-            df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
-
-        else:
-            df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
-
+        df = self.create_connection(source='source', target='gene',
+                                    cardinality='one_to_many')
         self.stack_connections(df)
