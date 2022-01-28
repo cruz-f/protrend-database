@@ -13,7 +13,7 @@ class SourceTransformer(SourceMixIn, LiteratureTransformer,
                         order=100,
                         register=True):
     name = ['bsub_faria_et_al_2017', 'ecol_fang_et_al_2017', 'mtub_turkarslan_et_al_2015']
-    type = [LITERATURE, LITERATURE, LITERATURE, LITERATURE]
+    type = [LITERATURE, LITERATURE, LITERATURE]
     url = ['https://www.frontiersin.org/articles/10.3389/fmicb.2016.00275',
            'https://www.pnas.org/content/114/38/10286',
            'https://www.nature.com/articles/sdata201510']
