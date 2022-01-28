@@ -8,14 +8,7 @@ from whoosh import searching
 from whoosh.fields import Schema, TEXT
 from whoosh.qparser import QueryParser
 
-from protrend.utils import Settings
-from protrend.utils.request import request, read_response
-
-
-KEGG_PATH = Settings.DATA_LAKE_BIOAPI_PATH.joinpath('kegg')
-
-if not os.path.exists(KEGG_PATH):
-    os.makedirs(KEGG_PATH)
+from protrend.utils import Settings, request, read_response
 
 
 class KEGGAPI:
@@ -58,7 +51,7 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
     if db not in KEGGAPI.dbs:
         raise ValueError(f'Invalid KEGG database: {db}')
 
-    db_path = os.path.join(KEGG_PATH, db)
+    db_path = os.path.join(Settings.kegg, db)
     if not os.path.exists(db_path):
         os.makedirs(db_path)
 
@@ -79,7 +72,7 @@ def fetch_kegg_list(db: str, cache: bool = True) -> pd.DataFrame:
 
 
 def indexing_kegg_list(db: str, df_kegg_list: pd.DataFrame = None, cache: bool = True) -> w_index.FileIndex:
-    index_dir = os.path.join(KEGG_PATH, f'{db}_index')
+    index_dir = os.path.join(Settings.kegg, f'{db}_index')
 
     if cache and os.path.exists(index_dir):
         return w_index.open_dir(index_dir)

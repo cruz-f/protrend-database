@@ -4,7 +4,8 @@ from typing import List
 import whoosh.index as w_index
 
 from protrend.bioapis.bioapi import BioAPI
-from protrend.bioapis.kegg import search_kegg_list, KEGG_PATH
+from protrend.bioapis.kegg import search_kegg_list
+from protrend.utils import Settings
 from protrend.utils.miscellaneous import is_null
 
 
@@ -46,7 +47,7 @@ class KEGGCompound(BioAPI):
 
         if index is None:
 
-            index_dir = os.path.join(KEGG_PATH, 'compound_index')
+            index_dir = os.path.join(Settings.kegg, 'compound_index')
 
             if os.path.exists(index_dir):
                 index = w_index.open_dir(index_dir)

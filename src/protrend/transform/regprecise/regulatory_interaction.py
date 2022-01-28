@@ -1,224 +1,283 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Source, Organism, Effector, Regulator, Operon, Gene, TFBS
-from protrend.transform.processors import (apply_processors, to_list, to_int_str, regulatory_effect_regprecise,
-                                           take_last)
+from protrend.io import read_json_lines
+from protrend.io.utils import read_regulator, read_organism, read_gene, read_tfbs, read_effector, read
+from protrend.model import RegulatoryInteraction, Gene, TFBS, Regulator, Effector, Organism
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
 from protrend.transform.regprecise.effector import EffectorTransformer
-from protrend.transform.regprecise.operon import OperonTransformer
+from protrend.transform.regprecise.gene import GeneTransformer
+from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.regprecise.tfbs import TFBSTransformer
+from protrend.transform.transformations import select_columns, drop_empty_string
 from protrend.utils import SetList
+from protrend.utils.processors import (apply_processors, regulatory_effect_regprecise, to_list_nan, to_int_str, to_str)
 
 
-class RegulatoryInteractionTransformer(RegPreciseTransformer):
-    default_node = RegulatoryInteraction
-    default_transform_stack = {'effector': 'integrated_effector.json',
-                               'regulator': 'integrated_regulator.json',
-                               'operon': 'integrated_operon.json'}
-    default_order = 50
-    columns = SetList(['regulator', 'regulatory_effect', 'organism_protrend_id', 'url',
-                       'regulon_id', 'effector', 'operon', 'genes', 'tfbss',
-                       'regulatory_interaction_hash', 'protrend_id'])
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, RegPreciseTransformer,
+                                       source='regprecise',
+                                       version='0.0.0',
+                                       node=RegulatoryInteraction,
+                                       order=60,
+                                       register=True):
+    columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
+                       'regulatory_interaction_hash'])
 
-    def transform(self) -> pd.DataFrame:
-        # merge effector and regulator
-        effector = read_from_stack(stack=self.transform_stack, file='effector',
-                                   default_columns=EffectorTransformer.columns, reader=read_json_frame)
-        effector = self.select_columns(effector, 'protrend_id', 'effector_id')
+    @staticmethod
+    def build_network(regulon: pd.DataFrame, target_gene: pd.DataFrame) -> pd.DataFrame:
+        target_gene = select_columns(target_gene, 'locus_tag', 'regulon', 'tfbs', 'url')
+        target_gene = target_gene.rename(columns={'regulon': 'regulon_id'})
+        target_gene = target_gene.dropna(subset=['locus_tag', 'regulon_id', 'tfbs'])
+        target_gene = drop_empty_string(target_gene, 'locus_tag', 'regulon_id', 'tfbs')
+        target_gene = apply_processors(target_gene, regulon_id=to_list_nan, tfbs=to_list_nan)
+
+        target_gene = target_gene.explode('regulon_id')
+        target_gene = target_gene.explode('tfbs')
+        target_gene = apply_processors(target_gene, regulon_id=to_int_str)
+
+        regulon = select_columns(regulon, 'regulon_id', 'genome', 'regulation_mode', 'effector')
+        regulon = regulon.dropna(subset=['regulon_id', 'genome'])
+        regulon = drop_empty_string(regulon, 'regulon_id', 'genome')
+
+        regulon = apply_processors(regulon, regulon_id=to_int_str, effector=to_list_nan)
+        regulon = regulon.explode('effector')
+
+        network = pd.merge(target_gene, regulon, on='regulon_id')
+        return network
+
+    def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
+        network = network.dropna(subset=['regulon_id', 'locus_tag'])
+        network = drop_empty_string(network, 'regulon_id', 'locus_tag')
+        network = network.rename(columns={'regulation_mode': 'regulatory_effect',
+                                          'effector': 'effector_id',
+                                          'genome': 'genome_id',
+                                          'locus_tag': 'tg_gene',
+                                          'tfbs': 'tfbs_id'})
+        network = apply_processors(network, effector_id=to_int_str, genome_id=to_int_str, tg_gene=to_str,
+                                   tfbs_id=to_str)
+        return network
+
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = select_columns(organism, 'protrend_id', 'genome_id')
+        organism = organism.rename(columns={'protrend_id': 'organism'})
+        organism = apply_processors(organism, genome_id=to_int_str)
+        return organism
+
+    def transform_effector(self, effector: pd.DataFrame) -> pd.DataFrame:
+        effector = select_columns(effector, 'protrend_id', 'effector_id')
         effector = effector.rename(columns={'protrend_id': 'effector'})
         effector = apply_processors(effector, effector_id=to_int_str)
+        return effector
 
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = self.select_columns(regulator, 'protrend_id', 'effector', 'operon', 'regulation_mode',
-                                        'organism_protrend_id', 'url', 'regulon_id')
-        regulator = regulator.rename(columns={'protrend_id': 'regulator',
-                                              'effector': 'regulator_effector',
-                                              'operon': 'regulator_operon',
-                                              'regulation_mode': 'regulatory_effect'})
-        regulator = apply_processors(regulator, regulator_effector=to_list, regulator_operon=to_list)
-        regulator = regulator.explode(column='regulator_effector')
-        regulator = apply_processors(regulator, regulator_effector=to_int_str)
+    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
+        regulator = select_columns(regulator, 'protrend_id', 'regulon_id')
+        regulator = regulator.rename(columns={'protrend_id': 'regulator'})
+        regulator = apply_processors(regulator, regulon_id=to_int_str)
+        return regulator
 
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = self.select_columns(operon, 'protrend_id', 'operon_id_old', 'genes', 'tfbss')
-        operon = operon.rename(columns={'protrend_id': 'operon'})
-        operon = apply_processors(operon, operon_id_old=to_list, genes=to_list, tfbss=to_list)
-        operon = operon.explode(column='operon_id_old')
+    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
+        gene = select_columns(gene, 'protrend_id', 'regprecise_locus_tag')
+        gene = apply_processors(gene, regprecise_locus_tag=to_list_nan)
+        gene = gene.explode('regprecise_locus_tag')
+        gene = gene.rename(columns={'protrend_id': 'gene', 'regprecise_locus_tag': 'tg_gene'})
+        gene = apply_processors(gene, tg_gene=to_str)
+        return gene
 
-        regulator_effector = pd.merge(regulator, effector, how='left',
-                                      left_on='regulator_effector', right_on='effector_id')
-        regulator_effector = regulator_effector.drop(columns=['effector_id', 'regulator_effector'])
-        regulator_effector = regulator_effector.rename(columns={'effector': 'regulator_effector'})
+    def transform_tfbs(self, tfbs: pd.DataFrame) -> pd.DataFrame:
+        tfbs = select_columns(tfbs, 'protrend_id', 'tfbs_id')
+        tfbs = tfbs.rename(columns={'protrend_id': 'tfbs'})
+        tfbs = apply_processors(tfbs, tfbs_id=to_str)
+        return tfbs
 
-        regulator_effector = apply_processors(regulator_effector, regulator_operon=to_list)
-        regulator_effector = regulator_effector.explode(column='regulator_operon')
+    def transform(self) -> pd.DataFrame:
+        target_gene = read(source=self.source, version=self.version,
+                           file='Gene.json', reader=read_json_lines,
+                           default=pd.DataFrame(columns=['locus_tag', 'name', 'function', 'url',
+                                                         'regulon', 'operon', 'tfbs']))
 
-        regulatory_interaction = pd.merge(regulator_effector, operon,
-                                          left_on='regulator_operon', right_on='operon_id_old')
-        regulatory_interaction = regulatory_interaction.drop(columns=['operon_id_old', 'regulator_operon'])
+        regulon = read(source=self.source, version=self.version,
+                       file='Regulon.json', reader=read_json_lines,
+                       default=pd.DataFrame(columns=['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+                                                     'regulator_locus_tag',
+                                                     'regulator_family', 'regulation_mode', 'biological_process',
+                                                     'regulation_effector',
+                                                     'regulation_regulog', 'regulog', 'taxonomy',
+                                                     'transcription_factor', 'tf_family',
+                                                     'rna_family', 'effector', 'pathway', 'operon', 'tfbs', 'gene']))
 
-        regulatory_interaction = apply_processors(regulatory_interaction, regulatory_effect=regulatory_effect_regprecise)
+        network = self.build_network(regulon=regulon, target_gene=target_gene)
 
-        regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
+        # noinspection DuplicatedCode
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        tfbs = read_tfbs(source=self.source, version=self.version, columns=TFBSTransformer.columns)
+        effector = read_effector(source=self.source, version=self.version, columns=EffectorTransformer.columns)
 
-        self._stack_transformed_nodes(regulatory_interaction)
+        df = self._transform(network=network,
+                             organism=organism, organism_key='genome_id',
+                             regulator=regulator, regulator_key='regulon_id',
+                             gene=gene, gene_key='tg_gene',
+                             tfbs=tfbs, tfbs_key='tfbs_id',
+                             effector=effector, effector_key='effector_id',
+                             regulatory_effect_processor=regulatory_effect_regprecise)
 
-        return regulatory_interaction
-
-
-class RegulatoryInteractionToSourceConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Source
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json',
-                             'source': 'integrated_source.json'}
-
-    def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        kwargs = dict(url=rin['url'].tolist(),
-                      external_identifier=rin['regulon_id'].tolist(),
-                      key=['regulon_id'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
+        self.stack_transformed_nodes(df)
+        return df
 
 
-class RegulatoryInteractionToOrganismConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Organism
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToOrganismConnector(RegPreciseConnector,
+                                               source='regprecise',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Organism,
+                                               register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-        rin = apply_processors(rin, organism_protrend_id=[to_list, take_last])
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['organism_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='organism')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToEffectorConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Effector
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToEffectorConnector(RegPreciseConnector,
+                                               source='regprecise',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Effector,
+                                               register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, effectors=to_list)
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['regulator_effector'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='effector')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToRegulatorConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToRegulatorConnector(RegPreciseConnector,
+                                                source='regprecise',
+                                                version='0.0.0',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='regulator')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToOperonConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToGeneConnector(RegPreciseConnector,
+                                           source='regprecise',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='gene')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToGeneConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToTFBSConnector(RegPreciseConnector,
+                                           source='regprecise',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=TFBS,
+                                           register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-        rin = rin.dropna(subset=['genes'])
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['genes'].tolist()
-
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='tfbs')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToTFBSConnector(RegPreciseConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = TFBS
-    default_connect_stack = {'regulatory_interaction': 'integrated_regulatoryinteraction.json'}
+class RegulatorToOrganismConnector(RegPreciseConnector,
+                                   source='regprecise',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Organism,
+                                   register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='regulatory_interaction',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='organism')
+        self.stack_connections(df)
 
-        rin = apply_processors(rin, tfbss=to_list)
-        rin = rin.explode(column='tfbss')
-        rin = rin.dropna(subset=['tfbss'])
 
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['tfbss'].tolist()
+class RegulatorToEffectorConnector(RegPreciseConnector,
+                                   source='regprecise',
+                                   version='0.0.0',
+                                   from_node=Regulator,
+                                   to_node=Effector,
+                                   register=True):
 
-        kwargs = dict(operon=rin['operon'].tolist())
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='effector')
+        self.stack_connections(df)
 
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
 
-        self.stack_json(df)
+class RegulatorToGeneConnector(RegPreciseConnector,
+                               source='regprecise',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
+
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='gene')
+        self.stack_connections(df)
+
+
+class RegulatorToTFBSConnector(RegPreciseConnector,
+                               source='regprecise',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=TFBS,
+                               register=True):
+
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='tfbs')
+        self.stack_connections(df)
+
+
+class GeneToOrganismConnector(RegPreciseConnector,
+                              source='regprecise',
+                              version='0.0.0',
+                              from_node=Gene,
+                              to_node=Organism,
+                              register=True):
+
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='gene', target_column='organism')
+        self.stack_connections(df)
+
+
+class GeneToTFBSConnector(RegPreciseConnector,
+                          source='regprecise',
+                          version='0.0.0',
+                          from_node=Gene,
+                          to_node=TFBS,
+                          register=True):
+
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='gene', target_column='tfbs')
+        self.stack_connections(df)
+
+
+class TFBSToOrganismConnector(RegPreciseConnector,
+                              source='regprecise',
+                              version='0.0.0',
+                              from_node=TFBS,
+                              to_node=Organism,
+                              register=True):
+
+    def connect(self):
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='tfbs', target_column='organism')
+        self.stack_connections(df)

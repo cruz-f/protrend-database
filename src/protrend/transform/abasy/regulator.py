@@ -1,50 +1,61 @@
 import pandas as pd
 
-from protrend.io import read_from_stack, read_json_frame
-from protrend.model.model import Regulator
-from protrend.transform.abasy.base import AbasyTransformer
+from protrend.io.utils import read_gene
+from protrend.model import Regulator
+from protrend.transform.abasy.base import AbasyTransformer, read_abasy_networks
 from protrend.transform.abasy.gene import GeneTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList
+from protrend.utils.constants import UNKNOWN
+from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class RegulatorTransformer(AbasyTransformer):
-    default_node = Regulator
-    default_transform_stack = {'gene': 'integrated_gene.json'}
-    default_order = 90
+class RegulatorTransformer(GeneMixIn, AbasyTransformer,
+                           source='abasy',
+                           version='0.0.0',
+                           node=Regulator,
+                           order=90,
+                           register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
-                       'strand', 'start', 'stop', 'mechanism',
-                       'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'source_taxonomy'])
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy', 'regulator_taxonomy'])
 
-    def _transform_networks(self, networks: pd.DataFrame) -> pd.DataFrame:
-        networks = networks.dropna(subset=['source', 'taxonomy'])
-        networks['source_taxonomy'] = networks['source'] + networks['taxonomy']
+    @staticmethod
+    def transform_network(networks: pd.DataFrame) -> pd.DataFrame:
+        networks = drop_duplicates(df=networks, subset=['regulator', 'taxonomy'], perfect_match=True)
+        networks = networks.dropna(subset=['regulator', 'taxonomy'])
+        networks = drop_empty_string(networks, 'regulator')
 
-        networks = self.drop_duplicates(df=networks, subset=['source_taxonomy'],
-                                        perfect_match=True, preserve_nan=True)
-        networks = networks.dropna(subset=['source_taxonomy'])
+        networks = apply_processors(networks, regulator=[rstrip, lstrip])
 
-        networks = apply_processors(networks,
-                                    source_taxonomy=[rstrip, lstrip],
-                                    source=[rstrip, lstrip])
+        regulator_taxonomy = networks['regulator'] + networks['taxonomy']
 
-        networks['mechanism'] = None
+        networks = networks.assign(regulator_taxonomy=regulator_taxonomy,
+                                   mechanism=UNKNOWN)
         return networks
 
+    @staticmethod
+    def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
+        gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                              'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                              'sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
+        return gene
+
     def transform(self):
-        networks = self._build_networks()
-        regulator = self._transform_networks(networks)
+        network = read_abasy_networks(self.source, self.version)
+        regulator = self.transform_network(network)
 
-        gene = read_from_stack(stack=self.transform_stack, file='gene',
-                               default_columns=GeneTransformer.columns,
-                               reader=read_json_frame)
-        gene = self.select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                                   'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                                   'sequence', 'strand', 'start', 'stop', 'gene_name_taxonomy')
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        gene = self.transform_gene(gene)
 
-        df = pd.merge(regulator, gene, left_on='source_taxonomy', right_on='gene_name_taxonomy')
+        df = pd.merge(regulator, gene, left_on='regulator_taxonomy', right_on='gene_taxonomy')
 
-        self._stack_transformed_nodes(df)
+        df = df.dropna(subset=['locus_tag'])
+        df = drop_empty_string(df, 'locus_tag')
+        df = drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
+
+        self.stack_transformed_nodes(df)
 
         return df

@@ -89,20 +89,29 @@ class NCBITaxonomyOrganism(BioAPI):
         if self._identifier:
             record = entrez_summary(db='taxonomy', identifier=self._identifier)
             self.record = record
+            return
 
-        else:
+        elif self._name:
 
-            if self._name:
-                term = f'{self._name}[Scientific Name]'
+            term = f'{self._name}[Scientific Name]'
+            search_record = entrez_search(db='taxonomy', term=term)
+            id_list = search_record.get('IdList', [])
 
+            if not id_list:
+
+                term = str(self._name)
                 search_record = entrez_search(db='taxonomy', term=term)
-
                 id_list = search_record.get('IdList', [])
 
-                if id_list:
-                    identifier = id_list[0]
-                    record = entrez_summary(db='taxonomy', identifier=identifier)
-                    self.record = record
+            if id_list:
+                identifier = id_list[0]
+                record = entrez_summary(db='taxonomy', identifier=identifier)
+                self.record = record
+                return
+
+            return
+
+        return
 
     def fetch(self, *args, **kwargs):
 

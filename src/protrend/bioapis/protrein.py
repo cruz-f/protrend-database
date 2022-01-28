@@ -7,7 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from protrend.bioapis.bioapi import BioAPI
 from protrend.bioapis.entrez import entrez_summary, entrez_search, entrez_fetch
 from protrend.bioapis.uniprot import fetch_uniprot_record, query_uniprot
-from protrend.transform.processors import to_int_str, to_str, apply_processors, lower_case, split_str
+from protrend.utils.processors import to_int_str, to_str, apply_processors, lower_case, split_str
 from protrend.utils.miscellaneous import is_null
 
 
@@ -36,7 +36,7 @@ class NCBIProtein(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
-        taxonomy = str(taxonomy)
+        taxonomy = to_int_str(taxonomy)
 
         if is_null(locus_tag):
             locus_tag = ''
@@ -153,6 +153,7 @@ class NCBIProtein(BioAPI):
     def sequence(self) -> str:
         return str(self.seq_record.seq)
 
+    # noinspection DuplicatedCode
     def build_term(self) -> str:
 
         if self._locus_tag and self._taxonomy:
@@ -217,7 +218,11 @@ class UniProtProtein(BioAPI):
         if is_null(taxonomy):
             taxonomy = ''
 
-        taxonomy = str(taxonomy)
+        taxonomy = to_int_str(taxonomy)
+
+        # E. coli taxonomy identifier for uniprot is 83333 rather than 511145
+        if taxonomy == '511145':
+            taxonomy = '83333'
 
         if is_null(locus_tag):
             locus_tag = ''
@@ -330,7 +335,7 @@ class UniProtProtein(BioAPI):
     def _filter_by_taxonomy(self, query: pd.DataFrame) -> pd.DataFrame:
 
         if self._taxonomy:
-            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False)
+            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False, regex=False)
 
             if tax_mask.any():
                 query = query[tax_mask]

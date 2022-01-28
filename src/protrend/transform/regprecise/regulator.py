@@ -1,209 +1,99 @@
-from typing import List, Union
-
+import numpy as np
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Regulator, Source, Organism
-from protrend.transform.annotation import annotate_genes
-from protrend.transform.dto import GeneDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str
-from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
+from protrend.io import read_json_lines, read
+from protrend.io.utils import read_organism
+from protrend.model import Regulator
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
-from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformations import drop_empty_string, create_input_value, merge_columns, drop_duplicates
 from protrend.utils import SetList
+from protrend.utils.constants import SMALL_RNA, TRANSCRIPTION_FACTOR
+from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str, to_str
 
 
-class RegulatorTransformer(RegPreciseTransformer):
-    default_node = Regulator
-    default_transform_stack = {'regulon': 'Regulon.json',
-                               'organism': 'integrated_organism.json'}
-    default_order = 90
-    columns = SetList(['locus_tag', 'synonyms', 'function', 'description', 'ncbi_gene',
-                       'ncbi_protein', 'genbank_accession', 'refseq_accession',
-                       'uniprot_accession', 'sequence', 'strand', 'start', 'stop',
+class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
+                           source='regprecise',
+                           version='0.0.0',
+                           node=Regulator,
+                           order=90,
+                           register=True):
+    columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'ncbi_taxonomy', 'regulator_name', 'regulator_locus_tag',
                        'regulon_id', 'genome', 'url', 'regulator_type', 'rfam',
-                       'biological_process', 'regulation_effector', 'regulation_regulog',
-                       'regulog', 'taxonomy', 'rna_family', 'effector', 'pathway', 'operon',
-                       'tfbs', 'gene', 'regulator_locus_tag', 'regulator_family',
-                       'regulation_mode', 'transcription_factor', 'tf_family', 'mechanism',
-                       'organism_protrend_id', 'genome_id', 'ncbi_taxonomy', 'name',
-                       'protrend_id'])
-
-    read_columns = SetList(['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam', 'biological_process',
-                            'regulation_effector', 'regulation_regulog', 'regulog', 'taxonomy', 'rna_family',
-                            'effector', 'pathway', 'operon', 'tfbs', 'gene'])
-
-    def _transform_tf(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-        # filter tfs only
-        regulon = regulon.dropna(subset=['regulator_locus_tag', 'genome'])
-
-        regulon = self.drop_duplicates(df=regulon, subset=['regulator_locus_tag'], perfect_match=True,
-                                       preserve_nan=False)
-
-        regulon = apply_processors(regulon, regulator_locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
-
-        regulon['mechanism'] = 'transcription factor'
-
-        df = pd.merge(regulon, organism, how='left', left_on='genome', right_on='genome_id')
-
-        self.create_input_value(df=df, col='regulator_locus_tag')
-        return df
-
-    def _transform_rna(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-        # filter tfs only
-        regulon = regulon.dropna(subset=['rfam', 'genome'])
-
-        regulon = self.drop_duplicates(df=regulon, subset=['rfam', 'genome'], perfect_match=True, preserve_nan=False)
-
-        regulon = apply_processors(regulon, rfam=[rstrip, lstrip], name=[rstrip, lstrip])
-
-        regulon['mechanism'] = 'small RNA (sRNA)'
-
-        df = pd.merge(regulon, organism, how='left', left_on='genome', right_on='genome_id')
-
-        return df
+                       'regulator_family', 'regulation_mode', 'biological_process', 'regulation_effector',
+                       'regulation_regulog', 'regulog', 'taxonomy', 'transcription_factor', 'tf_family',
+                       'rna_family', 'effector', 'pathway', 'operon', 'tfbs', 'gene'])
 
     @staticmethod
-    def _annotate_tfs(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
-        dtos = [GeneDTO(input_value=locus) for locus in loci]
-        annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
-
-        for dto, name in zip(dtos, names):
-            dto.synonyms.append(name)
-
-        # locus_tag: List[str]
-        # name: List[str]
-        # synonyms: List[str]
-        # function: List[str]
-        # description: List[str]
-        # ncbi_gene: List[str]
-        # ncbi_protein: List[str]
-        # genbank_accession: List[str]
-        # refseq_accession: List[str]
-        # uniprot_accession: List[str]
-        # sequence: List[str]
-        # strand: List[str]
-        # start: List[int]
-        # stop: List[int]
-
-        regulators = pd.DataFrame([dto.to_dict() for dto in dtos])
-        strand_mask = (regulators['strand'] != 'reverse') & (regulators['strand'] != 'forward')
-        regulators.loc[strand_mask, 'strand'] = None
-        return regulators
-
-    @staticmethod
-    def _annotate_rnas(names: List[str]):
-        dtos = [GeneDTO(input_value=name) for name in names]
-
-        # locus_tag: List[str]
-        # name: List[str]
-        # synonyms: List[str]
-        # function: List[str]
-        # description: List[str]
-        # ncbi_gene: List[str]
-        # ncbi_protein: List[str]
-        # genbank_accession: List[str]
-        # refseq_accession: List[str]
-        # uniprot_accession: List[str]
-        # sequence: List[str]
-        # strand: List[str]
-        # start: List[int]
-        # stop: List[int]
-
-        df = pd.DataFrame([dto.to_dict() for dto in dtos])
-        df = df.drop(columns=['name', 'locus_tag', 'input_value'])
-        return df
-
-    def transform(self):
-        regulon = read_from_stack(stack=self.transform_stack, file='regulon',
-                                  default_columns=self.read_columns, reader=read_json_lines)
-
+    def transform_regulator(regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
+        regulon = regulon.dropna(subset=['genome'])
+        regulon = drop_empty_string(regulon, 'genome')
         regulon = apply_processors(regulon, regulon_id=to_int_str, genome=to_int_str)
 
-        organism = read_from_stack(stack=self.transform_stack, file='organism',
-                                   default_columns=OrganismTransformer.columns, reader=read_json_frame)
-        organism = self.select_columns(organism, 'protrend_id', 'genome_id', 'ncbi_taxonomy')
-        organism = organism.rename(columns={'protrend_id': 'organism_protrend_id'})
+        # + "ncbi_taxonomy"
+        regulon = pd.merge(regulon, organism, on='genome')
 
-        organism = apply_processors(organism, genome_id=to_int_str, ncbi_taxonomy=to_int_str)
+        # mechanism
+        mechanism_map = {'RNA regulatory element': SMALL_RNA, 'Transcription factor': TRANSCRIPTION_FACTOR}
+        mechanism = regulon['regulator_type'].map(mechanism_map)
 
-        # ------------------ regulon of type TF --------------------------------
-        tf = self._transform_tf(regulon=regulon, organism=organism)
+        regulon = regulon.assign(locus_tag=regulon['regulator_locus_tag'].copy(),
+                                 regulator_name=regulon['name'].copy(),
+                                 mechanism=mechanism)
+        regulon = apply_processors(regulon, locus_tag=[rstrip, lstrip], name=[rstrip, lstrip])
 
-        loci = tf['input_value'].tolist()
-        names = tf['name'].tolist()
-        taxa = tf['ncbi_taxonomy'].tolist()
+        regulon = create_input_value(df=regulon, col='regulon_id')
+        return regulon
 
-        tfs = self._annotate_tfs(loci, names, taxa)
+    def transform(self):
+        regulon = read(source=self.source, version=self.version,
+                       file='Regulon.json', reader=read_json_lines,
+                       default=pd.DataFrame(columns=['regulon_id', 'name', 'genome', 'url', 'regulator_type', 'rfam',
+                                                     'regulator_locus_tag',
+                                                     'regulator_family', 'regulation_mode', 'biological_process',
+                                                     'regulation_effector',
+                                                     'regulation_regulog', 'regulog', 'taxonomy',
+                                                     'transcription_factor', 'tf_family',
+                                                     'rna_family', 'effector', 'pathway', 'operon', 'tfbs', 'gene']))
 
-        tf = pd.merge(tfs, tf, on='input_value', suffixes=('_annotation', '_regprecise'))
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
 
-        tf = self.merge_columns(df=tf, column='name', left='name_annotation', right='name_regprecise')
+        organism = self.transform_organism(organism)
+        regulators = self.transform_regulator(regulon, organism)
+        annotated_regulators = self.annotate_genes(regulators)
 
-        tf['locus_tag'] = tf['locus_tag'].fillna(tf['regulator_locus_tag'])
+        df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_regprecise'))
 
-        tf = tf.drop(columns=['input_value'])
+        df = merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_regprecise')
+        loci = df['locus_tag'].replace('', np.nan)
+        df = df.assign(locus_tag=loci)
 
-        # ------------------ regulon of type RNA --------------------------------
-        rna = self._transform_rna(regulon=regulon, organism=organism)
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
-        names = rna['name'].tolist()
-        rnas = self._annotate_rnas(names)
+        # the small RNAs might not have any locus tag associated with during the annotation, so we will create new
+        # locus tag composed by the name of sRNA plus the taxonomy identifier
+        fake_ncbi = df['ncbi_taxonomy'].copy()
+        fake_name = df['name'].copy()
+        fake_str = '_'
+        df = df.assign(fake_name=fake_name, fake_str=fake_str, fake_ncbi=fake_ncbi)
+        df = apply_processors(df, fake_name=to_str, fake_str=to_str, fake_ncbi=to_int_str)
+        fake_loci = df['fake_name'] + df['fake_str'] + df['fake_ncbi']
 
-        rna = pd.concat([rna, rnas], axis=1)
-        rna['locus_tag'] = rna['organism_protrend_id'] + '_' + rna['rfam']
+        loci = df['locus_tag'].fillna(fake_loci)
+        df = df.assign(locus_tag=loci)
+        df = df.drop(columns=['fake_name', 'fake_str', 'fake_ncbi'])
 
-        # --------------------- concat DFs --------------------------------------
-        df = pd.concat([tf, rna], axis=0)
+        df = df.dropna(subset=['locus_tag'])
+        df = drop_empty_string(df, 'locus_tag')
+        df = drop_duplicates(df, subset=['locus_tag'])
 
-        df = apply_processors(df, genome_id=to_int_str, ncbi_taxonomy=to_int_str, genome=to_int_str, regulog=to_int_str)
+        df = apply_processors(df, regulon_id=to_int_str, genome=to_int_str, ncbi_taxonomy=to_int_str)
 
-        self._stack_transformed_nodes(df)
+        df = df.drop(columns=['input_value'])
+
+        self.stack_transformed_nodes(df)
         return df
-
-
-class RegulatorToSourceConnector(RegPreciseConnector):
-    default_from_node = Regulator
-    default_to_node = Source
-    default_connect_stack = {'regulator': 'integrated_regulator.json', 'source': 'integrated_source.json'}
-
-    def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = regulator['protrend_id'].tolist()
-        size = len(from_identifiers)
-
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        kwargs = dict(url=regulator['url'].tolist(),
-                      external_identifier=regulator['regulon_id'].tolist(),
-                      key=['regulon_id'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class RegulatorToOrganismConnector(RegPreciseConnector):
-    default_from_node = Regulator
-    default_to_node = Organism
-    default_connect_stack = {'regulator': 'integrated_regulator.json'}
-
-    def connect(self):
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = regulator['protrend_id'].tolist()
-        to_identifiers = regulator['organism_protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)

@@ -7,45 +7,34 @@ from Bio.SeqRecord import SeqRecord
 from diskcache import Cache, JSONDisk
 
 from protrend.bioapis.settings import ENTREZ_E_MAIL, ENTREZ_API_KEY, ENTREZ_TOOL
-from protrend.utils.settings import Settings
+from protrend.utils import Settings
 
 Entrez.email = ENTREZ_E_MAIL
 Entrez.api_key = ENTREZ_API_KEY
 Entrez.tool = ENTREZ_TOOL
 
-ENTREZ_PATH = Settings.DATA_LAKE_BIOAPI_PATH.joinpath('entrez')
-
 
 def _init_entrez_search() -> Cache:
-    directory = ENTREZ_PATH.joinpath('search')
+    if not os.path.exists(Settings.entrez_search):
+        os.makedirs(Settings.entrez_search)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory, disk=JSONDisk)
-
+    cache = Cache(directory=Settings.entrez_search, disk=JSONDisk)
     return cache
 
 
 def _init_entrez_summary() -> Cache:
-    directory = ENTREZ_PATH.joinpath('summary')
+    if not os.path.exists(Settings.entrez_summary):
+        os.makedirs(Settings.entrez_summary)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory, disk=JSONDisk)
-
+    cache = Cache(directory=Settings.entrez_summary, disk=JSONDisk)
     return cache
 
 
 def _init_entrez_fetch() -> Cache:
-    directory = ENTREZ_PATH.joinpath('fetch')
+    if not os.path.exists(Settings.entrez_fetch):
+        os.makedirs(Settings.entrez_fetch)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.entrez_fetch)
     return cache
 
 

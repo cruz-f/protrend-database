@@ -1,6 +1,6 @@
 import subprocess
 
-from neomodel import config
+from neomodel import config, StructuredNode
 from neomodel import db, clear_neo4j_database, install_all_labels, install_labels
 
 
@@ -37,7 +37,7 @@ class NeoDatabase:
         config.AUTO_INSTALL_LABELS = True
 
     @staticmethod
-    def install_labels(cls):
+    def install_labels(cls: StructuredNode):
         install_labels(cls)
 
     @staticmethod

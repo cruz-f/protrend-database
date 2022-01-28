@@ -1,13 +1,14 @@
 import os
 from abc import ABCMeta, abstractmethod
 from functools import partial
-from typing import List, Any, Type, Dict
+from typing import List, Type, Dict, Tuple, Callable
 
 import pandas as pd
 
-from protrend.io.json import write_json_frame
-from protrend.model.node import Node
-from protrend.utils import Settings
+from protrend.io import read_json_frame, write_json_frame, read
+from protrend.model import BaseNode
+from protrend.utils import Settings, DefaultProperty, SetList
+from protrend.utils.processors import apply_processors
 
 
 class AbstractConnector(metaclass=ABCMeta):
@@ -45,24 +46,57 @@ class AbstractConnector(metaclass=ABCMeta):
         pass
 
 
+CONNECTOR_STACK = dict(source='integrated_source.json',
+                       effector='integrated_effector.json',
+                       evidence='integrated_evidence.json',
+                       gene='integrated_gene.json',
+                       operon='integrated_operon.jsonn',
+                       organism='integrated_organism.json',
+                       pathway='integrated_pathway.json',
+                       publication='integrated_publication.json',
+                       regulator='integrated_regulator.json',
+                       rfam='integrated_regulatoryfamily.json',
+                       rin='integrated_regulatoryinteraction.json',
+                       tfbs='integrated_tfbs.json')
+
+
 class Connector(AbstractConnector):
     """
     A connector is responsible for reading, processing, integrating and writing relationships files.
 
     A connector starts with data from the data lake and ends with structured relationships.
     """
-    default_connect_stack: Dict[str, str] = {}
-    default_source: str = ''
-    default_version: str = '0.0.0'
-    default_from_node: Type[Node] = Node
-    default_to_node: Type[Node] = Node
+    source = DefaultProperty()
+    version = DefaultProperty()
+
+    from_node = DefaultProperty()
+    to_node = DefaultProperty()
+
+    def __init_subclass__(cls, **kwargs):
+
+        source = kwargs.get('source')
+        cls.source.set_default(cls, source)
+
+        version = kwargs.get('version')
+        cls.version.set_default(cls, version)
+
+        from_node = kwargs.pop('from_node', None)
+        cls.from_node.set_default(cls, from_node)
+
+        to_node = kwargs.pop('to_node', None)
+        cls.to_node.set_default(cls, to_node)
+
+        register = kwargs.pop('register', False)
+
+        if register:
+            from protrend.pipeline import Pipeline
+            Pipeline.register_connector(cls, **kwargs)
 
     def __init__(self,
-                 connect_stack: Dict[str, str] = None,
                  source: str = None,
                  version: str = None,
-                 from_node: Type[Node] = None,
-                 to_node: Type[Node] = None):
+                 from_node: Type[BaseNode] = None,
+                 to_node: Type[BaseNode] = None):
         """
         The connector object uses results obtained during the transformation procedures
         for a given neomodel node entity.
@@ -74,15 +108,11 @@ class Connector(AbstractConnector):
         A pandas DataFrame is the main engine to read, load, process and transform data contained in these files into
         structured relationships
 
-        :type connect_stack: Dict[str, str]
         :type source: str
         :type version: str
-        :type from_node: Type[Node]
+        :type from_node: Type[BaseNode]
         :type to_node: Type[Node]
 
-        :param connect_stack: Dictionary containing the pair name and file name.
-        The key should be used to identify the file in the connect stack,
-        whereas the value should be the file name in the data lake
         :param source: The name of the data source in the data lake (e.g. regprecise, collectf, etc)
         :param version: The version of the data source in the data lake (e.g. 0.0.0, 0.0.1, etc)
         :param from_node: The source node type associated with this connector, and thus the source of the relation.
@@ -90,65 +120,19 @@ class Connector(AbstractConnector):
         :param to_node: The target node type associated with this connector, and thus the end of the relation.
         Note that, it should be created only one connector for each node-node relationship
         """
-        self._connect_stack = {}
+        self.source = source
+        self.version = version
+        self.from_node = from_node
+        self.to_node = to_node
+
         self._write_stack = []
-        self._source = source
-        self._version = version
-        self._from_node = from_node
-        self._to_node = to_node
-
-        self.load_connect_stack(connect_stack)
-
-    def load_connect_stack(self, connect_stack: Dict[str, str] = None):
-
-        self._connect_stack = {}
-
-        if not connect_stack:
-            connect_stack = self.default_connect_stack
-
-        for key, file in connect_stack.items():
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
-
-            self._connect_stack[key] = dl_file
 
     # --------------------------------------------------------
     # Static properties
     # --------------------------------------------------------
     @property
-    def source(self) -> str:
-        if not self._source:
-            return self.default_source
-
-        return self._source
-
-    @property
-    def version(self) -> str:
-        if not self._version:
-            return self.default_version
-
-        return self._version
-
-    @property
-    def from_node(self) -> Type[Node]:
-        if not self._from_node:
-            return self.default_from_node
-
-        return self._from_node
-
-    @property
-    def to_node(self) -> Type[Node]:
-        if not self._to_node:
-            return self.default_to_node
-
-        return self._to_node
-
-    @property
-    def connect_stack(self) -> Dict[str, str]:
-        return self._connect_stack
-
-    @property
     def write_path(self) -> str:
-        return os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version)
+        return os.path.join(Settings.data_lake, self.source, self.version)
 
     # --------------------------------------------------------
     # Python API
@@ -212,25 +196,111 @@ class Connector(AbstractConnector):
     # ----------------------------------------
     # Utilities
     # ----------------------------------------
-    def stack_json(self, df: pd.DataFrame):
-        name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}'
-        df = df.copy(deep=True)
+    @classmethod
+    def connected_file(cls):
+        from_node_name = cls.from_node.get_default(cls).node_name()
+        to_node_name = cls.to_node.get_default(cls).node_name()
+        return f'connected_{from_node_name}_{to_node_name}.json'
+
+    def stack_connections(self, df: pd.DataFrame):
+        df = df.copy()
         df = df.reset_index(drop=True)
-        fp = os.path.join(self.write_path, f'{name}.json')
+        file_name = f'connected_{self.from_node.node_name()}_{self.to_node.node_name()}.json'
+        fp = os.path.join(self.write_path, file_name)
         json_partial = partial(write_json_frame, file_path=fp, df=df)
         self._write_stack.append(json_partial)
 
-    def make_connection(self,
-                        from_identifiers: List[Any],
-                        to_identifiers: List[Any],
-                        kwargs: dict = None) -> pd.DataFrame:
+    def transform_stacks(self,
+                         source: str,
+                         target: str,
+                         source_column: str,
+                         target_column: str,
+                         source_on: str = None,
+                         target_on: str = None,
+                         source_processors: Dict[str, List[Callable]] = None,
+                         target_processors: Dict[str, List[Callable]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-        size = len(from_identifiers)
+        default_source_cols = SetList([source_column])
+        default_target_cols = SetList([target_column])
+
+        if source_on:
+            default_source_cols.append(source_on)
+
+        if target_on:
+            default_target_cols.append(target_on)
+
+        if not source_processors:
+            source_processors = {}
+
+        if not target_processors:
+            target_processors = {}
+
+        default_source_cols.extend(list(source_processors.keys()))
+        default_target_cols.extend(list(target_processors.keys()))
+
+        file = CONNECTOR_STACK[source]
+        source_df = read(source=self.source, version=self.version, file=file,
+                         reader=read_json_frame, default=pd.DataFrame(columns=default_source_cols))
+        source_df = apply_processors(source_df, **source_processors)
+        source_df = source_df.rename(columns={source_column: 'source_col'})
+
+        file = CONNECTOR_STACK[target]
+        target_df = read(source=self.source, version=self.version, file=file,
+                         reader=read_json_frame, default=pd.DataFrame(columns=default_target_cols))
+        target_df = apply_processors(target_df, **target_processors)
+        target_df = target_df.rename(columns={target_column: 'target_col'})
+
+        return source_df, target_df
+
+    @staticmethod
+    def merge_source_target(source_df: pd.DataFrame,
+                            target_df: pd.DataFrame,
+                            source_on: str = None,
+                            target_on: str = None,
+                            cardinality: str = 'many_to_many') -> Tuple[List[str], List[str]]:
+        if source_on:
+            df = pd.merge(source_df, target_df, left_on=source_on, right_on=target_on)
+            df = df.drop_duplicates(subset=['source_col', 'target_col'])
+
+        else:
+            source_df = source_df.reset_index(drop=True)
+            target_df = target_df.reset_index(drop=True)
+            df = pd.concat([source_df, target_df], axis=1)
+            df = df.drop_duplicates(subset=['source_col', 'target_col'])
+
+        if cardinality == 'many_to_many':
+            source_ids = df['source_col'].to_list()
+            target_ids = df['target_col'].to_list()
+
+        elif cardinality == 'one_to_many':
+            target_ids = df['target_col'].to_list()
+
+            source_ids = df['source_col'].dropna().to_list()
+            source_ids *= len(target_ids)
+
+        elif cardinality == 'many_to_one':
+            source_ids = df['source_col'].to_list()
+
+            target_ids = df['target_col'].dropna().to_list()
+            target_ids *= len(source_ids)
+
+        else:
+            source_ids = []
+            target_ids = []
+
+        return source_ids, target_ids
+
+    def connection_frame(self,
+                         source_ids: List[str],
+                         target_ids: List[str],
+                         kwargs: Dict[str, List[str]] = None) -> pd.DataFrame:
+
+        size = len(source_ids)
 
         connection = {'from_node': [self.from_node.node_name()] * size,
                       'to_node': [self.to_node.node_name()] * size,
-                      'from_identifier': from_identifiers.copy(),
-                      'to_identifier': to_identifiers.copy(),
+                      'from_identifier': source_ids.copy(),
+                      'to_identifier': target_ids.copy(),
                       'load': ['create'] * size,
                       'what': ['relationships'] * size}
 
@@ -240,3 +310,29 @@ class Connector(AbstractConnector):
         connection.update(kwargs)
 
         return pd.DataFrame(connection)
+
+    def create_connection(self,
+                          source: str,
+                          target: str,
+                          source_column: str = 'protrend_id',
+                          target_column: str = 'protrend_id',
+                          cardinality: str = 'many_to_many',
+                          source_on: str = None,
+                          target_on: str = None,
+                          source_processors: Dict[str, List[Callable]] = None,
+                          target_processors: Dict[str, List[Callable]] = None) -> pd.DataFrame:
+
+        source_df, target_df = self.transform_stacks(source=source,
+                                                     target=target,
+                                                     source_column=source_column,
+                                                     target_column=target_column,
+                                                     source_on=source_on,
+                                                     target_on=target_on,
+                                                     source_processors=source_processors,
+                                                     target_processors=target_processors)
+
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on=source_on, target_on=target_on,
+                                                          cardinality=cardinality)
+
+        return self.connection_frame(source_ids=source_ids, target_ids=target_ids)

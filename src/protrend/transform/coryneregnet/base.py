@@ -1,150 +1,59 @@
-import os
-from typing import Dict
+from abc import abstractmethod
 
 import pandas as pd
 
-from protrend.io import read_from_stack, read_csv
+from protrend.io import read_csv, read
 from protrend.transform import Transformer, Connector
-from protrend.transform.processors import take_first, to_set_list
-from protrend.utils import SetList, Settings
+from protrend.transform.transformations import merge_columns, merge_loci
 
 
-class CoryneRegNetTransformer(Transformer):
-    default_source = 'coryneregnet'
-    default_version = '0.0.0'
-    default_regulation_stack = {'bsub': 'bsub_regulation.csv',
-                                'cglu': 'cglu_regulation.csv',
-                                'ecol': 'ecol_regulation.csv',
-                                'mtub': 'mtub_regulation.csv'}
+CORYNEREGNET_NETWORK = ['bsub_regulation.csv',
+                        'cglu_regulation.csv',
+                        'ecol_regulation.csv',
+                        'mtub_regulation.csv']
 
-    default_operon_stack = {'bsub': 'bsub_operon.csv',
-                            'cglu': 'cglu_operon.csv',
-                            'ecol': 'ecol_operon.csv',
-                            'mtub': 'mtub_operon.csv'}
+CORYNEREGNET_TAXA = ['224308',
+                     '196627',
+                     '511145',
+                     '83332']
 
-    default_regulation_columns = SetList(['TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
-                                          'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                                          'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source'])
 
-    default_operon_columns = SetList(['Operon', 'Orientation', 'Genes'])
+def read_coryneregnet_networks(source: str, version: str) -> pd.DataFrame:
+    default = pd.DataFrame(columns=['TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
+                                    'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
+                                    'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
+                                    'PMID', 'Source'])
+    dfs = []
+    for file, taxon in zip(CORYNEREGNET_NETWORK, CORYNEREGNET_TAXA):
+        df = read(source=source, version=version, file=file, reader=read_csv, default=default.copy())
+        df = df.assign(taxonomy=taxon, source='coryneregnet')
+        dfs.append(df)
 
-    taxa_to_organism_code = {'bsub': '224308',
-                             'cglu': '196627',
-                             'ecol': '511145',
-                             'mtub': '83332'}
+    final_df = pd.concat(dfs)
+    final_df = final_df.reset_index(drop=True)
+    return final_df
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._regulation_stack = {}
-        self._operon_stack = {}
 
-        self.load_regulation_stack()
-        self.load_operon_stack()
+class CoryneRegNetTransformer(Transformer, register=False):
 
-    def load_regulation_stack(self, regulation_stack: Dict[str, str] = None):
+    @abstractmethod
+    def transform(self):
+        pass
 
-        self._regulation_stack = {}
+    @staticmethod
+    def merge_annotations(annotations: pd.DataFrame, coryneregnet: pd.DataFrame):
+        df = pd.merge(annotations, coryneregnet, on='input_value', suffixes=('_annotation', '_coryneregnet'))
 
-        if not regulation_stack:
-            regulation_stack = self.default_regulation_stack
+        # merge loci
+        df = merge_loci(df=df, left_suffix='_annotation', right_suffix='_coryneregnet')
 
-        for key, file in regulation_stack.items():
-
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
-
-            if os.path.exists(sa_file):
-
-                self._regulation_stack[key] = sa_file
-
-            else:
-
-                self._regulation_stack[key] = dl_file
-
-    def load_operon_stack(self, operon_stack: Dict[str, str] = None):
-
-        self._operon_stack = {}
-
-        if not operon_stack:
-            operon_stack = self.default_operon_stack
-
-        for key, file in operon_stack.items():
-
-            sa_file = os.path.join(Settings.STAGING_AREA_PATH, self.source, self.version, file)
-            dl_file = os.path.join(Settings.DATA_LAKE_PATH, self.source, self.version, file)
-
-            if os.path.exists(sa_file):
-
-                self._operon_stack[key] = sa_file
-
-            else:
-
-                self._operon_stack[key] = dl_file
-
-    @property
-    def regulation_stack(self):
-        return self._regulation_stack
-
-    @property
-    def operon_stack(self):
-        return self._operon_stack
-
-    def _build_regulations(self, regulation_stack: Dict[str, str] = None) -> pd.DataFrame:
-
-        if not regulation_stack:
-            regulation_stack = self.regulation_stack
-
-        dfs = []
-        for file in regulation_stack:
-            df = read_from_stack(stack=regulation_stack,
-                                 file=file,
-                                 default_columns=self.default_regulation_columns,
-                                 reader=read_csv)
-            df['taxonomy'] = self.taxa_to_organism_code[file]
-            dfs.append(df)
-
-        return pd.concat(dfs, axis=0)
-
-    def _read_operon(self, stack, file):
-        fixed_names = ['Operon', 'Orientation']
-        genes_names = [f'Genes{i}' for i in range(150)]
-        names = fixed_names + genes_names
-
-        df = read_from_stack(stack=stack,
-                             file=file,
-                             default_columns=self.default_operon_columns,
-                             reader=read_csv,
-                             names=names,
-                             engine='python',
-                             skiprows=1)
-        df['Operon'] = df['Operon'].str.replace('>', '')
-
-        df['Genes'] = df.iloc[:, 2:].values.tolist()
-
-        df = df[['Operon', 'Orientation', 'Genes']]
-        df = df.explode(column='Genes')
-        df = df.dropna(subset=['Genes'])
-
-        df = Transformer.group_by(df,
-                                  column='Operon',
-                                  aggregation={'Orientation': take_first},
-                                  default=to_set_list)
+        # merge name
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_coryneregnet')
         return df
 
-    def _build_operons(self, operon_stack: Dict[str, str] = None) -> pd.DataFrame:
 
-        if not operon_stack:
-            operon_stack = self.operon_stack
+class CoryneRegNetConnector(Connector, register=False):
 
-        dfs = []
-        for file in operon_stack:
-            df = self._read_operon(operon_stack, file)
-            df['taxonomy'] = self.taxa_to_organism_code[file]
-            dfs.append(df)
-
-        return pd.concat(dfs, axis=0)
-
-
-class CoryneRegNetConnector(Connector):
-    default_source = 'coryneregnet'
-    default_version = '0.0.0'
+    @abstractmethod
+    def connect(self):
+        pass

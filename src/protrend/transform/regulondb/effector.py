@@ -1,60 +1,56 @@
-from typing import List
-
 import pandas as pd
 
-from protrend.io import read_txt, read_from_stack
-from protrend.model.model import Effector
-from protrend.transform.annotation import annotate_effectors
-from protrend.transform.dto import EffectorDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, remove_html_tags, \
-    parse_effector_name_regulondb
-from protrend.transform.regulondb.base import RegulondbTransformer
+from protrend.io import read
+from protrend.model import Effector
+from protrend.transform.mix_ins import EffectorMixIn
+from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
 from protrend.utils import SetList
+from protrend.utils.processors import (rstrip, lstrip, apply_processors, remove_html_tags,
+                                       parse_effector_name_regulondb)
 
 
-class EffectorTransformer(RegulondbTransformer):
-    default_node = Effector
-    default_transform_stack = {'effector': 'effector.txt'}
-    default_order = 100
-    columns = SetList(['protrend_id',
-                       'name', 'synonyms', 'mechanism', 'kegg_compounds',
+class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
+                          source='regulondb',
+                          version='0.0.0',
+                          node=Effector,
+                          order=100,
+                          register=True):
+    columns = SetList(['protrend_id', 'name', 'kegg_compounds',
                        'effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
                        'effector_internal_comment', 'key_id_org'])
-    read_columns = SetList(['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
-                            'effector_internal_comment', 'key_id_org'])
-
-    def _transform_effector(self, effector: pd.DataFrame):
-        effector['name'] = effector['effector_name']
-        effector = self.drop_duplicates(df=effector, subset=['name'], perfect_match=True, preserve_nan=True)
-        effector = effector.dropna(subset=['name'])
-
-        effector = apply_processors(effector, effector_id=[rstrip, lstrip],
-                                    name=[rstrip, lstrip, remove_html_tags, parse_effector_name_regulondb])
-
-        effector = self.create_input_value(effector, 'name')
-
-        return effector
 
     @staticmethod
-    def _transform_effectors(names: List[str]):
-        dtos = [EffectorDTO(input_value=name) for name in names]
-        annotate_effectors(dtos=dtos, names=names)
+    def transform_effector(effector: pd.DataFrame):
+        effector = effector.assign(name=effector['effector_name'].copy())
 
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        effector = effector.dropna(subset=['name'])
+        effector = drop_empty_string(effector, 'name')
+        effector = drop_duplicates(df=effector, subset=['name'])
+
+        effector = apply_processors(effector,
+                                    effector_id=[rstrip, lstrip],
+                                    name=[rstrip, lstrip, remove_html_tags, parse_effector_name_regulondb])
+
+        effector = create_input_value(effector, 'name')
+        return effector
 
     def transform(self):
-        effector = read_from_stack(stack=self.transform_stack, file='effector', default_columns=self.read_columns,
-                                   reader=read_txt, skiprows=34, names=self.read_columns)
-        effector = self._transform_effector(effector)
+        columns = ['effector_id', 'effector_name', 'category', 'effector_type', 'effector_note',
+                   'effector_internal_comment', 'key_id_org']
+        reader = regulondb_reader(skiprows=34, names=columns)
+        effector = read(source=self.source, version=self.version,
+                        file='effector.txt', reader=reader,
+                        default=pd.DataFrame(columns=columns))
 
-        names = effector['input_value'].tolist()
-        effectors = self._transform_effectors(names)
+        effector = self.transform_effector(effector)
+        annotated_effectors = self.annotate_effectors(effector)
 
-        df = pd.merge(effectors, effector, on='input_value')
+        df = pd.merge(annotated_effectors, effector, on='input_value', suffixes=('_annotation', '_regulondb'))
 
-        df = df.rename(columns={'name_y': 'name'})
-        df = df.drop(columns=['input_value', 'name_x'])
+        df = merge_columns(df=df, column='name', left='name_annotation', right='name_regulondb')
 
-        self._stack_transformed_nodes(df)
+        df = df.drop(columns=['input_value'])
 
+        self.stack_transformed_nodes(df)
         return df

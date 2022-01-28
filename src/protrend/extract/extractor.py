@@ -1,6 +1,8 @@
 import sys
 from abc import ABCMeta, abstractmethod
 
+from protrend.extract.run_spider import run_spider
+from protrend.utils import DefaultProperty
 from protrend.utils import Settings
 
 
@@ -31,59 +33,41 @@ class Extractor(AbstractExtractor):
     """
     A Extractor is responsible for extracting data sources.
     """
-    default_spider: str = ''
-    default_version: str = '0.0.0'
+    source = DefaultProperty()
+    version = DefaultProperty()
+
+    def __init_subclass__(cls, **kwargs):
+
+        source = kwargs.get('source')
+        cls.source.set_default(cls, source)
+
+        version = kwargs.get('version')
+        cls.version.set_default(cls, version)
+
+        register = kwargs.pop('register', False)
+
+        if register:
+            from protrend.pipeline.pipeline import Pipeline
+            Pipeline.register_extractor(cls, **kwargs)
 
     def __init__(self,
-                 spider: str = None,
+                 source: str = None,
                  version: str = None):
         """
         The extractor object calls the respective scrapy spider for a given data source.
 
-        :type spider: str
+        :type source: str
         :type version: str
 
-        :param spider: The name of the data source and respective spider (e.g. regprecise, collectf, etc)
+        :param source: The name of the data source and respective spider (e.g. regprecise, collectf, etc)
         :param version: The version of the data source in the staging area (e.g. 0.0.0, 0.0.1, etc)
         """
 
-        self._spider = spider
-        self._version = version
-
-    # --------------------------------------------------------
-    # Static properties
-    # --------------------------------------------------------
-    @property
-    def spider(self) -> str:
-        if not self._spider:
-            return self.default_spider
-
-        return self._spider
-
-    @property
-    def version(self) -> str:
-        if not self._version:
-            return self.default_version
-
-        return self._version
+        self.source = source
+        self.version = version
 
     def extract(self):
-        src_path = Settings.ROOT_PATH.parent
+        src_path = Settings.source.parent
         sys.path.insert(0, str(src_path))
-        from .run_spider import run_spider
-        return run_spider(spider=self.spider, staging_area=Settings.STAGING_AREA_PATH, version=self.version)
-
-
-class RegPreciseExtractor(Extractor):
-    default_spider = 'regprecise'
-    default_version = '0.0.0'
-
-
-class CollectfExtractor(Extractor):
-    default_spider = 'collectf'
-    default_version = '0.0.1'
-
-
-class DBTBSExtractor(Extractor):
-    default_spider = 'dbtbs'
-    default_version = '0.0.3'
+        data_lake = str(Settings.data_lake)
+        return run_spider(spider=self.source, data_lake=data_lake, version=self.version)

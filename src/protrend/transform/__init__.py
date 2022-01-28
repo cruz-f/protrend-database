@@ -1,3 +1,10 @@
 from .transformer import Transformer
 from .connector import Connector
-from .dto import DTO, EffectorDTO, GeneDTO, OrganismDTO, PathwayDTO, PublicationDTO
+from .abasy import *
+from .collectf import *
+from .coryneregnet import *
+from .dbtbs import *
+from .literature import *
+from .operondb import *
+from .regprecise import *
+from .regulondb import *

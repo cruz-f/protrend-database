@@ -1,87 +1,50 @@
-from typing import List, Union
-
 import pandas as pd
 
-from protrend.model.model import Gene
-from protrend.transform import GeneDTO
-from protrend.transform.annotation import annotate_genes
-from protrend.transform.coryneregnet.base import CoryneRegNetTransformer
-from protrend.transform.processors import apply_processors, rstrip, lstrip
+from protrend.model import Gene
+from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, read_coryneregnet_networks
+from protrend.transform.mix_ins import GeneMixIn
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
-class GeneTransformer(CoryneRegNetTransformer):
-    default_node = Gene
-    default_transform_stack = {'bsub': 'bsub_regulation.csv',
-                               'cglu': 'cglu_regulation.csv',
-                               'ecol': 'ecol_regulation.csv',
-                               'mtub': 'mtub_regulation.csv'}
-    default_order = 100
+class GeneTransformer(GeneMixIn, CoryneRegNetTransformer,
+                      source='coryneregnet',
+                      version='0.0.0',
+                      node=Gene,
+                      order=100,
+                      register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
-                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession', 'sequence',
-                       'strand', 'start', 'stop',
+                       'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
+                       'sequence', 'strand', 'start', 'stop',
                        'TF_locusTag', 'TF_altLocusTag', 'TF_name', 'TF_role',
                        'TG_locusTag', 'TG_altLocusTag', 'TG_name', 'Operon',
-                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence', 'PMID', 'Source', 'taxonomy'])
-
-    def _transform_regulation(self, regulation: pd.DataFrame) -> pd.DataFrame:
-        regulation = self.drop_duplicates(df=regulation, subset=['TG_locusTag'], perfect_match=True, preserve_nan=True)
-        regulation = regulation.dropna(subset=['TG_locusTag'])
-
-        regulation = apply_processors(regulation, TF_locusTag=[rstrip, lstrip], TF_name=[rstrip, lstrip])
-
-        regulation['locus_tag'] = regulation['TG_locusTag']
-        regulation['name'] = regulation['TG_name']
-
-        regulation = self.create_input_value(df=regulation, col='locus_tag')
-        return regulation
+                       'Binding_site', 'Role', 'Is_sigma_factor', 'Evidence',
+                       'PMID', 'Source', 'taxonomy', 'source'])
 
     @staticmethod
-    def _annotate_genes(loci: List[Union[None, str]], names: List[str], taxa: List[str]):
-        dtos = [GeneDTO(input_value=locus) for locus in loci]
-        annotate_genes(dtos=dtos, loci=loci, names=names, taxa=taxa)
+    def transform_gene(network: pd.DataFrame) -> pd.DataFrame:
+        gene = network.dropna(subset=['TG_locusTag'])
+        gene = drop_empty_string(gene, 'TG_locusTag')
+        gene = drop_duplicates(df=gene, subset=['TG_locusTag'])
 
-        for dto, name in zip(dtos, names):
-            dto.synonyms.append(name)
+        gene = apply_processors(gene, TG_locusTag=[rstrip, lstrip], TG_name=[rstrip, lstrip])
 
-        # locus_tag: List[str]
-        # name: List[str]
-        # synonyms: List[str]
-        # function: List[str]
-        # description: List[str]
-        # ncbi_gene: List[str]
-        # ncbi_protein: List[str]
-        # genbank_accession: List[str]
-        # refseq_accession: List[str]
-        # uniprot_accession: List[str]
-        # sequence: List[str]
-        # strand: List[str]
-        # start: List[int]
-        # stop: List[int]
+        gene = gene.assign(locus_tag=gene['TG_locusTag'].copy(), name=gene['TG_name'].copy(),
+                           ncbi_taxonomy=gene['taxonomy'].copy())
 
-        genes = pd.DataFrame([dto.to_dict() for dto in dtos])
-        strand_mask = (genes['strand'] != 'reverse') & (genes['strand'] != 'forward')
-        genes.loc[strand_mask, 'strand'] = None
-        return genes
+        gene = create_input_value(df=gene, col='locus_tag')
+        return gene
 
     def transform(self):
-        regulation = self._build_regulations()
+        network = read_coryneregnet_networks(self.source, self.version)
 
-        regulation = self._transform_regulation(regulation)
+        genes = self.transform_gene(network)
+        annotated_genes = self.annotate_genes(genes)
 
-        loci = regulation['input_value'].tolist()
-        names = regulation['TF_name'].tolist()
-        taxa = regulation['taxonomy'].tolist()
-
-        genes = self._annotate_genes(loci, names, taxa)
-
-        df = pd.merge(genes, regulation, on='input_value', suffixes=('_annotation', '_coryneregnet'))
-
-        df = self.merge_columns(df=df, column='locus_tag', left='locus_tag_annotation', right='locus_tag_coryneregnet')
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_coryneregnet')
+        df = self.merge_annotations(annotated_genes, genes)
 
         df = df.drop(columns=['input_value'])
 
-        self._stack_transformed_nodes(df)
-
+        self.stack_transformed_nodes(df)
         return df

@@ -1,11 +1,17 @@
+from abc import abstractmethod
+
 from protrend.transform import Transformer, Connector
 
 
-class CollectfTransformer(Transformer):
-    default_source: str = 'collectf'
-    default_version: str = '0.0.1'
+class CollecTFTransformer(Transformer, register=False):
+
+    @abstractmethod
+    def transform(self):
+        pass
 
 
-class CollectfConnector(Connector):
-    default_source: str = 'collectf'
-    default_version: str = '0.0.1'
+class CollecTFConnector(Connector, register=False):
+
+    @abstractmethod
+    def connect(self):
+        pass

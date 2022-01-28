@@ -9,42 +9,30 @@ from Bio.Seq import Seq
 from Bio.SeqIO import SeqRecord
 from diskcache import Cache
 
-from protrend.utils.request import request, read_response
-from protrend.utils import Settings
-
-UNIPROT_PATH = Settings.DATA_LAKE_BIOAPI_PATH.joinpath('uniprot')
+from protrend.utils import Settings, request, read_response
 
 
 def _init_uniprot_record() -> Cache:
-    directory = UNIPROT_PATH.joinpath('record')
+    if not os.path.exists(Settings.uniprot_record):
+        os.makedirs(Settings.uniprot_record)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.uniprot_record)
     return cache
 
 
 def _init_uniprot_query() -> Cache:
-    directory = UNIPROT_PATH.joinpath('query')
+    if not os.path.exists(Settings.uniprot_query):
+        os.makedirs(Settings.uniprot_query)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.uniprot_query)
     return cache
 
 
 def _init_uniprot_mapping() -> Cache:
-    directory = UNIPROT_PATH.joinpath('mapping')
+    if not os.path.exists(Settings.uniprot_mapping):
+        os.makedirs(Settings.uniprot_mapping)
 
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    cache = Cache(directory=directory)
-
+    cache = Cache(directory=Settings.uniprot_mapping)
     return cache
 
 
@@ -80,7 +68,7 @@ def fetch_uniprot_record(uniprot_accession: str) -> SeqRecord:
     except:
         record = SeqRecord(Seq(""))
 
-    time.sleep(Settings.REQUEST_SLEEP)
+    time.sleep(Settings.request_sleep)
 
     return record
 
@@ -127,7 +115,7 @@ def query_uniprot(query: Dict[str, str],
     if df.empty:
         df = pd.DataFrame(columns=UniProtAPI.df_query_columns)
 
-    time.sleep(Settings.REQUEST_SLEEP)
+    time.sleep(Settings.request_sleep)
 
     if output == 'dataframe':
         return df
@@ -160,7 +148,7 @@ def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
     if df.empty:
         df = pd.DataFrame(columns=UniProtAPI.df_mapping_columns)
 
-    time.sleep(Settings.REQUEST_SLEEP)
+    time.sleep(Settings.request_sleep)
 
     if output == 'dataframe':
         return df

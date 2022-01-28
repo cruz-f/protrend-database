@@ -1,161 +1,74 @@
-from typing import List
-
 import pandas as pd
 
-from protrend.io.json import read_json_lines, read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import Pathway, Source, Regulator, Gene
-from protrend.transform.annotation import annotate_pathways
-from protrend.transform.dto import PathwayDTO
-from protrend.transform.processors import rstrip, lstrip, apply_processors, to_int_str, to_list
+from protrend.io import read_json_lines, read
+from protrend.model import Pathway, Regulator
+from protrend.transform.mix_ins import PathwayMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer, RegPreciseConnector
-from protrend.transform.regprecise.gene import GeneTransformer
-from protrend.transform.regprecise.regulator import RegulatorTransformer
-from protrend.transform.regprecise.source import SourceTransformer
+from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
 from protrend.utils import SetList
+from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str, to_list_nan
 
 
-class PathwayTransformer(RegPreciseTransformer):
-    default_node = Pathway
-    default_transform_stack = {'pathway': 'Pathway.json'}
-    default_order = 100
-    columns = SetList(['synonyms', 'kegg_pathways', 'pathway_id', 'url', 'regulog', 'name',
-                       'protrend_id'])
-    read_columns = SetList(['pathway_id', 'name', 'url', 'regulog'])
-
-    def _transform_pathway(self, pathway: pd.DataFrame) -> pd.DataFrame:
-        df = self.drop_duplicates(df=pathway, subset=['name'], perfect_match=True, preserve_nan=False)
-
-        df = apply_processors(df, name=[rstrip, lstrip], pathway_id=to_int_str, regulog=to_int_str)
-
-        self.create_input_value(df, 'name')
-        return df
+class PathwayTransformer(PathwayMixIn, RegPreciseTransformer,
+                         source='regprecise',
+                         version='0.0.0',
+                         node=Pathway,
+                         order=100,
+                         register=True):
+    columns = SetList(['protrend_id', 'name', 'kegg_pathways',
+                       'pathway_id', 'url', 'regulog'])
 
     @staticmethod
-    def _transform_pathways(names: List[str]):
-        dtos = [PathwayDTO(input_value=name) for name in names]
-        annotate_pathways(dtos=dtos, names=names)
+    def transform_pathway(pathway: pd.DataFrame) -> pd.DataFrame:
+        # noinspection DuplicatedCode
+        pathway = pathway.dropna(subset=['name'])
+        pathway = drop_empty_string(pathway, 'name')
+        pathway = drop_duplicates(df=pathway, subset=['name'])
 
-        # name: List[str]
-        # synonyms: List[str]
-        # kegg_pathways: List[str]
+        pathway = apply_processors(pathway, pathway_id=to_int_str, name=[rstrip, lstrip])
 
-        return pd.DataFrame([dto.to_dict() for dto in dtos])
+        # clean the unknown and NULL pathways
+        mask = (pathway['name'] != 'unknown') & (pathway['name'] != 'NULL')
+        pathway = pathway[mask]
+
+        pathway = create_input_value(pathway, 'name')
+        return pathway
 
     def transform(self):
-        pathway = read_from_stack(stack=self.transform_stack, file='pathway',
-                                  default_columns=self.read_columns, reader=read_json_lines)
-        pathway = self._transform_pathway(pathway)
+        pathway = read(source=self.source, version=self.version,
+                       file='Pathway.json', reader=read_json_lines,
+                       default=pd.DataFrame(columns=['pathway_id', 'name', 'url', 'regulog']))
 
-        names = pathway['input_value'].tolist()
-        pathways = self._transform_pathways(names)
+        pathways = self.transform_pathway(pathway)
+        annotated_pathways = self.annotate_pathways(pathways)
 
-        df = pd.merge(pathways, pathway, on='input_value', suffixes=('_annotation', '_regprecise'))
+        df = self.merge_annotations_by_name(annotated_pathways, pathways)
 
-        df = self.merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
-
-        df = df.drop(columns=['input_value'])
-
-        self._stack_transformed_nodes(df)
-
+        self.stack_transformed_nodes(df)
         return df
 
 
-class PathwayToSourceConnector(RegPreciseConnector):
-    default_from_node = Pathway
-    default_to_node = Source
-    default_connect_stack = {'pathway': 'integrated_pathway.json', 'source': 'integrated_source.json'}
+class PathwayToRegulatorConnector(RegPreciseConnector,
+                                  source='regprecise',
+                                  version='0.0.0',
+                                  from_node=Pathway,
+                                  to_node=Regulator,
+                                  register=True):
 
     def connect(self):
-        pathway = read_from_stack(stack=self._connect_stack, file='pathway',
-                                  default_columns=PathwayTransformer.columns, reader=read_json_frame)
-        source = read_from_stack(stack=self._connect_stack, file='source',
-                                 default_columns=SourceTransformer.columns, reader=read_json_frame)
+        source_df, target_df = self.transform_stacks(source='pathway',
+                                                     target='regulator',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_on='pathway_id',
+                                                     target_on='pathway',
+                                                     source_processors={'pathway_id': [to_int_str]},
+                                                     target_processors={'pathway': [to_list_nan]})
+        target_df = target_df.explode('pathway')
+        target_df = apply_processors(target_df, pathway=to_int_str)
 
-        from_identifiers = pathway['protrend_id'].tolist()
-        size = len(from_identifiers)
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          source_on='pathway_id', target_on='pathway')
 
-        protrend_id = source['protrend_id'].iloc[0]
-        to_identifiers = [protrend_id] * size
-
-        kwargs = dict(url=pathway['url'].tolist(),
-                      external_identifier=pathway['pathway_id'].tolist(),
-                      key=['pathway_id'] * size)
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
-
-
-class PathwayToRegulatorConnector(RegPreciseConnector):
-    default_from_node = Pathway
-    default_to_node = Regulator
-    default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json'}
-
-    def connect(self):
-        pathway = read_from_stack(stack=self._connect_stack, file='pathway',
-                                  default_columns=PathwayTransformer.columns, reader=read_json_frame)
-        pathway = apply_processors(pathway, pathway_id=to_int_str)
-
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = apply_processors(regulator, pathway=to_list)
-        regulator = regulator.explode('pathway')
-        regulator = apply_processors(regulator, pathway=to_int_str)
-
-        merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
-                          suffixes=('_pathway', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_pathway', 'protrend_id_regulator'])
-        merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
-
-        from_identifiers = merged['protrend_id_pathway'].tolist()
-        to_identifiers = merged['protrend_id_regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class PathwayToGeneConnector(RegPreciseConnector):
-    default_from_node = Pathway
-    default_to_node = Gene
-    default_connect_stack = {'pathway': 'integrated_pathway.json', 'regulator': 'integrated_regulator.json',
-                             'gene': 'integrated_gene.json'}
-
-    def connect(self):
-        pathway = read_from_stack(stack=self._connect_stack, file='pathway',
-                                  default_columns=PathwayTransformer.columns, reader=read_json_frame)
-        pathway = apply_processors(pathway, pathway_id=to_int_str)
-
-        regulator = read_from_stack(stack=self._connect_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = apply_processors(regulator, pathway=to_list)
-        regulator = regulator.explode('pathway')
-        regulator = apply_processors(regulator, pathway=to_int_str)
-
-        merged = pd.merge(pathway, regulator, left_on='pathway_id', right_on='pathway',
-                          suffixes=('_pathway', '_regulator'))
-        merged = merged.dropna(subset=['protrend_id_pathway', 'protrend_id_regulator'])
-        merged = merged.drop_duplicates(subset=['protrend_id_pathway', 'protrend_id_regulator'])
-        merged = apply_processors(merged, regulon_id=to_int_str)
-
-        gene = read_from_stack(stack=self._connect_stack, file='gene',
-                               default_columns=GeneTransformer.columns, reader=read_json_frame)
-
-        gene = apply_processors(gene, regulon=to_list)
-        gene = gene.explode('regulon')
-        gene = apply_processors(gene, regulon=to_int_str)
-
-        merged = pd.merge(merged, gene, left_on='regulon_id', right_on='regulon',
-                          suffixes=('_pathway_regulator', '_gene'))
-
-        from_identifiers = merged['protrend_id_pathway'].tolist()
-        to_identifiers = merged['protrend_id'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids)
+        self.stack_connections(df)

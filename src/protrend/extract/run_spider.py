@@ -5,7 +5,7 @@ from scrapy import cmdline
 
 
 def run_spider(spider: str,
-               staging_area: str,
+               data_lake: str,
                version: str = None,
                urls: str = None):
     """
@@ -15,7 +15,7 @@ def run_spider(spider: str,
     :param spider:
 
     Spider pipeline
-    :param staging_area:
+    :param data_lake:
     :param version:
 
     Spider settings
@@ -23,22 +23,22 @@ def run_spider(spider: str,
     :return:
     """
 
-    if not os.path.exists(staging_area):
-        os.makedirs(staging_area)
+    if not os.path.exists(data_lake):
+        os.makedirs(data_lake)
 
-    spider_sa = os.path.join(staging_area, spider)
+    spider_dl = os.path.join(data_lake, spider)
 
-    if not os.path.exists(spider_sa):
-        os.makedirs(spider_sa)
+    if not os.path.exists(spider_dl):
+        os.makedirs(spider_dl)
 
-    spider_sa_version = os.path.join(staging_area, spider, version)
+    spider_dl_version = os.path.join(data_lake, spider, version)
 
-    if not os.path.exists(spider_sa_version):
-        os.makedirs(spider_sa_version)
+    if not os.path.exists(spider_dl_version):
+        os.makedirs(spider_dl_version)
 
     else:
-        for filename in os.listdir(spider_sa_version):
-            file_path = os.path.join(spider_sa_version, filename)
+        for filename in os.listdir(spider_dl_version):
+            file_path = os.path.join(spider_dl_version, filename)
             try:
                 if os.path.isfile(file_path) or os.path.islink(file_path):
                     os.unlink(file_path)
@@ -47,7 +47,7 @@ def run_spider(spider: str,
             except Exception as e:
                 print(f'Failed to delete {file_path}. Reason: {e}')
 
-    logfile = fr'{spider_sa_version}\{spider}.log'
+    logfile = fr'{spider_dl_version}\{spider}.log'
 
     try:
         if os.path.isfile(logfile) or os.path.islink(logfile):
@@ -59,7 +59,7 @@ def run_spider(spider: str,
                  "crawl",
                  spider,
                  "-s", f"LOG_FILE={logfile}",
-                 "-s", f"staging_area={spider_sa_version}"]
+                 "-s", f"data_lake={spider_dl_version}"]
 
     if version:
         arguments.append("-s")

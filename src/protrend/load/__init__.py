@@ -1,8 +1,3 @@
 from .loader import Loader
-from .regprecise import RegPreciseLoader
-from .collectf import CollectfLoader
-from .regulondb import RegulondbLoader
-from .dbtbs import DBTBSLoader
-from .coryneregnet import CoryneRegNetLoader
-from .abasy import AbasyLoader
-from .literature import LiteratureLoader
+from .loaders import (AbasyLoader, CollecTFLoader, CoryneRegNetLoader, DBTBSLoader, LiteratureLoader, RegPreciseLoader,
+                      RegulonDBLoader)

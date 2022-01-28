@@ -1,27 +1,36 @@
 from .effector import EffectorTransformer
-from .evidence import (EvidenceToGeneConnector, EvidenceToOperonConnector,
-                       EvidenceToPromoterConnector, EvidenceToRegulatorConnector,
-                       EvidenceToRegulatoryInteractionConnector,
-                       EvidenceToTFBSConnector, EvidenceTransformer)
+from .evidence import (EvidenceToRegulatoryInteractionConnector,
+                       EvidenceTransformer)
 from .gene import GeneTransformer
-from .operon import (GeneToPromoterConnector, GeneToTFBSConnector, OperonToGeneConnector, OperonToPromoterConnector,
-                     OperonToTFBSConnector, OperonTransformer)
-from .organism import (EffectorToOrganismConnector, GeneToOrganismConnector, OperonToOrganismConnector,
-                       OrganismTransformer, PromoterToOrganismConnector, RegulatorToOrganismConnector,
-                       RegulatoryInteractionToOrganismConnector, TFBSToOrganismConnector)
-from .promoter import PromoterTransformer
-from .publication import (PublicationToGeneConnector, PublicationToOperonConnector, PublicationToPromoterConnector,
-                          PublicationToRegulatorConnector, PublicationToTFBSConnector, PublicationToOrganismConnector,
+from .organism import (OrganismToGeneConnector,
+                       OrganismToRegulatorConnector,
+                       OrganismToRegulatoryInteractionConnector,
+                       OrganismToTFBSConnector,
+                       OrganismTransformer)
+from .publication import (PublicationToGeneConnector,
+                          PublicationToOrganismConnector,
+                          PublicationToRegulatorConnector,
+                          PublicationToRegulatoryInteractionConnector,
+                          PublicationToTFBSConnector,
                           PublicationTransformer)
 from .regulator import RegulatorTransformer
-from .regulatory_family import RegulatoryFamilyTransformer, RegulatorToRegulatoryFamilyConnector
-from .regulatory_interaction import (RegulatorToEffectorConnector, RegulatorToGeneConnector, RegulatorToOperonConnector,
-                                     RegulatorToTFBSConnector, RegulatoryInteractionToEffectorConnector,
-                                     RegulatoryInteractionToGeneConnector, RegulatoryInteractionToOperonConnector,
-                                     RegulatoryInteractionToRegulatorConnector, RegulatoryInteractionToTFBSConnector,
+from .regulatory_family import (RegulatoryFamilyToRegulatorConnector,
+                                RegulatoryFamilyTransformer)
+from .regulatory_interaction import (GeneToTFBSConnector,
+                                     RegulatorToEffectorConnector,
+                                     RegulatorToGeneConnector,
+                                     RegulatorToTFBSConnector,
+                                     RegulatoryInteractionToEffectorConnector,
+                                     RegulatoryInteractionToGeneConnector,
+                                     RegulatoryInteractionToRegulatorConnector,
+                                     RegulatoryInteractionToTFBSConnector,
                                      RegulatoryInteractionTransformer)
-from .source import  (EffectorToSourceConnector, GeneToSourceConnector, OperonToSourceConnector,
-                      OrganismToSourceConnector, PromoterToSourceConnector, RegulatorToSourceConnector,
-                      RegulatoryFamilyToSourceConnector, RegulatoryInteractionToSourceConnector, SourceTransformer,
-                      TFBSToSourceConnector)
+from .source import (SourceToEffectorConnector,
+                     SourceToGeneConnector,
+                     SourceToOrganismConnector,
+                     SourceToRegulatorConnector,
+                     SourceToRegulatoryFamilyConnector,
+                     SourceToRegulatoryInteractionConnector,
+                     SourceToTFBSConnector,
+                     SourceTransformer)
 from .tfbs import TFBSTransformer

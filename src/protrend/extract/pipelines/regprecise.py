@@ -22,14 +22,14 @@ class RegPrecisePipeline(JSONPipeline):
                                version=self.version,
                                created=datetime.utcnow().replace(tzinfo=pytz.utc))
 
-        file = open(fr'{self.staging_area}\Database.json', 'wb')
+        file = open(fr'{self.data_lake}\Database.json', 'wb')
         exporter = JsonLinesItemExporter(file)
         exporter.start_exporting()
         exporter.export_item(db_item)
         exporter.finish_exporting()
         file.close()
 
-        self.items_types = (TaxonomyItem,
+        self.items_types = [TaxonomyItem,
                             GenomeItem,
                             TranscriptionFactorItem,
                             RegulogItem,
@@ -40,9 +40,9 @@ class RegPrecisePipeline(JSONPipeline):
                             RegulonItem,
                             OperonItem,
                             GeneItem,
-                            TFBSItem)
+                            TFBSItem]
 
-        self.exporters = build_json_exporters(self.staging_area, self.items_types)
+        self.exporters = build_json_exporters(self.data_lake, self.items_types)
 
         for exporter, _ in self.exporters.values():
             exporter.start_exporting()

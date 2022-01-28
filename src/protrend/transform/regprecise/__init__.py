@@ -1,19 +1,33 @@
-from .effector import (EffectorTransformer, EffectorToOrganismConnector,
-                       EffectorToSourceConnector, EffectorToRegulatorConnector)
-from .gene import GeneTransformer, GeneToSourceConnector, GeneToOrganismConnector
-from .operon import (OperonTransformer, OperonToGeneConnector, OperonToSourceConnector,
-                     OperonToRegulatorConnector, OperonToOrganismConnector, OperonToTFBSConnector,
-                     TFBSToRegulatorConnector, GeneToTFBSConnector, GeneToRegulatorConnector)
-from .organism import OrganismTransformer, OrganismToSourceConnector
-from .pathway import PathwayTransformer, PathwayToGeneConnector, PathwayToSourceConnector, PathwayToRegulatorConnector
-from .publication import PublicationTransformer
-from .regulator import RegulatorTransformer, RegulatorToSourceConnector, RegulatorToOrganismConnector
-from .regulatory_family import (RegulatoryFamilyTransformer, RegulatoryFamilyToRegulatorConnector,
-                                RegulatoryFamilyToPublicationConnector, RegulatoryFamilyToSourceConnector)
-from .regulatory_interaction import (RegulatoryInteractionTransformer,
-                                     RegulatoryInteractionToGeneConnector, RegulatoryInteractionToEffectorConnector,
-                                     RegulatoryInteractionToOrganismConnector, RegulatoryInteractionToOperonConnector,
-                                     RegulatoryInteractionToTFBSConnector, RegulatoryInteractionToRegulatorConnector,
-                                     RegulatoryInteractionToSourceConnector)
-from .source import SourceTransformer
-from .tfbs import TFBSTransformer, TFBSToSourceConnector, TFBSToOrganismConnector
+from .effector import EffectorTransformer
+from .gene import GeneTransformer
+from .organism import OrganismTransformer
+from .pathway import (PathwayToRegulatorConnector,
+                      PathwayTransformer)
+from .publication import (PublicationToRegulatoryFamilyConnector,
+                          PublicationTransformer)
+from .regulator import RegulatorTransformer
+from .regulatory_family import (RegulatoryFamilyToRegulatorConnector,
+                                RegulatoryFamilyTransformer)
+from .regulatory_interaction import (GeneToOrganismConnector,
+                                     GeneToTFBSConnector,
+                                     RegulatorToEffectorConnector,
+                                     RegulatorToGeneConnector,
+                                     RegulatorToOrganismConnector,
+                                     RegulatorToTFBSConnector,
+                                     RegulatoryInteractionToEffectorConnector,
+                                     RegulatoryInteractionToGeneConnector,
+                                     RegulatoryInteractionToOrganismConnector,
+                                     RegulatoryInteractionToRegulatorConnector,
+                                     RegulatoryInteractionToTFBSConnector,
+                                     RegulatoryInteractionTransformer,
+                                     TFBSToOrganismConnector)
+from .source import (SourceToEffectorConnector,
+                     SourceToGeneConnector,
+                     SourceToOrganismConnector,
+                     SourceToPathwayConnector,
+                     SourceToRegulatorConnector,
+                     SourceToRegulatoryFamilyConnector,
+                     SourceToRegulatoryInteractionConnector,
+                     SourceToTFBSConnector,
+                     SourceTransformer)
+from .tfbs import TFBSTransformer

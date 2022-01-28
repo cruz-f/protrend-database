@@ -4,7 +4,7 @@ from itemloaders import ItemLoader
 from scrapy import Request, Spider
 from scrapy.http import Response
 
-from protrend.extract.items.dbtbs import TranscriptionFactorItem, OperonItem, GeneItem, TFBSItem
+from protrend.extract.items.dbtbs import TranscriptionFactorItem, GeneItem, TFBSItem
 from protrend.extract.utils import parsing_spider_arguments
 
 
@@ -114,156 +114,106 @@ class DBTBSSpider(Spider):
         comment_xpath = "//html/body/table[1]/tr[5]/td[1]/text()"
         tf_loader.add_xpath("comment", comment_xpath)
 
-        tf_loader.load_item()
+        tf_item = tf_loader.load_item()
+        tf_loader = ItemLoader(item=tf_item)
 
-        operons_xpath = "//html/body/table[2]/tr/td[1]/a"
-        operons = response.xpath(operons_xpath)
+        # regulatory interactions
+        ri_table = response.xpath("//html/body/table[2]/tr")
+        ri_header = ri_table[0]
+        ri_body = ri_table[1:]
 
-        for operon in operons:
-            operon_loader = ItemLoader(item=OperonItem(), selector=operon)
+        cols = ri_header.xpath(".//th/a/text()").getall() + ri_header.xpath(".//th/text()").getall()
 
-            name_xpath = ".//text()"
-            operon_loader.add_xpath("name", name_xpath)
+        if len(cols) > 6:
+            mechanism = 'tf'
+            gene_xpath = ".//td[2]/text()"
+            tfbs_xpath = ".//td[7]/text()"
+            absolute_position_xpath = ".//td[5]/tt/text()"
+            sequence_xpath = ".//td[7]"
+            pubmed_xpath = ".//td[8]/a/@href"
 
-            operon_loader.add_value("tf", tf_item.get("name"))
-            operon_item = operon_loader.load_item()
-
-            tf_loader = ItemLoader(item=tf_item)
-            tf_loader.add_value("operon", operon_item.get("name"))
-            tf_loader.load_item()
-
-            cb_kwargs = dict(tf_name=tf_item.get("name"), operon_item=operon_item)
-
-            yield response.follow(operon,
-                                  callback=self.parse_operon,
-                                  cb_kwargs=cb_kwargs)
-
-        yield tf_item
-
-    def parse_operon(self, response: Response, tf_name: str, operon_item: OperonItem):
-
-        operon_loader = ItemLoader(item=operon_item, selector=response)
-        operon_loader.add_value("url", response.url)
-
-        evidence_xpath = "//html/body/table[3]/tr[1]/td/text()"
-        operon_loader.add_xpath("evidence", evidence_xpath)
-
-        pubmed_xpath = "//html/body/table[3]/tr[2]/td/a/@href"
-        operon_loader.add_xpath("pubmed", pubmed_xpath)
-
-        comment_xpath = "//html/body/table[3]/tr[3]/td/text()"
-        operon_loader.add_xpath("comment", comment_xpath)
-
-        genes_items = self.parse_genes(response)
-        tfbs_items = self.parse_tfbs(response, operon_item)
-
-        for gene_item in genes_items:
-
-            operon_loader.add_value("gene", gene_item.get("name"))
-
-            gene_loader = ItemLoader(item=gene_item)
-            gene_loader.add_value("tf", tf_name)
-            gene_loader.add_value("operon", operon_item.get("name"))
-            gene_loader.add_value("tfbs", [tfbs_item.get('identifier') for tfbs_item in tfbs_items])
-            gene_loader.load_item()
-
-        for tfbs_item in tfbs_items:
-            operon_loader.add_value("tfbs", tfbs_item.get("identifier"))
-
-            tfbs_loader = ItemLoader(item=tfbs_item)
-            tfbs_loader.add_value("tf", tf_name)
-            tfbs_loader.add_value("operon", operon_item.get("name"))
-            tfbs_loader.add_value("gene", [gene_item.get('name') for gene_item in genes_items])
-            tfbs_loader.load_item()
-
-        yield operon_loader.load_item()
-        yield from genes_items
-        yield from tfbs_items
-
-    @staticmethod
-    def parse_genes(response: Response):
-
-        genes_xpath = "//html/body/table[2]/tr"
-        genes = response.xpath(genes_xpath)
+        else:
+            mechanism = 'sigma'
+            gene_xpath = ".//td[2]/text()"
+            tfbs_xpath = ".//td[5]/text()"
+            absolute_position_xpath = ".//td[3]/tt/text()"
+            sequence_xpath = ".//td[5]"
+            pubmed_xpath = ".//td[6]/a/@href"
 
         genes_items = []
+        tfbs_items = []
+        for ri in ri_body:
 
-        for gene in genes:
+            gene = ri.xpath(gene_xpath).get()
+            tfbs = ri.xpath(tfbs_xpath).get()
 
-            name_xpath = ".//td[1]/text()"
-            name = gene.xpath(name_xpath)
+            if gene and tfbs:
 
-            if name:
+                # gene
+                gene_loader = ItemLoader(item=GeneItem(), selector=ri)
+                gene_loader.add_xpath("name", gene_xpath)
 
-                gene_loader = ItemLoader(item=GeneItem(), selector=gene)
-
-                gene_loader.add_xpath("name", name_xpath)
                 gene_loader.add_value("url", response.url)
 
-                synonyms_xpath = ".//td[2]/text()"
-                gene_loader.add_xpath("synonyms", synonyms_xpath)
+                if mechanism == 'tf':
+                    gene_loader.add_xpath("regulation", ".//td[4]/text()")
+                else:
+                    gene_loader.add_value("regulation", 'Promoter')
 
-                strand_xpath = ".//td[3]/text()"
-                gene_loader.add_xpath("strand", strand_xpath)
+                gene_loader.add_xpath("pubmed", pubmed_xpath)
 
-                position_xpath = ".//td[4]/text()"
-                gene_loader.add_xpath("position", position_xpath)
+                # tfbs
+                tfbs_loader = ItemLoader(item=TFBSItem(), selector=ri)
 
-                function_xpath = ".//td[5]/text()"
-                gene_loader.add_xpath("function", function_xpath)
+                tfbs_loader.add_value("identifier", tf_item.get("name"))
+                tfbs_loader.add_xpath("identifier", gene_xpath)
+                if mechanism == 'tf':
+                    tfbs_loader.add_xpath("identifier", ".//td[4]/text()")
+                else:
+                    tfbs_loader.add_value("identifier", 'Promoter')
 
-                cog_id_xpath = ".//td[6]/a/text()"
-                gene_loader.add_xpath("cog_id", cog_id_xpath)
-
-                conversed_groups_xpath = ".//td[7]/text()"
-                gene_loader.add_xpath("conversed_groups", conversed_groups_xpath)
-
-                gene_item = gene_loader.load_item()
-                genes_items.append(gene_item)
-
-        return genes_items
-
-    @staticmethod
-    def parse_tfbs(response: Response, operon_item: OperonItem):
-
-        tfbs_xpath = "//html/body/table[4]/tr"
-        tfbs = response.xpath(tfbs_xpath)
-
-        tfbs_items = []
-
-        for bs in tfbs:
-
-            tf_xpath = ".//td[1]/a/text()"
-            tf = bs.xpath(tf_xpath)
-
-            if tf:
-                tfbs_loader = ItemLoader(item=TFBSItem(), selector=bs)
-
-                tfbs_loader.add_xpath("identifier", tf_xpath)
-                tfbs_loader.add_value("url", response.url)
-                tfbs_loader.add_value("identifier", operon_item.get("name"))
-
-                regulation_xpath = ".//td[2]/text()"
-                tfbs_loader.add_xpath("identifier", regulation_xpath)
-                tfbs_loader.add_xpath("regulation", regulation_xpath)
-
-                location_xpath = ".//td[3]/tt/text()"
-                tfbs_loader.add_xpath("location", location_xpath)
-
-                absolute_position_xpath = ".//td[4]/text()"
                 tfbs_loader.add_xpath("identifier", absolute_position_xpath)
+
+                tfbs_loader.add_value("url", response.url)
+
+                if mechanism == 'tf':
+                    tfbs_loader.add_xpath("regulation", ".//td[4]/text()")
+                else:
+                    tfbs_loader.add_value("regulation", 'Promoter')
                 tfbs_loader.add_xpath("absolute_position", absolute_position_xpath)
 
-                sequence_selector = bs.xpath('.//td[5]/tt')
+                sequence_selector = ri.xpath(sequence_xpath)
                 if sequence_selector:
                     sequence = sequence_selector.xpath("string()").extract()
                     if sequence:
                         tfbs_loader.add_value('sequence', sequence)
 
-                pubmed_xpath = ".//td[6]/a/@href"
                 tfbs_loader.add_xpath("pubmed", pubmed_xpath)
+
+                # interaction
+                gene_item = gene_loader.load_item()
+                tfbs_item = tfbs_loader.load_item()
+
+                gene_loader = ItemLoader(item=gene_item)
+                tfbs_loader = ItemLoader(item=tfbs_item)
+
+                gene_loader.add_value("tf", tf_item.get('name'))
+                gene_loader.add_value("tfbs", tfbs_item.get('identifier'))
+
+                tfbs_loader.add_value("tf", tf_item.get('name'))
+                tfbs_loader.add_value("gene", gene_item.get('name'))
+
+                gene_item = gene_loader.load_item()
+                genes_items.append(gene_item)
 
                 tfbs_item = tfbs_loader.load_item()
                 tfbs_items.append(tfbs_item)
 
-        return tfbs_items
+                tf_loader.add_value('gene', gene_item.get('name'))
+                tf_loader.add_value('tfbs', tfbs_item.get('identifier'))
+
+        tf_item = tf_loader.load_item()
+
+        yield from genes_items
+        yield from tfbs_items
+        yield tf_item

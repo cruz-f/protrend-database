@@ -1,176 +1,129 @@
 import pandas as pd
 
-from protrend.io.json import read_json_frame
-from protrend.io.utils import read_from_stack
-from protrend.model.model import RegulatoryInteraction, Regulator, Operon, Gene
-from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
-from protrend.transform.abasy.operon import OperonTransformer
+from protrend.io.utils import read_organism, read_regulator, read_gene
+from protrend.model import RegulatoryInteraction, Regulator, Gene, Organism
+from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector, read_abasy_networks
+from protrend.transform.abasy.gene import GeneTransformer
+from protrend.transform.abasy.organism import OrganismTransformer
 from protrend.transform.abasy.regulator import RegulatorTransformer
-from protrend.transform.processors import (apply_processors, to_list, regulatory_effect_coryneregnet, rstrip, lstrip)
+from protrend.transform.mix_ins import RegulatoryInteractionMixIn
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
 from protrend.utils import SetList
+from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, regulatory_effect_abasy
 
 
-class RegulatoryInteractionTransformer(AbasyTransformer):
-    default_node = RegulatoryInteraction
-    default_transform_stack = {'regulator': 'integrated_regulator.json',
-                               'operon': 'integrated_operon.json'}
-    default_order = 80
-    columns = SetList(['regulator_effector', 'regulator', 'operon', 'genes', 'tfbss', 'regulatory_effect',
-                       'regulatory_interaction_hash', 'protrend_id',
-                       'id', 'source', 'target', 'Effect', 'Evidence', 'taxonomy', 'source_target_taxonomy'
-                       ])
+class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, AbasyTransformer,
+                                       source='abasy',
+                                       version='0.0.0',
+                                       node=RegulatoryInteraction,
+                                       order=80,
+                                       register=True):
+    columns = SetList(['protrend_id', 'organism', 'regulator', 'gene', 'tfbs', 'effector', 'regulatory_effect',
+                       'regulatory_interaction_hash',
+                       'id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy',
+                       'regulator_taxonomy', 'target_taxonomy'])
 
-    def _transform_networks(self, networks: pd.DataFrame) -> pd.DataFrame:
-        networks = networks.dropna(subset=['source', 'target', 'taxonomy', 'Effect'])
-        networks.loc[:, 'source_target_taxonomy'] = networks['source'] + networks['target'] + networks['Effect'] + networks['taxonomy']
+    def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
+        network = apply_processors(network,
+                                   regulator=[rstrip, lstrip],
+                                   target=[rstrip, lstrip],
+                                   Effect=[rstrip, lstrip])
 
-        networks = self.drop_duplicates(df=networks, subset=['source_target_taxonomy'],
-                                        perfect_match=True, preserve_nan=True)
-        networks = networks.dropna(subset=['source_target_taxonomy'])
+        network = network.dropna(subset=['regulator', 'target', 'taxonomy', 'Effect'])
+        network = drop_empty_string(network, 'regulator', 'target')
+        network = drop_duplicates(df=network, subset=['regulator', 'target', 'taxonomy', 'Effect'],
+                                  perfect_match=True)
 
-        networks = apply_processors(networks,
-                                    source_target_taxonomy=[rstrip, lstrip],
-                                    source=[rstrip, lstrip],
-                                    target=[rstrip, lstrip])
+        regulator_taxonomy = network['regulator'] + network['taxonomy']
+        gene_taxonomy = network['target'] + network['taxonomy']
 
-        return networks
+        network = network.assign(regulator_taxonomy=regulator_taxonomy,
+                                 gene_taxonomy=gene_taxonomy)
+        network = network.rename(columns={'Effect': 'regulatory_effect', 'regulator': 'regulator_abasy'})
+        return network
 
-    def _transform_regulator(self) -> pd.DataFrame:
-        regulator = read_from_stack(stack=self.transform_stack, file='regulator',
-                                    default_columns=RegulatorTransformer.columns, reader=read_json_frame)
-        regulator = self.select_columns(regulator, 'protrend_id', 'source')
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
+        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
+        organism = organism.rename(columns={'protrend_id': 'organism', 'ncbi_taxonomy': 'taxonomy'})
+        organism = apply_processors(organism, taxonomy=to_int_str)
+        return organism
+
+    def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
+        regulator = select_columns(regulator, 'protrend_id', 'regulator_taxonomy')
         regulator = regulator.rename(columns={'protrend_id': 'regulator'})
         return regulator
 
-    def _transform_operon(self) -> pd.DataFrame:
-        operon = read_from_stack(stack=self.transform_stack, file='operon',
-                                 default_columns=OperonTransformer.columns, reader=read_json_frame)
-        operon = self.select_columns(operon, 'protrend_id', 'genes', 'tfbss', 'target')
-        operon = operon.rename(columns={'protrend_id': 'operon'})
-        operon = apply_processors(operon, genes=to_list, tfbss=to_list)
-        return operon
+    def transform_gene(self, gene: pd.DataFrame) -> pd.DataFrame:
+        gene = select_columns(gene, 'protrend_id', 'gene_taxonomy')
+        gene = gene.rename(columns={'protrend_id': 'gene'})
+        return gene
 
     def transform(self) -> pd.DataFrame:
-        networks = self._build_networks()
-        network = self._transform_networks(networks)
+        network = read_abasy_networks(self.source, self.version)
 
-        regulator = self._transform_regulator()
-        regulator_network = pd.merge(network, regulator, on='source')
+        organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
 
-        operon = self._transform_operon()
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
-        regulatory_interaction = pd.merge(regulator_network, operon, on='target')
-        regulatory_interaction.loc[:, 'regulatory_effect'] = regulatory_interaction['Effect'].tolist()
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 
-        regulatory_interaction = apply_processors(regulatory_interaction,
-                                                  regulatory_effect=regulatory_effect_coryneregnet)
+        df = self._transform(network=network,
+                             organism=organism, organism_key='taxonomy',
+                             regulator=regulator, regulator_key='regulator_taxonomy',
+                             gene=gene, gene_key='gene_taxonomy',
+                             regulatory_effect_processor=regulatory_effect_abasy)
 
-        regulatory_interaction['regulator_effector'] = None
-
-        regulatory_interaction = self.regulatory_interaction_hash(regulatory_interaction)
-
-        self._stack_transformed_nodes(regulatory_interaction)
-
-        return regulatory_interaction
+        self.stack_transformed_nodes(df)
+        return df
 
 
-class RegulatoryInteractionToRegulatorConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Regulator
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToOrganismConnector(AbasyConnector,
+                                               source='abasy',
+                                               version='0.0.0',
+                                               from_node=RegulatoryInteraction,
+                                               to_node=Organism,
+                                               register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['regulator'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='organism')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToOperonConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Operon
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToRegulatorConnector(AbasyConnector,
+                                                source='abasy',
+                                                version='0.0.0',
+                                                from_node=RegulatoryInteraction,
+                                                to_node=Regulator,
+                                                register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='regulator')
+        self.stack_connections(df)
 
 
-class RegulatoryInteractionToGeneConnector(AbasyConnector):
-    default_from_node = RegulatoryInteraction
-    default_to_node = Gene
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+class RegulatoryInteractionToGeneConnector(AbasyConnector,
+                                           source='abasy',
+                                           version='0.0.0',
+                                           from_node=RegulatoryInteraction,
+                                           to_node=Gene,
+                                           register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-        rin = rin.dropna(subset=['genes'])
-
-        from_identifiers = rin['protrend_id'].tolist()
-        to_identifiers = rin['genes'].tolist()
-
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    target_column='gene')
+        self.stack_connections(df)
 
 
-class RegulatorToOperonConnector(AbasyConnector):
-    default_from_node = Regulator
-    default_to_node = Operon
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
+class RegulatorToGeneConnector(AbasyConnector,
+                               source='abasy',
+                               version='0.0.0',
+                               from_node=Regulator,
+                               to_node=Gene,
+                               register=True):
 
     def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['operon'].tolist()
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers)
-
-        self.stack_json(df)
-
-
-class RegulatorToGeneConnector(AbasyConnector):
-    default_from_node = Regulator
-    default_to_node = Gene
-    default_connect_stack = {'rin': 'integrated_regulatoryinteraction.json'}
-
-    def connect(self):
-        rin = read_from_stack(stack=self._connect_stack, file='rin',
-                              default_columns=RegulatoryInteractionTransformer.columns, reader=read_json_frame)
-
-        rin = apply_processors(rin, genes=to_list)
-        rin = rin.explode(column='genes')
-
-        from_identifiers = rin['regulator'].tolist()
-        to_identifiers = rin['genes'].tolist()
-        kwargs = dict(operon=rin['operon'].tolist())
-
-        df = self.make_connection(from_identifiers=from_identifiers,
-                                  to_identifiers=to_identifiers,
-                                  kwargs=kwargs)
-
-        self.stack_json(df)
+        df = self.create_connection(source='rin', target='rin',
+                                    source_column='regulator', target_column='gene')
+        self.stack_connections(df)
