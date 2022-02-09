@@ -54,6 +54,7 @@ class help_text:
     regulator_id = 'The regulator ProTReND identifier'
     gene_id = 'The gene ProTReND identifier'
     tfbs_id = 'The TFBS ProTReND identifier'
+    tfbs_sequence = 'The binding sequence for this TFBS'
     effector_id = 'The effector ProTReND identifier'
     regulatory_effect = 'The regulatory effect (eg activation, repression, dual and unknown) of this regulatory interaction'
     source_author = 'The authors of this data source'
