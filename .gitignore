@@ -1,8 +1,8 @@
 # Internal
+/src/etl.conf
 /useless
-/src/protrend/extract/staging_area
 /src/protrend/bioapis/settings.py
-/src/protrend/transform/data_lake
+/src/protrend/data_lake
 
 # PyCharm
 .idea
