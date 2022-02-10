@@ -1,4 +1,5 @@
 # Internal
+/database
 /src/etl.conf
 /useless
 /src/protrend/bioapis/settings.py
