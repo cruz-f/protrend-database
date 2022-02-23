@@ -1,9 +1,11 @@
 # Internal
-/database
-/src/etl.conf
-/useless
+/database/
+/data/
+/src/data/
+/src/protrend/etl.conf
+/useless/
 /src/protrend/bioapis/settings.py
-/src/protrend/data_lake
+/src/protrend/data_lake/
 
 # PyCharm
 .idea
