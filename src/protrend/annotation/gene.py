@@ -1,3 +1,4 @@
+import re
 from typing import List, Union, Type, TYPE_CHECKING
 
 import pandas as pd
@@ -6,9 +7,13 @@ from tqdm import tqdm
 from protrend.bioapis import NCBIGene, UniProtProtein, NCBIProtein, map_uniprot_identifiers
 from protrend.log import ProtrendLogger
 from protrend.utils.miscellaneous import args_length, scale_arg
+from ..utils import SetList
 
 if TYPE_CHECKING:
     from .dto import GeneDTO
+
+
+locus_tag_pattern = re.compile('^[A-Za-z]+[0-9]{3,}$')
 
 
 def _map_accession(acc: str, mapping: pd.DataFrame) -> List[str]:
@@ -110,6 +115,27 @@ def _annotate_gene(uniprot_protein: UniProtProtein, gene_dto: 'GeneDTO'):
     gene_dto.locus_tag.append(uniprot_protein.locus_tag)
     gene_dto.name.append(uniprot_protein.name)
     gene_dto.synonyms.extend(uniprot_protein.synonyms)
+
+
+def _annotate_locus_tag(gene_dto: 'GeneDTO'):
+    locus_tag = gene_dto.locus_tag.take_first()
+    loci = gene_dto.locus_tag.take_all()
+    synonyms = gene_dto.synonyms.take_all()
+
+    loci = loci + synonyms
+    loci = set(loci)
+
+    if len(locus_tag) < 5:
+
+        for locus in loci:
+            if locus_tag_pattern.match(locus):
+                gene_dto.locus_tag = SetList([locus], output='take_first')
+
+                return
+
+        gene_dto.locus_tag = SetList([], output='take_first')
+
+    return
 
 
 def annotate_genes(dtos: List['GeneDTO'],

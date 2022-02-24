@@ -92,6 +92,9 @@ class GeneMixIn:
         if genes_df.empty:
             return genes_df
 
+        genes_df = genes_df.dropna(subset=['locus_tag'])
+        genes_df = drop_empty_string(genes_df, 'locus_tag')
+
         strand_mask = (genes_df['strand'] != REVERSE) & (genes_df['strand'] != FORWARD)
         genes_df.loc[strand_mask, 'strand'] = UNKNOWN
 
