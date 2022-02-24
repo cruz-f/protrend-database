@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # # CollecTF
     # # ----------------------------------------------------
     # # run_logger('collectf_logger')
-    run_pipeline(source='collectf', version='0.0.1')
+    # run_pipeline(source='collectf', version='0.0.1')
 
     # # ----------------------------------------------------
     # # RegPrecise
