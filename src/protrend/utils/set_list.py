@@ -3,8 +3,10 @@ from dataclasses import field
 from functools import partial
 from typing import Sequence, Any, Iterator, Union, List, TypeVar
 
+V = TypeVar('V')
 
-class SetList(UserList):
+
+class SetList(UserList, List[V]):
 
     def __init__(self,
                  sequence: Union[Iterator, Sequence] = None,
