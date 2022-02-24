@@ -1,4 +1,4 @@
-from neomodel import StringProperty, RelationshipTo, One
+from neomodel import StringProperty, RelationshipTo, One, ZeroOrOne
 
 from protrend.utils.processors import to_str, rstrip, lstrip, lower_case, to_nan
 from .base import BaseNode
@@ -25,8 +25,8 @@ class RegulatoryInteraction(BaseNode):
     data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, model=SourceRelationship)
     evidence = RelationshipTo('.evidence.Evidence', BASE_REL_TYPE, model=BaseRelationship)
     publication = RelationshipTo('.publication.Publication', BASE_REL_TYPE, model=BaseRelationship)
-    data_effector = RelationshipTo('.effector.Effector', BASE_REL_TYPE, cardinality=One, model=BaseRelationship)
+    data_effector = RelationshipTo('.effector.Effector', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
     data_organism = RelationshipTo('.organism.Organism', BASE_REL_TYPE, cardinality=One, model=BaseRelationship)
     data_regulator = RelationshipTo('.regulator.Regulator', BASE_REL_TYPE, cardinality=One, model=BaseRelationship)
     data_gene = RelationshipTo('.gene.Gene', BASE_REL_TYPE, cardinality=One, model=BaseRelationship)
-    data_tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, cardinality=One, model=BaseRelationship)
+    data_tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
