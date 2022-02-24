@@ -93,7 +93,10 @@ class FunctionalDatabaseTest(unittest.TestCase):
         """
         # noinspection PyTypeChecker
         for _regulator in Regulator.nodes:
-            regulator_organism = ProtrendSetList(_regulator.organism.all())[0]
+            regulator_organisms = ProtrendSetList(_regulator.organism.all())
+            self.assertEqual(len(regulator_organisms), 1)
+
+            regulator_organism = regulator_organisms[0]
             regulator_genes = ProtrendSetList(_regulator.gene.all())
 
             for _gene in regulator_genes:
@@ -106,6 +109,9 @@ class FunctionalDatabaseTest(unittest.TestCase):
         """
         # noinspection PyTypeChecker
         for _regulator in Regulator.nodes:
+            regulator_organisms = ProtrendSetList(_regulator.organism.all())
+            self.assertEqual(len(regulator_organisms), 1)
+
             regulator_organism = ProtrendSetList(_regulator.organism.all())[0]
             regulator_tfbs = ProtrendSetList(_regulator.tfbs.all())
 
