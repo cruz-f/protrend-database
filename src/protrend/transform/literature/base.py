@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 
 import pandas as pd
@@ -256,6 +257,45 @@ class LiteratureTransformer(Transformer, register=False):
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_literature')
 
         df = df.drop(columns=['input_value'])
+
+        df = apply_processors(df, taxonomy=to_int_str)
+
+        bsu_pattern = r'^bsu[0-9]{5}$'
+        ecoli_pattern = r'^b[0-9]{4}$'
+        mtub_pattern = r'^rv[0-9]{4}$|^rv[0-9]{4}c$'
+
+        for _, row in df.iterrows():
+            tax = row['taxonomy']
+            locus_tag = row['locus_tag']
+            locus_tag_to_set = None
+            synonyms = row.get('synonyms', [])
+
+            if tax == '224308' and not re.match(bsu_pattern, locus_tag, re.IGNORECASE):
+
+                for synonym in synonyms:
+                    if re.match(bsu_pattern, synonym, re.IGNORECASE):
+                        locus_tag_to_set = synonym
+                        break
+
+            elif tax == '511145' and not re.match(ecoli_pattern, locus_tag, re.IGNORECASE):
+                for synonym in synonyms:
+                    if re.match(ecoli_pattern, synonym, re.IGNORECASE):
+                        locus_tag_to_set = synonym
+                        break
+
+            elif tax == '83332' and not re.match(mtub_pattern, locus_tag, re.IGNORECASE):
+                for synonym in synonyms:
+                    if re.match(mtub_pattern, synonym, re.IGNORECASE):
+                        locus_tag_to_set = synonym
+                        break
+
+            else:
+                continue
+
+            row['locus_tag'] = locus_tag_to_set
+
+        df = df.dropna(subset=['locus_tag'])
+        df = drop_empty_string(df, 'locus_tag')
         return df
 
     @abstractmethod
