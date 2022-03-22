@@ -135,6 +135,10 @@ def _annotate_locus_tag(gene_dto: 'GeneDTO'):
 
         gene_dto.locus_tag = SetList([], output='take_first')
 
+    elif '(deprecated)' in locus_tag:
+        locus_tag = locus_tag.replace('(deprecated)', '').rstrip().lstrip()
+        gene_dto.locus_tag = SetList([locus_tag], output='take_first')
+
     return
 
 
@@ -278,6 +282,9 @@ def annotate_genes(dtos: List['GeneDTO'],
 
         # base annotation, in case none of the annotations work
         _annotate_gene(uniprot_protein, gene_dto)
+
+        # curating the locus tag annotation due to mis annotations of some locus tag
+        _annotate_locus_tag(gene_dto)
 
         uniprot_ncbi_protein = _map_accession(uniprot_id, uniprot_ncbi_proteins)
         uniprot_ncbi_refseq = _map_accession(uniprot_id, uniprot_ncbi_refseqs)
