@@ -4,8 +4,9 @@ import pandas as pd
 
 from protrend.io import read_csv, read
 from protrend.transform import Transformer, Connector
-from protrend.transform.transformations import merge_columns, merge_loci
-
+from protrend.transform.transformations import merge_columns, merge_loci, locus_tag_curation
+from protrend.utils import apply_processors
+from protrend.utils.processors import to_int_str
 
 CORYNEREGNET_NETWORK = ['bsub_regulation.csv',
                         'cglu_regulation.csv',
@@ -49,6 +50,9 @@ class CoryneRegNetTransformer(Transformer, register=False):
 
         # merge name
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_coryneregnet')
+
+        df = apply_processors(df, taxonomy=to_int_str)
+        df = locus_tag_curation(df)
         return df
 
 
