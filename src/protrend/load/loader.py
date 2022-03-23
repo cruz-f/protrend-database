@@ -141,6 +141,11 @@ class Loader:
 
         from_rels, to_rels = get_nodes_relationships(from_node=from_node, to_node=to_node)
 
+        if 'data_source' in from_rels or 'data_source' in to_rels:
+            avoid_duplicates = False
+        else:
+            avoid_duplicates = True
+
         for _, relationship in tqdm(df.iterrows(),
                                     desc=f'relationship: {from_node_name} - {to_node_name}',
                                     total=df.shape[0]):
@@ -160,7 +165,7 @@ class Loader:
 
                 try:
                     connect_nodes(from_node=from_node_instance, to_node=to_node_instance, relationship=attr,
-                                  kwargs=relationship)
+                                  kwargs=relationship, avoid_duplicates=avoid_duplicates)
 
                 except AttemptedCardinalityViolation:
                     continue
@@ -174,7 +179,7 @@ class Loader:
 
                 try:
                     connect_nodes(from_node=to_node_instance, to_node=from_node_instance, relationship=attr,
-                                  kwargs=relationship)
+                                  kwargs=relationship, avoid_duplicates=avoid_duplicates)
 
                 except AttemptedCardinalityViolation:
                     continue

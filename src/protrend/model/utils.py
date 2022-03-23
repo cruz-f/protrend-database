@@ -102,7 +102,10 @@ def get_node_by_name(name: str, default=None) -> Union[Type['BaseNode'], None]:
     return BaseNode.node_register.get(name, default)
 
 
-def _find_to_node(relationship: RelationshipManager) -> Type['BaseNode']:
+def _find_to_node(relationship) -> Type['BaseNode']:
+    if 'node_class' not in relationship.definition:
+        # noinspection PyProtectedMember
+        relationship._lookup_node_class()
     return relationship.definition['node_class']
 
 
@@ -126,7 +129,11 @@ def get_nodes_relationships(from_node: Type['BaseNode'], to_node: Type['BaseNode
     return from_node_matches, to_node_matches
 
 
-def connect_nodes(from_node: 'BaseNode', to_node: 'BaseNode', relationship: str, kwargs: dict) -> bool:
+def connect_nodes(from_node: 'BaseNode',
+                  to_node: 'BaseNode',
+                  relationship: str,
+                  kwargs: dict,
+                  avoid_duplicates: bool = False) -> bool:
     relationship: RelationshipManager = getattr(from_node, relationship, None)
     relationship_model: StructuredRel = relationship.definition['model']
 
@@ -136,5 +143,8 @@ def connect_nodes(from_node: 'BaseNode', to_node: 'BaseNode', relationship: str,
 
     else:
         kwargs = {}
+
+    if avoid_duplicates and relationship.is_connected(to_node):
+        return False
 
     return relationship.connect(to_node, kwargs)
