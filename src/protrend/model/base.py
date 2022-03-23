@@ -113,9 +113,7 @@ class BaseNode(StructuredNode):
 
                     if key in node_keys:
 
-                        last_val = getattr(structured_node, key, None)
-
-                        if not is_null(val) and is_null(last_val):
+                        if not is_null(val):
                             setattr(structured_node, key, val)
 
                 if save:
@@ -200,9 +198,7 @@ class BaseNode(StructuredNode):
 
                     if key in node_keys:
 
-                        last_val = getattr(structured_node, key, None)
-
-                        if not is_null(val) and is_null(last_val):
+                        if not is_null(val):
                             setattr(structured_node, key, val)
 
                 if save:
