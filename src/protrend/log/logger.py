@@ -71,5 +71,5 @@ class ProtrendLogger:
 
 
 # Due to the singleton pattern, code inspections, lints and stubs will raise warnings that ProtrendLogger
-# is a Type an not an instance
+# is a Type and not an instance
 ProtrendLogger: ProtrendLogger
