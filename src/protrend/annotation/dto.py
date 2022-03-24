@@ -1,14 +1,14 @@
 from dataclasses import dataclass, fields, field
 from typing import List, Any
 
-from protrend.utils.set_list import set_list_field
+from protrend.utils.set_list import set_list_field, SetList
 
 
 @dataclass
 class DTO:
     input_value: Any = field(default=None)
 
-    def to_dict(self, ignore_fields: List[str] = None):
+    def to_dict(self, ignore_fields: SetList[str] = None):
 
         if not ignore_fields:
             ignore_fields = []
@@ -36,55 +36,55 @@ class DTO:
 
 @dataclass
 class GeneDTO(DTO):
-    locus_tag: List[str] = set_list_field(output='take_first')
-    name: List[str] = set_list_field(output='take_first')
-    synonyms: List[str] = set_list_field(output='take_all')
-    function: List[str] = set_list_field(output='take_first')
-    description: List[str] = set_list_field(output='take_first')
-    ncbi_gene: List[str] = set_list_field(output='take_first')
-    ncbi_protein: List[str] = set_list_field(output='take_first')
-    genbank_accession: List[str] = set_list_field(output='take_first')
-    refseq_accession: List[str] = set_list_field(output='take_first')
-    uniprot_accession: List[str] = set_list_field(output='take_first')
-    sequence: List[str] = set_list_field(output='take_first')
-    strand: List[str] = set_list_field(output='take_first')
+    locus_tag: SetList[str] = set_list_field(output='take_first')
+    name: SetList[str] = set_list_field(output='take_first')
+    synonyms: SetList[str] = set_list_field(output='take_all')
+    function: SetList[str] = set_list_field(output='take_first')
+    description: SetList[str] = set_list_field(output='take_first')
+    ncbi_gene: SetList[str] = set_list_field(output='take_first')
+    ncbi_protein: SetList[str] = set_list_field(output='take_first')
+    genbank_accession: SetList[str] = set_list_field(output='take_first')
+    refseq_accession: SetList[str] = set_list_field(output='take_first')
+    uniprot_accession: SetList[str] = set_list_field(output='take_first')
+    sequence: SetList[str] = set_list_field(output='take_first')
+    strand: SetList[str] = set_list_field(output='take_first')
     start: List[int] = set_list_field(output='take_first')
     stop: List[int] = set_list_field(output='take_first')
 
 
 @dataclass
 class EffectorDTO(DTO):
-    name: List[str] = set_list_field(output='take_first')
-    synonyms: List[str] = set_list_field(output='take_all')
-    mechanism: List[str] = set_list_field(output='take_first')
-    kegg_compounds: List[str] = set_list_field(output='take_all')
+    name: SetList[str] = set_list_field(output='take_first')
+    synonyms: SetList[str] = set_list_field(output='take_all')
+    mechanism: SetList[str] = set_list_field(output='take_first')
+    kegg_compounds: SetList[str] = set_list_field(output='take_all')
 
 
 @dataclass
 class OrganismDTO(DTO):
-    name: List[str] = set_list_field(output='take_first')
-    species: List[str] = set_list_field(output='take_first')
-    strain: List[str] = set_list_field(output='take_first')
-    ncbi_taxonomy: List[str] = set_list_field(output='take_first')
-    refseq_accession: List[str] = set_list_field(output='take_first')
-    refseq_ftp: List[str] = set_list_field(output='take_first')
-    genbank_accession: List[str] = set_list_field(output='take_first')
-    genbank_ftp: List[str] = set_list_field(output='take_first')
-    ncbi_assembly: List[str] = set_list_field(output='take_first')
-    assembly_accession: List[str] = set_list_field(output='take_first')
+    name: SetList[str] = set_list_field(output='take_first')
+    species: SetList[str] = set_list_field(output='take_first')
+    strain: SetList[str] = set_list_field(output='take_first')
+    ncbi_taxonomy: SetList[str] = set_list_field(output='take_first')
+    refseq_accession: SetList[str] = set_list_field(output='take_first')
+    refseq_ftp: SetList[str] = set_list_field(output='take_first')
+    genbank_accession: SetList[str] = set_list_field(output='take_first')
+    genbank_ftp: SetList[str] = set_list_field(output='take_first')
+    ncbi_assembly: SetList[str] = set_list_field(output='take_first')
+    assembly_accession: SetList[str] = set_list_field(output='take_first')
 
 
 @dataclass
 class PathwayDTO(DTO):
-    name: List[str] = set_list_field(output='take_first')
-    synonyms: List[str] = set_list_field(output='take_all')
-    kegg_pathways: List[str] = set_list_field(output='take_all')
+    name: SetList[str] = set_list_field(output='take_first')
+    synonyms: SetList[str] = set_list_field(output='take_all')
+    kegg_pathways: SetList[str] = set_list_field(output='take_all')
 
 
 @dataclass
 class PublicationDTO(DTO):
-    pmid: List[str] = set_list_field(output='take_first')
-    doi: List[str] = set_list_field(output='take_first')
-    title: List[str] = set_list_field(output='take_first')
-    author: List[str] = set_list_field(output='take_first')
-    year: List[str] = set_list_field(output='take_first')
+    pmid: SetList[str] = set_list_field(output='take_first')
+    doi: SetList[str] = set_list_field(output='take_first')
+    title: SetList[str] = set_list_field(output='take_first')
+    author: SetList[str] = set_list_field(output='take_first')
+    year: SetList[str] = set_list_field(output='take_first')

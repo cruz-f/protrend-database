@@ -4,7 +4,7 @@ from protrend.model import *
 from protrend.utils import NeoDatabase
 
 
-class DatabaseTest(unittest.TestCase):
+class CoreDatabaseTest(unittest.TestCase):
     """
     Testing the database status
     """
@@ -160,8 +160,8 @@ class DatabaseTest(unittest.TestCase):
         self.assertEqual(df.interaction_hash.nunique(), entries)
         self.assertEqual(df.regulatory_effect.nunique(), 4)
 
-        self.assertNotEqual(df.regulator.nunique(), entries)
-        self.assertNotEqual(df.gene.nunique(), entries)
+        self.assertLessEqual(df.regulator.nunique(), entries)
+        self.assertLessEqual(df.gene.nunique(), entries)
 
         self.assertLessEqual(df.effector.nunique(), entries)
         self.assertLessEqual(df.tfbs.nunique(), entries)

@@ -8,7 +8,7 @@ from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, is_null
 from protrend.utils.constants import UNKNOWN
-from protrend.utils.processors import apply_processors, to_int_str
+from protrend.utils.processors import apply_processors, to_int_str, upper_case
 
 
 class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
@@ -57,6 +57,7 @@ class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
     @staticmethod
     def site_coordinates(tfbs: pd.DataFrame) -> pd.DataFrame:
         tfbs = tfbs.assign(strand=UNKNOWN, start=None, stop=None, length=tfbs['sequence'].str.len())
+        tfbs = apply_processors(tfbs, sequence=upper_case)
         return tfbs
 
     @staticmethod

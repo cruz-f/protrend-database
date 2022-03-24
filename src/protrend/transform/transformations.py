@@ -1,3 +1,4 @@
+import re
 from typing import Dict, Callable, List
 
 import pandas as pd
@@ -90,4 +91,51 @@ def drop_duplicates(df: pd.DataFrame,
 
     df = df.reset_index(drop=True)
 
+    return df
+
+
+def locus_tag_curation(df: pd.DataFrame) -> pd.DataFrame:
+    bsu_pattern = r'^bsu[0-9]{5}$'
+    ecoli_pattern = r'^b[0-9]{4}$'
+    mtub_pattern = r'^rv[0-9]{4}$|^rv[0-9]{4}c$'
+    cg_pattern = r'^cg[0-9]{4}$'
+
+    for _, row in df.iterrows():
+        tax = row['taxonomy']
+        locus_tag = row['locus_tag']
+        locus_tag_to_set = None
+        synonyms = row.get('synonyms', [])
+
+        if tax == '224308' and not re.match(bsu_pattern, locus_tag, re.IGNORECASE):
+
+            for synonym in synonyms:
+                if re.match(bsu_pattern, synonym, re.IGNORECASE):
+                    locus_tag_to_set = synonym
+                    break
+
+        elif tax == '511145' and not re.match(ecoli_pattern, locus_tag, re.IGNORECASE):
+            for synonym in synonyms:
+                if re.match(ecoli_pattern, synonym, re.IGNORECASE):
+                    locus_tag_to_set = synonym
+                    break
+
+        elif tax == '83332' and not re.match(mtub_pattern, locus_tag, re.IGNORECASE):
+            for synonym in synonyms:
+                if re.match(mtub_pattern, synonym, re.IGNORECASE):
+                    locus_tag_to_set = synonym
+                    break
+
+        elif tax == '196627' and not re.match(cg_pattern, locus_tag, re.IGNORECASE):
+            for synonym in synonyms:
+                if re.match(cg_pattern, synonym, re.IGNORECASE):
+                    locus_tag_to_set = synonym
+                    break
+
+        else:
+            continue
+
+        row['locus_tag'] = locus_tag_to_set
+
+    df = df.dropna(subset=['locus_tag'])
+    df = drop_empty_string(df, 'locus_tag')
     return df

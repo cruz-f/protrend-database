@@ -1,15 +1,17 @@
 import pandas as pd
 
 from protrend.io import read_json_lines
-from protrend.io.utils import read_organism, read
+from protrend.io.utils import read_organism, read, read_gene, read_regulator
 from protrend.model import TFBS
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.dbtbs.organism import OrganismTransformer
+from protrend.transform.dbtbs.gene import GeneTransformer
+from protrend.transform.dbtbs.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import TFBSMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, select_columns
 from protrend.utils import SetList, is_null
 from protrend.utils.constants import REVERSE, FORWARD, UNKNOWN
-from protrend.utils.processors import apply_processors, upper_case, to_str
+from protrend.utils.processors import apply_processors, upper_case
 
 
 class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
@@ -134,6 +136,13 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
 
         tfbs = self.transform_tfbs(tfbs, organism)
         tfbs = self.site_coordinates(tfbs)
+
+        gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
+
+        tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='dbtbs_name')
+        tfbs = pd.merge(tfbs, regulator, left_on='tf', right_on='dbtbs_name')
+
         tfbs = self.site_hash(tfbs)
 
         self.stack_transformed_nodes(tfbs)

@@ -4,12 +4,11 @@ from typing import List, Dict, Any, Union, Type
 
 import pandas as pd
 import pytz
-from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager,
-                      IntegerProperty, ArrayProperty)
+from neomodel import (UniqueIdProperty, DateTimeProperty, StructuredNode, StringProperty, RelationshipManager)
 from tqdm import tqdm
 
 from protrend.utils.miscellaneous import convert_to_snake_case, is_null
-from .utils import choices, help_text, _sort_nodes
+from .utils import help_text, _sort_nodes
 
 
 class BaseNode(StructuredNode):
@@ -114,9 +113,7 @@ class BaseNode(StructuredNode):
 
                     if key in node_keys:
 
-                        last_val = getattr(structured_node, key, None)
-
-                        if not is_null(val) and is_null(last_val):
+                        if not is_null(val):
                             setattr(structured_node, key, val)
 
                 if save:
@@ -201,9 +198,7 @@ class BaseNode(StructuredNode):
 
                     if key in node_keys:
 
-                        last_val = getattr(structured_node, key, None)
-
-                        if not is_null(val) and is_null(last_val):
+                        if not is_null(val):
                             setattr(structured_node, key, val)
 
                 if save:
@@ -248,36 +243,3 @@ class BaseNode(StructuredNode):
     def to_df(self):
         data = [list(self.values())]
         return pd.DataFrame(data=data, columns=self.keys())
-
-
-class NameMixIn:
-    # properties
-    name = StringProperty(required=True, unique_index=True, max_length=250, help_text=help_text.required_name)
-    name_factor = StringProperty(required=True, unique_index=True, max_length=250, help_text=help_text.required_name)
-
-
-class SequenceMixIn:
-    sequence = StringProperty(help_text=help_text.sequence)
-
-
-class PositionMixIn:
-    strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
-    start = IntegerProperty(help_text=help_text.start)
-    stop = IntegerProperty(help_text=help_text.stop)
-
-
-class GeneMixIn:
-    # properties
-    locus_tag = StringProperty(required=True, unique_index=True, max_length=100, help_text=help_text.locus_tag)
-    locus_tag_factor = StringProperty(required=True, unique_index=True, max_length=100,
-                                      help_text=help_text.required_name)
-    uniprot_accession = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)
-    uniprot_accession_factor = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)
-    name = StringProperty(max_length=50, help_text=help_text.gene_name)
-    synonyms = ArrayProperty(StringProperty(), help_text=help_text.synonyms)
-    function = StringProperty(help_text=help_text.function)
-    description = StringProperty(help_text=help_text.description)
-    ncbi_gene = IntegerProperty(max_length=50, help_text=help_text.ncbi_gene)
-    ncbi_protein = IntegerProperty(max_length=50, help_text=help_text.ncbi_protein)
-    genbank_accession = StringProperty(max_length=50, help_text=help_text.genbank_accession)
-    refseq_accession = StringProperty(max_length=50, help_text=help_text.refseq_accession)
