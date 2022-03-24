@@ -75,6 +75,8 @@ class OrganismTransformer(OrganismMixIn, RegPreciseTransformer,
 
         df = pd.merge(annotated_organisms, organisms, on='input_value', suffixes=('_annotation', '_regprecise'))
 
+        df = merge_columns(df=df, column='ncbi_taxonomy', left='ncbi_taxonomy_annotation',
+                           right='ncbi_taxonomy_regprecise')
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_regprecise')
 
         df = apply_processors(df, ncbi_taxonomy=to_int_str, ncbi_assembly=to_int_str)
