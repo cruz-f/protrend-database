@@ -1,4 +1,5 @@
 import os.path
+import time
 from datetime import datetime
 
 from protrend.utils import Settings
@@ -123,6 +124,8 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
+    # sleep 10 seconds so the database can start
+    time.sleep(10)
     run_logger('tcl_logger')
     run_database(install_all_labels=True, clear_db=True, constraints=True, indexes=True)
 
