@@ -15,7 +15,8 @@ from protrend.transform.transformations import select_columns, group_by, drop_em
 from protrend.utils import SetList
 from protrend.utils.constants import FORWARD, REVERSE
 from protrend.utils.processors import (apply_processors, remove_ellipsis, upper_case, flatten_set_list_nan,
-                                       to_set_list, to_list_nan, take_last, strand_mode, start_forward, start_reverse)
+                                       to_set_list, to_list_nan, take_last, strand_mode, start_forward, start_reverse,
+                                       to_int_str)
 
 regprecise_tfbs_pattern = re.compile(r'-\([0-9]+\)-')
 
@@ -149,6 +150,7 @@ class TFBSTransformer(TFBSMixIn, RegPreciseTransformer,
         gene = select_columns(gene, 'strand', 'start', 'tfbs', 'ncbi_taxonomy')
         gene = gene.rename(columns={'tfbs': 'tfbs_id'})
         gene = apply_processors(gene, tfbs_id=to_list_nan)
+        gene = apply_processors(gene, ncbi_taxonomy=to_int_str)
         gene = gene.explode('tfbs_id')
         return gene
 
