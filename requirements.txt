@@ -10,6 +10,6 @@ w3lib==1.22.0
 Whoosh==2.7.4
 diskcache==5.4.0
 itemloaders==1.0.4
-Scrapy==2.5.1
+Scrapy==2.6.0
 itemadapter==0.4.0
 openpyxl==3.0.5
