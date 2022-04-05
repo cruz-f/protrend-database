@@ -31,3 +31,7 @@ class RegPreciseLoader(Loader, source='regprecise', version='0.0.0', register=Tr
 
 class RegulonDBLoader(Loader, source='regulondb', version='0.0.0', register=True):
     pass
+
+
+class StandardizerLoader(Loader, source='standardizer', version='0.0.0', register=True):
+    pass
