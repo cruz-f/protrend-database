@@ -15,7 +15,6 @@ def run_database(user_name: str = None,
                  clear_db: bool = False,
                  constraints: bool = False,
                  indexes: bool = False):
-
     if not user_name:
         user_name = Settings.db_user_name
 
@@ -64,7 +63,6 @@ def run_pipeline(source: str,
                  connect: bool = True,
                  load: bool = True,
                  verbose: bool = True):
-
     if verbose:
         print('\n', f'Starting {source}-{version} pipeline', '\n')
 
@@ -177,3 +175,15 @@ if __name__ == "__main__":
     # # ----------------------------------------------------
     # # run_logger('operondb_logger')
     run_pipeline(source='operondb', version='0.0.0')
+    #
+    # # ----------------------------------------------------
+    # # Standardizer
+    # # ----------------------------------------------------
+    # run_logger('standardizer_logger')
+    # run_database(install_all_labels=True)
+    run_pipeline(source='standardizer', version='0.0.0',
+                 extract=False,
+                 transform=True,
+                 connect=False,
+                 load=False,
+                 verbose=True)

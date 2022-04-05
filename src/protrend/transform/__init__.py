@@ -8,3 +8,4 @@ from .literature import *
 from .operondb import *
 from .regprecise import *
 from .regulondb import *
+from .standardizer import *

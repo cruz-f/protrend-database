@@ -47,6 +47,9 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
         tf = pd.merge(tf, sequence, on='name_lower')
         tf = tf.drop(columns=['name_lower'])
 
+        # for locus tag annotation
+        tf = tf.assign(taxonomy='224308')
+
         tf = create_input_value(df=tf, col='locus_tag')
         return tf
 
