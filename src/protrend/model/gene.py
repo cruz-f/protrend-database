@@ -30,6 +30,7 @@ class Gene(BaseNode):
     strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
     start = IntegerProperty(help_text=help_text.start)
     stop = IntegerProperty(help_text=help_text.stop)
+    gene_seq = StringProperty(help_text=help_text.gene_seq)
 
     # relationships
     data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, model=SourceRelationship)
