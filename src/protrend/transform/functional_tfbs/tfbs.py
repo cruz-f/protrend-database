@@ -1,4 +1,5 @@
 import pandas as pd
+import requests
 from neo4j.exceptions import Neo4jError, DriverError
 
 from .base import FunctionalTFBSTransformer
@@ -16,15 +17,40 @@ class TFBSTransformer(FunctionalTFBSTransformer,
     def fetch_nodes(self):
         try:
             return self.node.node_to_df()
-        except (Neo4jError, DriverError):
+        except (Neo4jError, DriverError) as e:
+            print(e)
             return pd.DataFrame()
 
     def align_tfbs(self, tfbs: pd.DataFrame, promoters: pd.DataFrame) -> pd.DataFrame:
-        # TODO: method to align tfbs against prometers
-        pass
+        # TODO: method to align tfbs against prometers - fetch_lasagna_api.py
+        url = "http://127.0.0.1:5000/submit"
+
+        sequences = {
+            'sequences': [
+                'GACCAATGATTATTAGCCAAT',
+                'GGCCAGCCTTGCCTTGACCAATAGCCTTGACAAGGCAAACTT',
+                'CCCGAGCCGCTGATTGGCTTTCAGG',
+                'ACCAATGACTTTTAAGTACC',
+                'CCAAT'
+
+            ],
+            'headers': [
+                'site_0',
+                'site_1',
+                'site_2',
+                'site_3',
+                'site_4'
+            ]}
+
+        payload = {'sequences': sequences, 'k': 0}
+
+        response = requests.request("POST", url, json=payload)
+
+        #print(response.json())
+        return response.json()
 
     def calculate_descriptors(self, aligned_tfbs: pd.DataFrame) -> pd.DataFrame:
-        # TODO: method to calculate descriptors
+        # TODO: method to calculate descriptors - pwm, pssm, gc content
         pass
 
     def transform(self) -> pd.DataFrame:
