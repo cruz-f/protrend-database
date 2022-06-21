@@ -46,3 +46,4 @@ class Regulator(BaseNode):
     tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=BaseRelationship)
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', BASE_REL_TYPE,
                                             model=BaseRelationship)
+    tf_motif = RelationshipTo('.tf_motif.TFMotif', BASE_REL_TYPE, model=BaseRelationship)
