@@ -1,5 +1,3 @@
-# TODO: implement the promoter transformer
-
 def read_fasta(file_name):
     fasta_file = SeqIO.parse(open(file_name), 'fasta')
     fasta_seq = [seq for seq in fasta_file][0]
@@ -13,11 +11,10 @@ class Promoter(FunctionalTFBSTransformer,
                       source='functional_tfbs',
                       version='0.0.0',
                       node=TFBS,
-                      order=100, # confirmar se a order é suposto ser maior que a dos tfbs (90)
+                      order=100,
                       register=True):
 
     def fetch_nodes(self):
-        # TODO: method to fetch promoter sequences from NCBI or another DB using biopython
         try:
             return self.node.node_to_df()
         except (Neo4jError, DriverError) as e:
