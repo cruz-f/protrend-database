@@ -43,4 +43,4 @@ class Gene(BaseNode):
     tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=BaseRelationship)
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', BASE_REL_TYPE,
                                             model=BaseRelationship)
-    promoter = RelationshipTo('.promoter.Promoter', BASE_REL_TYPE, model=BaseRelationship)
+    promoter_region = RelationshipTo('.promoter.Promoter', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)

@@ -31,5 +31,5 @@ class Source(BaseNode):
     effector = RelationshipTo('.effector.Effector', SOURCE_REL_TYPE, model=SourceRelationship)
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', SOURCE_REL_TYPE,
                                             model=SourceRelationship)
-    tf_motif = RelationshipTo('.tf_motif.TFMotif', SOURCE_REL_TYPE, model=SourceRelationship)
-    promoter = RelationshipTo('.promoter.Promoter', SOURCE_REL_TYPE, model=SourceRelationship)
+    motif = RelationshipTo('.motif.Motif', SOURCE_REL_TYPE, model=SourceRelationship)
+    promoter_region = RelationshipTo('.promoter_region.PromoterRegion', SOURCE_REL_TYPE, model=SourceRelationship)

@@ -6,7 +6,7 @@ from .relationships import BaseRelationship, BASE_REL_TYPE
 from .utils import help_text
 
 
-class TFMotif(BaseNode):
+class Motif(BaseNode):
     entity = 'TFM'
     node_factors = {'pmid': [to_int_str, lower_case, rstrip, lstrip, to_nan]} # compor
 
@@ -18,7 +18,7 @@ class TFMotif(BaseNode):
     end = IntegerProperty(help_text=help_text.stop)
 
     # relationships
-    data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, model=SourceRelationship)
+    data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, cardinality=ZeroOrOne, model=SourceRelationship)
     tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=BaseRelationship)
-    organism = RelationshipTo('.organism.Organism', BASE_REL_TYPE, model=BaseRelationship)
-    regulator = RelationshipTo('.regulator.Regulator', BASE_REL_TYPE, model=BaseRelationship)
+    organism = RelationshipTo('.organism.Organism', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
+    regulator = RelationshipTo('.regulator.Regulator', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)

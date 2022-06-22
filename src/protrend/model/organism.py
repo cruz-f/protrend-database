@@ -34,5 +34,5 @@ class Organism(BaseNode):
     tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=BaseRelationship)
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', BASE_REL_TYPE,
                                             model=BaseRelationship)
-    tf_motif = RelationshipTo('.tf_motif.TFMotif', BASE_REL_TYPE, model=BaseRelationship)
-    promoter = RelationshipTo('.promoter.Promoter', BASE_REL_TYPE, model=BaseRelationship)
+    motif = RelationshipTo('.motif.Motif', BASE_REL_TYPE, model=BaseRelationship)
+    promoter_region = RelationshipTo('.promoter_region.PromoterRegion', BASE_REL_TYPE, model=BaseRelationship)
