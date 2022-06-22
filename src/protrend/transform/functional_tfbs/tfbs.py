@@ -22,7 +22,6 @@ class TFBSTransformer(FunctionalTFBSTransformer,
             return pd.DataFrame()
 
     def align_tfbs(self, tfbs: pd.DataFrame, promoters: pd.DataFrame) -> pd.DataFrame:
-        # TODO: method to align tfbs against prometers - fetch_lasagna_api.py
         url = "http://127.0.0.1:5000/submit"
 
         sequences = {
