@@ -25,6 +25,7 @@ class Settings:
         self._db_password = str(config.get('db-configuration', 'password'))
         self._db_ip = str(config.get('db-configuration', 'ip'))
         self._db_port = str(config.get('db-configuration', 'port'))
+        self._lasagna_url = str(config.get('db-configuration', 'lasagna_url'))
 
         self._started = False
 
@@ -63,6 +64,10 @@ class Settings:
     @property
     def db_port(self):
         return self._db_port
+
+    @property
+    def lasagna_url(self):
+        return self._lasagna_url
 
     @property
     def extract(self):
