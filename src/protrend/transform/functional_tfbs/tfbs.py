@@ -5,6 +5,7 @@ from neo4j.exceptions import Neo4jError, DriverError
 from .base import FunctionalTFBSTransformer
 from protrend.model import TFBS
 from protrend.io.utils import read_promoters
+from protrend.descriptors import gc_content, pssm, pwm
 
 
 class TFBSTransformer(FunctionalTFBSTransformer,
@@ -50,7 +51,10 @@ class TFBSTransformer(FunctionalTFBSTransformer,
 
     def calculate_descriptors(self, aligned_tfbs: pd.DataFrame) -> pd.DataFrame:
         # TODO: method to calculate descriptors - pwm, pssm, gc content
-        pass
+        calculate_gc_content = gc_content.GCContent(aligned_tfbs)
+        calculate_pwm = pwm.PWM(aligned_tfbs)
+        calculate_pssm = pssm.PSSM(aligned_tfbs)
+        return calculate_gc_content, calculate_pwm, calculate_pssm
 
     def transform(self) -> pd.DataFrame:
         tfbs = self.fetch_nodes()
