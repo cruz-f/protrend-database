@@ -1,8 +1,11 @@
+from Bio import motifs
+from Bio.Seq import Seq
 from Bio.SeqUtils import GC
 
-from protrend.transform.functional_tfbs.tfbs import TFBSTransformer
-
-def GCContent (motif):
-    motif = TFBSTransformer.align_tfbs()
-    descriptor = GC(motif)
+def GCContent (aligned_seqs):
+    seqs = []
+    for seq in aligned_seqs:
+        seqs.append(Seq(seq))
+    m = motifs.create(seqs, alphabet='ATGC-')
+    descriptor = GC(m.consensus)
     return descriptor
