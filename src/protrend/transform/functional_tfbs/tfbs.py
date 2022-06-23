@@ -16,7 +16,26 @@ class TFBSTransformer(FunctionalTFBSTransformer,
 
     def fetch_nodes(self):
         try:
-            return self.node.node_to_df()
+            regulators = Regulator.nodes.all()
+
+            identifiers = []
+            loci = []
+            names = []
+            binding_sites = []
+            for regulator in regulators:
+                sites = regulator.tfbs.all()
+                if not sites:
+                    continue
+                identifiers.append(regulator.protrend_id)
+                loci.append(regulator.locus_tag)
+                names.append(regulator.name)
+                binding_sites.append([site.sequence for site in sites])
+
+            df = pd.DataFrame(data={'protrend_id': identifiers,
+                                    'locus_tag': loci,
+                                    'name': names,
+                                    'binding_sites': binding_sites})
+            return df
         except (Neo4jError, DriverError) as e:
             print(e)
             return pd.DataFrame()
