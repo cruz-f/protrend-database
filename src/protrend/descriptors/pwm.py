@@ -17,4 +17,4 @@ def PWM (motif):
     motif = TFBSTransformer.align_tfbs()
     m = motifs.create(motif)
     descriptor1 = m.counts.normalize(pseudocounts=0.5)
-return descriptor1
+    return descriptor1
