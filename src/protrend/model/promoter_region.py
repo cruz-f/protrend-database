@@ -8,13 +8,14 @@ from .utils import help_text
 
 class PromoterRegion(BaseNode):
     entity = 'PRO'
-    node_factors = {'pmid': [to_int_str, lower_case, rstrip, lstrip, to_nan]} # compor
+    node_factors = {'uniprot_accession': [to_str, lower_case, rstrip, lstrip, to_nan],
+                    'locus_tag': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
     promoter_sequence = StringProperty(help_text=help_text.promoter_sequence)
     locus_tag = StringProperty(required=True, unique_index=True, max_length=100, help_text=help_text.locus_tag)
     uniprot_accession = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)
-    start = IntegerProperty(help_text=help_text.start) # uso o start e stop já existente ou crio específicos para promoters?
+    start = IntegerProperty(help_text=help_text.start)
     end = IntegerProperty(help_text=help_text.stop)
     strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
 

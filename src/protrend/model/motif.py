@@ -7,14 +7,15 @@ from .utils import help_text
 
 
 class Motif(BaseNode):
-    entity = 'TFM'
-    node_factors = {'pmid': [to_int_str, lower_case, rstrip, lstrip, to_nan]} # compor
+    entity = 'MOT'
+    node_factors = {'regulator_protrend_id': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
+    regulator_protrend_id = StringProperty(required=True, unique_index=True, max_length=25)
     motif_sequence = StringProperty(help_text=help_text.motif_sequence)
     strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
     score = IntegerProperty(help_text=help_text.score)
-    start = IntegerProperty(help_text=help_text.start) # uso o start e stop já existente ou crio específicos para tf motif?
+    start = IntegerProperty(help_text=help_text.start)
     end = IntegerProperty(help_text=help_text.stop)
 
     # relationships
