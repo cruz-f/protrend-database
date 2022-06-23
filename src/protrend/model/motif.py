@@ -1,9 +1,9 @@
-from neomodel import StringProperty, IntegerProperty, RelationshipTo
+from neomodel import StringProperty, IntegerProperty, RelationshipTo, ZeroOrOne
 
-from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_int_str
+from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_str
 from .base import BaseNode
-from .relationships import BaseRelationship, BASE_REL_TYPE
-from .utils import help_text
+from .relationships import BaseRelationship, BASE_REL_TYPE, SOURCE_REL_TYPE, SourceRelationship
+from .utils import help_text, choices
 
 
 class Motif(BaseNode):

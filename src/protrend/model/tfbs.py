@@ -30,4 +30,3 @@ class TFBS(BaseNode):
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', BASE_REL_TYPE,
                                             model=BaseRelationship)
     motif = RelationshipTo('.motif.Motif', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
-
