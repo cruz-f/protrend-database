@@ -3,7 +3,7 @@ import requests
 from neo4j.exceptions import Neo4jError, DriverError
 
 from .base import FunctionalTFBSTransformer
-from protrend.model import TFBS
+from protrend.model import TFBS, Regulator
 from ...utils import Settings
 
 
