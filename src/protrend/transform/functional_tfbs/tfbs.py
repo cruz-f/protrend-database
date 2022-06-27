@@ -37,10 +37,10 @@ class TFBSTransformer(FunctionalTFBSTransformer,
                                     'binding_sites': binding_sites})
             return df
         except (Neo4jError, DriverError) as e:
-            print(e)
             return pd.DataFrame()
 
-    def align_tfbs(self, sequences: list, headers: list) -> pd.DataFrame:
+    @staticmethod
+    def align_tfbs(sequences: list, headers: list) -> pd.DataFrame:
 
         data = {
             'sequences': sequences,

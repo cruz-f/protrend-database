@@ -1,7 +1,6 @@
 from neomodel import StringProperty, IntegerProperty, RelationshipTo, ZeroOrOne
 
 from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_str
-from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_int_str, to_str
 from .base import BaseNode
 from .relationships import BaseRelationship, BASE_REL_TYPE, SOURCE_REL_TYPE, SourceRelationship
 from .utils import help_text, choices
@@ -17,7 +16,6 @@ class PromoterRegion(BaseNode):
     locus_tag_factor = StringProperty(required=True, unique_index=True, max_length=100,
                                       help_text=help_text.required_name)
     uniprot_accession = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)
-    start = IntegerProperty(help_text=help_text.start)
     uniprot_accession_factor = StringProperty(unique_index=True, max_length=50, help_text=help_text.uniprot_accession)
     promoter_sequence = StringProperty(help_text=help_text.promoter_sequence)
     start = IntegerProperty(help_text=help_text.start)
