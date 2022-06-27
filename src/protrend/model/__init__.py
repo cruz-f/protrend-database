@@ -5,6 +5,7 @@ from .gene import Gene
 from .operon import Operon
 from .organism import Organism
 from .pathway import Pathway
+from .promoter_region import PromoterRegion
 from .publication import Publication
 from .regulator import Regulator
 from .regulatory_family import RegulatoryFamily
