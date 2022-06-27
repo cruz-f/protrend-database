@@ -1,16 +1,17 @@
 from neomodel import StringProperty, IntegerProperty, RelationshipTo, ZeroOrOne
 
-from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_int_str
+from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_str
 from .base import BaseNode
 from .relationships import BaseRelationship, BASE_REL_TYPE, SOURCE_REL_TYPE, SourceRelationship
 from .utils import help_text, choices
 
 
 class Motif(BaseNode):
-    entity = 'TFM'
-    node_factors = {'pmid': [to_int_str, lower_case, rstrip, lstrip, to_nan]}
+    entity = 'MOT'
+    node_factors = {'regulator_protrend_id': [to_str, lower_case, rstrip, lstrip, to_nan]}
 
     # properties
+    regulator_protrend_id = StringProperty(required=True, unique_index=True, max_length=25)
     motif_sequence = StringProperty(help_text=help_text.motif_sequence)
     strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
     score = IntegerProperty(help_text=help_text.score)
