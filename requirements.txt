@@ -13,3 +13,4 @@ itemloaders==1.0.4
 Scrapy==2.5.1
 itemadapter==0.4.0
 openpyxl==3.0.5
+xlrd==1.2.0
