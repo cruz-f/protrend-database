@@ -26,5 +26,5 @@ class EvidenceTransformer(StandardizerTransformer,
             orphans.add(node.protrend_id)
             node.delete()
 
-        df = {'protrend_id': orphans}
+        df = {'protrend_id': list(orphans)}
         return pd.DataFrame(df)
