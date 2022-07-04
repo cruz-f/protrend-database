@@ -50,12 +50,14 @@ class InteractionDatabaseTest(unittest.TestCase):
             self.assertEqual(interaction_genes[0].protrend_id, interaction.gene)
 
             # interaction - tfbs
-            self.assertEqual(len(interaction_tfbs), 1)
-            self.assertEqual(interaction_tfbs[0].protrend_id, interaction.tfbs)
+            if interaction.tfbs:
+                self.assertEqual(len(interaction_tfbs), 1)
+                self.assertEqual(interaction_tfbs[0].protrend_id, interaction.tfbs)
 
             # interaction - effectors
-            self.assertEqual(len(interaction_effectors), 1)
-            self.assertEqual(interaction_effectors[0].protrend_id, interaction.effector)
+            if interaction.effector:
+                self.assertEqual(len(interaction_effectors), 1)
+                self.assertEqual(interaction_effectors[0].protrend_id, interaction.effector)
 
     def test_interactions_regulators(self):
         """
@@ -76,12 +78,14 @@ class InteractionDatabaseTest(unittest.TestCase):
             self.assertIn(interaction.gene, regulator_genes)
 
             # regulator - tfbs
-            regulator_tfbs = [obj.protrend_id for obj in _regulator.tfbs.all()]
-            self.assertIn(interaction.tfbs, regulator_tfbs)
+            if interaction.tfbs:
+                regulator_tfbs = [obj.protrend_id for obj in _regulator.tfbs.all()]
+                self.assertIn(interaction.tfbs, regulator_tfbs)
 
             # regulator - effectors
-            regulator_effectors = [obj.protrend_id for obj in _regulator.effector.all()]
-            self.assertIn(interaction.effector, regulator_effectors)
+            if interaction.effector:
+                regulator_effectors = [obj.protrend_id for obj in _regulator.effector.all()]
+                self.assertIn(interaction.effector, regulator_effectors)
 
     def test_interactions_genes(self):
         """
@@ -101,8 +105,9 @@ class InteractionDatabaseTest(unittest.TestCase):
             self.assertIn(interaction.regulator, gene_regulators)
 
             # gene - tfbs
-            gene_tfbs = [obj.protrend_id for obj in _gene.tfbs.all()]
-            self.assertIn(interaction.tfbs, gene_tfbs)
+            if interaction.tfbs:
+                gene_tfbs = [obj.protrend_id for obj in _gene.tfbs.all()]
+                self.assertIn(interaction.tfbs, gene_tfbs)
 
     def test_interactions_tfbs(self):
         """
@@ -110,20 +115,21 @@ class InteractionDatabaseTest(unittest.TestCase):
         """
         # noinspection PyTypeChecker
         for interaction in RegulatoryInteraction.nodes:
-            interaction_tfbs = ProtrendSetList(interaction.data_tfbs.all())
-            _tfbs = interaction_tfbs[0]
+            if interaction.tfbs:
+                interaction_tfbs = ProtrendSetList(interaction.data_tfbs.all())
+                _tfbs = interaction_tfbs[0]
 
-            # tfbs - organisms
-            tfbs_organism = _tfbs.data_organism[0]
-            self.assertEqual(interaction.organism, tfbs_organism.protrend_id)
+                # tfbs - organisms
+                tfbs_organism = _tfbs.data_organism[0]
+                self.assertEqual(interaction.organism, tfbs_organism.protrend_id)
 
-            # tfbs - regulators
-            tfbs_regulators = [obj.protrend_id for obj in _tfbs.regulator.all()]
-            self.assertIn(interaction.regulator, tfbs_regulators)
+                # tfbs - regulators
+                tfbs_regulators = [obj.protrend_id for obj in _tfbs.regulator.all()]
+                self.assertIn(interaction.regulator, tfbs_regulators)
 
-            # tfbs - genes
-            tfbs_genes = [obj.protrend_id for obj in _tfbs.gene.all()]
-            self.assertIn(interaction.tfbs, tfbs_genes)
+                # tfbs - genes
+                tfbs_genes = [obj.protrend_id for obj in _tfbs.gene.all()]
+                self.assertIn(interaction.gene, tfbs_genes)
 
     def test_interactions_effectors(self):
         """
@@ -131,12 +137,13 @@ class InteractionDatabaseTest(unittest.TestCase):
         """
         # noinspection PyTypeChecker
         for interaction in RegulatoryInteraction.nodes:
-            interaction_effector = ProtrendSetList(interaction.data_effector.all())
-            _effector = interaction_effector[0]
+            if interaction.effector:
+                interaction_effector = ProtrendSetList(interaction.data_effector.all())
+                _effector = interaction_effector[0]
 
-            # effector - regulators
-            effector_regulators = [obj.protrend_id for obj in _effector.regulator.all()]
-            self.assertIn(interaction.regulator, effector_regulators)
+                # effector - regulators
+                effector_regulators = [obj.protrend_id for obj in _effector.regulator.all()]
+                self.assertIn(interaction.regulator, effector_regulators)
 
     def test_interactions_regulators_genes(self):
         """

@@ -30,6 +30,7 @@ class Gene(BaseNode):
     strand = StringProperty(choices=choices.strand, help_text=help_text.strand)
     start = IntegerProperty(help_text=help_text.start)
     stop = IntegerProperty(help_text=help_text.stop)
+    gene_seq = StringProperty(help_text=help_text.gene_seq)
 
     # relationships
     data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, model=SourceRelationship)
@@ -42,3 +43,4 @@ class Gene(BaseNode):
     tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=BaseRelationship)
     regulatory_interaction = RelationshipTo('.regulatory_interaction.RegulatoryInteraction', BASE_REL_TYPE,
                                             model=BaseRelationship)
+    promoter_region = RelationshipTo('.promoter.Promoter', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)

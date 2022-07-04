@@ -63,3 +63,8 @@ def read_rfam(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame
 def read_operon(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
     return read(source=source, version=version, file='integrated_operon.json',
                 reader=read_json_frame, default=pd.DataFrame(columns=columns))
+
+
+def read_promoters(source: str, version: str, columns: Sequence[str]) -> pd.DataFrame:
+    return read(source=source, version=version, file='transformed_promoters.json',
+                reader=read_json_frame, default=pd.DataFrame(columns=columns))

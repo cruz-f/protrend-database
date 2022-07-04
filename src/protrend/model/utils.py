@@ -24,6 +24,7 @@ class help_text:
     genbank_accession = 'The NCBI GenBank accession'
     refseq_accession = 'The NCBI RefSeq accession'
     sequence = 'The protein sequence for this protein'
+    gene_seq = 'The gene sequence for this gene'
     strand = 'The strand corresponds to the genomic coordinate forward or reverse'
     start = 'The start corresponds to the genomic coordinate of the item position in the genome sequence'
     stop = 'The stop corresponds to the genomic coordinate of the item position in the genome sequence'
@@ -61,6 +62,9 @@ class help_text:
     url = 'The web address for this data source'
     data_source_type = 'The type of this data source'
     length = 'The length of the TFBS sequence'
+    motif_sequence = 'The sequence of the motif'
+    score = 'The score of the TFBS alignment'
+    promoter_sequence = 'The sequence of the promoter'
 
 
 # noinspection PyPep8Naming
