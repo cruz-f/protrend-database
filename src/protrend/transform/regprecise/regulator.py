@@ -6,7 +6,8 @@ from protrend.io import read_json_lines, read
 from protrend.io.utils import read_organism
 from protrend.log import ProtrendLogger
 from protrend.model import Regulator
-from protrend.transform.mix_ins import GeneMixIn, get_values
+from protrend.transform.mix_ins._utils import get_values
+from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.transformations import drop_empty_string, create_input_value, merge_columns, drop_duplicates
