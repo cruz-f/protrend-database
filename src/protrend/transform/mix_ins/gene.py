@@ -80,7 +80,7 @@ class GeneMixIn:
 
         annotated_genes['synonyms'] = annotated_genes['synonyms'].fillna("").apply(list)
         largest_annotated_synonyms = annotated_genes['synonyms'].str.len().max()
-        annotated_synonyms_cols = [f'synonym_{i+1}' for i in range(largest_annotated_synonyms)]
+        annotated_synonyms_cols = [f'annotated_synonym_{i+1}' for i in range(largest_annotated_synonyms)]
         genes_synonyms = pd.DataFrame(annotated_genes['synonyms'].to_list(), columns=annotated_synonyms_cols)
         annotated_genes = annotated_genes.drop(columns=['synonyms'])
         annotated_genes = annotated_genes.join(genes_synonyms)
@@ -88,7 +88,7 @@ class GeneMixIn:
         genome = read_json_frame(genome_path)
         genome['synonyms'] = genome['synonyms'].fillna("").apply(list)
         largest_genome_synonyms = genome['synonyms'].str.len().max()
-        genome_synonyms_cols = [f'synonym_{i+1}' for i in range(largest_genome_synonyms)]
+        genome_synonyms_cols = [f'genome_synonym_{i+1}' for i in range(largest_genome_synonyms)]
         genome_synonyms = pd.DataFrame(genome['synonyms'].to_list(), columns=genome_synonyms_cols)
         genome = genome.drop(columns=['synonyms'])
         genome = genome.join(genome_synonyms)
@@ -102,11 +102,16 @@ class GeneMixIn:
                       right_on=right_on_cols,
                       suffixes=('_annotated', '_genomes'))
 
+        synonyms_df = df[annotated_synonyms_cols + genome_synonyms_cols]
         df = df.drop(columns=['name_annotated',
                               'promoter_sequence',
                               'promoter_start',
                               'promoter_end',
-                              'promoter_strand'])
+                              'promoter_strand',
+                              *annotated_synonyms_cols,
+                              *genome_synonyms_cols])
+        df['synonyms'] = synonyms_df.values.tolist()
+        df['synonyms'] = df['synonyms'].apply(lambda x: set([y for y in x if y]))
         df = df.rename(columns={'name_genomes': 'name'})
 
         df = merge_columns(df, column='protein_sequence', left='protein_sequence', right='sequence')
