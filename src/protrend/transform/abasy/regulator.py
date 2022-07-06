@@ -19,7 +19,7 @@ class RegulatorTransformer(GeneMixIn, AbasyTransformer,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'id', 'regulator', 'target', 'Effect', 'Evidence', 'source', 'taxonomy', 'regulator_taxonomy'])
 
     @staticmethod
@@ -40,7 +40,7 @@ class RegulatorTransformer(GeneMixIn, AbasyTransformer,
     def transform_gene(gene: pd.DataFrame) -> pd.DataFrame:
         gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                               'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                              'sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
+                              'protein_sequence', 'strand', 'start', 'stop', 'gene_taxonomy')
         return gene
 
     def transform(self):

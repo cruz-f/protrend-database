@@ -19,7 +19,7 @@ class RegulatorTransformer(RegulonDBTransformer,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'name_lower', 'gene_id', 'regulator_id',
                        'transcription_factor_id', 'transcription_factor_name', 'transcription_factor_family',
                        'srna_id', 'srna_gene_id',
@@ -77,7 +77,7 @@ class RegulatorTransformer(RegulonDBTransformer,
         gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
         gene = select_columns(gene, 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                               'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                              'sequence', 'strand', 'start', 'stop',
+                              'protein_sequence', 'strand', 'start', 'stop',
                               'name_lower', 'gene_id')
 
         tf_columns = ['transcription_factor_id', 'transcription_factor_name', 'site_length', 'symmetry',

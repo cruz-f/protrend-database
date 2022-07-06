@@ -50,7 +50,7 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
                        'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'])
 

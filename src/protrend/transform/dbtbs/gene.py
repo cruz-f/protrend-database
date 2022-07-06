@@ -17,7 +17,7 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
                       register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop',
+                       'protein_sequence', 'strand', 'start', 'stop',
                        'url', 'regulation', 'pubmed', 'tf', 'tfbs',
                        'dbtbs_name'])
 

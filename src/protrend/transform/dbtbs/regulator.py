@@ -18,7 +18,7 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'family', 'domain', 'domain_description', 'description', 'url',
                        'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs',
                        'dbtbs_name'])
@@ -58,7 +58,7 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
                   default=pd.DataFrame(columns=['name', 'family', 'domain', 'domain_description', 'description', 'url',
                                                 'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs']))
 
-        sequence = read(source=self.source, version=self.version, file='sequence.gb', reader=read_genbank,
+        sequence = read(source=self.source, version=self.version, file='protein_sequence.gb', reader=read_genbank,
                         default=pd.DataFrame(columns=['name_lower', 'locus_tag', 'genbank_accession',
                                                       'uniprot_accession']))
 

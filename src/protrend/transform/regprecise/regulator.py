@@ -24,7 +24,7 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'ncbi_taxonomy', 'regulator_name', 'regulator_locus_tag',
                        'regulon_id', 'genome', 'url', 'regulator_type', 'rfam',
                        'regulator_family', 'regulation_mode', 'biological_process', 'regulation_effector',
