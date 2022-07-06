@@ -25,7 +25,9 @@ class Settings:
         self._db_password = str(config.get('db-configuration', 'password'))
         self._db_ip = str(config.get('db-configuration', 'ip'))
         self._db_port = str(config.get('db-configuration', 'port'))
-        self._lasagna_url = str(config.get('db-configuration', 'lasagna_url'))
+
+        self._alignment_ip = str(config.get('alignment-configuration', 'ip'))
+        self._alignment_port = str(config.get('alignment-configuration', 'port'))
 
         self._started = False
 
@@ -67,7 +69,7 @@ class Settings:
 
     @property
     def lasagna_url(self):
-        return self._lasagna_url
+        return f'http://{self.alignment_ip}:{self.alignment_port}'
 
     @property
     def extract(self):
@@ -128,6 +130,14 @@ class Settings:
     @property
     def uniprot_mapping(self):
         return self.working_directory.joinpath('data_lake', 'bioapi_cache', 'uniprot', 'mapping')
+
+    @property
+    def genomes_database(self):
+        return self.working_directory.joinpath('data_lake', 'genomes_database')
+
+    @property
+    def genomes_ftps(self):
+        return self.genomes_database.joinpath('genomes_ftps.csv')
 
     @property
     def log_conf_file(self):
