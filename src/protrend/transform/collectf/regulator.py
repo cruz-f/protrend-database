@@ -18,8 +18,8 @@ from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_
 
 
 def map_accession(acc: str, mapping: pd.DataFrame) -> Union[str, None]:
-    mask = mapping['From'] == acc
-    to = mapping.loc[mask, 'To'].to_list()
+    mask = mapping['from'] == acc
+    to = mapping.loc[mask, 'to'].to_list()
 
     if to:
         return to[0]
@@ -57,7 +57,8 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
     @staticmethod
     def get_ncbi_proteins_from_uniprot(uniprot_accessions: List[str]) -> List[Union[str, None]]:
         # map uniprot_accessions to ncbi_proteins
-        uniprot_ncbi_proteins = map_uniprot_identifiers(uniprot_accessions, from_='ACC', to='P_GI')
+        uniprot_ncbi_proteins = map_uniprot_identifiers(uniprot_accessions, from_db='UniProtKB_AC-ID',
+                                                        to_db='GI_number')
         return [map_accession(accession, uniprot_ncbi_proteins) for accession in uniprot_accessions]
 
     @staticmethod
