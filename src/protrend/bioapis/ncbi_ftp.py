@@ -36,11 +36,3 @@ def fetch_sequences(ftp_path: str, file_name_or_path: Path):
 
     ftp.quit()
 
-
-if __name__ == '__main__':
-    pass
-    # fetch_sequences_to_ncbi_ftp(
-    #     ftp_paths=['ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/021/485/GCA_000021485.1_ASM2148v1'],
-    #     output_folder=r'C:\Users\BiSBII\OneDrive - Universidade do Minho\PhD\Protrend\main\protrend-database\useless',
-    #     protrend_ids=['PRT.ORG.0000001']
-    # )
