@@ -1,4 +1,6 @@
 import gzip
+import os
+import shutil
 from pathlib import Path
 from typing import List, Optional
 
@@ -8,6 +10,7 @@ from tqdm import tqdm
 
 from protrend.bioapis import fetch_sequences
 from protrend.io import write_json_frame
+from protrend.log import ProtrendLogger
 from protrend.utils import Settings
 
 
@@ -29,8 +32,11 @@ def read_gb_file(gb_file_path: Path):
     Reads the given genbank file.
     """
     with gzip.open(gb_file_path, "rt") as handle:
-        for record in SeqIO.parse(handle, 'gb'):
-            return record
+        try:
+            return [record for record in SeqIO.parse(handle, "genbank")]
+        except Exception as e:
+            ProtrendLogger.log.info(f'Error reading {gb_file_path}: {e}')
+            return []
 
 
 def read_genomes_ftps(genomes_file: Path = None) -> pd.DataFrame:
@@ -62,13 +68,10 @@ def fetch_genomes(genomes_ftps: pd.DataFrame):
     return output_sequences
 
 
-def build_genome_database(gb_file: Path,
-                          promoter_region_length: int = 150) -> pd.DataFrame:
+def _parse_record(record: SeqIO.SeqRecord, promoter_region_length: int) -> dict:
     """
-    Retrieves the promoter sequences for the given organisms.
+    Parses the given record.
     """
-    record = read_gb_file(gb_file)
-
     genome = {'locus_tag': [],
               'name': [],
               'synonyms': [],
@@ -144,7 +147,25 @@ def build_genome_database(gb_file: Path,
             genome['promoter_end'].append(promoter_end)
             genome['promoter_strand'].append(promoter_strand)
 
-    return pd.DataFrame(genome)
+    return genome
+
+
+def build_genome_database(gb_file: Path,
+                          promoter_region_length: int = 150) -> pd.DataFrame:
+    """
+    Retrieves the promoter sequences for the given organisms.
+    """
+    records = read_gb_file(gb_file)
+    genomes = []
+    for record in records:
+        genome_record = _parse_record(record, promoter_region_length)
+        genome_record = pd.DataFrame(genome_record)
+        genomes.append(genome_record)
+
+    if genomes:
+        return pd.concat(genomes, ignore_index=True)
+
+    return pd.DataFrame()
 
 
 def build_genomes_database(genomes_file: Path = None,
@@ -161,10 +182,13 @@ def build_genomes_database(genomes_file: Path = None,
 
     for genome_gnb, ncbi_taxonomy in tqdm(genomes_gnbs, desc='build genomes from GenBanks',
                                           total=len(genomes_gnbs)):
-        genome_path = str(Path(Settings.genomes_database).joinpath(f'{ncbi_taxonomy}.json').absolute())
-        genome = build_genome_database(genome_gnb, promoter_region_length)
-        write_json_frame(genome_path, genome)
+        genome_path = Path(Settings.genomes_database).joinpath(f'{ncbi_taxonomy}.json')
+        if not genome_path.exists():
+            genome = build_genome_database(genome_gnb, promoter_region_length)
+            write_json_frame(genome_path, genome)
 
 
 if __name__ == '__main__':
+    from protrend.runners.runners import run_logger
+    run_logger('extract_genomes')
     build_genomes_database()

@@ -70,7 +70,7 @@ def is_set_list_column(column: pd.Series) -> bool:
         return False
 
 
-def write_json_frame(file_path: str, df: pd.DataFrame, **kwargs) -> Optional[str]:
+def write_json_frame(file_path: Union[str, Path], df: pd.DataFrame, **kwargs) -> Optional[str]:
     cols_to_process = {col: to_list_nan
                        for col in df.columns
                        if is_set_list_column(df[col])}
