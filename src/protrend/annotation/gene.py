@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from protrend.bioapis import NCBIGene, UniProtProtein, NCBIProtein, map_uniprot_identifiers
 from protrend.log import ProtrendLogger
-from protrend.utils.miscellaneous import args_length, scale_arg
+from protrend.utils.miscellaneous import args_length, scale_arg, is_null
 from ..utils import SetList
 
 if TYPE_CHECKING:
@@ -33,16 +33,10 @@ def _fetch_genes(identifiers: List[str],
 
     genes = []
 
-    if identifiers[0] is None:
-
-        for taxonomy, locus_tag, name in tqdm(zip(taxa, loci, names), desc='gene', total=len(taxa)):
-            gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
-            gene.fetch()
-            genes.append(gene)
-
-    else:
-
-        for identifier in tqdm(identifiers, desc='gene'):
+    for identifier, taxonomy, locus_tag, name in tqdm(zip(identifiers, taxa, loci, names),
+                                                      desc='gene',
+                                                      total=len(taxa)):
+        if not is_null(identifier):
 
             if is_refseq:
                 gene = cls(refseq_accession=identifier)
@@ -53,8 +47,11 @@ def _fetch_genes(identifiers: List[str],
             else:
                 gene = cls(identifier=identifier)
 
-            gene.fetch()
-            genes.append(gene)
+        else:
+            gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
+
+        gene.fetch()
+        genes.append(gene)
 
     return genes
 
@@ -67,7 +64,7 @@ def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: 'GeneDTO'):
         gene_dto.synonyms.extend(uniprot_protein.synonyms)
         gene_dto.function.append(uniprot_protein.function)
         gene_dto.description.append(uniprot_protein.description)
-        gene_dto.sequence.append(uniprot_protein.sequence)
+        gene_dto.protein_sequence.append(uniprot_protein.sequence)
 
         return uniprot_protein.identifier
 
@@ -80,7 +77,7 @@ def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: 'GeneDTO'):
         gene_dto.ncbi_protein.append(ncbi_protein.identifier)
         gene_dto.locus_tag.append(ncbi_protein.locus_tag)
         gene_dto.synonyms.extend(ncbi_protein.synonyms)
-        gene_dto.sequence.append(ncbi_protein.sequence)
+        gene_dto.protein_sequence.append(ncbi_protein.sequence)
 
         if ncbi_protein.is_refseq():
             gene_dto.refseq_accession.append(ncbi_protein.refseq_accession)

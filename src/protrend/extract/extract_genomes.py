@@ -22,7 +22,7 @@ def _get_uniprot_accession(db_xref: List[str]) -> Optional[str]:
         if not xref:
             continue
 
-        if xref.startswith('UniProtKB:'):
+        if xref.startswith('UniProtKB'):
             return xref.split(':')[1]
     return
 
