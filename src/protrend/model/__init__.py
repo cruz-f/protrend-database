@@ -2,6 +2,7 @@ from .base import BaseNode
 from .effector import Effector
 from .evidence import Evidence
 from .gene import Gene
+from .motif import Motif
 from .operon import Operon
 from .organism import Organism
 from .pathway import Pathway

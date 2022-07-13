@@ -62,8 +62,9 @@ class help_text:
     url = 'The web address for this data source'
     data_source_type = 'The type of this data source'
     length = 'The length of the TFBS sequence'
-    motif_sequence = 'The sequence of the motif'
-    score = 'The score of the TFBS alignment'
+    consensus_sequence = 'The consensus sequence of the motif'
+    aligned_sequences = 'The aligned sequences of the motif'
+    aligned_sequence = 'An aligned sequence TFBS'
     promoter_sequence = 'The sequence of the promoter'
 
 

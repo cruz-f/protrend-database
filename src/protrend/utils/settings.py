@@ -26,8 +26,7 @@ class Settings:
         self._db_ip = str(config.get('db-configuration', 'ip'))
         self._db_port = str(config.get('db-configuration', 'port'))
 
-        self._alignment_ip = str(config.get('alignment-configuration', 'ip'))
-        self._alignment_port = str(config.get('alignment-configuration', 'port'))
+        self._lasagna_k = int(config.get('alignment-configuration', 'k'))
 
         self._started = False
 
@@ -66,10 +65,6 @@ class Settings:
     @property
     def db_port(self):
         return self._db_port
-
-    @property
-    def lasagna_url(self):
-        return f'http://{self.alignment_ip}:{self.alignment_port}'
 
     @property
     def extract(self):
@@ -138,6 +133,10 @@ class Settings:
     @property
     def genomes_ftps(self):
         return self.genomes_database.joinpath('genomes_ftps.csv')
+
+    @property
+    def k(self):
+        return self._lasagna_k
 
     @property
     def log_conf_file(self):
