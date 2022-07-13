@@ -57,7 +57,8 @@ CONNECTOR_STACK = dict(source='integrated_source.json',
                        regulator='integrated_regulator.json',
                        rfam='integrated_regulatoryfamily.json',
                        rin='integrated_regulatoryinteraction.json',
-                       tfbs='integrated_tfbs.json')
+                       tfbs='integrated_tfbs.json',
+                       promoter_region='integrated_promoterregion.json')
 
 
 class Connector(AbstractConnector):
