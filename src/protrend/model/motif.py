@@ -16,12 +16,13 @@ class Motif(BaseNode):
     locus_tag_factor = StringProperty(required=True, unique_index=True, max_length=100,
                                       help_text=help_text.locus_tag)
     regulator = StringProperty(required=True, max_length=100, help_text=help_text.regulator_id)
+    tfbs = ArrayProperty(StringProperty(), help_text=help_text.tfbs_id)
     sequences = ArrayProperty(StringProperty(), help_text=help_text.aligned_sequences)
     consensus_sequence = StringProperty(help_text=help_text.consensus_sequence)
 
     # relationships
     data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, cardinality=ZeroOrOne, model=SourceRelationship)
-    tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=AlignedSequenceRelationship)
     organism = RelationshipTo('.organism.Organism', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
+    data_tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=AlignedSequenceRelationship)
     data_regulator = RelationshipTo('.regulator.Regulator', BASE_REL_TYPE, cardinality=ZeroOrOne,
                                     model=BaseRelationship)

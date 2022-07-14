@@ -243,7 +243,7 @@ class Transformer(AbstractTransformer):
     # Utilities
     # ----------------------------------------
     @classmethod
-    def nodes_file(cls):
+    def nodes_file(cls) -> str:
         node_name = cls.node.get_default(cls).node_name()
         return f'nodes_{node_name}.json'
 

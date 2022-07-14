@@ -6,12 +6,12 @@ from protrend.utils.constants import CURATION
 
 
 class SourceTransformer(SourceMixIn, Transformer,
-                        source='functional_tfbs',
+                        source='motif',
                         version='0.0.0',
                         node=Source,
                         order=100,
                         register=True):
-    name = ['functional_tfbs']
+    name = ['motif']
     type = [CURATION]
     url = ['https://protrend.bio.di.uminho.pt/']
     doi = ['10.1016/j.csbj.2020.05.015']
@@ -22,7 +22,7 @@ class SourceTransformer(SourceMixIn, Transformer,
 
 
 class SourceToMotifConnector(Connector,
-                             source='functional_tfbs',
+                             source='motif',
                              version='0.0.0',
                              from_node=Source,
                              to_node=Motif,

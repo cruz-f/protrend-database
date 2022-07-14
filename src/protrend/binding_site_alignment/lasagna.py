@@ -466,6 +466,6 @@ def LASAGNA(sites, SCOPE, seedIdx=-1, trim=False, ICThres=0.0, covThres=0.4):
     return aligned, idxAligned, strands
 
 
-def run_lasagna(sequences: List[str], identifiers: List[str], k: int):
+def run_lasagna(identifiers: List[str], sequences: List[str], k: int):
     aligned, _, strands = LASAGNA(sequences, k)
-    return {'protrend_id': identifiers, 'aligned_sequence': aligned, 'aligned_strand': strands}
+    return {'identifiers': identifiers, 'sequences': aligned, 'strands': strands}
