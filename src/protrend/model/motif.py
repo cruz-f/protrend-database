@@ -3,7 +3,7 @@ from neomodel import StringProperty, RelationshipTo, ZeroOrOne, ArrayProperty
 from protrend.utils.processors import rstrip, lstrip, lower_case, to_nan, to_str
 from .base import BaseNode
 from .relationships import BaseRelationship, BASE_REL_TYPE, SOURCE_REL_TYPE, SourceRelationship, \
-    AlignedSequenceRelationship
+    AlignedSequenceRelationship, ALIGNED_SEQUENCE_REL_TYPE
 from .utils import help_text
 
 
@@ -23,6 +23,6 @@ class Motif(BaseNode):
     # relationships
     data_source = RelationshipTo('.source.Source', SOURCE_REL_TYPE, cardinality=ZeroOrOne, model=SourceRelationship)
     organism = RelationshipTo('.organism.Organism', BASE_REL_TYPE, cardinality=ZeroOrOne, model=BaseRelationship)
-    data_tfbs = RelationshipTo('.tfbs.TFBS', BASE_REL_TYPE, model=AlignedSequenceRelationship)
+    data_tfbs = RelationshipTo('.tfbs.TFBS', ALIGNED_SEQUENCE_REL_TYPE, model=AlignedSequenceRelationship)
     data_regulator = RelationshipTo('.regulator.Regulator', BASE_REL_TYPE, cardinality=ZeroOrOne,
                                     model=BaseRelationship)

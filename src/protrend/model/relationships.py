@@ -3,8 +3,10 @@ from neomodel import StructuredRel, DateTimeProperty, StringProperty, IntegerPro
 from protrend.model.utils import help_text
 from protrend.model.utils import choices
 
+
 BASE_REL_TYPE = 'HAS'
 SOURCE_REL_TYPE = 'OWNER'
+ALIGNED_SEQUENCE_REL_TYPE = 'ALIGNED_SEQUENCE'
 
 
 class BaseRelationship(StructuredRel):
