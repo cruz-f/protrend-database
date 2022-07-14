@@ -17,7 +17,7 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
                       register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop',
+                       'protein_sequence', 'strand', 'start', 'stop',
                        'name_lower',
                        'gene_id', 'gene_name', 'gene_posleft', 'gene_posright', 'gene_strand',
                        'gene_sequence', 'gc_content', 'cri_score', 'gene_note',

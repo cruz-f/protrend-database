@@ -118,23 +118,30 @@ class NCBITaxonomyOrganism(BioAPI):
         self.get_taxonomy_record()
 
         if self.taxonomy:
-            assembly_term = f'txid{self.taxonomy}[Organism:noexp] AND "reference genome"[refseq category]'
+            assembly_term = f'txid{self.taxonomy}[Organism:noexp] AND "complete genome"[filter] ' \
+                            f'AND "representative genome"[filter]'
 
             assembly_search_record = entrez_search(db='assembly', term=assembly_term)
 
             id_list = assembly_search_record.get('IdList', [])
 
-            # broad search. However, it can retrieve multiple assemblies for the same organism.
-            # In this case, the first one is selected.
             if not id_list:
+                assembly_term = f'txid{self.taxonomy}[Organism:noexp] AND "complete genome"[filter]'
 
+                assembly_search_record = entrez_search(db='assembly', term=assembly_term)
+
+                id_list = assembly_search_record.get('IdList', [])
+
+            # broad search. However, it can retrieve multiple assemblies for the same organism.
+            if not id_list:
                 assembly_term = f'txid{self.taxonomy}[Organism:noexp]'
 
                 assembly_search_record = entrez_search(db='assembly', term=assembly_term)
 
                 id_list = assembly_search_record.get('IdList', [])
 
+            # In this case, the first one is selected.
             if id_list:
-                identifier = id_list[0]
+                identifier = id_list[-1]
                 record = entrez_summary(db='assembly', identifier=identifier)
                 self.assembly_record = record

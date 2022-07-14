@@ -18,8 +18,8 @@ from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_
 
 
 def map_accession(acc: str, mapping: pd.DataFrame) -> Union[str, None]:
-    mask = mapping['From'] == acc
-    to = mapping.loc[mask, 'To'].to_list()
+    mask = mapping['from'] == acc
+    to = mapping.loc[mask, 'to'].to_list()
 
     if to:
         return to[0]
@@ -50,14 +50,15 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
                            register=True):
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
-                       'sequence', 'strand', 'start', 'stop', 'mechanism',
+                       'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
                        'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'])
 
     @staticmethod
     def get_ncbi_proteins_from_uniprot(uniprot_accessions: List[str]) -> List[Union[str, None]]:
         # map uniprot_accessions to ncbi_proteins
-        uniprot_ncbi_proteins = map_uniprot_identifiers(uniprot_accessions, from_='ACC', to='P_GI')
+        uniprot_ncbi_proteins = map_uniprot_identifiers(uniprot_accessions, from_db='UniProtKB_AC-ID',
+                                                        to_db='GI_number')
         return [map_accession(accession, uniprot_ncbi_proteins) for accession in uniprot_accessions]
 
     @staticmethod

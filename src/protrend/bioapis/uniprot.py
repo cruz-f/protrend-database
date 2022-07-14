@@ -9,6 +9,9 @@ from Bio.Seq import Seq
 from Bio.SeqIO import SeqRecord
 from diskcache import Cache
 
+from protrend.bioapis._map_identifiers_utils import submit_id_mapping, check_id_mapping_status, \
+    get_id_mapping_results_link, get_id_mapping_results_search
+from protrend.log import ProtrendLogger
 from protrend.utils import Settings, request, read_response
 
 
@@ -42,18 +45,13 @@ mapping_cache = _init_uniprot_mapping()
 
 
 class UniProtAPI:
-    record = "https://www.uniprot.org/uniprot"
+    record = "https://rest.uniprot.org/uniprotkb"
     record_format = 'xml'
-    query_fields = ('accession', 'ec', 'gene', 'gene_exact', 'id', 'organism', 'taxonomy')
-    query_columns = ('id', 'entry name', 'genes', 'genes(PREFERRED)', 'organism', 'organism-id')
-    query_format = 'tab'
-    df_query_columns = ('Entry', 'Entry name', 'Gene names', 'Gene names  (primary )', 'Organism', 'Organism ID')
-
-    mapping = "https://www.uniprot.org/uploadlists"
-    mapping_format = 'tab'
-    mapping_terms = ('P_GI', 'P_ENTREZGENEID', 'REFSEQ_NT_ID', 'P_REFSEQ_AC', 'EMBL', 'EMBL_ID',
-                     'ACC', 'ACC+ID', 'SWISSPROT', 'ID')
-    df_mapping_columns = ('From', 'To')
+    query_fields = ('accession', 'ec', 'gene', 'gene_exact', 'accession_id', 'organism_name', 'organism_id',
+                    'taxonomy_id', 'taxonomy_name')
+    query_columns = ('accession', 'id', 'gene_names', 'gene_primary', 'organism_name', 'organism_id')
+    query_format = 'tsv'
+    df_query_columns = ('Entry', 'Entry Name', 'Gene Names', 'Gene Names (primary)', 'Organism', 'Organism (ID)')
 
 
 @record_cache.memoize()
@@ -75,8 +73,7 @@ def fetch_uniprot_record(uniprot_accession: str) -> SeqRecord:
 
 @query_cache.memoize()
 def query_uniprot(query: Dict[str, str],
-                  limit: int = 5,
-                  sort: bool = True,
+                  size: int = 5,
                   output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
     query_str = ''
 
@@ -101,13 +98,7 @@ def query_uniprot(query: Dict[str, str],
 
     columns_str = ','.join(UniProtAPI.query_columns)
 
-    if sort:
-        url = f'{UniProtAPI.record}' \
-              f'/?query={query_str}&format={UniProtAPI.query_format}&columns={columns_str}&limit={limit}&sort=score'
-
-    else:
-        url = f'{UniProtAPI.record}' \
-              f'/?query={query_str}&format={UniProtAPI.query_format}&columns={columns_str}&limit={limit}'
+    url = f'{UniProtAPI.record}/search?query={query_str}&format={UniProtAPI.query_format}&fields={columns_str}&size={size}'
 
     response = request(url)
     df = read_response(response, sep='\t')
@@ -125,28 +116,29 @@ def query_uniprot(query: Dict[str, str],
 
 @mapping_cache.memoize()
 def map_uniprot_identifiers(identifiers: Union[List[str], Tuple[str]],
-                            from_: str,
-                            to: str,
+                            from_db: str,
+                            to_db: str,
                             output: str = 'dataframe') -> Union[Dict, pd.DataFrame]:
-    if from_ not in UniProtAPI.mapping_terms:
-        raise ValueError(f'Invalid from {from_}')
 
-    if to not in UniProtAPI.mapping_terms:
-        raise ValueError(f'Invalid from {to}')
+    job_id = submit_id_mapping(from_db=from_db,
+                               to_db=to_db,
+                               ids=identifiers)
 
-    query = ' '.join(identifiers)
+    try:
+        if check_id_mapping_status(job_id):
+            link = get_id_mapping_results_link(job_id)
+            results = get_id_mapping_results_search(link)
+        else:
+            results = {}
 
-    params = {'from': from_,
-              'to': to,
-              'format': UniProtAPI.mapping_format,
-              'query': query}
+    except Exception as e:
+        ProtrendLogger.log.error(e)
+        results = {}
 
-    url = f'{UniProtAPI.mapping}/'
-    response = request(url, params=params)
-    df = read_response(response, sep='\t')
+    df = pd.DataFrame(results.get('results', []))
 
     if df.empty:
-        df = pd.DataFrame(columns=UniProtAPI.df_mapping_columns)
+        df = pd.DataFrame(columns=['from', 'to'])
 
     time.sleep(Settings.request_sleep)
 

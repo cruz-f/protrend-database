@@ -138,6 +138,8 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
         tfbs = self.site_coordinates(tfbs)
 
         gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
+        gene = gene.drop(columns=['tf'])
+
         regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
         tfbs = pd.merge(tfbs, gene, left_on='gene', right_on='dbtbs_name')

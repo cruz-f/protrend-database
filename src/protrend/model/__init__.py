@@ -2,9 +2,11 @@ from .base import BaseNode
 from .effector import Effector
 from .evidence import Evidence
 from .gene import Gene
+from .motif import Motif
 from .operon import Operon
 from .organism import Organism
 from .pathway import Pathway
+from .promoter_region import PromoterRegion
 from .publication import Publication
 from .regulator import Regulator
 from .regulatory_family import RegulatoryFamily

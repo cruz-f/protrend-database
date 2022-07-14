@@ -26,6 +26,8 @@ class Settings:
         self._db_ip = str(config.get('db-configuration', 'ip'))
         self._db_port = str(config.get('db-configuration', 'port'))
 
+        self._lasagna_k = int(config.get('alignment-configuration', 'k'))
+
         self._started = False
 
     @property
@@ -123,6 +125,18 @@ class Settings:
     @property
     def uniprot_mapping(self):
         return self.working_directory.joinpath('data_lake', 'bioapi_cache', 'uniprot', 'mapping')
+
+    @property
+    def genomes_database(self):
+        return self.working_directory.joinpath('data_lake', 'genomes_database')
+
+    @property
+    def genomes_ftps(self):
+        return self.genomes_database.joinpath('genomes_ftps.csv')
+
+    @property
+    def k(self):
+        return self._lasagna_k
 
     @property
     def log_conf_file(self):

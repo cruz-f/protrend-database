@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from protrend.bioapis import NCBIGene, UniProtProtein, NCBIProtein, map_uniprot_identifiers
 from protrend.log import ProtrendLogger
-from protrend.utils.miscellaneous import args_length, scale_arg
+from protrend.utils.miscellaneous import args_length, scale_arg, is_null
 from ..utils import SetList
 
 if TYPE_CHECKING:
@@ -17,8 +17,8 @@ locus_tag_pattern = re.compile('^[A-Za-z]+[0-9]{3,}$')
 
 
 def _map_accession(acc: str, mapping: pd.DataFrame) -> List[str]:
-    mask = mapping['From'] == acc
-    return mapping.loc[mask, 'To'].to_list()
+    mask = mapping['from'] == acc
+    return mapping.loc[mask, 'to'].to_list()
 
 
 def _fetch_genes(identifiers: List[str],
@@ -33,16 +33,10 @@ def _fetch_genes(identifiers: List[str],
 
     genes = []
 
-    if identifiers[0] is None:
-
-        for taxonomy, locus_tag, name in tqdm(zip(taxa, loci, names), desc='gene', total=len(taxa)):
-            gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
-            gene.fetch()
-            genes.append(gene)
-
-    else:
-
-        for identifier in tqdm(identifiers, desc='gene'):
+    for identifier, taxonomy, locus_tag, name in tqdm(zip(identifiers, taxa, loci, names),
+                                                      desc='gene',
+                                                      total=len(taxa)):
+        if not is_null(identifier):
 
             if is_refseq:
                 gene = cls(refseq_accession=identifier)
@@ -53,8 +47,11 @@ def _fetch_genes(identifiers: List[str],
             else:
                 gene = cls(identifier=identifier)
 
-            gene.fetch()
-            genes.append(gene)
+        else:
+            gene = cls(taxonomy=taxonomy, locus_tag=locus_tag, name=name)
+
+        gene.fetch()
+        genes.append(gene)
 
     return genes
 
@@ -67,7 +64,7 @@ def _annotate_uniprot(uniprot_protein: UniProtProtein, gene_dto: 'GeneDTO'):
         gene_dto.synonyms.extend(uniprot_protein.synonyms)
         gene_dto.function.append(uniprot_protein.function)
         gene_dto.description.append(uniprot_protein.description)
-        gene_dto.sequence.append(uniprot_protein.sequence)
+        gene_dto.protein_sequence.append(uniprot_protein.sequence)
 
         return uniprot_protein.identifier
 
@@ -80,7 +77,7 @@ def _annotate_ncbi_protein(ncbi_protein: NCBIProtein, gene_dto: 'GeneDTO'):
         gene_dto.ncbi_protein.append(ncbi_protein.identifier)
         gene_dto.locus_tag.append(ncbi_protein.locus_tag)
         gene_dto.synonyms.extend(ncbi_protein.synonyms)
-        gene_dto.sequence.append(ncbi_protein.sequence)
+        gene_dto.protein_sequence.append(ncbi_protein.sequence)
 
         if ncbi_protein.is_refseq():
             gene_dto.refseq_accession.append(ncbi_protein.refseq_accession)
@@ -260,20 +257,24 @@ def annotate_genes(dtos: List['GeneDTO'],
 
     ProtrendLogger.log.info(f'Finishing fetch genes')
 
-    # from acc to ncbi protein
+    # using the uniprot mapping identifier tool
     accessions = [protein.identifier for protein in uniprot_proteins if protein.identifier]
 
     ProtrendLogger.log.info(f'Starting map genes with '
-                            f'{len(accessions)} uniprot accessions to ncbi proteins (P_GI)')
-    uniprot_ncbi_proteins = map_uniprot_identifiers(accessions, from_='ACC', to='P_GI')
+                            f'{len(accessions)} uniprot accessions to ncbi proteins (GI_number)')
+    uniprot_ncbi_proteins = map_uniprot_identifiers(accessions, from_db='UniProtKB_AC-ID', to_db='GI_number')
 
     ProtrendLogger.log.info(f'Starting map genes with '
-                            f'{len(accessions)} uniprot accessions to ncbi refseqs (P_REFSEQ_AC)')
-    uniprot_ncbi_refseqs = map_uniprot_identifiers(accessions, from_='ACC', to='P_REFSEQ_AC')
+                            f'{len(accessions)} uniprot accessions to ncbi refseqs (RefSeq_Protein)')
+    uniprot_ncbi_refseqs = map_uniprot_identifiers(accessions, from_db='UniProtKB_AC-ID', to_db='RefSeq_Protein')
 
     ProtrendLogger.log.info(f'Starting map genes with '
-                            f'{len(accessions)} uniprot accessions to ncbi refseqs (EMBL)')
-    uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_='ACC', to='EMBL')
+                            f'{len(accessions)} uniprot accessions to ncbi genbanks (RefSeq_Nucleotide)')
+    uniprot_ncbi_genbanks = map_uniprot_identifiers(accessions, from_db='UniProtKB_AC-ID', to_db='RefSeq_Nucleotide')
+
+    ProtrendLogger.log.info(f'Starting map genes with '
+                            f'{len(accessions)} uniprot accessions to ncbi gene (GeneID)')
+    uniprot_ncbi_genes = map_uniprot_identifiers(accessions, from_db='UniProtKB_AC-ID', to_db='GeneID')
 
     for gene_dto, uniprot_protein, ncbi_protein, ncbi_gene in zip(dtos, uniprot_proteins, ncbi_proteins, ncbi_genes):
         uniprot_id = _annotate_uniprot(uniprot_protein, gene_dto)
@@ -289,9 +290,11 @@ def annotate_genes(dtos: List['GeneDTO'],
         uniprot_ncbi_protein = _map_accession(uniprot_id, uniprot_ncbi_proteins)
         uniprot_ncbi_refseq = _map_accession(uniprot_id, uniprot_ncbi_refseqs)
         uniprot_ncbi_genbank = _map_accession(uniprot_id, uniprot_ncbi_genbanks)
+        uniprot_ncbi_gene = _map_accession(uniprot_id, uniprot_ncbi_genes)
 
         gene_dto.ncbi_protein.extend(uniprot_ncbi_protein)
         gene_dto.refseq_accession.extend(uniprot_ncbi_refseq)
         gene_dto.genbank_accession.extend(uniprot_ncbi_genbank)
+        gene_dto.ncbi_gene.extend(uniprot_ncbi_gene)
 
     return dtos

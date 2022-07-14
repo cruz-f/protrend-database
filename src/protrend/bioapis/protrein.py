@@ -335,7 +335,7 @@ class UniProtProtein(BioAPI):
     def _filter_by_taxonomy(self, query: pd.DataFrame) -> pd.DataFrame:
 
         if self._taxonomy:
-            tax_mask = query['Organism ID'].str.contains(self._taxonomy, na=False, regex=False)
+            tax_mask = query['Organism (ID)'].str.contains(self._taxonomy, na=False, regex=False)
 
             if tax_mask.any():
                 query = query[tax_mask]
@@ -352,7 +352,7 @@ class UniProtProtein(BioAPI):
             return self._locus_tag.lower() in row
 
         if self._locus_tag:
-            loci_mask = query['Gene names'].map(loci_filter)
+            loci_mask = query['Gene Names'].map(loci_filter)
 
             if loci_mask.any():
                 query = query[loci_mask]
@@ -369,7 +369,7 @@ class UniProtProtein(BioAPI):
             return self._name.lower() in row
 
         if self._name:
-            name_mask = query['Gene names  (primary )'].map(name_filter)
+            name_mask = query['Gene Names (primary)'].map(name_filter)
 
             if name_mask.any():
                 query = query[name_mask]
@@ -378,9 +378,9 @@ class UniProtProtein(BioAPI):
 
     def parse_uniprot_query(self, query: pd.DataFrame):
 
-        processors = {'Organism ID': to_int_str,
-                      'Gene names': [to_str, lower_case, split_str],
-                      'Gene names  (primary )': [to_str, lower_case, split_str]}
+        processors = {'Organism (ID)': to_int_str,
+                      'Gene Names': [to_str, lower_case, split_str],
+                      'Gene Names (primary)': [to_str, lower_case, split_str]}
         query = apply_processors(query, **processors)
 
         query = self._filter_by_taxonomy(query=query)
@@ -396,7 +396,7 @@ class UniProtProtein(BioAPI):
 
         if self._locus_tag and self._taxonomy:
 
-            return {'gene': self._locus_tag, 'taxonomy': self._taxonomy}
+            return {'gene': self._locus_tag, 'taxonomy_id': self._taxonomy}
 
         elif self._locus_tag and not self._taxonomy:
 
@@ -404,7 +404,7 @@ class UniProtProtein(BioAPI):
 
         elif self._name and self._taxonomy:
 
-            return {'gene': self._name, 'taxonomy': self._taxonomy}
+            return {'gene': self._name, 'taxonomy_id': self._taxonomy}
 
         return {}
 
