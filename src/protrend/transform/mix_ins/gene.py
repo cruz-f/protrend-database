@@ -1,15 +1,49 @@
+from typing import Optional, Tuple
+
 import pandas as pd
 
 from protrend.annotation import (GeneDTO, annotate_genes)
-from protrend.log import ProtrendLogger
-from ._utils import get_values
-from protrend.utils.constants import UNKNOWN, REVERSE, FORWARD
-from protrend.transform.transformations import drop_empty_string, merge_columns
 from protrend.io import read_json_frame
+from protrend.log import ProtrendLogger
+from protrend.transform.transformations import drop_empty_string, merge_columns, group_by
 from protrend.utils import Settings
+from protrend.utils.constants import UNKNOWN, REVERSE, FORWARD
+from ._utils import get_values
+from ...utils.processors import take_first, to_set_list, take_last, flatten_set_list_nan
+
+
+def _explode_synonyms(df: pd.DataFrame) -> pd.DataFrame:
+    df['synonyms'] = df['synonyms'].fillna("").apply(list)
+
+    df = df.explode(column='synonyms')
+    df = df.assign(synonyms=df['synonyms'].str.lower())
+    df = df.drop_duplicates(subset=['synonyms'])
+    return df
 
 
 class GeneMixIn:
+
+    @staticmethod
+    def _read_genome(taxa: str) -> Optional[pd.DataFrame]:
+        """
+        Reads the genomes database for the given taxa.
+        """
+        genome_path = Settings.genomes_database.joinpath(f'{taxa}.json')
+
+        if not genome_path.exists():
+            return
+
+        genome = read_json_frame(genome_path)
+        genome = genome.drop(columns=['promoter_sequence',
+                                      'promoter_start',
+                                      'promoter_end',
+                                      'promoter_strand'])
+        genome = genome.rename(columns={'gene_strand': 'strand',
+                                        'gene_start': 'start',
+                                        'gene_end': 'stop'})
+        genome = genome.assign(strand=genome['strand'].map({1: FORWARD, -1: REVERSE}))
+        genome = genome.dropna().drop_duplicates(subset=['locus_tag']).reset_index(drop=True)
+        return genome
 
     @staticmethod
     def _annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
@@ -69,80 +103,65 @@ class GeneMixIn:
 
         return genes_df
 
-    def annotate_genes(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _annotate_with_genomes_database(self, annotated_genes: pd.DataFrame, taxa: str) -> pd.DataFrame:
+        """
+        Annotates the given dataframe with the genomes database.
+        """
+        genome = self._read_genome(taxa)
+        genome = _explode_synonyms(genome)
+
+        annotated_genes = annotated_genes.reset_index(drop=True)
+        annotated_genes = _explode_synonyms(annotated_genes)
+
+        annotated_genes_cols = list(annotated_genes.columns)
+
+        for col in ['synonyms', 'uniprot_accession', 'locus_tag']:
+
+            annotated_genes = annotated_genes.merge(genome, how='left', on=col,
+                                                    suffixes=('_annotated_x', '_genome_y'))
+
+            for merged_col in annotated_genes_cols:
+                left_col = f'{merged_col}_annotated_x'
+                right_col = f'{merged_col}_genome_y'
+
+                if left_col in annotated_genes.columns and right_col in annotated_genes.columns:
+
+                    # we want to keep the genome annotation rather than the annotation obtained
+                    # by searching the NCBI and UniProt
+                    annotated_genes = merge_columns(annotated_genes, column=merged_col,
+                                                    right=left_col, left=right_col)
+
+        annotated_genes = annotated_genes.reset_index(drop=True)
+
+        aggregation = {
+            'synonyms': flatten_set_list_nan,
+        }
+
+        annotated_genes = group_by(annotated_genes,
+                                   column='input_value',
+                                   aggregation=aggregation,
+                                   default=take_last)
+        annotated_genes = annotated_genes.reset_index(drop=True)
+        return annotated_genes
+
+    def annotate_genes(self, df: pd.DataFrame, use_genomes_database: bool = True) -> pd.DataFrame:
         """
         Annotates the given dataframe using NCBI and Uniprot databases.
         """
-        genes_df = self._annotate_genes(df)
-        genes_df = genes_df.drop(columns=['ncbi_taxonomy'])
-        return genes_df
-
-    @staticmethod
-    def _annotate_with_genomes_database(annotated_genes: pd.DataFrame, taxa: str) -> pd.DataFrame:
-        """
-        Annotates the given dataframe with the genomes database.
-        """
-        genome_path = Settings.genomes_database.joinpath(f'{taxa}.json')
-
-        if not genome_path.exists():
-            return annotated_genes
-
-        # expanding the df so that each synonym is a separate column
-        annotated_genes['synonyms'] = annotated_genes['synonyms'].fillna("").apply(list)
-        largest_synonyms_list = annotated_genes['synonyms'].str.len().max()
-        synonyms_cols = [f'synonym_{i + 1}' for i in range(largest_synonyms_list)]
-        synonyms = pd.DataFrame(annotated_genes['synonyms'].to_list(), columns=synonyms_cols)
-
-        annotated_genes = annotated_genes.drop(columns=['synonyms']).join(synonyms)
-
-        genome = read_json_frame(genome_path)
-        genome = genome.drop(columns=['promoter_sequence',
-                                      'promoter_start',
-                                      'promoter_end',
-                                      'promoter_strand'])
-        genome = genome.rename(columns={'gene_strand': 'strand',
-                                        'gene_start': 'start',
-                                        'gene_end': 'stop'})
-        genome = genome.assign(strand=genome['strand'].map({1: FORWARD, -1: REVERSE}))
-
-        # Repeating the locus tag to match the gene synonyms obtained during the annotation
-        genome_synonyms = pd.concat([genome['locus_tag']] * largest_synonyms_list, axis=1, ignore_index=True)
-        genome_synonyms.columns = [f'{synonyms_col}_locus_tag' for synonyms_col in synonyms_cols]
-        genome = genome.join(genome_synonyms)
-
-        df = annotated_genes.copy()
-        for col in ['locus_tag', 'uniprot_accession']:
-            df = df.set_index(col, drop=False)
-            mapper = genome.dropna(subset=[col]).drop_duplicates(subset=[col]).set_index(col, drop=False)
-            df.update(mapper)
-
-        df = df.reset_index(drop=True)
-
-        for col in synonyms_cols:
-            df = df.set_index(col, drop=False)
-            mapper = genome.dropna(subset=[f'{col}_locus_tag']).drop_duplicates(subset=[f'{col}_locus_tag']).\
-                set_index([f'{col}_locus_tag'], drop=False)
-            df.update(mapper)
-
-        df = df.reset_index(drop=True)
-        df = df.assign(synonyms=df[synonyms_cols].values.tolist())
-        df['synonyms'] = df['synonyms'].apply(lambda x: set([y for y in x if y]))
-        df = df.drop(columns=synonyms_cols)
-        return df
-
-    def annotate_with_genomes_database(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Annotates the given dataframe with the genomes database.
-        """
         annotated_genes = self._annotate_genes(df)
 
-        unique_taxa = annotated_genes['ncbi_taxonomy'].unique()
-        dfs = []
-        for taxa in unique_taxa:
-            annotated_genes_by_taxa = annotated_genes[annotated_genes['ncbi_taxonomy'] == taxa]
-            annotated_genes_by_taxa = annotated_genes_by_taxa.drop(columns=['ncbi_taxonomy']).reset_index(drop=True)
-            df = self._annotate_with_genomes_database(annotated_genes_by_taxa, taxa)
-            dfs.append(df)
-        df = pd.concat(dfs, ignore_index=True)
-        df = df.reset_index(drop=True)
-        return df
+        if use_genomes_database:
+            unique_taxa = annotated_genes['ncbi_taxonomy'].unique()
+            dfs = []
+            for taxa in unique_taxa:
+                annotated_genes_by_taxa = annotated_genes[annotated_genes['ncbi_taxonomy'] == taxa]
+                annotated_genes_by_taxa = annotated_genes_by_taxa.reset_index(drop=True)
+
+                df = self._annotate_with_genomes_database(annotated_genes_by_taxa, taxa)
+                dfs.append(df)
+
+            annotated_genes = pd.concat(dfs, ignore_index=True)
+            annotated_genes = annotated_genes.reset_index(drop=True)
+
+        annotated_genes = annotated_genes.drop(columns=['ncbi_taxonomy'])
+        return annotated_genes

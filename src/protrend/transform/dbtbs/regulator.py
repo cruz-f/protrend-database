@@ -1,11 +1,11 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read, read_genbank
+from protrend.io import read_json_lines, read, read_json_frame
 from protrend.model import Regulator
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
-from protrend.utils import SetList
+from protrend.utils import SetList, Settings
 from protrend.utils.constants import UNKNOWN, SIGMA_FACTOR, TRANSCRIPTION_FACTOR
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_list_nan, take_first
 
@@ -24,7 +24,7 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
                        'dbtbs_name'])
 
     @staticmethod
-    def transform_tf(tf: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
+    def transform_tf(tf: pd.DataFrame, genome: pd.DataFrame) -> pd.DataFrame:
         tf = tf.assign(dbtbs_name=tf['name'].copy())
 
         tf = apply_processors(tf, name=[rstrip, lstrip], family=[to_list_nan, take_first, rstrip, lstrip])
@@ -44,7 +44,7 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
         tf_not_sigma_mask = tf['family'] != 'Sigma factors'
         tf.loc[tf_not_sigma_mask, 'mechanism'] = TRANSCRIPTION_FACTOR
 
-        tf = pd.merge(tf, sequence, on='name_lower')
+        tf = pd.merge(tf, genome, on='name_lower')
         tf = tf.drop(columns=['name_lower'])
 
         # for locus tag annotation
@@ -58,11 +58,14 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
                   default=pd.DataFrame(columns=['name', 'family', 'domain', 'domain_description', 'description', 'url',
                                                 'type', 'consensus_sequence', 'comment', 'subti_list', 'gene', 'tfbs']))
 
-        sequence = read(source=self.source, version=self.version, file='protein_sequence.gb', reader=read_genbank,
-                        default=pd.DataFrame(columns=['name_lower', 'locus_tag', 'genbank_accession',
-                                                      'uniprot_accession']))
+        genome_path = Settings.genomes_database.joinpath(f'224308.json')
+        genome = read_json_frame(genome_path)
+        genome = genome[['locus_tag', 'name']].copy()
 
-        regulators = self.transform_tf(tf=tf, sequence=sequence)
+        genome = genome.assign(name_lower=genome['name'].str.lower())
+        genome = genome.drop(columns=['name'])
+
+        regulators = self.transform_tf(tf=tf, genome=genome)
         annotated_regulators = self.annotate_genes(regulators)
 
         df = self.merge_annotations(annotated_regulators, regulators)

@@ -1,6 +1,4 @@
 import gzip
-import os
-import shutil
 from pathlib import Path
 from typing import List, Optional
 
@@ -25,6 +23,22 @@ def _get_uniprot_accession(db_xref: List[str]) -> Optional[str]:
         if xref.startswith('UniProtKB'):
             return xref.split(':')[1]
     return
+
+
+def _get_synonyms(qualifiers: dict) -> List[str]:
+    """
+    Retrieves the synonyms for the given qualifiers.
+    """
+    synonyms = []
+    if 'old_locus_tag' in qualifiers:
+        synonyms.extend(qualifiers['old_locus_tag'])
+    if 'gene_synonym' in qualifiers:
+        synonyms.extend(qualifiers['gene_synonym'])
+    if 'gene_name' in qualifiers:
+        synonyms.extend(qualifiers['gene_name'])
+    if 'gene_alias' in qualifiers:
+        synonyms.extend(qualifiers['gene_alias'])
+    return synonyms
 
 
 def read_gb_file(gb_file_path: Path):
@@ -122,7 +136,7 @@ def _parse_record(record: SeqIO.SeqRecord, promoter_region_length: int) -> dict:
 
             locus_tag = feature.qualifiers.get('locus_tag', [None])[0]
             name = feature.qualifiers.get('gene', [None])[0]
-            synonyms = feature.qualifiers.get('gene_synonym', [None])[0]
+            synonyms = _get_synonyms(feature.qualifiers)
             uniprot_accession = _get_uniprot_accession(feature.qualifiers.get('db_xref', [None]))
             genbank_accession = feature.qualifiers.get('protein_id', [None])[0]
             gene_sequence = str(feature.extract(record.seq))

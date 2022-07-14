@@ -4,7 +4,7 @@ import pandas as pd
 
 from protrend.io import read_csv, read
 from protrend.transform import Transformer, Connector
-from protrend.transform.transformations import merge_columns, merge_loci, locus_tag_curation
+from protrend.transform.transformations import merge_columns, merge_loci
 from protrend.utils import apply_processors
 from protrend.utils.processors import to_int_str
 
@@ -52,7 +52,9 @@ class CoryneRegNetTransformer(Transformer, register=False):
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_coryneregnet')
 
         df = apply_processors(df, taxonomy=to_int_str)
-        df = locus_tag_curation(df)
+
+        # the locus tag curation is now performed in the annotate genes method
+        # df = locus_tag_curation(df)
         return df
 
 
