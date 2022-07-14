@@ -1,9 +1,10 @@
 # Internal
-src/protrend/conf
+docker-compose.yml
 /database/
 /data/
 /src/data/
 /src/protrend/etl.conf
+/src/protrend/etl-production.conf
 /useless/
 /src/protrend/bioapis/settings.py
 /src/protrend/data_lake/
