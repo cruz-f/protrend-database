@@ -7,12 +7,12 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /home/protrend-database
 
-COPY protrend-database/requirements.txt /home/protrend-database
-COPY protrend-database/run.sh /home/protrend-database
+COPY requirements.txt /home/protrend-database
+COPY run.sh /home/protrend-database
 
 RUN pip install -r requirements.txt
 
-COPY protrend-database/src/protrend /home/protrend-database/protrend
+COPY src/protrend /home/protrend-database/protrend
 
 
 CMD ["/bin/bash", "run.sh"]
