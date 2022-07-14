@@ -4,8 +4,7 @@ import pandas as pd
 
 from protrend.io import read
 from protrend.transform import Transformer, Connector
-from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, merge_columns, \
-    locus_tag_curation
+from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates, merge_columns
 from protrend.utils import is_null
 from protrend.utils.processors import apply_processors, to_int_str, rstrip, lstrip, to_set_list
 
@@ -259,7 +258,9 @@ class LiteratureTransformer(Transformer, register=False):
         df = df.drop(columns=['input_value'])
 
         df = apply_processors(df, taxonomy=to_int_str)
-        df = locus_tag_curation(df)
+
+        # the locus tag curation is now performed in the annotate genes method
+        # df = locus_tag_curation(df)
         return df
 
     @abstractmethod

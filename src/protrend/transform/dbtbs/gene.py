@@ -1,11 +1,11 @@
 import pandas as pd
 
-from protrend.io import read_json_lines, read, read_genbank
+from protrend.io import read_json_lines, read, read_json_frame
 from protrend.model import Gene
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
-from protrend.utils import SetList
+from protrend.utils import SetList, Settings
 from protrend.utils.processors import rstrip, lstrip, apply_processors
 
 
@@ -22,7 +22,7 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
                        'dbtbs_name'])
 
     @staticmethod
-    def transform_gene(gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
+    def transform_gene(gene: pd.DataFrame, genome: pd.DataFrame) -> pd.DataFrame:
         gene = gene.explode(column='name')
         gene = gene.explode(column='url')
         gene = gene.explode(column='regulation')
@@ -40,7 +40,7 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
 
         gene = gene.assign(name_lower=gene['name'].str.lower())
 
-        gene = pd.merge(gene, sequence, on='name_lower')
+        gene = pd.merge(gene, genome, on='name_lower')
         gene = gene.drop(columns=['name_lower'])
 
         # for locus tag annotation
@@ -53,11 +53,14 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
         gene = read(source=self.source, version=self.version, file='Gene.json', reader=read_json_lines,
                     default=pd.DataFrame(columns=['name', 'url', 'regulation', 'pubmed', 'tf', 'tfbs']))
 
-        sequence = read(source=self.source, version=self.version, file='sequence.gb', reader=read_genbank,
-                        default=pd.DataFrame(columns=['name_lower', 'locus_tag', 'genbank_accession',
-                                                      'uniprot_accession']))
+        genome_path = Settings.genomes_database.joinpath(f'224308.json')
+        genome = read_json_frame(genome_path)
+        genome = genome[['locus_tag', 'name']].copy()
 
-        genes = self.transform_gene(gene=gene, sequence=sequence)
+        genome = genome.assign(name_lower=genome['name'].str.lower())
+        genome = genome.drop(columns=['name'])
+
+        genes = self.transform_gene(gene=gene, genome=genome)
         annotated_genes = self.annotate_genes(genes)
 
         df = self.merge_annotations(annotated_genes, genes)

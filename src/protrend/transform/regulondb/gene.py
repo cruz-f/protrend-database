@@ -1,11 +1,11 @@
 import pandas as pd
 
-from protrend.io import read, read_genbank
+from protrend.io import read, read_json_frame
 from protrend.model import Gene
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
-from protrend.utils import SetList
+from protrend.utils import SetList, Settings
 from protrend.utils.processors import apply_processors, rstrip, lstrip
 
 
@@ -24,7 +24,7 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
                        'gene_internal_comment', 'key_id_org', 'gene_type'])
 
     @staticmethod
-    def transform_gene(gene: pd.DataFrame, sequence: pd.DataFrame) -> pd.DataFrame:
+    def transform_gene(gene: pd.DataFrame, genome: pd.DataFrame) -> pd.DataFrame:
         gene = gene.assign(name=gene['gene_name'].copy())
 
         # noinspection DuplicatedCode
@@ -37,7 +37,10 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
 
         gene = gene.assign(name_lower=gene['name'].str.lower())
 
-        gene = pd.merge(gene, sequence, on='name_lower')
+        gene = pd.merge(gene, genome, on='name_lower')
+
+        # for locus tag annotation
+        gene = gene.assign(taxonomy='511145')
 
         gene = create_input_value(df=gene, col='locus_tag')
         return gene
@@ -47,14 +50,18 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
                    'gene_sequence', 'gc_content', 'cri_score', 'gene_note',
                    'gene_internal_comment', 'key_id_org', 'gene_type']
         reader = regulondb_reader(skiprows=39, names=columns)
+
         gene = read(source=self.source, version=self.version, file='gene.txt', reader=reader,
                     default=pd.DataFrame(columns=columns))
 
-        sequence = read(source=self.source, version=self.version, file='sequence.gb', reader=read_genbank,
-                        default=pd.DataFrame(columns=['name_lower', 'locus_tag', 'genbank_accession',
-                                                      'uniprot_accession']))
+        genome_path = Settings.genomes_database.joinpath(f'511145.json')
+        genome = read_json_frame(genome_path)
+        genome = genome[['locus_tag', 'name']].copy()
 
-        genes = self.transform_gene(gene=gene, sequence=sequence)
+        genome = genome.assign(name_lower=genome['name'].str.lower())
+        genome = genome.drop(columns=['name'])
+
+        genes = self.transform_gene(gene=gene, genome=genome)
         annotated_genes = self.annotate_genes(genes)
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_regulondb'))
@@ -63,10 +70,6 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
                            left='locus_tag_annotation', right='locus_tag_regulondb')
         df = merge_columns(df=df, column='name',
                            left='name_annotation', right='name_regulondb')
-        df = merge_columns(df=df, column='genbank_accession',
-                           left='genbank_accession_annotation', right='genbank_accession_regulondb')
-        df = merge_columns(df=df, column='uniprot_accession',
-                           left='uniprot_accession_annotation', right='uniprot_accession_regulondb')
 
         df = df.dropna(subset=['locus_tag'])
         df = drop_empty_string(df, 'locus_tag')
