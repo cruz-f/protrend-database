@@ -124,10 +124,10 @@ def run_pipeline(source: str,
 
 
 if __name__ == "__main__":
-    # sleep 10 seconds so the database can start
-    time.sleep(10)
+    # sleep 120 seconds so the database can start
+    time.sleep(120)
     run_logger('tcl_logger')
-    run_database(install_all_labels=False, clear_db=False, constraints=False, indexes=False)
+    run_database(install_all_labels=True, clear_db=True, constraints=True, indexes=True)
 
     # ORDER MATTERS!!!!!!!!!!!!!
 
@@ -137,56 +137,66 @@ if __name__ == "__main__":
     # # run_logger('collectf_logger')
     # run_pipeline(source='collectf', version='0.0.1')
 
-    # # ----------------------------------------------------
-    # # RegPrecise
-    # # ----------------------------------------------------
-    # # run_logger('regprecise_logger')
-    # run_pipeline(source='regprecise', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # Abasy
-    # # ----------------------------------------------------
-    # # run_logger('abasy_logger')
-    # run_pipeline(source='abasy', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # Literature
-    # # ----------------------------------------------------
-    # # run_logger('literature_logger')
-    # run_pipeline(source='literature', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # CoryneRegNet
-    # # ----------------------------------------------------
-    # # run_logger('coryneregnet_logger')
-    # run_pipeline(source='coryneregnet', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # DBTBS
-    # # ----------------------------------------------------
-    # # run_logger('dbtbs_logger')
-    # run_pipeline(source='dbtbs', version='0.0.4')
-    #
-    # # ----------------------------------------------------
-    # # RegulonDB
-    # # ----------------------------------------------------
-    # # run_logger('regulondb_logger')
-    # run_pipeline(source='regulondb', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # OperonDB
-    # # ----------------------------------------------------
-    # # run_logger('operondb_logger')
-    # run_pipeline(source='operondb', version='0.0.0')
-    #
-    # # ----------------------------------------------------
-    # # Standardizer
-    # # ----------------------------------------------------
+    # ----------------------------------------------------
+    # RegPrecise
+    # ----------------------------------------------------
+    # run_logger('regprecise_logger')
+    run_pipeline(source='regprecise', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Abasy
+    # ----------------------------------------------------
+    # run_logger('abasy_logger')
+    run_pipeline(source='abasy', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Literature
+    # ----------------------------------------------------
+    # run_logger('literature_logger')
+    run_pipeline(source='literature', version='0.0.0')
+
+    # ----------------------------------------------------
+    # CoryneRegNet
+    # ----------------------------------------------------
+    # run_logger('coryneregnet_logger')
+    run_pipeline(source='coryneregnet', version='0.0.0')
+
+    # ----------------------------------------------------
+    # DBTBS
+    # ----------------------------------------------------
+    # run_logger('dbtbs_logger')
+    run_pipeline(source='dbtbs', version='0.0.4')
+
+    # ----------------------------------------------------
+    # RegulonDB
+    # ----------------------------------------------------
+    # run_logger('regulondb_logger')
+    run_pipeline(source='regulondb', version='0.0.0')
+
+    # ----------------------------------------------------
+    # OperonDB
+    # ----------------------------------------------------
+    # run_logger('operondb_logger')
+    run_pipeline(source='operondb', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Promoter Region
+    # ----------------------------------------------------
+    # run_logger('promoter_region_logger')
+    run_pipeline(source='promoter_region', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Motif
+    # ----------------------------------------------------
+    # run_logger('moitf_logger')
+    run_pipeline(source='moitf', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Standardizer
+    # ----------------------------------------------------
     # run_logger('standardizer_logger')
     # run_database(install_all_labels=True)
     run_pipeline(source='standardizer', version='0.0.0',
-                 extract=False,
                  transform=True,
                  connect=False,
-                 load=False,
-                 verbose=True)
+                 load=False)
