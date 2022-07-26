@@ -31,7 +31,10 @@ class GeneMixIn:
         genome_path = Settings.genomes_database.joinpath(f'{taxa}.json')
 
         if not genome_path.exists():
-            return
+            ProtrendLogger.log.info(f'Missing genome database for taxonomy {taxa}')
+            return pd.DataFrame(columns=['locus_tag', 'name', 'synonyms', 'uniprot_accession',
+                                         'genbank_accession', 'gene_sequence', 'start',
+                                         'end', 'strand'])
 
         genome = read_json_frame(genome_path)
         genome = genome.drop(columns=['promoter_sequence',
@@ -43,6 +46,8 @@ class GeneMixIn:
                                         'gene_end': 'stop'})
         genome = genome.assign(strand=genome['strand'].map({1: FORWARD, -1: REVERSE}))
         genome = genome.dropna().drop_duplicates(subset=['locus_tag']).reset_index(drop=True)
+
+        ProtrendLogger.log.info(f'Loaded genome database for taxonomy {taxa}')
         return genome
 
     @staticmethod
@@ -108,6 +113,9 @@ class GeneMixIn:
         Annotates the given dataframe with the genomes database.
         """
         genome = self._read_genome(taxa)
+        if genome.empty:
+            return annotated_genes
+
         genome = _explode_synonyms(genome)
 
         annotated_genes = annotated_genes.reset_index(drop=True)
@@ -125,7 +133,6 @@ class GeneMixIn:
                 right_col = f'{merged_col}_genome_y'
 
                 if left_col in annotated_genes.columns and right_col in annotated_genes.columns:
-
                     # we want to keep the genome annotation rather than the annotation obtained
                     # by searching the NCBI and UniProt
                     annotated_genes = merge_columns(annotated_genes, column=merged_col,
