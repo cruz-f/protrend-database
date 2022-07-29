@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 
@@ -9,7 +9,7 @@ from protrend.transform.transformations import drop_empty_string, merge_columns,
 from protrend.utils import Settings
 from protrend.utils.constants import UNKNOWN, REVERSE, FORWARD
 from ._utils import get_values
-from ...utils.processors import take_first, to_set_list, take_last, flatten_set_list_nan
+from ...utils.processors import take_last, flatten_set_list_nan
 
 
 def _explode_synonyms(df: pd.DataFrame) -> pd.DataFrame:
@@ -51,7 +51,7 @@ class GeneMixIn:
         return genome
 
     @staticmethod
-    def _annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
+    def _annotate_genes(df: pd.DataFrame, drop_nan_locus_tag: bool = True) -> pd.DataFrame:
         """
         Annotates the given dataframe with the genomes database.
         The output contains the ncbi taxonomy column!!!
@@ -100,8 +100,10 @@ class GeneMixIn:
             return genes_df
 
         genes_df = genes_df.assign(ncbi_taxonomy=taxa)
-        genes_df = genes_df.dropna(subset=['locus_tag'])
-        genes_df = drop_empty_string(genes_df, 'locus_tag')
+
+        if drop_nan_locus_tag:
+            genes_df = genes_df.dropna(subset=['locus_tag'])
+            genes_df = drop_empty_string(genes_df, 'locus_tag')
 
         strand_mask = (genes_df['strand'] != REVERSE) & (genes_df['strand'] != FORWARD)
         genes_df.loc[strand_mask, 'strand'] = UNKNOWN
@@ -151,11 +153,14 @@ class GeneMixIn:
         annotated_genes = annotated_genes.reset_index(drop=True)
         return annotated_genes
 
-    def annotate_genes(self, df: pd.DataFrame, use_genomes_database: bool = True) -> pd.DataFrame:
+    def annotate_genes(self,
+                       df: pd.DataFrame,
+                       use_genomes_database: bool = True,
+                       drop_nan_locus_tag: bool = True) -> pd.DataFrame:
         """
         Annotates the given dataframe using NCBI and Uniprot databases.
         """
-        annotated_genes = self._annotate_genes(df)
+        annotated_genes = self._annotate_genes(df, drop_nan_locus_tag=drop_nan_locus_tag)
 
         if use_genomes_database:
             unique_taxa = annotated_genes['ncbi_taxonomy'].unique()

@@ -23,15 +23,15 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTra
                        'regulatory_interaction_hash',
                        'regulator_locus_tag', 'gene_locus_tag',
                        'regulatory_effect', 'effector', 'mechanism',
-                       'taxonomy', 'source'])
+                       'ncbi_taxonomy', 'source'])
 
     def transform_network(self, network: pd.DataFrame) -> pd.DataFrame:
         return network
 
     def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy')
-        organism = organism.rename(columns={'protrend_id': 'organism', 'ncbi_taxonomy': 'taxonomy'})
-        organism = apply_processors(organism, taxonomy=to_int_str)
+        organism = organism.rename(columns={'protrend_id': 'organism'})
+        organism = apply_processors(organism, ncbi_taxonomy=to_int_str)
         return organism
 
     def transform_regulator(self, regulator: pd.DataFrame) -> pd.DataFrame:
@@ -57,7 +57,7 @@ class RegulatoryInteractionTransformer(RegulatoryInteractionMixIn, LiteratureTra
         effector = read_effector(source=self.source, version=self.version, columns=EffectorTransformer.columns)
 
         df = self._transform(network=network,
-                             organism=organism, organism_key='taxonomy',
+                             organism=organism, organism_key='ncbi_taxonomy',
                              regulator=regulator, regulator_key='regulator_locus_tag',
                              gene=gene, gene_key='gene_locus_tag',
                              effector=effector, effector_key='effector_name',

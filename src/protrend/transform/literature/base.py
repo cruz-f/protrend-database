@@ -208,12 +208,12 @@ LITERATURE_READERS = [read_bsub_faria_et_al_2017,
 def read_literature_networks(source: str, version: str) -> pd.DataFrame:
     default = pd.DataFrame(columns=['regulator_locus_tag', 'gene_locus_tag',
                                     'regulatory_effect', 'effector_name', 'mechanism',
-                                    'taxonomy', 'source'])
+                                    'ncbi_taxonomy', 'source'])
     dfs = []
     for file, taxon, d_source, reader in zip(LITERATURE_NETWORKS, LITERATURE_TAXA,
                                              LITERATURE_SOURCES, LITERATURE_READERS):
         df = read(source=source, version=version, file=file, reader=reader, default=default.copy())
-        df = df.assign(taxonomy=taxon, source=d_source)
+        df = df.assign(ncbi_taxonomy=taxon, source=d_source)
         dfs.append(df)
 
     network = pd.concat(dfs)
@@ -242,9 +242,9 @@ class LiteratureTransformer(Transformer, register=False):
         network = apply_processors(network, locus_tag=[rstrip, lstrip])
         network = network.dropna(subset=['locus_tag'])
         network = drop_empty_string(network, 'locus_tag')
-        network = drop_duplicates(df=network, subset=['locus_tag', 'taxonomy'], perfect_match=True)
+        network = drop_duplicates(df=network, subset=['locus_tag', 'ncbi_taxonomy'], perfect_match=True)
 
-        input_value = network[col] + network['taxonomy']
+        input_value = network[col] + network['ncbi_taxonomy']
         network = network.assign(input_value=input_value)
         return network
 
@@ -257,7 +257,7 @@ class LiteratureTransformer(Transformer, register=False):
 
         df = df.drop(columns=['input_value'])
 
-        df = apply_processors(df, taxonomy=to_int_str)
+        df = apply_processors(df, ncbi_taxonomy=to_int_str)
 
         # the locus tag curation is now performed in the annotate genes method
         # df = locus_tag_curation(df)

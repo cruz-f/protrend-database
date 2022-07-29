@@ -52,55 +52,6 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
         regulon = create_input_value(df=regulon, col='regulon_id')
         return regulon
 
-    @staticmethod
-    def annotate_genes(df: pd.DataFrame) -> pd.DataFrame:
-        input_values = get_values(df, 'input_value')
-
-        genes = [GeneDTO(input_value=input_value) for input_value in input_values]
-
-        ProtrendLogger.log.info(f'Annotating {len(genes)} genes')
-
-        loci = get_values(df, 'locus_tag')
-        names = get_values(df, 'name')
-        taxa = get_values(df, 'ncbi_taxonomy')
-        uniprot_proteins = get_values(df, 'uniprot_accession')
-        ncbi_proteins = get_values(df, 'ncbi_protein')
-        ncbi_genbanks = get_values(df, 'genbank_accession')
-        ncbi_refseqs = get_values(df, 'refseq_accession')
-        ncbi_genes = get_values(df, 'ncbi_gene')
-
-        iterator = zip(
-            ('locus_tag', 'name', 'ncbi_taxonomy', 'uniprot_accession', 'ncbi_protein', 'genbank_accession',
-             'refseq_accession', 'ncbi_gene'),
-            (loci, names, taxa, uniprot_proteins, ncbi_proteins, ncbi_genbanks, ncbi_refseqs, ncbi_genes)
-        )
-
-        params = [param for param, value in iterator if value is not None]
-        params = ','.join(params)
-
-        ProtrendLogger.log.info(f'Annotating with the following params: {params}')
-
-        annotate_genes(dtos=genes,
-                       loci=loci,
-                       names=names,
-                       taxa=taxa,
-                       uniprot_proteins=uniprot_proteins,
-                       ncbi_proteins=ncbi_proteins,
-                       ncbi_genbanks=ncbi_genbanks,
-                       ncbi_refseqs=ncbi_refseqs,
-                       ncbi_genes=ncbi_genes)
-
-        genes_dict = [dto.to_dict() for dto in genes]
-        genes_df = pd.DataFrame(genes_dict)
-
-        if genes_df.empty:
-            return genes_df
-
-        strand_mask = (genes_df['strand'] != REVERSE) & (genes_df['strand'] != FORWARD)
-        genes_df.loc[strand_mask, 'strand'] = UNKNOWN
-
-        return genes_df
-
     def transform(self):
         regulon = read(source=self.source, version=self.version,
                        file='Regulon.json', reader=read_json_lines,
@@ -116,7 +67,7 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
 
         organism = self.transform_organism(organism)
         regulators = self.transform_regulator(regulon, organism)
-        annotated_regulators = self.annotate_genes(regulators)
+        annotated_regulators = self.annotate_genes(regulators, drop_nan_locus_tag=False)
 
         df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_regprecise'))
 

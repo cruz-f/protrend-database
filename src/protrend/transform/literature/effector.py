@@ -19,7 +19,7 @@ class EffectorTransformer(EffectorMixIn, LiteratureTransformer,
     columns = SetList(['protrend_id', 'name', 'kegg_compounds',
                        'regulator_locus_tag', 'gene_locus_tag',
                        'regulatory_effect', 'effector_name', 'mechanism',
-                       'taxonomy', 'source'])
+                       'ncbi_taxonomy', 'source'])
 
     @staticmethod
     def transform_effector(network: pd.DataFrame) -> pd.DataFrame:
