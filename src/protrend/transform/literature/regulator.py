@@ -19,7 +19,7 @@ class RegulatorTransformer(GeneMixIn, LiteratureTransformer,
                        'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
                        'regulator_locus_tag', 'gene_locus_tag',
                        'regulatory_effect', 'effector_name',
-                       'ncbi_taxonomy', 'source'])
+                       'taxonomy', 'source'])
 
     regulator_mechanisms = {"sigma factor": SIGMA_FACTOR,
                             "sigma factor - ECF type": SIGMA_FACTOR,

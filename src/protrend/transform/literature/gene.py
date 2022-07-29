@@ -17,7 +17,7 @@ class GeneTransformer(GeneMixIn, LiteratureTransformer,
                        'protein_sequence', 'strand', 'start', 'stop',
                        'regulator_locus_tag', 'gene_locus_tag',
                        'regulatory_effect', 'effector_name', 'mechanism',
-                       'ncbi_taxonomy', 'source'])
+                       'taxonomy', 'source'])
 
     def transform_gene(self, network: pd.DataFrame) -> pd.DataFrame:
         return self._transform_gene(network, col='gene_locus_tag')

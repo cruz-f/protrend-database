@@ -44,7 +44,7 @@ class GeneTransformer(GeneMixIn, DBTBSTransformer,
         gene = gene.drop(columns=['name_lower'])
 
         # for locus tag annotation
-        gene = gene.assign(ncbi_taxonomy='224308')
+        gene = gene.assign(taxonomy='224308', ncbi_taxonomy='224308')
 
         gene = create_input_value(df=gene, col='locus_tag')
         return gene

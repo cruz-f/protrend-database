@@ -40,7 +40,7 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
         gene = pd.merge(gene, genome, on='name_lower')
 
         # for locus tag annotation
-        gene = gene.assign(ncbi_taxonomy='511145')
+        gene = gene.assign(ncbi_taxonomy='511145', taxonomy='511145')
 
         gene = create_input_value(df=gene, col='locus_tag')
         return gene

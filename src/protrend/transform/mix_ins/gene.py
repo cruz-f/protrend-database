@@ -163,10 +163,13 @@ class GeneMixIn:
         annotated_genes = self._annotate_genes(df, drop_nan_locus_tag=drop_nan_locus_tag)
 
         if use_genomes_database:
-            unique_taxa = annotated_genes['ncbi_taxonomy'].unique()
-            dfs = []
-            for taxa in unique_taxa:
-                annotated_genes_by_taxa = annotated_genes[annotated_genes['ncbi_taxonomy'] == taxa]
+            mask = annotated_genes['ncbi_taxonomy'].isnull()
+            annotated_genes_non_nan = annotated_genes[~mask]
+            annotated_genes_nan = annotated_genes[mask]
+
+            dfs = [annotated_genes_nan]
+            for taxa in annotated_genes_non_nan['ncbi_taxonomy'].unique():
+                annotated_genes_by_taxa = annotated_genes_non_nan[annotated_genes_non_nan['ncbi_taxonomy'] == taxa]
                 annotated_genes_by_taxa = annotated_genes_by_taxa.reset_index(drop=True)
 
                 df = self._annotate_with_genomes_database(annotated_genes_by_taxa, taxa)
