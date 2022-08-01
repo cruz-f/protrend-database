@@ -183,13 +183,13 @@ if __name__ == "__main__":
     # Promoter Region
     # ----------------------------------------------------
     # run_logger('promoter_region_logger')
-    run_pipeline(source='promoter_region', version='0.0.0')
+    # run_pipeline(source='promoter_region', version='0.0.0')
 
     # ----------------------------------------------------
     # Motif
     # ----------------------------------------------------
     # run_logger('moitf_logger')
-    run_pipeline(source='moitf', version='0.0.0')
+    run_pipeline(source='motif', version='0.0.0')
 
     # ----------------------------------------------------
     # Standardizer

@@ -10,7 +10,7 @@ class SourceTransformer(SourceMixIn, Transformer,
                         version='0.0.0',
                         node=Source,
                         order=100,
-                        register=True):
+                        register=False):
     name = ['promoter_region']
     type = [CURATION]
     url = ['https://protrend.bio.di.uminho.pt/']

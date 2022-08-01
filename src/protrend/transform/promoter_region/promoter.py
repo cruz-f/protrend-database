@@ -15,7 +15,7 @@ class PromoterRegionTransformer(Transformer,
                                 version='0.0.0',
                                 node=PromoterRegion,
                                 order=100,
-                                register=True):
+                                register=False):
 
     @staticmethod
     def fetch_genes():
