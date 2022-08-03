@@ -25,6 +25,10 @@ class OperonDBLoader(Loader, source='operondb', version='0.0.0', register=True):
     pass
 
 
+class MotifLoader(Loader, source='motif', version='0.0.0', register=True):
+    pass
+
+
 class RegPreciseLoader(Loader, source='regprecise', version='0.0.0', register=True):
     pass
 
