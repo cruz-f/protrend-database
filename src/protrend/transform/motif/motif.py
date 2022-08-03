@@ -223,10 +223,10 @@ class MotifToTFBSConnector(Connector,
                                                      source_processors={},
                                                      target_processors={})
 
-        source_df = source_df.drop_duplicates(subset=['source_col', 'target_col'])
+        source_df = source_df.drop_duplicates(subset=['source_col', 'tfbs'])
 
         source_ids = source_df['source_col'].to_list()
-        target_ids = source_df['target_col'].to_list()
+        target_ids = source_df['tfbs'].to_list()
 
         kwargs = dict(sequence=source_df['sequences'].to_list(),
                       start=source_df['start'].to_list(),
