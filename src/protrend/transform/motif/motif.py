@@ -117,7 +117,7 @@ class MotifTransformer(Transformer,
             regulator_motif = regulator_motif.drop(columns=['sequence'])
 
             aligned_motif = pd.DataFrame({'tfbs': aligned_motif['identifiers'],
-                                          'sequence': aligned_motif['sequences']})
+                                          'sequences': aligned_motif['sequences']})
 
             motif = pd.merge(regulator_motif, aligned_motif, on='tfbs')
             motif = motif.reset_index(drop=True)
