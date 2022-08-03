@@ -127,7 +127,7 @@ if __name__ == "__main__":
     # sleep 120 seconds so the database can start
     time.sleep(120)
     run_logger('tcl_logger')
-    run_database(install_all_labels=True, clear_db=True, constraints=True, indexes=True)
+    run_database(install_all_labels=False, clear_db=False, constraints=False, indexes=False)
 
     # ORDER MATTERS!!!!!!!!!!!!!
 
