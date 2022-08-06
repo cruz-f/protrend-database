@@ -3,6 +3,7 @@ from typing import Union, Type, Tuple, List, TYPE_CHECKING
 from neomodel import RelationshipManager, StructuredRel, StringProperty
 
 import protrend.utils.constants as constants
+from ..utils import is_null
 
 if TYPE_CHECKING:
     from .base import BaseNode
