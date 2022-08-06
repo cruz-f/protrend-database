@@ -144,7 +144,7 @@ def connect_nodes(from_node: 'BaseNode',
 
     if kwargs:
         kwargs = {key: val for key, val in kwargs.items()
-                  if hasattr(relationship_model, key)}
+                  if hasattr(relationship_model, key) and not is_null(val)}
 
     else:
         kwargs = {}
