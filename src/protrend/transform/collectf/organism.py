@@ -68,6 +68,10 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
 
         df = pd.merge(annotated_organisms, organisms, on='input_value', suffixes=('_annotation', '_collectf'))
 
+        # merge taxonomy
+        df = merge_columns(df=df, column='ncbi_taxonomy', left='ncbi_taxonomy_annotation',
+                           right='ncbi_taxonomy_collectf')
+
         # merge name
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
 
