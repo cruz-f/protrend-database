@@ -80,8 +80,29 @@ class SourceToGeneConnector(SourceConnector,
                             register=True):
 
     def connect(self):
-        df = self._connect(target='gene', target_processors={'regulon': [to_list_nan, take_first]},
-                           url='url', external_identifier='regulon', key='regulon_id')
+        source_df, target_df = self.transform_stacks(source='source',
+                                                     target='gene',
+                                                     source_column='protrend_id',
+                                                     target_column='protrend_id',
+                                                     source_processors={},
+                                                     target_processors={'regulon': [to_list_nan]})
+
+        if 'regulon' in target_df.columns:
+            target_df = target_df.explode('regulon')
+
+        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
+                                                          cardinality='one_to_many')
+
+        if 'url' in target_df.columns and 'regulon' in target_df.columns:
+            size = len(target_ids)
+            kwargs = dict(url=target_df['url'].to_list(),
+                          external_identifier=target_df['regulon'].to_list(),
+                          key=['regulon_id'] * size)
+
+        else:
+            kwargs = {}
+
+        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
         self.stack_connections(df)
 
 
