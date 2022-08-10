@@ -23,7 +23,6 @@ from .regulatory_interaction import (GeneToTFBSConnector,
 from .source import (SourceToGeneConnector,
                      SourceToOrganismConnector,
                      SourceToRegulatorConnector,
-                     SourceToRegulatoryFamilyConnector,
                      SourceToRegulatoryInteractionConnector,
                      SourceToTFBSConnector,
                      SourceTransformer)
