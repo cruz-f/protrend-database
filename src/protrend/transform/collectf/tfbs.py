@@ -21,32 +21,37 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
                       register=True):
     columns = SetList(['protrend_id', 'organism', 'start', 'stop', 'strand', 'sequence', 'length', 'site_hash',
                        'tfbs_id', 'site_start', 'site_end', 'site_strand', 'mode', 'sequence',
-                       'pubmed', 'organism', 'regulon', 'operon', 'gene', 'experimental_evidence',
-                       'uniprot_accession'])
+                       'pubmed', 'regulon', 'operon', 'gene', 'experimental_evidence',
+                       'regulon_id', 'regulator_name', 'tfbs', 'organism'])
 
     @staticmethod
     def transform_regulator(regulator: pd.DataFrame) -> pd.DataFrame:
-        regulator = select_columns(regulator, 'uniprot_accession', 'organism_protrend_id')
+        regulator = select_columns(regulator, 'regulon_id', 'url', 'tfbs',
+                                   'organism_protrend_id', 'organism_name', 'ncbi_taxonomy')
+
+        regulator = apply_processors(regulator, tfbs=to_list_nan)
+        regulator = regulator.explode('tfbs')
+        regulator = regulator.dropna(subset=['tfbs'])
+        regulator = drop_empty_string(regulator, 'tfbs')
         return regulator
 
     @staticmethod
     def transform_tfbs(tfbs: pd.DataFrame, regulator: pd.DataFrame) -> pd.DataFrame:
-        tfbs = tfbs.rename(columns={'site_start': 'start', 'site_end': 'stop', 'site_strand': 'strand',
-                                    'organism': 'organism_collectf'})
+        tfbs = tfbs.drop(columns=['organism'])
 
-        tfbs = apply_processors(tfbs, sequence=[rstrip, lstrip], regulon=to_list_nan)
+        tfbs = tfbs.rename(columns={'site_start': 'start', 'site_end': 'stop', 'site_strand': 'strand'})
+
+        tfbs = apply_processors(tfbs, sequence=[rstrip, lstrip])
         # filter by sequence, start, stop, strand
         tfbs = tfbs.dropna(subset=['sequence', 'start', 'stop', 'strand'])
         tfbs = drop_empty_string(tfbs, 'sequence')
 
-        # filter by organism
-        tfbs = tfbs.explode(column='regulon')
+        tfbs = pd.merge(tfbs, regulator, left_on='tfbs_id', right_on='tfbs')
 
-        tfbs = pd.merge(tfbs, regulator, left_on='regulon', right_on='uniprot_accession')
+        tfbs = tfbs.drop_duplicates(subset=['tfbs_id', 'organism_protrend_id'])
+        tfbs = drop_empty_string(tfbs, 'organism_protrend_id')
+        tfbs = tfbs.dropna(subset=['organism_protrend_id'])
 
-        aggr = {'pubmed': flatten_set_list_nan, 'regulon': to_set_list, 'operon': flatten_set_list_nan,
-                'experimental_evidence': flatten_set_list_nan, 'gene': flatten_set_list_nan}
-        tfbs = group_by(df=tfbs, column='tfbs_id', aggregation=aggr, default=take_first)
         tfbs = tfbs.rename(columns={'organism_protrend_id': 'organism'})
         return tfbs
 
@@ -89,8 +94,8 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
                     )
 
         regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
-
         regulator = self.transform_regulator(regulator)
+
         tfbs = self.transform_tfbs(tfbs=tfbs, regulator=regulator)
         tfbs = self.site_coordinates(tfbs)
         tfbs = self.site_hash(tfbs)

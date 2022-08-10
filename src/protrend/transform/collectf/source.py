@@ -62,20 +62,6 @@ class SourceToOrganismConnector(CollecTFConnector,
         self.stack_connections(df)
 
 
-class SourceToRegulatoryFamilyConnector(CollecTFConnector,
-                                        source='collectf',
-                                        version='0.0.1',
-                                        from_node=Source,
-                                        to_node=RegulatoryFamily,
-                                        register=True):
-
-    def connect(self):
-        df = self.create_connection(source='source',
-                                    target='rfam',
-                                    cardinality='one_to_many')
-        self.stack_connections(df)
-
-
 class SourceToRegulatorConnector(CollecTFConnector,
                                  source='collectf',
                                  version='0.0.1',
@@ -91,21 +77,24 @@ class SourceToRegulatorConnector(CollecTFConnector,
                                                      source_processors={},
                                                      target_processors={})
 
+        if 'url' in target_df:
+            target_df = target_df.explode('url')
+
         source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
                                                           cardinality='one_to_many')
 
         url = []
         ext_id = []
         key = []
-        if 'uniprot_accession' in target_df:
-            for reg_id in target_df['uniprot_accession']:
-                if is_null(reg_id):
+        if 'url' in target_df:
+            for url_ in target_df['url']:
+                if is_null(url_):
                     url.append(None)
                     ext_id.append(None)
                     key.append(None)
                 else:
-                    url.append(f'http://www.collectf.org/uniprot/{reg_id}')
-                    ext_id.append(reg_id)
+                    url.append(url_)
+                    ext_id.append(url_.replace('http://www.collectf.org/uniprot/', ''))
                     key.append('uniprot')
 
         kwargs = dict(url=url,
@@ -152,34 +141,7 @@ class SourceToRegulatoryInteractionConnector(CollecTFConnector,
                                              register=True):
 
     def connect(self):
-        source_df, target_df = self.transform_stacks(source='source',
-                                                     target='rin',
-                                                     source_column='protrend_id',
-                                                     target_column='protrend_id',
-                                                     source_processors={},
-                                                     target_processors={'regulon': [to_list_nan]})
-
-        target_df = target_df.explode('regulon')
-
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
-                                                          cardinality='one_to_many')
-
-        url = []
-        ext_id = []
-        key = []
-        for reg_id in target_df['regulon']:
-            if is_null(reg_id):
-                url.append(None)
-                ext_id.append(None)
-                key.append(None)
-            else:
-                url.append(f'http://www.collectf.org/uniprot/{reg_id}')
-                ext_id.append(reg_id)
-                key.append('uniprot')
-
-        kwargs = dict(url=url,
-                      external_identifier=ext_id,
-                      key=key)
-
-        df = self.connection_frame(source_ids=source_ids, target_ids=target_ids, kwargs=kwargs)
+        df = self.create_connection(source='source',
+                                    target='rin',
+                                    cardinality='one_to_many')
         self.stack_connections(df)

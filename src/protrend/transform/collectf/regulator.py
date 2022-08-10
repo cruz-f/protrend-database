@@ -1,9 +1,5 @@
-from typing import List, Union
-
 import pandas as pd
-from Bio.SeqRecord import SeqRecord
 
-from protrend.bioapis import map_uniprot_identifiers, fetch_uniprot_record
 from protrend.io import read_json_lines, read
 from protrend.io.utils import read_organism
 from protrend.model import Regulator
@@ -11,35 +7,10 @@ from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.organism import OrganismTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (drop_empty_string, drop_duplicates, create_input_value, select_columns,
-                                                merge_columns, merge_loci)
+                                                merge_columns, group_by)
 from protrend.utils import SetList
 from protrend.utils.constants import TRANSCRIPTION_FACTOR
-from protrend.utils.processors import apply_processors, rstrip, lstrip, to_list_nan
-
-
-def map_accession(acc: str, mapping: pd.DataFrame) -> Union[str, None]:
-    mask = mapping['from'] == acc
-    to = mapping.loc[mask, 'to'].to_list()
-
-    if to:
-        return to[0]
-
-    return None
-
-
-def uniprot_record_locus_tag(record: SeqRecord) -> Union[str, None]:
-    annotations = getattr(record, 'annotations', {})
-
-    if annotations:
-        loci = annotations.get('gene_name_ordered locus', [])
-
-        if not loci:
-            loci = annotations.get('gene_name_ORF', [])
-
-        for locus in loci:
-            return locus
-
-    return
+from protrend.utils.processors import apply_processors, rstrip, lstrip, take_first, to_set_list, flatten_set_list_nan
 
 
 class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
@@ -51,48 +22,44 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
     columns = SetList(['protrend_id', 'locus_tag', 'name', 'synonyms', 'function', 'description', 'ncbi_gene',
                        'ncbi_protein', 'genbank_accession', 'refseq_accession', 'uniprot_accession',
                        'protein_sequence', 'strand', 'start', 'stop', 'mechanism',
-                       'url', 'organism', 'operon', 'gene', 'tfbs', 'experimental_evidence',
-                       'organism_protrend_id', 'organism_name_collectf', 'ncbi_taxonomy'])
-
-    @staticmethod
-    def get_ncbi_proteins_from_uniprot(uniprot_accessions: List[str]) -> List[Union[str, None]]:
-        # map uniprot_accessions to ncbi_proteins
-        uniprot_ncbi_proteins = map_uniprot_identifiers(uniprot_accessions, from_db='UniProtKB_AC-ID',
-                                                        to_db='GI_number')
-        return [map_accession(accession, uniprot_ncbi_proteins) for accession in uniprot_accessions]
-
-    @staticmethod
-    def get_locus_tag_from_uniprot(uniprot_accessions: List[str]) -> List[Union[str, None]]:
-        # fetch uniprot record to retrieve locus_tag
-        uniprot_records = [fetch_uniprot_record(accession) for accession in uniprot_accessions]
-        return [uniprot_record_locus_tag(record) for record in uniprot_records]
+                       'url', 'operon', 'gene', 'tfbs', 'experimental_evidence',
+                       'organism_protrend_id', 'organism_name', 'ncbi_taxonomy',
+                       'regulon_id', 'regulator_name'])
 
     def transform_regulon(self, regulon: pd.DataFrame, organism: pd.DataFrame) -> pd.DataFrame:
-        regulon = apply_processors(regulon, uniprot_accession=[rstrip, lstrip], name=[rstrip, lstrip])
-        regulon = regulon.dropna(subset=['uniprot_accession'])
-        regulon = drop_empty_string(regulon, 'uniprot_accession')
-        regulon = drop_duplicates(df=regulon, subset=['uniprot_accession'])
+        # ignore the uniprot annotation as it is incorrect
+        regulon = regulon.drop(columns=['uniprot_accession'])
 
-        df = pd.merge(regulon, organism, left_on='organism', right_on='organism_name_collectf')
+        # making a copy of the original name
+        regulon = regulon.assign(regulator_name=regulon['name'].copy())
 
-        df = drop_duplicates(df=df, subset=['uniprot_accession', 'organism'], perfect_match=True)
+        regulon = apply_processors(regulon, name=[rstrip, lstrip], organism=[rstrip, lstrip])
+        regulon = regulon.dropna(subset=['name', 'organism'])
+        regulon = drop_empty_string(regulon, 'name', 'organism')
 
-        uniprot_accessions = df['uniprot_accession'].to_list()
-        ncbi_proteins = self.get_ncbi_proteins_from_uniprot(uniprot_accessions)
-        loci = self.get_locus_tag_from_uniprot(uniprot_accessions)
+        df = pd.merge(regulon, organism, left_on='organism', right_on='organism_name')
+        df = df.drop(columns=['organism'])
 
-        df = df.assign(mechanism=TRANSCRIPTION_FACTOR, ncbi_protein=ncbi_proteins, locus_tag=loci)
+        # creating the regulon id: regulon_id = organism_name + '_' + regulator_name
+        df['regulon_id'] = df.apply(lambda row: f'{row["organism_name"]}_{row["name"]}', axis=1)
 
-        df = create_input_value(df=df, col='uniprot_accession')
+        # group by regulon_id
+        aggregation = {'name': take_first, 'url': to_set_list,
+                       'operon': flatten_set_list_nan, 'gene': flatten_set_list_nan,
+                       'tfbs': flatten_set_list_nan, 'experimental_evidence': flatten_set_list_nan,
+                       'organism_protrend_id': take_first, 'organism_name': take_first, 'ncbi_taxonomy': take_first}
+        df = group_by(df=df, column='regulon_id', aggregation=aggregation)
+
+        df = df.assign(mechanism=TRANSCRIPTION_FACTOR)
+
+        df = create_input_value(df=df, col='regulon_id')
         return df
 
     @staticmethod
     def transform_organism(organism: pd.DataFrame):
-        organism = apply_processors(organism, collectf_name=to_list_nan)
-        organism = organism.explode('collectf_name')
-        organism = select_columns(organism, 'protrend_id', 'ncbi_taxonomy', 'collectf_name')
+        organism = select_columns(organism, 'protrend_id', 'name', 'ncbi_taxonomy')
         organism = organism.rename(columns={'protrend_id': 'organism_protrend_id',
-                                            'collectf_name': 'organism_name_collectf'})
+                                            'name': 'organism_name'})
         return organism
 
     def transform(self):
@@ -102,26 +69,18 @@ class RegulatorTransformer(GeneMixIn, CollecTFTransformer,
                                                      'gene', 'tfbs', 'experimental_evidence']))
 
         organism = read_organism(source=self.source, version=self.version, columns=OrganismTransformer.columns)
-
         organism = self.transform_organism(organism)
+
         regulators = self.transform_regulon(regulon, organism)
         annotated_regulators = self.annotate_genes(regulators)
 
         df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_collectf'))
 
-        # merge loci
-        df = merge_loci(df=df, left_suffix='_annotation', right_suffix='_collectf')
+        # drop regulators without a gene annotation, that is no locus tag
+        df = df.dropna(subset=['locus_tag'])
 
         # merge name
         df = merge_columns(df=df, column='name', left='name_annotation', right='name_collectf')
-
-        # merge uniprot_accession
-        df = merge_columns(df=df, column='uniprot_accession',
-                           left='uniprot_accession_annotation', right='uniprot_accession_collectf')
-
-        # merge ncbi_protein
-        df = merge_columns(df=df, column='ncbi_protein',
-                           left='ncbi_protein_annotation', right='ncbi_protein_collectf')
 
         df = df.drop(columns=['input_value'])
 

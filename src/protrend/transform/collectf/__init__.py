@@ -13,8 +13,6 @@ from .publication import (PublicationToGeneConnector,
                           PublicationToTFBSConnector,
                           PublicationTransformer)
 from .regulator import RegulatorTransformer
-from .regulatory_family import (RegulatoryFamilyToRegulatorConnector,
-                                RegulatoryFamilyTransformer)
 from .regulatory_interaction import (GeneToTFBSConnector,
                                      RegulatorToGeneConnector,
                                      RegulatorToTFBSConnector,
