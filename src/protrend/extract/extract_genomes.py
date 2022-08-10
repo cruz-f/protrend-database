@@ -12,6 +12,57 @@ from protrend.log import ProtrendLogger
 from protrend.utils import Settings
 
 
+def _get_locus_tag(qualifiers: dict) -> Optional[str]:
+    """
+    Retrieves the locus tag for the given qualifiers.
+    """
+    if 'locus_tag' in qualifiers:
+        return qualifiers['locus_tag'][0]
+
+    elif 'gene' in qualifiers:
+        return qualifiers['gene'][0]
+
+    elif 'old_locus_tag' in qualifiers:
+        return qualifiers['old_locus_tag'][0]
+
+    elif 'gene_synonym' in qualifiers:
+        return qualifiers['gene_synonym'][0]
+
+    elif 'gene_name' in qualifiers:
+        return qualifiers['gene_name'][0]
+
+    elif 'gene_alias' in qualifiers:
+        return qualifiers['gene_alias'][0]
+
+    return
+
+
+def _get_name(qualifiers: dict) -> Optional[str]:
+    """
+    Retrieves the name for the given qualifiers.
+    """
+
+    if 'gene' in qualifiers:
+        return qualifiers['gene'][0]
+
+    elif 'gene_name' in qualifiers:
+        return qualifiers['gene_name'][0]
+
+    elif 'locus_tag' in qualifiers:
+        return qualifiers['locus_tag'][0]
+
+    elif 'old_locus_tag' in qualifiers:
+        return qualifiers['old_locus_tag'][0]
+
+    elif 'gene_synonym' in qualifiers:
+        return qualifiers['gene_synonym'][0]
+
+    elif 'gene_alias' in qualifiers:
+        return qualifiers['gene_alias'][0]
+
+    return
+
+
 def _get_uniprot_accession(db_xref: List[str]) -> Optional[str]:
     """
     Retrieves the uniprot accession for the given db xref.
@@ -134,8 +185,8 @@ def _parse_record(record: SeqIO.SeqRecord, promoter_region_length: int) -> dict:
             else:
                 continue
 
-            locus_tag = feature.qualifiers.get('locus_tag', [None])[0]
-            name = feature.qualifiers.get('gene', [None])[0]
+            locus_tag = _get_locus_tag(feature.qualifiers)
+            name = _get_name(feature.qualifiers)
             synonyms = _get_synonyms(feature.qualifiers)
             uniprot_accession = _get_uniprot_accession(feature.qualifiers.get('db_xref', [None]))
             genbank_accession = feature.qualifiers.get('protein_id', [None])[0]
