@@ -38,7 +38,9 @@ class OrganismTransformer(OrganismMixIn, RegPreciseTransformer,
         "Lactobacillus rhamnosus GG":
             {"name": "Lacticaseibacillus rhamnosus GG", "ncbi_taxonomy": 568703},
         "Alteromonas macleodii 'Deep ecotype'":
-            {"name": "Alteromonas mediterranea DE", "ncbi_taxonomy": 1774373}
+            {"name": "Alteromonas mediterranea DE", "ncbi_taxonomy": 1774373},
+        "Clostridium sp. L2-50":
+            {"name": "Clostridium sp. L2-50", "ncbi_taxonomy": 411489}
     }
 
     def transform_organism(self, genome: pd.DataFrame) -> pd.DataFrame:
