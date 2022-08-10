@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import pandas as pd
 from Bio import SeqIO
+from Bio.Seq import UndefinedSequenceError
 from tqdm import tqdm
 
 from protrend.bioapis import fetch_sequences
@@ -223,7 +224,14 @@ def build_genome_database(gb_file: Path,
     records = read_gb_file(gb_file)
     genomes = []
     for record in records:
-        genome_record = _parse_record(record, promoter_region_length)
+        try:
+            genome_record = _parse_record(record, promoter_region_length)
+
+        except UndefinedSequenceError as e:
+
+            ProtrendLogger.log.info(f'Error parsing {gb_file}: {e}')
+            continue
+
         genome_record = pd.DataFrame(genome_record)
         genomes.append(genome_record)
 
