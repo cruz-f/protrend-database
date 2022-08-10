@@ -4,7 +4,7 @@ from protrend.io import read_json_lines, read
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import OrganismMixIn
-from protrend.transform.transformations import (merge_columns, create_input_value, drop_duplicates, group_by,
+from protrend.transform.transformations import (merge_columns, create_input_value, group_by,
                                                 drop_empty_string)
 from protrend.utils import SetList
 from protrend.utils.processors import apply_processors, rstrip, lstrip, to_int_str, take_last, flatten_set_list_nan
@@ -20,14 +20,40 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
                        'genbank_accession', 'genbank_ftp', 'ncbi_assembly', 'assembly_accession',
                        'genome_accession', 'taxonomy', 'regulon', 'tfbs'])
 
-    @staticmethod
-    def transform_organism(organism: pd.DataFrame) -> pd.DataFrame:
+    manual_curation = {
+        "Escherichia coli BL21(DE3)":
+            {"name": "Escherichia coli BL21(DE3)", "ncbi_taxonomy": 469008},
+        "Rhodobacter sphaeroides ATCC 17029":
+            {"name": "Rhodobacter sphaeroides ATCC 17029", "ncbi_taxonomy": 349101},
+        "Streptomyces coelicolor A3(2)":
+            {"name": "Agrobacterium fabrum str. C58", "ncbi_taxonomy": 100226},
+        "Borrelia burgdorferi 297":
+            {"name": "Borreliella burgdorferi 297", "ncbi_taxonomy": 521009},
+        "Lactobacillus casei BL23":
+            {"name": "Lacticaseibacillus casei BL23", "ncbi_taxonomy": 543734},
+    }
+
+    def transform_organism(self, organism: pd.DataFrame) -> pd.DataFrame:
         organism = apply_processors(organism, name=[rstrip, lstrip])
         organism = organism.dropna(subset=['name'])
         organism = drop_empty_string(organism, 'name')
 
         aggregation = {'genome_accession': take_last, 'taxonomy': take_last}
         organism = group_by(df=organism, column='name', aggregation=aggregation, default=flatten_set_list_nan)
+
+        def _map_name(key):
+            map_dict = self.manual_curation.get(key, {'name': key})
+            return map_dict['name']
+
+        def _map_ncbi(key):
+            map_dict = self.manual_curation.get(key, {'ncbi_taxonomy': None})
+            return map_dict['ncbi_taxonomy']
+
+        curated_names = organism['name'].map(_map_name)
+        curated_tax = organism['name'].map(_map_ncbi)
+
+        organism = organism.assign(name=curated_names, ncbi_taxonomy=curated_tax)
+        organism = apply_processors(organism, name=[rstrip, lstrip], ncbi_taxonomy=to_int_str)
 
         organism = create_input_value(organism, col='name')
         return organism
