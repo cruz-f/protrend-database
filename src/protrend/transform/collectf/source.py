@@ -1,3 +1,5 @@
+import pandas as pd
+
 from protrend.model import (Source, Organism, RegulatoryFamily, Regulator, Gene, TFBS, RegulatoryInteraction)
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import SourceMixIn
@@ -80,8 +82,14 @@ class SourceToRegulatorConnector(CollecTFConnector,
         if 'url' in target_df:
             target_df = target_df.explode('url')
 
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
-                                                          cardinality='one_to_many')
+        source_df = source_df.reset_index(drop=True)
+        target_df = target_df.reset_index(drop=True)
+        df = pd.concat([source_df, target_df], axis=1)
+
+        target_ids = df['target_col'].to_list()
+
+        source_ids = df['source_col'].dropna().to_list()
+        source_ids *= len(target_ids)
 
         url = []
         ext_id = []
@@ -92,6 +100,7 @@ class SourceToRegulatorConnector(CollecTFConnector,
                     url.append(None)
                     ext_id.append(None)
                     key.append(None)
+
                 else:
                     url.append(url_)
                     ext_id.append(url_.replace('http://www.collectf.org/uniprot/', ''))
