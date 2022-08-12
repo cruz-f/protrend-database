@@ -2,6 +2,7 @@ import os.path
 import time
 from datetime import datetime
 
+from protrend.report import ProtrendReporter
 from protrend.utils import Settings
 from protrend.log import ProtrendLogger
 from protrend.pipeline import Pipeline
@@ -185,15 +186,7 @@ if __name__ == "__main__":
     # run_logger('promoter_region_logger')
     # run_pipeline(source='promoter_region', version='0.0.0')
 
-    # ----------------------------------------------------
-    # Motif
-    # ----------------------------------------------------
-    # run_logger('moitf_logger')
-    run_pipeline(source='motif', version='0.0.0')
-
-    # ----------------------------------------------------
-    # Standardizer
-    # ----------------------------------------------------
-    # run_logger('standardizer_logger')
-    # run_database(install_all_labels=True)
-    run_pipeline(source='standardizer', version='0.0.0', transform=True, connect=False, load=False)
+    # # ----------------------------------------------------
+    # # Report the integration
+    # # ----------------------------------------------------
+    ProtrendReporter.write_report()
