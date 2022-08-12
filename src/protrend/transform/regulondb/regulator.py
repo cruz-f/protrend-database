@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read
 from protrend.io.utils import read_gene
 from protrend.model import Regulator
+from protrend.report import ProtrendReporter
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.regulondb.gene import GeneTransformer
 from protrend.transform.transformations import select_columns, drop_empty_string, drop_duplicates
@@ -106,5 +107,10 @@ class RegulatorTransformer(RegulonDBTransformer,
 
         df = pd.concat([tf, srna, sigma])
         df = df.reset_index(drop=True)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=df.shape[0], properties=df.shape[1])
+
         self.stack_transformed_nodes(df)
         return df

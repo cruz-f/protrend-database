@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io import read
 from protrend.model import Effector
+from protrend.report import ProtrendReporter
 from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
@@ -44,6 +45,11 @@ class EffectorTransformer(EffectorMixIn, RegulonDBTransformer,
                         default=pd.DataFrame(columns=columns))
 
         effector = self.transform_effector(effector)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=effector.shape[0], properties=effector.shape[1])
+
         annotated_effectors = self.annotate_effectors(effector)
 
         df = pd.merge(annotated_effectors, effector, on='input_value', suffixes=('_annotation', '_regulondb'))

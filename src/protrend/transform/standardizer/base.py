@@ -24,3 +24,5 @@ class StandardizerTransformer(Transformer, register=False):
         df.assign(load='delete', what='nodes')
         self.stack_integrated_nodes(df)
         self.stack_nodes(df)
+
+        return df

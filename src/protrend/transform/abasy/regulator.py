@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io.utils import read_gene
 from protrend.model import Regulator
+from protrend.report import ProtrendReporter
 from protrend.transform.abasy.base import AbasyTransformer, read_abasy_networks
 from protrend.transform.abasy.gene import GeneTransformer
 from protrend.transform.mix_ins import GeneMixIn
@@ -55,6 +56,10 @@ class RegulatorTransformer(GeneMixIn, AbasyTransformer,
         df = df.dropna(subset=['locus_tag'])
         df = drop_empty_string(df, 'locus_tag')
         df = drop_duplicates(df=df, subset=['locus_tag'], perfect_match=True)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=df.shape[0], properties=df.shape[1])
 
         self.stack_transformed_nodes(df)
 

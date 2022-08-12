@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read
 from protrend.model import Effector
+from protrend.report import ProtrendReporter
 from protrend.transform.mix_ins import EffectorMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
@@ -36,6 +37,11 @@ class EffectorTransformer(EffectorMixIn, RegPreciseTransformer,
                         default=pd.DataFrame(columns=['effector_id', 'name', 'url', 'regulog']))
 
         effectors = self.transform_effector(effector)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=effectors.shape[0], properties=effectors.shape[1])
+
         annotated_effectors = self.annotate_effectors(effectors)
 
         df = self.merge_annotations_by_name(annotated_effectors, effectors)

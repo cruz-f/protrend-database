@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io.utils import read_organism
 from protrend.model import TFBS
+from protrend.report import ProtrendReporter
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, read_coryneregnet_networks
 from protrend.transform.coryneregnet.organism import OrganismTransformer
 from protrend.transform.mix_ins import TFBSMixIn
@@ -74,6 +75,11 @@ class TFBSTransformer(TFBSMixIn, CoryneRegNetTransformer,
         organism = self.transform_organism(organism)
 
         tfbs = self.transform_tfbs(network, organism)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=tfbs.shape[0], properties=tfbs.shape[1])
+
         tfbs = self.site_coordinates(tfbs)
         tfbs = self.site_hash(tfbs)
 

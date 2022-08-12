@@ -1,6 +1,7 @@
 import pandas as pd
 
 from protrend.model import Gene
+from protrend.report import ProtrendReporter
 from protrend.transform.abasy.base import AbasyTransformer, read_abasy_genes
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import (create_input_value, drop_duplicates, drop_empty_string, merge_loci,
@@ -49,6 +50,11 @@ class GeneTransformer(GeneMixIn, AbasyTransformer,
         gene = read_abasy_genes(self.source, self.version)
 
         genes = self.transform_gene(gene)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=genes.shape[0], properties=genes.shape[1])
+
         annotated_genes = self.annotate_genes(genes)
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_abasy'))

@@ -146,6 +146,10 @@ class Settings:
     def log_working_directory(self):
         return self.working_directory.joinpath('log')
 
+    @property
+    def report_working_directory(self):
+        return self.working_directory.joinpath('report')
+
     def start_settings(self,
                        working_directory: Union[str, Path] = None,
                        request_sleep: float = None,

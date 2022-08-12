@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_json_lines
 from protrend.io.utils import read_organism, read, read_gene, read_regulator
 from protrend.model import TFBS
+from protrend.report import ProtrendReporter
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.dbtbs.organism import OrganismTransformer
 from protrend.transform.dbtbs.gene import GeneTransformer
@@ -135,6 +136,11 @@ class TFBSTransformer(TFBSMixIn, DBTBSTransformer,
         organism = self.transform_organism(organism)
 
         tfbs = self.transform_tfbs(tfbs, organism)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=tfbs.shape[0], properties=tfbs.shape[1])
+
         tfbs = self.site_coordinates(tfbs)
 
         gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)

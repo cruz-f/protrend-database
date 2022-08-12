@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_json_lines
 from protrend.io.utils import read_regulator, read
 from protrend.model import TFBS
+from protrend.report import ProtrendReporter
 from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import TFBSMixIn
@@ -97,6 +98,11 @@ class TFBSTransformer(TFBSMixIn, CollecTFTransformer,
         regulator = self.transform_regulator(regulator)
 
         tfbs = self.transform_tfbs(tfbs=tfbs, regulator=regulator)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=tfbs.shape[0], properties=tfbs.shape[1])
+
         tfbs = self.site_coordinates(tfbs)
         tfbs = self.site_hash(tfbs)
 

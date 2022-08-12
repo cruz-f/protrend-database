@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io import read, read_json_frame
 from protrend.model import Gene
+from protrend.report import ProtrendReporter
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regulondb.base import RegulonDBTransformer, regulondb_reader
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value, merge_columns
@@ -62,6 +63,11 @@ class GeneTransformer(GeneMixIn, RegulonDBTransformer,
         genome = genome.drop(columns=['name'])
 
         genes = self.transform_gene(gene=gene, genome=genome)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=genes.shape[0], properties=genes.shape[1])
+
         annotated_genes = self.annotate_genes(genes)
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_regulondb'))

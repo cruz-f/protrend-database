@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io.utils import read_regulator
 from protrend.model import Gene
+from protrend.report import ProtrendReporter
 from protrend.transform.collectf.base import CollecTFTransformer
 from protrend.transform.collectf.regulator import RegulatorTransformer
 from protrend.transform.mix_ins import GeneMixIn
@@ -51,6 +52,11 @@ class GeneTransformer(GeneMixIn, CollecTFTransformer,
 
         regulator = self.transform_regulator(regulator)
         genes = self.transform_gene(regulator=regulator)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=genes.shape[0], properties=genes.shape[1])
+
         annotated_genes = self.annotate_genes(genes)
 
         df = pd.merge(annotated_genes, genes, on='input_value', suffixes=('_annotation', '_collectf'))

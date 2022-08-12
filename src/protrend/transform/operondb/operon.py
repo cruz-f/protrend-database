@@ -3,6 +3,7 @@ import pandas as pd
 from protrend.io import read_txt
 from protrend.io.utils import read_gene, read
 from protrend.model import Operon, Gene, Organism
+from protrend.report import ProtrendReporter
 from protrend.transform.operondb.base import OperonDBTransformer, OperonDBConnector
 from protrend.transform.operondb.gene import GeneTransformer
 from protrend.transform.transformations import select_columns, group_by, drop_empty_string
@@ -79,6 +80,10 @@ class OperonTransformer(OperonDBTransformer,
                      default=pd.DataFrame(columns=known_columns))
 
         operon = self.transform_operon(conserved=conserved, known=known)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=operon.shape[0], properties=operon.shape[1])
 
         gene = read_gene(source=self.source, version=self.version, columns=GeneTransformer.columns)
 

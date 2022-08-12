@@ -207,6 +207,8 @@ class MotifTransformer(Transformer,
         self.stack_integrated_nodes(aligned_motifs)
         self.stack_nodes(df)
 
+        return df
+
 
 class MotifToTFBSConnector(Connector,
                            source='motif',

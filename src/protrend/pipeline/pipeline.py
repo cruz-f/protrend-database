@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import List, Dict, Tuple, Type, TYPE_CHECKING
 
 from protrend.log import ProtrendLogger
+from protrend.report import ProtrendReporter
 
 if TYPE_CHECKING:
     from protrend.extract import Extractor
@@ -138,7 +139,23 @@ class Pipeline:
                 ProtrendLogger.log.info(f'Starting transformer: {transformer}')
 
                 df = transformer.transform()
-                transformer.integrate(df)
+
+                ProtrendReporter.report_objects(source=transformer.source,
+                                                version=transformer.version,
+                                                system='transform',
+                                                label=transformer.node.node_name(),
+                                                objects=df.shape[0],
+                                                properties=df.shape[1])
+
+                integrated = transformer.integrate(df)
+
+                ProtrendReporter.report_objects(source=transformer.source,
+                                                version=transformer.version,
+                                                system='integrate',
+                                                label=transformer.node.node_name(),
+                                                objects=integrated.shape[0],
+                                                properties=integrated.shape[1])
+
                 transformer.write()
 
                 ProtrendLogger.log.info(f'Finishing transformer: {transformer.node.node_name()} with stats: {df.shape}')

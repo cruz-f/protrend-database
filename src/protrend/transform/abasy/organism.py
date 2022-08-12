@@ -1,6 +1,7 @@
 import pandas as pd
 
 from protrend.model import Organism, Regulator, Gene
+from protrend.report import ProtrendReporter
 from protrend.transform.abasy.base import AbasyTransformer, AbasyConnector
 from protrend.transform.mix_ins import OrganismMixIn
 from protrend.utils import SetList
@@ -110,6 +111,10 @@ class OrganismTransformer(OrganismMixIn, AbasyTransformer,
         organisms = organisms.drop(columns=['input_value'])
 
         df = pd.concat([annotated_organisms, organisms])
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=df.shape[0], properties=df.shape[1])
 
         self.stack_transformed_nodes(df)
         return df

@@ -1,6 +1,7 @@
 import pandas as pd
 
 from protrend.model import Gene
+from protrend.report import ProtrendReporter
 from protrend.transform.literature.base import LiteratureTransformer, read_literature_networks
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.utils import SetList
@@ -26,6 +27,11 @@ class GeneTransformer(GeneMixIn, LiteratureTransformer,
         network = read_literature_networks(source=self.source, version=self.version)
 
         genes = self.transform_gene(network)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=genes.shape[0], properties=genes.shape[1])
+
         annotated_genes = self.annotate_genes(genes)
 
         df = self.merge_annotations(annotated_genes, genes)

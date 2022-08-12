@@ -229,6 +229,8 @@ class Transformer(AbstractTransformer):
         self.stack_integrated_nodes(df)
         self.stack_nodes(df)
 
+        return df
+
     def write(self):
 
         if not os.path.exists(self.write_path):

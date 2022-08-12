@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read, read_json_frame
 from protrend.model import Regulator
+from protrend.report import ProtrendReporter
 from protrend.transform.dbtbs.base import DBTBSTransformer
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
@@ -66,6 +67,11 @@ class RegulatorTransformer(GeneMixIn, DBTBSTransformer,
         genome = genome.drop(columns=['name'])
 
         regulators = self.transform_tf(tf=tf, genome=genome)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=regulators.shape[0], properties=regulators.shape[1])
+
         annotated_regulators = self.annotate_genes(regulators)
 
         df = self.merge_annotations(annotated_regulators, regulators)

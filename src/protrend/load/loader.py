@@ -8,6 +8,7 @@ from tqdm import tqdm
 from protrend.io import read_json_frame
 from protrend.log import ProtrendLogger
 from protrend.model import get_node_by_name, get_nodes_relationships, connect_nodes
+from protrend.report import ProtrendReporter
 from protrend.utils import DefaultProperty, build_file_path
 
 
@@ -108,8 +109,7 @@ class Loader:
 
         node.node_update_from_df(nodes=df, save=True)
 
-    @staticmethod
-    def _nodes_to_create(df: pd.DataFrame):
+    def _nodes_to_create(self, df: pd.DataFrame):
 
         mask = (df['load'] == 'create') & (df['what'] == 'nodes')
         df = df.loc[mask, :]
@@ -120,10 +120,16 @@ class Loader:
         node_name = df['node'].iloc[0]
         node = get_node_by_name(node_name)
 
+        ProtrendReporter.report_objects(source=self.source,
+                                        version=self.version,
+                                        system='load',
+                                        label=node_name,
+                                        objects=df.shape[0],
+                                        properties=df.shape[1])
+
         node.node_from_df(nodes=df, save=True)
 
-    @staticmethod
-    def _relationships_to_create(df: pd.DataFrame):
+    def _relationships_to_create(self, df: pd.DataFrame):
 
         mask = (df['load'] == 'create') & (df['what'] == 'relationships')
         df = df.loc[mask, :]
@@ -145,6 +151,13 @@ class Loader:
             avoid_duplicates = False
         else:
             avoid_duplicates = True
+
+        ProtrendReporter.report_relationships(source=self.source,
+                                              version=self.version,
+                                              system='connect',
+                                              source_label=from_node_name,
+                                              target_label=to_node_name,
+                                              relationships=df.shape[0])
 
         for _, relationship in tqdm(df.iterrows(),
                                     desc=f'relationship: {from_node_name} - {to_node_name}',

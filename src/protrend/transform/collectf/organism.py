@@ -2,6 +2,7 @@ import pandas as pd
 
 from protrend.io import read_json_lines, read
 from protrend.model import Organism, Regulator, Gene, TFBS, RegulatoryInteraction
+from protrend.report import ProtrendReporter
 from protrend.transform.collectf.base import CollecTFTransformer, CollecTFConnector
 from protrend.transform.mix_ins import OrganismMixIn
 from protrend.transform.transformations import (merge_columns, create_input_value, group_by,
@@ -64,6 +65,11 @@ class OrganismTransformer(OrganismMixIn, CollecTFTransformer,
                         default=pd.DataFrame(columns=['name', 'genome_accession', 'taxonomy', 'regulon', 'tfbs']))
 
         organisms = self.transform_organism(organism)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=organisms.shape[0], properties=organisms.shape[1])
+
         annotated_organisms = self.annotate_organisms(organisms)
 
         df = pd.merge(annotated_organisms, organisms, on='input_value', suffixes=('_annotation', '_collectf'))

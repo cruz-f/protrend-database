@@ -1,6 +1,7 @@
 import pandas as pd
 
 from protrend.model import Regulator
+from protrend.report import ProtrendReporter
 from protrend.transform.coryneregnet.base import CoryneRegNetTransformer, read_coryneregnet_networks
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.transformations import drop_empty_string, drop_duplicates, create_input_value
@@ -45,6 +46,11 @@ class RegulatorTransformer(GeneMixIn, CoryneRegNetTransformer,
         network = read_coryneregnet_networks(self.source, self.version)
 
         regulators = self.transform_regulator(network)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=regulators.shape[0], properties=regulators.shape[1])
+
         annotated_regulators = self.annotate_genes(regulators)
 
         df = self.merge_annotations(annotated_regulators, regulators)

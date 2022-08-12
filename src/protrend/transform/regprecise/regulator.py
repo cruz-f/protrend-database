@@ -6,6 +6,7 @@ from protrend.io import read_json_lines, read
 from protrend.io.utils import read_organism
 from protrend.log import ProtrendLogger
 from protrend.model import Regulator
+from protrend.report import ProtrendReporter
 from protrend.transform.mix_ins._utils import get_values
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
@@ -67,6 +68,11 @@ class RegulatorTransformer(GeneMixIn, RegPreciseTransformer,
 
         organism = self.transform_organism(organism)
         regulators = self.transform_regulator(regulon, organism)
+
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=regulators.shape[0], properties=regulators.shape[1])
+
         annotated_regulators = self.annotate_genes(regulators, drop_nan_locus_tag=False)
 
         df = pd.merge(annotated_regulators, regulators, on='input_value', suffixes=('_annotation', '_regprecise'))
