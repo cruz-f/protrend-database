@@ -1,5 +1,7 @@
 from typing import Dict, Callable, List
 
+import pandas as pd
+
 from protrend.io.utils import read_source, read_rfam
 from protrend.model import (Source, Effector, Gene, Organism, Pathway, Regulator, RegulatoryFamily,
                             RegulatoryInteraction, TFBS)
@@ -87,11 +89,17 @@ class SourceToGeneConnector(SourceConnector,
                                                      source_processors={},
                                                      target_processors={'regulon': [to_list_nan]})
 
-        if 'regulon' in target_df.columns:
+        if 'regulon' in target_df:
             target_df = target_df.explode('regulon')
 
-        source_ids, target_ids = self.merge_source_target(source_df=source_df, target_df=target_df,
-                                                          cardinality='one_to_many')
+        source_df = source_df.reset_index(drop=True)
+        target_df = target_df.reset_index(drop=True)
+        df = pd.concat([source_df, target_df], axis=1)
+
+        target_ids = df['target_col'].to_list()
+
+        source_ids = df['source_col'].dropna().to_list()
+        source_ids *= len(target_ids)
 
         if 'url' in target_df.columns and 'regulon' in target_df.columns:
             size = len(target_ids)
