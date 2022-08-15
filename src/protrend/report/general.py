@@ -13,6 +13,7 @@ entities = {
     'operon': Operon,
     'organism': Organism,
     'pathway': Pathway,
+    'publication': Publication,
     'regulator': Regulator,
     'regulatory family': RegulatoryFamily,
     'regulatory interaction': RegulatoryInteraction,
