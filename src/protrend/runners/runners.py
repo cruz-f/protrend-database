@@ -152,16 +152,16 @@ if __name__ == "__main__":
     run_pipeline(source='abasy', version='0.0.0')
 
     # ----------------------------------------------------
-    # Literature
-    # ----------------------------------------------------
-    # run_logger('literature_logger')
-    run_pipeline(source='literature', version='0.0.0')
-
-    # ----------------------------------------------------
     # CoryneRegNet
     # ----------------------------------------------------
     # run_logger('coryneregnet_logger')
     run_pipeline(source='coryneregnet', version='0.0.0')
+
+    # ----------------------------------------------------
+    # Literature
+    # ----------------------------------------------------
+    # run_logger('literature_logger')
+    run_pipeline(source='literature', version='0.0.0')
 
     # ----------------------------------------------------
     # DBTBS
