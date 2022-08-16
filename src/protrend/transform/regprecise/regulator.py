@@ -1,19 +1,16 @@
 import numpy as np
 import pandas as pd
 
-from protrend import GeneDTO, annotate_genes
 from protrend.io import read_json_lines, read
 from protrend.io.utils import read_organism
-from protrend.log import ProtrendLogger
 from protrend.model import Regulator
 from protrend.report import ProtrendReporter
-from protrend.transform.mix_ins._utils import get_values
 from protrend.transform.mix_ins import GeneMixIn
 from protrend.transform.regprecise.base import RegPreciseTransformer
 from protrend.transform.regprecise.organism import OrganismTransformer
 from protrend.transform.transformations import drop_empty_string, create_input_value, merge_columns, drop_duplicates
 from protrend.utils import SetList
-from protrend.utils.constants import SMALL_RNA, TRANSCRIPTION_FACTOR, REVERSE, FORWARD, UNKNOWN
+from protrend.utils.constants import SMALL_RNA, TRANSCRIPTION_FACTOR
 from protrend.utils.processors import rstrip, lstrip, apply_processors, to_int_str, to_str
 
 

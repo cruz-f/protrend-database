@@ -9,7 +9,7 @@ class PathwayTransformer(StandardizerTransformer,
                          source='standardizer',
                          version='0.0.0',
                          node=Pathway,
-                         order=60,
+                         order=50,
                          register=True):
 
     def transform(self):

@@ -9,7 +9,7 @@ class RegulatorTransformer(StandardizerTransformer,
                            source='standardizer',
                            version='0.0.0',
                            node=Regulator,
-                           order=100,
+                           order=90,
                            register=True):
 
     def transform(self):

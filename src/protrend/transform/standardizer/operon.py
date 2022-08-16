@@ -9,7 +9,7 @@ class OperonTransformer(StandardizerTransformer,
                         source='standardizer',
                         version='0.0.0',
                         node=Operon,
-                        order=80,
+                        order=70,
                         register=True):
 
     def transform(self):

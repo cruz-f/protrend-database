@@ -9,7 +9,7 @@ class RegulatoryInteractionTransformer(StandardizerTransformer,
                                        source='standardizer',
                                        version='0.0.0',
                                        node=RegulatoryInteraction,
-                                       order=60,
+                                       order=50,
                                        register=True):
 
     def transform(self):

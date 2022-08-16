@@ -9,7 +9,7 @@ class TFBSTransformer(StandardizerTransformer,
                       source='standardizer',
                       version='0.0.0',
                       node=TFBS,
-                      order=70,
+                      order=60,
                       register=True):
 
     def transform(self):

@@ -9,7 +9,7 @@ class PublicationTransformer(StandardizerTransformer,
                              source='standardizer',
                              version='0.0.0',
                              node=Publication,
-                             order=50,
+                             order=40,
                              register=True):
 
     def transform(self):

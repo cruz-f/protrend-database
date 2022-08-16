@@ -9,7 +9,7 @@ class OrganismTransformer(StandardizerTransformer,
                           source='standardizer',
                           version='0.0.0',
                           node=Organism,
-                          order=80,
+                          order=70,
                           register=True):
 
     def transform(self):

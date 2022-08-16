@@ -6,6 +6,7 @@ import pandas as pd
 from protrend.io import read_json, read_csv, read
 from protrend.transform import Transformer, Connector
 
+
 ABASY_GENES = ['bsub_genes.tsv',
                'cglu_genes.tsv',
                'ecol_genes.tsv',
@@ -58,6 +59,10 @@ def _read_abasy_network(file_path: str) -> pd.DataFrame:
 
     network_df = pd.DataFrame(network_data)
     network_df = network_df.rename(columns={'source': 'regulator'})
+
+    if 'Evidence' in network_df.columns:
+        network_df = network_df[network_df['Evidence'].str.lower().str.strip() == 'strong']
+
     return network_df
 
 

@@ -9,7 +9,7 @@ class GeneTransformer(StandardizerTransformer,
                       source='standardizer',
                       version='0.0.0',
                       node=Gene,
-                      order=90,
+                      order=80,
                       register=True):
 
     def transform(self):

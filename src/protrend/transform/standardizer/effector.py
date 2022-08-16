@@ -9,7 +9,7 @@ class EffectorTransformer(StandardizerTransformer,
                           source='standardizer',
                           version='0.0.0',
                           node=Effector,
-                          order=80,
+                          order=70,
                           register=True):
 
     def transform(self):

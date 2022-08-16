@@ -9,7 +9,7 @@ class SourceTransformer(SourceMixIn, StandardizerTransformer,
                         source='standardizer',
                         version='0.0.0',
                         node=Source,
-                        order=100,
+                        order=90,
                         register=True):
     name = ['standardizer']
     type = [CURATION]

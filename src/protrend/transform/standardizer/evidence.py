@@ -9,7 +9,7 @@ class EvidenceTransformer(StandardizerTransformer,
                           source='standardizer',
                           version='0.0.0',
                           node=Evidence,
-                          order=50,
+                          order=40,
                           register=True):
 
     def transform(self):
