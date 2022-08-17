@@ -10,3 +10,4 @@ from .regulatory_family import RegulatoryFamilyTransformer
 from .regulatory_interaction import RegulatoryInteractionTransformer
 from .source import SourceTransformer
 from .tfbs import TFBSTransformer
+from .relationships import RelationshipTransformer

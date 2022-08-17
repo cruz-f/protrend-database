@@ -2,10 +2,9 @@ import pandas as pd
 from neo4j.exceptions import Neo4jError, DriverError
 from tqdm import tqdm
 
-from protrend.model import Organism, Gene, TFBS, RegulatoryInteraction, Regulator
+from protrend.model import Source, Organism, Gene, TFBS, RegulatoryInteraction, Regulator
 from protrend.transform.standardizer.base import StandardizerTransformer
 from protrend.utils import NeoDatabase, Settings
-
 
 neo_db = NeoDatabase(user_name=Settings.db_user_name, password=Settings.db_password,
                      ip=Settings.db_ip, port=Settings.db_port)
@@ -48,4 +47,29 @@ class RelationshipTransformer(StandardizerTransformer,
                 node.delete()
 
         df = {'protrend_id': list(orphans)}
-        return pd.DataFrame(df)
+        df = pd.DataFrame(df)
+
+        # regprecise relationships are not standardized in the pipeline due to errors
+        regprecise_src = Source.nodes.get(name='regprecise')
+
+        for gene in Gene.nodes.all():
+            rel = gene.data_source.relationship(regprecise_src)
+
+            if rel is None:
+                continue
+
+            # url: ['https://regprecise.lbl.gov/regulon.jsp?regulon_id=19126']
+            # external_identifier: ['19126']
+            urls = rel.url.replace("['", "").replace("']", '').split(",")
+            external_identifiers = rel.external_identifier.replace("['", "").replace("']", '').split(",")
+
+            gene.data_source.disconnect(regprecise_src)
+            regprecise_src.gene.disconnect(gene)
+
+            for url, external_identifier in zip(urls, external_identifiers):
+                kwargs = {'url': url, 'external_identifier': external_identifier, 'key': 'regulon_id'}
+
+                gene.data_source.connect(regprecise_src, kwargs)
+                regprecise_src.gene.connect(gene, kwargs)
+
+        return df
