@@ -1,3 +1,5 @@
+import ast
+
 import pandas as pd
 from neo4j.exceptions import Neo4jError, DriverError
 from tqdm import tqdm
@@ -60,13 +62,15 @@ class RelationshipTransformer(StandardizerTransformer,
 
             # url: ['https://regprecise.lbl.gov/regulon.jsp?regulon_id=19126']
             # external_identifier: ['19126']
-            urls = rel.url.replace("['", "").replace("']", '').split(",")
-            external_identifiers = rel.external_identifier.replace("['", "").replace("']", '').split(",")
+            urls = ast.literal_eval(rel.url)
+            external_identifiers = ast.literal_eval(rel.external_identifier)
 
             gene.data_source.disconnect(regprecise_src)
             regprecise_src.gene.disconnect(gene)
 
             for url, external_identifier in zip(urls, external_identifiers):
+                url = url.strip()
+                external_identifier = external_identifier.strip()
                 kwargs = {'url': url, 'external_identifier': external_identifier, 'key': 'regulon_id'}
 
                 gene.data_source.connect(regprecise_src, kwargs)
