@@ -53,6 +53,20 @@ def database_long_report(nodes: Dict[str, Type[BaseNode]] = None) -> pd.DataFram
     return pd.concat(results, keys=keys, axis=0)
 
 
+def database_report_by_source(nodes: Dict[str, Type[BaseNode]] = None) -> pd.DataFrame:
+    """
+    Generate a report of the database by source.
+    """
+    if not nodes:
+        nodes = entities.copy()
+
+    results = {}
+    for name, node in nodes.items():
+        df = node.node_to_df()
+        results[name] = df['source'].value_counts()
+
+    return pd.DataFrame(results)
+
 if __name__ == '__main__':
     short_report = database_short_report()
     long_report = database_long_report()
