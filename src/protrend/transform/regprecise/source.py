@@ -174,10 +174,11 @@ class SourceToRegulatoryFamilyConnector(RegPreciseConnector,
         for target_key in ('tffamily_id', 'collection_id', 'riboswitch_id'):
             target_df = target.dropna(subset=[target_key])
 
-            from_identifier = target_df['protrend_id'].to_list()
+            to_identifier = target_df['protrend_id'].to_list()
 
-            size = len(from_identifier)
-            to_identifier = [protrend_id] * size
+            size = len(to_identifier)
+            from_identifier = [protrend_id] * size
+
 
             url = target_df['url'].to_list()
             external_id = target_df[target_key].to_list()
