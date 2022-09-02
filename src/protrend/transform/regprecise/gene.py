@@ -67,13 +67,13 @@ class GeneTransformer(GeneMixIn, RegPreciseTransformer,
                     default=pd.DataFrame(columns=['locus_tag', 'name', 'function', 'url',
                                                   'regulon', 'operon', 'tfbs']))
 
+        ProtrendReporter.report_objects(source=self.source, version=self.version,
+                                        system='extract', label=self.node.node_name(),
+                                        objects=gene.shape[0], properties=gene.shape[1])
+
         regulator = read_regulator(source=self.source, version=self.version, columns=RegulatorTransformer.columns)
 
         regulator = self.transform_regulator(regulator)
-
-        ProtrendReporter.report_objects(source=self.source, version=self.version,
-                                        system='extract', label=self.node.node_name(),
-                                        objects=regulator.shape[0], properties=regulator.shape[1])
 
         genes = self.transform_gene(gene=gene, regulator=regulator)
 
